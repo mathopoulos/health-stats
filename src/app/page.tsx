@@ -44,8 +44,9 @@ export default function Home() {
         position: 'bottom' as const,
         labels: {
           font: {
-            family: 'Inter, system-ui, sans-serif',
-            size: 12
+            family: 'ui-monospace, monospace',
+            size: 12,
+            weight: 'bold' as const
           },
           usePointStyle: true,
           padding: 16,
@@ -62,12 +63,12 @@ export default function Home() {
         padding: 12,
         cornerRadius: 8,
         titleFont: {
-          family: 'Inter, system-ui, sans-serif',
+          family: 'ui-monospace, monospace',
           size: 14,
           weight: 'bold' as const
         },
         bodyFont: {
-          family: 'Inter, system-ui, sans-serif',
+          family: 'ui-sans-serif, system-ui, sans-serif',
           size: 13
         }
       }
@@ -80,8 +81,9 @@ export default function Home() {
         },
         ticks: {
           font: {
-            family: 'Inter, system-ui, sans-serif',
-            size: 12
+            family: 'ui-monospace, monospace',
+            size: 12,
+            weight: 'bold' as const
           }
         }
       },
@@ -91,8 +93,9 @@ export default function Home() {
         },
         ticks: {
           font: {
-            family: 'Inter, system-ui, sans-serif',
-            size: 12
+            family: 'ui-monospace, monospace',
+            size: 12,
+            weight: 'bold' as const
           }
         }
       }
@@ -168,39 +171,39 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen dot-grid p-8 font-['Inter',system-ui,sans-serif]">
+    <main className="min-h-screen dot-grid p-8 font-sans">
       {/* Profile Section */}
       <div className="mb-8 flex items-center space-x-6 bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.04)]">
         <img
-          src="https://avatars.githubusercontent.com/u/8431042?v=4"
+          src="/images/profile.jpg"
           alt="Lex Mathopoulos"
           className="h-24 w-24 rounded-full object-cover border-4 border-white shadow-lg"
         />
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">Lex Mathopoulos</h1>
-          <p className="text-gray-500 text-lg">Health Dashboard</p>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2 font-mono">Lex Mathopoulos</h1>
+          <p className="text-gray-600 text-lg font-medium">Health Dashboard</p>
         </div>
       </div>
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.04)] hover:shadow-[0_0_25px_rgba(0,0,0,0.06)] transition-shadow">
-          <h2 className="text-xl font-semibold mb-6 text-gray-900">Body Composition</h2>
+          <h2 className="text-xl font-mono font-bold mb-6 text-gray-800">Body Composition</h2>
           <Line options={chartOptions} data={bodyCompositionData} />
         </div>
         
         <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.04)] hover:shadow-[0_0_25px_rgba(0,0,0,0.06)] transition-shadow">
-          <h2 className="text-xl font-semibold mb-6 text-gray-900">Sleep Quality</h2>
+          <h2 className="text-xl font-mono font-bold mb-6 text-gray-800">Sleep Quality</h2>
           <Line options={chartOptions} data={sleepData} />
         </div>
         
         <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.04)] hover:shadow-[0_0_25px_rgba(0,0,0,0.06)] transition-shadow">
-          <h2 className="text-xl font-semibold mb-6 text-gray-900">Daily Steps</h2>
+          <h2 className="text-xl font-mono font-bold mb-6 text-gray-800">Daily Steps</h2>
           <Line options={chartOptions} data={stepsData} />
         </div>
         
         <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.04)] hover:shadow-[0_0_25px_rgba(0,0,0,0.06)] transition-shadow">
-          <h2 className="text-xl font-semibold mb-6 text-gray-900">Heart Rate Variability</h2>
+          <h2 className="text-xl font-mono font-bold mb-6 text-gray-800">Heart Rate Variability</h2>
           <Line options={chartOptions} data={hrvData} />
         </div>
       </div>
