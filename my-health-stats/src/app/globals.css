@@ -2,12 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-.dot-grid {
-  background-image: radial-gradient(circle, #e5e7eb 1px, transparent 1px);
-  background-size: 24px 24px;
-  background-color: #f8fafc;
-}
-
 :root {
   --background: #ffffff;
   --foreground: #171717;
