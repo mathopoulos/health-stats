@@ -216,8 +216,8 @@ export default function Home() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
         {/* Heart Rate Chart */}
         <div className="bg-white rounded-xl shadow-lg p-4 h-[400px]">
-          <h3 className="text-lg font-semibold mb-2">Daily Average Heart Rate</h3>
-          <div className="relative h-[calc(100%-2rem)] w-full">
+          <h3 className="text-lg font-medium text-gray-700 mb-4 font-mono">Daily Average Heart Rate</h3>
+          <div className="relative h-[calc(100%-3rem)] w-full">
             <Line
               data={heartRateData}
               options={{
