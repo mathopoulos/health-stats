@@ -35,34 +35,41 @@ interface DailyAverage {
   count: number;
 }
 
+interface WeightRecord {
+  date: string;
+  value: number;
+}
+
 export default function Home() {
   const [healthData, setHealthData] = useState<HealthData | null>(null);
+  const [rawWeightData, setRawWeightData] = useState<WeightRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function loadHealthData() {
+    async function fetchData() {
       try {
-        setIsLoading(true);
-        const response = await fetch('/api/health-data');
-        const data = await response.json();
-        console.log('Loaded data:', data);
-        // Log the date range
-        if (data.heartRate && data.heartRate.length > 0) {
-          const dates = data.heartRate.map((r: { date: string }) => r.date);
-          console.log('Date range:', {
-            min: new Date(Math.min(...dates.map((d: string) => new Date(d)))).toISOString(),
-            max: new Date(Math.max(...dates.map((d: string) => new Date(d)))).toISOString(),
-          });
+        const [healthResponse, weightResponse] = await Promise.all([
+          fetch('/api/health-data'),
+          fetch('/api/weight-data')
+        ]);
+
+        if (healthResponse.ok && weightResponse.ok) {
+          const [healthJson, weightJson] = await Promise.all([
+            healthResponse.json(),
+            weightResponse.json()
+          ]);
+
+          setHealthData(healthJson);
+          setRawWeightData(weightJson);
         }
-        setHealthData(data);
       } catch (error) {
-        console.error('Error loading health data:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setIsLoading(false);
       }
     }
 
-    loadHealthData();
+    fetchData();
   }, []);
 
   // Calculate daily averages
@@ -102,7 +109,7 @@ export default function Home() {
   }
 
   // Early return for error state
-  if (!healthData || !healthData.heartRate || healthData.heartRate.length === 0) {
+  if (!healthData && rawWeightData.length === 0) {
     return (
       <main className="min-h-screen dot-grid p-8 font-sans">
         <div className="flex items-center justify-center h-screen">
@@ -112,8 +119,8 @@ export default function Home() {
     );
   }
 
-  const dailyAverages = calculateDailyAverages(healthData.heartRate);
-  const weightAverages = calculateDailyAverages(healthData.weight || []);
+  const dailyAverages = healthData?.heartRate ? calculateDailyAverages(healthData.heartRate) : [];
+  const weightAverages = calculateDailyAverages(rawWeightData);
 
   const heartRateData = {
     labels: dailyAverages.map(d => new Date(d.date).toLocaleDateString('en-US', { 
@@ -132,21 +139,15 @@ export default function Home() {
     ],
   };
 
-  const weightData = {
-    labels: weightAverages.map(d => new Date(d.date).toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric' 
-    })),
-    datasets: [
-      {
-        label: 'Weight (kg)',
-        data: weightAverages.map(d => d.average),
-        borderColor: '#10b981', // Emerald color for weight
-        backgroundColor: '#10b981',
-        tension: 0.4,
-      },
-    ],
+  const weightChartData = {
+    labels: weightAverages.map(d => d.date),
+    datasets: [{
+      label: 'Weight (kg)',
+      data: weightAverages.map(d => d.average),
+      borderColor: 'rgb(75, 192, 192)',
+      backgroundColor: 'rgba(75, 192, 192, 0.5)',
+      tension: 0.1
+    }]
   };
 
   const chartOptions = {
@@ -251,19 +252,21 @@ export default function Home() {
       {/* Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
         {/* Heart Rate Chart */}
-        <div className="bg-white rounded-xl shadow-lg p-4 h-[400px]">
-          <h3 className="text-lg font-medium text-gray-700 mb-4 font-mono">Daily Average Heart Rate</h3>
-          <div className="relative h-[calc(100%-3rem)] w-full">
-            <Line
-              data={heartRateData}
-              options={{
-                ...chartOptions,
-                maintainAspectRatio: false,
-                responsive: true
-              }}
-            />
+        {dailyAverages.length > 0 && (
+          <div className="bg-white rounded-xl shadow-lg p-4 h-[400px]">
+            <h3 className="text-lg font-medium text-gray-700 mb-4 font-mono">Daily Average Heart Rate</h3>
+            <div className="relative h-[calc(100%-3rem)] w-full">
+              <Line
+                data={heartRateData}
+                options={{
+                  ...chartOptions,
+                  maintainAspectRatio: false,
+                  responsive: true
+                }}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Weight Chart */}
         {weightAverages.length > 0 && (
@@ -271,7 +274,7 @@ export default function Home() {
             <h3 className="text-lg font-medium text-gray-700 mb-4 font-mono">Body Weight</h3>
             <div className="relative h-[calc(100%-3rem)] w-full">
               <Line
-                data={weightData}
+                data={weightChartData}
                 options={{
                   ...chartOptions,
                   maintainAspectRatio: false,
