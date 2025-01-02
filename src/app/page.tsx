@@ -26,6 +26,7 @@ ChartJS.register(
 
 interface HealthData {
   heartRate: { date: string; value: number }[];
+  weight: { date: string; value: number }[];
 }
 
 interface DailyAverage {
@@ -44,6 +45,15 @@ export default function Home() {
         setIsLoading(true);
         const response = await fetch('/api/health-data');
         const data = await response.json();
+        console.log('Loaded data:', data);
+        // Log the date range
+        if (data.heartRate && data.heartRate.length > 0) {
+          const dates = data.heartRate.map((r: { date: string }) => r.date);
+          console.log('Date range:', {
+            min: new Date(Math.min(...dates.map((d: string) => new Date(d)))).toISOString(),
+            max: new Date(Math.max(...dates.map((d: string) => new Date(d)))).toISOString(),
+          });
+        }
         setHealthData(data);
       } catch (error) {
         console.error('Error loading health data:', error);
@@ -57,6 +67,7 @@ export default function Home() {
 
   // Calculate daily averages
   const calculateDailyAverages = (data: { date: string; value: number }[]): DailyAverage[] => {
+    console.log('Calculating averages for dates:', data.map(d => d.date));
     const dailyData = data.reduce((acc: { [key: string]: { sum: number; count: number } }, record) => {
       const date = record.date;
       if (!acc[date]) {
@@ -67,13 +78,16 @@ export default function Home() {
       return acc;
     }, {});
 
-    return Object.entries(dailyData)
+    const averages = Object.entries(dailyData)
       .map(([date, { sum, count }]) => ({
         date,
         average: Math.round(sum / count),
         count
       }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    console.log('Calculated averages:', averages);
+    return averages;
   };
 
   // Early return for loading state
@@ -99,15 +113,37 @@ export default function Home() {
   }
 
   const dailyAverages = calculateDailyAverages(healthData.heartRate);
+  const weightAverages = calculateDailyAverages(healthData.weight || []);
 
   const heartRateData = {
-    labels: dailyAverages.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+    labels: dailyAverages.map(d => new Date(d.date).toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric' 
+    })),
     datasets: [
       {
         label: 'Average Heart Rate (bpm)',
         data: dailyAverages.map(d => d.average),
         borderColor: '#f59e0b',
         backgroundColor: '#f59e0b',
+        tension: 0.4,
+      },
+    ],
+  };
+
+  const weightData = {
+    labels: weightAverages.map(d => new Date(d.date).toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric' 
+    })),
+    datasets: [
+      {
+        label: 'Weight (kg)',
+        data: weightAverages.map(d => d.average),
+        borderColor: '#10b981', // Emerald color for weight
+        backgroundColor: '#10b981',
         tension: 0.4,
       },
     ],
@@ -212,7 +248,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Chart */}
+      {/* Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
         {/* Heart Rate Chart */}
         <div className="bg-white rounded-xl shadow-lg p-4 h-[400px]">
@@ -229,7 +265,37 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Other charts... */}
+        {/* Weight Chart */}
+        {weightAverages.length > 0 && (
+          <div className="bg-white rounded-xl shadow-lg p-4 h-[400px]">
+            <h3 className="text-lg font-medium text-gray-700 mb-4 font-mono">Body Weight</h3>
+            <div className="relative h-[calc(100%-3rem)] w-full">
+              <Line
+                data={weightData}
+                options={{
+                  ...chartOptions,
+                  maintainAspectRatio: false,
+                  responsive: true,
+                  plugins: {
+                    ...chartOptions.plugins,
+                    tooltip: {
+                      ...chartOptions.plugins.tooltip,
+                      callbacks: {
+                        label: function(context: any) {
+                          const dataPoint = weightAverages[context.dataIndex];
+                          return [
+                            `Weight: ${context.parsed.y.toFixed(1)} kg`,
+                            `Readings: ${dataPoint.count}`
+                          ];
+                        }
+                      }
+                    }
+                  }
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

@@ -7,7 +7,7 @@ import path from 'path';
 
 const parseXML = promisify(parseString);
 
-interface HeartRateRecord {
+interface WeightRecord {
   date: string;
   value: number;
   sourceName: string;
@@ -15,11 +15,11 @@ interface HeartRateRecord {
   endTime: string;
 }
 
-async function extractHeartRate() {
-  console.log('Starting heart rate data extraction...');
+async function extractWeight() {
+  console.log('Starting weight data extraction...');
   
   const inputPath = path.join(process.cwd(), 'public', 'export.xml');
-  const outputPath = path.join(process.cwd(), 'public', 'data', 'heartRate.json');
+  const outputPath = path.join(process.cwd(), 'public', 'data', 'weight.json');
 
   // Check if input file exists
   try {
@@ -43,12 +43,12 @@ async function extractHeartRate() {
   console.log('Ensured data directory exists');
 
   // Initialize or read existing data
-  let heartRateData: HeartRateRecord[] = [];
+  let weightData: WeightRecord[] = [];
   if (fs.existsSync(outputPath)) {
     try {
       const existingData = fs.readFileSync(outputPath, 'utf8');
-      heartRateData = JSON.parse(existingData);
-      console.log(`Loaded ${heartRateData.length} existing records`);
+      weightData = JSON.parse(existingData);
+      console.log(`Loaded ${weightData.length} existing records`);
     } catch (error) {
       console.error('Error reading existing data, starting fresh:', error);
     }
@@ -56,13 +56,9 @@ async function extractHeartRate() {
 
   let xmlChunk = '';
   let recordsProcessed = 0;
-  let heartRateRecordsFound = heartRateData.length;
+  let weightRecordsFound = weightData.length;
   let bytesProcessed = 0;
-  let shouldStop = false;  // Add flag to control when to stop
-
-  // Get the date 30 days ago for a good amount of historical data
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  let shouldStop = false;
 
   return new Promise((resolve, reject) => {
     console.log('Starting to read export.xml...');
@@ -74,7 +70,6 @@ async function extractHeartRate() {
       .pipe(new Transform({
         async transform(chunk, encoding, callback) {
           try {
-            // If we should stop, just pass through the chunk without processing
             if (shouldStop) {
               callback();
               return;
@@ -83,15 +78,15 @@ async function extractHeartRate() {
             bytesProcessed += chunk.length;
             xmlChunk += chunk;
             
-            // Look for complete heart rate records
-            const matches = xmlChunk.match(/<Record type="HKQuantityTypeIdentifierHeartRate"[^>]*>[\s\S]*?<\/Record>/g) || [];
+            // Look for complete weight records
+            const matches = xmlChunk.match(/<Record type="HKQuantityTypeIdentifierBodyMass"[^>]*>[\s\S]*?<\/Record>/g) || [];
             
             for (const record of matches) {
               if (shouldStop) break;
               
               recordsProcessed++;
               if (recordsProcessed % 100 === 0) {
-                console.log(`Processed ${recordsProcessed} records, found ${heartRateRecordsFound} heart rate records...`);
+                console.log(`Processed ${recordsProcessed} records, found ${weightRecordsFound} weight records...`);
                 console.log(`Processed ${(bytesProcessed / 1024 / 1024).toFixed(2)} MB`);
               }
               
@@ -99,38 +94,25 @@ async function extractHeartRate() {
                 const result = await parseXML(record);
                 const recordData = (result as any).Record.$;
                 
-                if (recordData.type === 'HKQuantityTypeIdentifierHeartRate' && recordData.unit === 'count/min') {
-                  // Parse the date, considering timezone
+                if (recordData.type === 'HKQuantityTypeIdentifierBodyMass' && recordData.unit === 'kg') {
                   const startDate = new Date(recordData.startDate);
                   const endDate = new Date(recordData.endDate);
                   const dateStr = startDate.toISOString().split('T')[0];
                   
-                  if (startDate >= thirtyDaysAgo) {
-                    const newRecord: HeartRateRecord = {
-                      date: dateStr,
-                      value: parseFloat(recordData.value),
-                      sourceName: recordData.sourceName,
-                      startTime: startDate.toISOString(),
-                      endTime: endDate.toISOString()
-                    };
-                    heartRateData.push(newRecord);
-                    heartRateRecordsFound++;
+                  const newRecord: WeightRecord = {
+                    date: dateStr,
+                    value: parseFloat(recordData.value),
+                    sourceName: recordData.sourceName,
+                    startTime: startDate.toISOString(),
+                    endTime: endDate.toISOString()
+                  };
+                  weightData.push(newRecord);
+                  weightRecordsFound++;
 
-                    // Only write to file every 100 records to reduce disk I/O
-                    if (heartRateRecordsFound % 100 === 0) {
-                      fs.writeFileSync(outputPath, JSON.stringify(heartRateData, null, 2), 'utf8');
-                      console.log(`Saved ${heartRateRecordsFound} records to file...`);
-                    }
-
-                    // Set flag to stop after finding 100000 records
-                    if (heartRateRecordsFound >= 100000) {
-                      console.log('Found 100000 records, stopping...');
-                      // Write final data before stopping
-                      fs.writeFileSync(outputPath, JSON.stringify(heartRateData, null, 2), 'utf8');
-                      shouldStop = true;
-                      resolve(heartRateData);
-                      return;
-                    }
+                  // Save every 10 records since weight measurements are less frequent
+                  if (weightRecordsFound % 10 === 0) {
+                    fs.writeFileSync(outputPath, JSON.stringify(weightData, null, 2), 'utf8');
+                    console.log(`Saved ${weightRecordsFound} records to file...`);
                   }
                 }
               } catch (error) {
@@ -141,7 +123,7 @@ async function extractHeartRate() {
 
             // Keep only the last partial record if we're not stopping
             if (!shouldStop) {
-              const lastRecordStart = xmlChunk.lastIndexOf('<Record type="HKQuantityTypeIdentifierHeartRate"');
+              const lastRecordStart = xmlChunk.lastIndexOf('<Record type="HKQuantityTypeIdentifierBodyMass"');
               if (lastRecordStart !== -1) {
                 xmlChunk = xmlChunk.slice(lastRecordStart);
               } else {
@@ -158,19 +140,18 @@ async function extractHeartRate() {
       }));
 
     stream.on('end', () => {
-      if (shouldStop) return; // Already resolved
-
       console.log(`Finished processing ${recordsProcessed} total records`);
-      console.log(`Found ${heartRateRecordsFound} heart rate records`);
+      console.log(`Found ${weightRecordsFound} weight records`);
       console.log(`Total data processed: ${(bytesProcessed / 1024 / 1024).toFixed(2)} MB`);
       
-      if (heartRateRecordsFound === 0) {
-        console.log('No heart rate records found. Sample of last XML chunk:', xmlChunk.slice(0, 500));
-        resolve([]);
-        return;
+      // Save final data
+      if (weightRecordsFound > 0) {
+        fs.writeFileSync(outputPath, JSON.stringify(weightData, null, 2), 'utf8');
+      } else {
+        console.log('No weight records found');
       }
-
-      resolve(heartRateData);
+      
+      resolve(weightData);
     });
 
     stream.on('error', (error) => {
@@ -181,13 +162,13 @@ async function extractHeartRate() {
 }
 
 // Run the extraction
-console.log('Starting heart rate extraction script...');
-extractHeartRate()
+console.log('Starting weight extraction script...');
+extractWeight()
   .then(() => {
     console.log('Extraction completed successfully');
-    process.exit(0);  // Ensure the process exits after completion
+    process.exit(0);
   })
   .catch(error => {
     console.error('Extraction failed:', error);
-    process.exit(1);  // Exit with error code
+    process.exit(1);
   }); 
