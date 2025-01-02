@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -11,7 +12,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { UserCircleIcon } from '@heroicons/react/24/solid';
+import { parseHealthData } from '@/utils/healthDataParser';
 
 ChartJS.register(
   CategoryScale,
@@ -23,22 +24,98 @@ ChartJS.register(
   Legend
 );
 
-// Generate fake data for the charts
-const generateData = (count: number, min: number, max: number) => {
-  return Array.from({ length: count }, () =>
-    Math.floor(Math.random() * (max - min + 1) + min)
-  );
-};
+interface HealthData {
+  heartRate: { date: string; value: number }[];
+}
 
-const dates = Array.from({ length: 7 }, (_, i) => {
-  const d = new Date();
-  d.setDate(d.getDate() - i);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}).reverse();
+interface DailyAverage {
+  date: string;
+  average: number;
+  count: number;
+}
 
 export default function Home() {
+  const [healthData, setHealthData] = useState<HealthData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadHealthData() {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/health-data');
+        const data = await response.json();
+        setHealthData(data);
+      } catch (error) {
+        console.error('Error loading health data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadHealthData();
+  }, []);
+
+  // Calculate daily averages
+  const calculateDailyAverages = (data: { date: string; value: number }[]): DailyAverage[] => {
+    const dailyData = data.reduce((acc: { [key: string]: { sum: number; count: number } }, record) => {
+      const date = record.date;
+      if (!acc[date]) {
+        acc[date] = { sum: 0, count: 0 };
+      }
+      acc[date].sum += record.value;
+      acc[date].count += 1;
+      return acc;
+    }, {});
+
+    return Object.entries(dailyData)
+      .map(([date, { sum, count }]) => ({
+        date,
+        average: Math.round(sum / count),
+        count
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  };
+
+  // Early return for loading state
+  if (isLoading) {
+    return (
+      <main className="min-h-screen dot-grid p-8 font-sans">
+        <div className="flex items-center justify-center h-screen">
+          <p className="text-xl font-mono text-gray-600">Loading health data...</p>
+        </div>
+      </main>
+    );
+  }
+
+  // Early return for error state
+  if (!healthData || !healthData.heartRate || healthData.heartRate.length === 0) {
+    return (
+      <main className="min-h-screen dot-grid p-8 font-sans">
+        <div className="flex items-center justify-center h-screen">
+          <p className="text-xl font-mono text-gray-600">No health data available.</p>
+        </div>
+      </main>
+    );
+  }
+
+  const dailyAverages = calculateDailyAverages(healthData.heartRate);
+
+  const heartRateData = {
+    labels: dailyAverages.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+    datasets: [
+      {
+        label: 'Average Heart Rate (bpm)',
+        data: dailyAverages.map(d => d.average),
+        borderColor: '#f59e0b',
+        backgroundColor: '#f59e0b',
+        tension: 0.4,
+      },
+    ],
+  };
+
   const chartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'bottom' as const,
@@ -70,6 +147,15 @@ export default function Home() {
         bodyFont: {
           family: 'ui-sans-serif, system-ui, sans-serif',
           size: 13
+        },
+        callbacks: {
+          label: function(context: any) {
+            const dataPoint = dailyAverages[context.dataIndex];
+            return [
+              `Average: ${context.parsed.y} bpm`,
+              `Readings: ${dataPoint.count}`
+            ];
+          }
         }
       }
     },
@@ -111,65 +197,6 @@ export default function Home() {
     }
   };
 
-  const bodyCompositionData = {
-    labels: dates,
-    datasets: [
-      {
-        label: 'Weight (kg)',
-        data: generateData(7, 70, 75),
-        borderColor: '#6366f1',
-        backgroundColor: '#6366f1',
-        tension: 0.4,
-      },
-      {
-        label: 'BMI',
-        data: generateData(7, 21, 23),
-        borderColor: '#f43f5e',
-        backgroundColor: '#f43f5e',
-        tension: 0.4,
-      },
-    ],
-  };
-
-  const sleepData = {
-    labels: dates,
-    datasets: [
-      {
-        label: 'Sleep Duration (hours)',
-        data: generateData(7, 6, 9),
-        borderColor: '#8b5cf6',
-        backgroundColor: '#8b5cf6',
-        tension: 0.4,
-      },
-    ],
-  };
-
-  const stepsData = {
-    labels: dates,
-    datasets: [
-      {
-        label: 'Daily Steps',
-        data: generateData(7, 5000, 12000),
-        borderColor: '#10b981',
-        backgroundColor: '#10b981',
-        tension: 0.4,
-      },
-    ],
-  };
-
-  const hrvData = {
-    labels: dates,
-    datasets: [
-      {
-        label: 'HRV (ms)',
-        data: generateData(7, 40, 70),
-        borderColor: '#f59e0b',
-        backgroundColor: '#f59e0b',
-        tension: 0.4,
-      },
-    ],
-  };
-
   return (
     <main className="min-h-screen dot-grid p-8 font-sans">
       {/* Profile Section */}
@@ -185,27 +212,24 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.04)] hover:shadow-[0_0_25px_rgba(0,0,0,0.06)] transition-shadow">
-          <h2 className="text-xl font-mono font-bold mb-6 text-gray-800">Body Composition</h2>
-          <Line options={chartOptions} data={bodyCompositionData} />
+      {/* Chart */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+        {/* Heart Rate Chart */}
+        <div className="bg-white rounded-xl shadow-lg p-4 h-[400px]">
+          <h3 className="text-lg font-semibold mb-2">Daily Average Heart Rate</h3>
+          <div className="relative h-[calc(100%-2rem)] w-full">
+            <Line
+              data={heartRateData}
+              options={{
+                ...chartOptions,
+                maintainAspectRatio: false,
+                responsive: true
+              }}
+            />
+          </div>
         </div>
-        
-        <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.04)] hover:shadow-[0_0_25px_rgba(0,0,0,0.06)] transition-shadow">
-          <h2 className="text-xl font-mono font-bold mb-6 text-gray-800">Sleep Quality</h2>
-          <Line options={chartOptions} data={sleepData} />
-        </div>
-        
-        <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.04)] hover:shadow-[0_0_25px_rgba(0,0,0,0.06)] transition-shadow">
-          <h2 className="text-xl font-mono font-bold mb-6 text-gray-800">Daily Steps</h2>
-          <Line options={chartOptions} data={stepsData} />
-        </div>
-        
-        <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.04)] hover:shadow-[0_0_25px_rgba(0,0,0,0.06)] transition-shadow">
-          <h2 className="text-xl font-mono font-bold mb-6 text-gray-800">Heart Rate Variability</h2>
-          <Line options={chartOptions} data={hrvData} />
-        </div>
+
+        {/* Other charts... */}
       </div>
     </main>
   );
