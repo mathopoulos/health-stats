@@ -19,31 +19,18 @@ export default function UploadPage() {
     setStatus('Starting upload...');
 
     try {
-      // Get the blob URL from our API
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: JSON.stringify({
-          filename: 'export.xml',
-          contentType: 'application/xml',
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to get upload URL');
-      }
-
-      const { url, uploadUrl } = await response.json();
-
-      // Upload the file to the URL
-      const uploadResponse = await upload(uploadUrl, file, {
-        contentType: 'application/xml',
+      // Upload directly to Vercel Blob
+      const blob = await upload(file.name, file, {
         access: 'public',
-        handleUploadUrl: url
+        handleUploadUrl: '/api/upload',
       });
 
-      if (!uploadResponse) {
+      if (!blob) {
         throw new Error('Upload failed');
       }
+
+      setProgress(50);
+      setStatus('Processing health data...');
 
       // Process the health data after upload
       try {
@@ -54,16 +41,16 @@ export default function UploadPage() {
         if (!processResponse.ok) {
           throw new Error('Failed to process health data');
         }
+
+        setProgress(100);
+        setStatus('Processing complete! Redirecting...');
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1000);
       } catch (error) {
         console.error('Failed to process health data:', error);
         throw error;
       }
-
-      setProgress(100);
-      setStatus('Processing complete! Redirecting...');
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 1000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload file');
       console.error('Upload error:', err);
