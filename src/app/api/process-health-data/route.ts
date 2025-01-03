@@ -15,6 +15,17 @@ async function checkFileExists(filePath: string): Promise<boolean> {
   }
 }
 
+async function ensureDataDirectory(cwd: string): Promise<void> {
+  const dataDir = path.join(cwd, 'public', 'data');
+  try {
+    await fs.mkdir(dataDir, { recursive: true });
+    console.log('Data directory created/verified at:', dataDir);
+  } catch (error) {
+    console.error('Error creating data directory:', error);
+    throw error;
+  }
+}
+
 async function runScript(scriptName: string, cwd: string): Promise<void> {
   try {
     console.log(`Running ${scriptName}...`);
@@ -30,6 +41,9 @@ async function runScript(scriptName: string, cwd: string): Promise<void> {
     if (stdout) {
       console.log(`${scriptName} stdout:`, stdout);
     }
+
+    // Wait a moment for file system operations to complete
+    await new Promise(resolve => setTimeout(resolve, 1000));
   } catch (error) {
     console.error(`Error running ${scriptName}:`, error);
     throw error;
@@ -38,18 +52,35 @@ async function runScript(scriptName: string, cwd: string): Promise<void> {
 
 async function verifyDataFile(filename: string, cwd: string): Promise<void> {
   const filePath = path.join(cwd, 'public', 'data', filename);
-  const exists = await checkFileExists(filePath);
-  if (!exists) {
-    throw new Error(`Data file ${filename} was not created`);
-  }
-  console.log(`Verified ${filename} exists`);
+  console.log(`Verifying ${filename} at:`, filePath);
   
-  // Check if file has content
-  const content = await fs.readFile(filePath, 'utf8');
-  if (!content || content.trim() === '' || content === '[]') {
-    throw new Error(`Data file ${filename} is empty`);
+  let retries = 3;
+  while (retries > 0) {
+    try {
+      const exists = await checkFileExists(filePath);
+      if (!exists) {
+        throw new Error(`Data file ${filename} was not created`);
+      }
+      console.log(`Verified ${filename} exists`);
+      
+      // Check if file has content
+      const content = await fs.readFile(filePath, 'utf8');
+      if (!content || content.trim() === '' || content === '[]') {
+        throw new Error(`Data file ${filename} is empty`);
+      }
+      console.log(`Verified ${filename} has content`);
+      return;
+    } catch (error) {
+      console.error(`Verification attempt ${4 - retries} failed for ${filename}:`, error);
+      retries--;
+      if (retries > 0) {
+        console.log(`Retrying in 1 second...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } else {
+        throw error;
+      }
+    }
   }
-  console.log(`Verified ${filename} has content`);
 }
 
 export async function POST() {
@@ -69,9 +100,8 @@ export async function POST() {
       );
     }
 
-    // Create data directory if it doesn't exist
-    const dataDir = path.join(cwd, 'public', 'data');
-    await fs.mkdir(dataDir, { recursive: true });
+    // Ensure data directory exists
+    await ensureDataDirectory(cwd);
 
     // Run scripts sequentially and verify their output
     console.log('Starting health data extraction...');
