@@ -211,7 +211,11 @@ export default function Home() {
   };
 
   const weightChartData = {
-    labels: paginatedWeightData.map(d => d.date),
+    labels: paginatedWeightData.map(d => new Date(d.date).toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric' 
+    })),
     datasets: [{
       label: 'Weight (kg)',
       data: paginatedWeightData.map(d => d.average),
@@ -222,7 +226,11 @@ export default function Home() {
   };
 
   const bodyFatChartData = {
-    labels: paginatedBodyFatData.map(d => d.date),
+    labels: paginatedBodyFatData.map(d => new Date(d.date).toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric' 
+    })),
     datasets: [{
       label: 'Body Fat (%)',
       data: paginatedBodyFatData.map(d => d.average),
@@ -334,41 +342,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Heart Rate Chart */}
-        {dailyAverages.length > 0 && (
-          <div className="bg-white rounded-xl shadow-lg p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-700 font-mono">Daily Average Heart Rate</h3>
-              <div className="flex gap-2">
-                <button 
-                  onClick={handlePrevHeartRatePage}
-                  disabled={heartRatePage !== null && heartRatePage * ENTRIES_PER_PAGE >= dailyAverages.length}
-                  className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  ←
-                </button>
-                <button 
-                  onClick={handleNextHeartRatePage}
-                  disabled={heartRatePage === 0}
-                  className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  →
-                </button>
-              </div>
-            </div>
-            <div className="relative h-[400px]">
-              <Line
-                data={heartRateData}
-                options={{
-                  ...chartOptions,
-                  maintainAspectRatio: false,
-                  responsive: true
-                }}
-              />
-            </div>
-          </div>
-        )}
-
         {/* Weight Chart */}
         {weightAverages.length > 0 && (
           <div className="bg-white rounded-xl shadow-lg p-4">
@@ -463,6 +436,41 @@ export default function Home() {
                       }
                     }
                   }
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Heart Rate Chart */}
+        {dailyAverages.length > 0 && (
+          <div className="bg-white rounded-xl shadow-lg p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-700 font-mono">Daily Average Heart Rate</h3>
+              <div className="flex gap-2">
+                <button 
+                  onClick={handlePrevHeartRatePage}
+                  disabled={heartRatePage !== null && heartRatePage * ENTRIES_PER_PAGE >= dailyAverages.length}
+                  className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ←
+                </button>
+                <button 
+                  onClick={handleNextHeartRatePage}
+                  disabled={heartRatePage === 0}
+                  className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  →
+                </button>
+              </div>
+            </div>
+            <div className="relative h-[400px]">
+              <Line
+                data={heartRateData}
+                options={{
+                  ...chartOptions,
+                  maintainAspectRatio: false,
+                  responsive: true
                 }}
               />
             </div>
