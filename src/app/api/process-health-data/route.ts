@@ -106,27 +106,42 @@ export async function POST() {
     // Run scripts sequentially and verify their output
     console.log('Starting health data extraction...');
     
-    await runScript('extractHeartRate', cwd);
-    await verifyDataFile('heartRate.json', cwd);
-    console.log('Heart rate data extracted and verified');
-    
-    await runScript('extractWeight', cwd);
-    await verifyDataFile('weight.json', cwd);
-    console.log('Weight data extracted and verified');
-    
-    await runScript('extractBodyFat', cwd);
-    await verifyDataFile('bodyFat.json', cwd);
-    console.log('Body fat data extracted and verified');
+    try {
+      await runScript('extractHeartRate', cwd);
+      await verifyDataFile('heartRate.json', cwd);
+      console.log('Heart rate data extracted and verified');
+      
+      await runScript('extractWeight', cwd);
+      await verifyDataFile('weight.json', cwd);
+      console.log('Weight data extracted and verified');
+      
+      await runScript('extractBodyFat', cwd);
+      await verifyDataFile('bodyFat.json', cwd);
+      console.log('Body fat data extracted and verified');
 
-    console.log('All data extraction completed successfully');
+      console.log('All data extraction completed successfully');
 
-    return NextResponse.json({ success: true });
+      return NextResponse.json({ success: true, message: 'Data processed successfully' });
+    } catch (scriptError) {
+      console.error('Script execution error:', scriptError);
+      return NextResponse.json(
+        { 
+          error: 'Error running extraction scripts',
+          details: process.env.NODE_ENV === 'development' 
+            ? scriptError instanceof Error ? scriptError.message : 'Unknown script error'
+            : 'Error processing health data'
+        },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error('Error processing health data:', error);
     return NextResponse.json(
       { 
         error: 'Error processing health data',
-        details: error instanceof Error ? error.message : String(error)
+        details: process.env.NODE_ENV === 'development' 
+          ? error instanceof Error ? error.message : 'Unknown error'
+          : 'Server error'
       },
       { status: 500 }
     );

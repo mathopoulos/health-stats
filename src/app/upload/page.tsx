@@ -52,14 +52,15 @@ export default function UploadPage() {
       setProcessingStep('Uploading export.xml...');
       formData.append('file', exportXml);
 
-      const response = await fetch('/api/upload', {
+      const uploadResponse = await fetch('/api/upload', {
         method: 'POST',
         body: formData
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to upload file');
+      const uploadData = await uploadResponse.json();
+
+      if (!uploadResponse.ok || !uploadData.success) {
+        throw new Error(uploadData.error || 'Failed to upload file');
       }
 
       setProcessingStep('Processing health data...');
@@ -69,21 +70,17 @@ export default function UploadPage() {
 
       const processData = await processResponse.json();
 
-      if (!processResponse.ok) {
-        throw new Error(processData.details || processData.error || 'Failed to process health data');
-      }
-
-      if (!processData.success) {
-        throw new Error('Failed to process health data');
+      if (!processResponse.ok || !processData.success) {
+        throw new Error(processData.error || processData.details || 'Failed to process health data');
       }
 
       setIsSuccess(true);
+      setProcessingStep('');
     } catch (err) {
       console.error('Upload error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred while processing your data.');
     } finally {
       setIsProcessing(false);
-      setProcessingStep('');
     }
   };
 
