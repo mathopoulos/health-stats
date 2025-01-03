@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { exec } from 'child_process';
+import { exec, execSync } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 import { promises as fs } from 'fs';
@@ -15,8 +15,25 @@ async function checkFileExists(filePath: string): Promise<boolean> {
   }
 }
 
+async function killBackgroundProcesses() {
+  try {
+    // Kill any running tsx processes
+    if (process.platform === 'win32') {
+      execSync('taskkill /F /IM tsx.exe', { stdio: 'ignore' });
+    } else {
+      execSync('pkill -f tsx', { stdio: 'ignore' });
+    }
+  } catch (error) {
+    // Ignore errors if no processes found
+    console.log('No background processes found to clean up');
+  }
+}
+
 export async function POST() {
   try {
+    // Kill any existing background processes first
+    await killBackgroundProcesses();
+
     const cwd = process.cwd();
     console.log('Current working directory:', cwd);
 
@@ -29,7 +46,10 @@ export async function POST() {
     
     try {
       console.log('Running extract-health-data...');
-      const { stdout: healthOut, stderr: healthErr } = await execAsync('npx tsx scripts/extractHeartRate.ts', { cwd });
+      const { stdout: healthOut, stderr: healthErr } = await execAsync('npx tsx scripts/extractHeartRate.ts', { 
+        cwd,
+        timeout: 300000 // 5 minute timeout
+      });
       if (healthErr) console.error('Health data extraction error:', healthErr);
       console.log('Health data extraction output:', healthOut);
       
@@ -42,7 +62,11 @@ export async function POST() {
 
     try {
       console.log('Running extract-weight...');
-      const { stdout: weightOut, stderr: weightErr } = await execAsync('npx tsx scripts/extractWeight.ts', { cwd, maxBuffer: 1024 * 1024 * 100 });
+      const { stdout: weightOut, stderr: weightErr } = await execAsync('npx tsx scripts/extractWeight.ts', { 
+        cwd,
+        maxBuffer: 1024 * 1024 * 100,
+        timeout: 300000 // 5 minute timeout
+      });
       if (weightErr) console.error('Weight data extraction error:', weightErr);
       console.log('Weight data extraction output:', weightOut);
       
@@ -55,7 +79,11 @@ export async function POST() {
 
     try {
       console.log('Running extract-body-fat...');
-      const { stdout: bodyFatOut, stderr: bodyFatErr } = await execAsync('npx tsx scripts/extractBodyFat.ts', { cwd, maxBuffer: 1024 * 1024 * 100 });
+      const { stdout: bodyFatOut, stderr: bodyFatErr } = await execAsync('npx tsx scripts/extractBodyFat.ts', { 
+        cwd,
+        maxBuffer: 1024 * 1024 * 100,
+        timeout: 300000 // 5 minute timeout
+      });
       if (bodyFatErr) console.error('Body fat data extraction error:', bodyFatErr);
       console.log('Body fat data extraction output:', bodyFatOut);
       
@@ -66,10 +94,16 @@ export async function POST() {
       throw error;
     }
 
+    // Final cleanup of any remaining processes
+    await killBackgroundProcesses();
+
     console.log('All data extraction completed successfully');
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    // Ensure cleanup even on error
+    await killBackgroundProcesses();
+    
     console.error('Error processing health data:', error);
     return NextResponse.json(
       { 
