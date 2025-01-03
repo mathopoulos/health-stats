@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import { XMLParser } from 'fast-xml-parser/src/fxp';
-import { setProcessingComplete } from '../health-data/status/route';
+import { setProcessingComplete } from '../health-data/status/processingStatus';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
