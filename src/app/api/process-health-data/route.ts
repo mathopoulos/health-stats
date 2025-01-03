@@ -22,6 +22,16 @@ async function processXMLData(xmlContent: string): Promise<HealthData> {
     trimValues: true,
     isArray: (name) => {
       return name === 'Record';
+    },
+    allowBooleanAttributes: true,
+    parseTagValue: true,
+    cdataPropName: "value",
+    stopNodes: ["*.value"],
+    tagValueProcessor: (tagName: string, tagValue: string) => {
+      return tagValue?.trim();
+    },
+    attributeValueProcessor: (attrName: string, attrValue: string) => {
+      return attrValue?.trim();
     }
   });
 
@@ -33,6 +43,16 @@ async function processXMLData(xmlContent: string): Promise<HealthData> {
   };
 
   try {
+    // Validate XML content before parsing
+    if (!xmlContent || typeof xmlContent !== 'string' || xmlContent.trim().length === 0) {
+      throw new Error('Invalid XML content: Empty or not a string');
+    }
+
+    // Check if content looks like XML
+    if (!xmlContent.trim().startsWith('<?xml') && !xmlContent.trim().startsWith('<')) {
+      throw new Error('Invalid XML content: Does not appear to be XML');
+    }
+
     // Parse in a try-catch to handle malformed XML
     const data = parser.parse(xmlContent);
     console.log('XML parsed successfully');
@@ -121,6 +141,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Process the XML content
     const xmlContent = await response.text();
+    console.log('XML content length:', xmlContent.length);
+    console.log('First 500 characters of XML:', xmlContent.substring(0, 500));
+
     console.log('Processing XML content...');
     const healthData = await processXMLData(xmlContent);
 
