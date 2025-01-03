@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { upload } from '@vercel/blob/client';
 
 export default function UploadPage() {
   const [uploading, setUploading] = useState(false);
@@ -19,33 +18,26 @@ export default function UploadPage() {
     setStatus('Starting upload...');
 
     try {
-      // Upload file directly to Vercel Blob
-      const response = await upload(file.name, file, {
-        access: 'public',
-        handleUploadUrl: '/api/upload',
+      // Upload file
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: file,
+        headers: {
+          'Content-Type': 'application/xml',
+        },
       });
 
-      if (!response.url) {
-        throw new Error('Upload failed - no URL returned');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Upload failed');
       }
 
       setProgress(100);
-      setStatus('Upload complete! Processing data...');
-      
-      // Wait for processing to complete
-      const processResponse = await fetch('/api/process-health-data', {
-        method: 'POST'
-      });
-
-      if (!processResponse.ok) {
-        throw new Error('Failed to process health data');
-      }
-
-      const result = await processResponse.json();
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to process health data');
-      }
-
       setStatus('Processing complete! Redirecting...');
       setTimeout(() => {
         window.location.href = '/';

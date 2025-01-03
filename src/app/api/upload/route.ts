@@ -1,44 +1,46 @@
-import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { put } from '@vercel/blob';
 
-export async function POST(request: Request): Promise<NextResponse> {
-  const body = (await request.json()) as HandleUploadBody;
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
+export async function POST(request: NextRequest) {
   try {
-    const jsonResponse = await handleUpload({
-      body,
-      request,
-      onBeforeGenerateToken: async (pathname) => {
-        // Validate file type
-        return {
-          allowedContentTypes: ['application/xml'],
-          tokenPayload: JSON.stringify({
-            // optional, sent to your server on upload completion
-            pathname
-          }),
-        };
-      },
-      onUploadCompleted: async ({ blob, tokenPayload }) => {
-        // Get notified of client upload completion
-        console.log('blob upload completed', blob);
+    const file = request.body;
+    if (!file) {
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    }
 
-        try {
-          // Trigger health data processing
-          await fetch('/api/process-health-data', {
-            method: 'POST'
-          });
-        } catch (error) {
-          console.error('Failed to process health data:', error);
-          throw new Error('Could not process health data');
-        }
-      },
+    // Upload to Vercel Blob
+    const { url } = await put('export.xml', file, {
+      access: 'public',
+      contentType: 'application/xml'
     });
 
-    return NextResponse.json(jsonResponse);
+    // Process the health data
+    const processResponse = await fetch('/api/process-health-data', {
+      method: 'POST'
+    });
+
+    if (!processResponse.ok) {
+      throw new Error('Failed to process health data');
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      url,
+      message: 'File uploaded and processed successfully' 
+    });
   } catch (error) {
+    console.error('Error handling upload:', error);
     return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 400 },
+      { 
+        error: 'Error processing upload',
+        details: process.env.NODE_ENV === 'development' 
+          ? error instanceof Error ? error.message : 'Unknown error'
+          : 'Server error'
+      },
+      { status: 500 }
     );
   }
 } 
