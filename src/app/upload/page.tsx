@@ -91,8 +91,8 @@ export default function UploadPage() {
     <main className="min-h-screen dot-grid p-8 font-sans">
       <div className="max-w-2xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2 font-mono">Upload Health Data</h1>
-          <p className="text-gray-600">Drag and drop your Apple Health export folder here</p>
+          <h1 className="text-4xl font-bold text-foreground mb-2 font-mono">Upload Health Data</h1>
+          <p className="text-foreground/70">Drag and drop your Apple Health export folder here</p>
         </div>
 
         {isSuccess ? (
@@ -133,16 +133,16 @@ export default function UploadPage() {
           >
             {isProcessing ? (
               <div className="space-y-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-                <p className="text-gray-600 font-mono">{processingStep}</p>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-foreground mx-auto"></div>
+                <p className="text-foreground/70 font-mono">{processingStep}</p>
               </div>
             ) : (
               <div className="space-y-4">
                 <div className="text-6xl mb-4">📁</div>
-                <p className="text-gray-600 font-mono">
+                <p className="text-foreground/70 font-mono">
                   Drop your Apple Health export folder here
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-foreground/50 text-sm">
                   The folder should contain an export.xml file
                 </p>
               </div>
@@ -156,8 +156,8 @@ export default function UploadPage() {
           </div>
         )}
 
-        <div className="mt-8 space-y-4 text-sm text-gray-600">
-          <h2 className="font-medium text-gray-800">How to export your Apple Health data:</h2>
+        <div className="mt-8 space-y-4 text-sm text-foreground/70">
+          <h2 className="font-medium text-foreground">How to export your Apple Health data:</h2>
           <ol className="list-decimal pl-5 space-y-2">
             <li>Open the Health app on your iPhone</li>
             <li>Tap your profile picture in the top right</li>
