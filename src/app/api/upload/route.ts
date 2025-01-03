@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 
-// New route segment config format
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// New route segment config format
+export const maxDuration = 60;
+export const fetchCache = 'force-no-store';
+
+// Configure body size limit
 export async function POST(request: NextRequest) {
   try {
     if (!request.body) {
@@ -15,13 +19,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const formData = await request.formData();
+    let formData;
+    try {
+      formData = await request.formData();
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('entity too large')) {
+        return NextResponse.json(
+          { error: 'File size too large. Maximum size is 50MB.' },
+          { status: 413 }
+        );
+      }
+      throw error;
+    }
+
     const file = formData.get('file') as File;
 
     if (!file) {
       return NextResponse.json(
         { error: 'No file uploaded' },
         { status: 400 }
+      );
+    }
+
+    // Check file size (50MB in bytes)
+    if (file.size > 50 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: 'File size too large. Maximum size is 50MB.' },
+        { status: 413 }
       );
     }
 
