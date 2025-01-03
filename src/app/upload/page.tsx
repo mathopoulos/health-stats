@@ -42,9 +42,20 @@ export default function UploadPage() {
     setUploading(true);
     setProgress(0);
     setError(null);
-    setStatus('Starting upload...');
+    setStatus('Cleaning up old data...');
 
     try {
+      // Clean up old data first
+      console.log('Cleaning up old data...');
+      const cleanupResponse = await fetch('/api/cleanup-blobs', {
+        method: 'POST'
+      });
+
+      if (!cleanupResponse.ok) {
+        console.warn('Cleanup warning:', await cleanupResponse.text());
+      }
+
+      setStatus('Starting upload...');
       let chunkIndex = 0;
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
       let finalBlob: PutBlobResult | null = null;
