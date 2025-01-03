@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "extract-health-data": "tsx scripts/extractHeartRate.ts",
-    "extract-weight": "tsx scripts/extractWeight.ts"
+    "extract-weight": "tsx scripts/extractWeight.ts",
+    "extract-body-fat": "tsx scripts/extractBodyFat.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
