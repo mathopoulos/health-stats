@@ -112,7 +112,7 @@ export default function Home() {
         average: Math.round(sum / count),
         count
       }))
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // Sort in reverse chronological order
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()); // Sort in chronological order
     
     console.log('Calculated averages:', averages);
     return averages;
@@ -120,54 +120,46 @@ export default function Home() {
 
   // Get paginated data with specific page
   const getPaginatedData = (data: DailyAverage[], page: number) => {
-    // Start from the end of the array (most recent data)
-    const endIndex = data.length;
-    const startIndex = Math.max(0, endIndex - ENTRIES_PER_PAGE - (page * ENTRIES_PER_PAGE));
-    const pageData = data.slice(startIndex, startIndex + ENTRIES_PER_PAGE);
+    // Calculate total pages
+    const totalPages = Math.ceil(data.length / ENTRIES_PER_PAGE);
     
-    // If we have less than ENTRIES_PER_PAGE items, pad with the available data
-    if (pageData.length < ENTRIES_PER_PAGE && startIndex > 0) {
-      const remainingItems = ENTRIES_PER_PAGE - pageData.length;
-      const additionalData = data.slice(Math.max(0, startIndex - remainingItems), startIndex);
-      return [...additionalData, ...pageData];
-    }
+    // For page 0, show the last ENTRIES_PER_PAGE entries
+    const startIndex = Math.max(0, data.length - ENTRIES_PER_PAGE - (page * ENTRIES_PER_PAGE));
+    const endIndex = Math.min(data.length - (page * ENTRIES_PER_PAGE), data.length);
     
-    return pageData;
+    return data.slice(startIndex, endIndex);
   };
 
   // Navigation handlers for heart rate
   const handlePrevHeartRatePage = () => {
-    // Going left means increasing the page number (showing older data)
-    const maxPage = Math.ceil(dailyAverages.length / ENTRIES_PER_PAGE) - 1;
-    setHeartRatePage(prev => Math.min(maxPage, (prev || 0) + 1));
+    // Going left means showing older data (increasing page number)
+    setHeartRatePage(prev => (prev || 0) + 1);
   };
 
   const handleNextHeartRatePage = () => {
-    // Going right means decreasing the page number (showing newer data)
+    // Going right means showing newer data (decreasing page number)
     setHeartRatePage(prev => Math.max(0, (prev || 0) - 1));
   };
 
   // Navigation handlers for weight
   const handlePrevWeightPage = () => {
-    // Going left means increasing the page number (showing older data)
-    const maxPage = Math.ceil(weightAverages.length / ENTRIES_PER_PAGE) - 1;
-    setWeightPage(prev => Math.min(maxPage, (prev || 0) + 1));
+    // Going left means showing older data (increasing page number)
+    setWeightPage(prev => (prev || 0) + 1);
   };
 
   const handleNextWeightPage = () => {
-    // Going right means decreasing the page number (showing newer data)
+    // Going right means showing newer data (decreasing page number)
     setWeightPage(prev => Math.max(0, (prev || 0) - 1));
   };
 
   // Navigation handlers for body fat
   const handlePrevBodyFatPage = () => {
-    // Going left means increasing the page number (showing older data)
-    const maxPage = Math.ceil(bodyFatAverages.length / ENTRIES_PER_PAGE) - 1;
-    setBodyFatPage(prev => Math.min(maxPage, (prev || 0) + 1));
+    // Going left means showing older data (increasing page number)
+    setBodyFatPage(prev => (prev || 0) + 1);
   };
 
   const handleNextBodyFatPage = () => {
-    // Going right means decreasing the page number (showing newer data)
+    // Going right means showing newer data (decreasing page number)
     setBodyFatPage(prev => Math.max(0, (prev || 0) - 1));
   };
 
@@ -349,7 +341,7 @@ export default function Home() {
               <div className="flex gap-2">
                 <button 
                   onClick={handlePrevHeartRatePage}
-                  disabled={heartRatePage >= Math.ceil(dailyAverages.length / ENTRIES_PER_PAGE) - 1}
+                  disabled={heartRatePage !== null && heartRatePage * ENTRIES_PER_PAGE >= dailyAverages.length}
                   className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ←
@@ -384,7 +376,7 @@ export default function Home() {
               <div className="flex gap-2">
                 <button 
                   onClick={handlePrevWeightPage}
-                  disabled={weightPage >= Math.ceil(weightAverages.length / ENTRIES_PER_PAGE) - 1}
+                  disabled={weightPage !== null && weightPage * ENTRIES_PER_PAGE >= weightAverages.length}
                   className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ←
@@ -434,7 +426,7 @@ export default function Home() {
               <div className="flex gap-2">
                 <button 
                   onClick={handlePrevBodyFatPage}
-                  disabled={bodyFatPage >= Math.ceil(bodyFatAverages.length / ENTRIES_PER_PAGE) - 1}
+                  disabled={bodyFatPage !== null && bodyFatPage * ENTRIES_PER_PAGE >= bodyFatAverages.length}
                   className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ←
