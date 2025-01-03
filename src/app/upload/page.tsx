@@ -1,17 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { upload } from '@vercel/blob/client';
+import { type PutBlobResult } from '@vercel/blob';
 
 export default function UploadPage() {
+  const inputFileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>('');
+  const [blob, setBlob] = useState<PutBlobResult | null>(null);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!inputFileRef.current?.files) {
+      console.log('No file selected');
+      setError('No file selected');
+      return;
+    }
+
+    const file = inputFileRef.current.files[0];
+    console.log('Starting upload for file:', file.name, 'size:', file.size);
 
     setUploading(true);
     setProgress(0);
@@ -19,21 +30,20 @@ export default function UploadPage() {
     setStatus('Starting upload...');
 
     try {
-      // Upload directly to Vercel Blob
-      const blob = await upload(file.name, file, {
+      console.log('Initiating blob upload...');
+      const newBlob = await upload(file.name, file, {
         access: 'public',
         handleUploadUrl: '/api/upload',
       });
 
-      if (!blob) {
-        throw new Error('Upload failed');
-      }
-
+      console.log('Upload completed:', newBlob);
+      setBlob(newBlob);
       setProgress(50);
       setStatus('Processing health data...');
 
       // Process the health data after upload
       try {
+        console.log('Processing health data...');
         const processResponse = await fetch('/api/process-health-data', {
           method: 'POST'
         });
@@ -42,6 +52,7 @@ export default function UploadPage() {
           throw new Error('Failed to process health data');
         }
 
+        console.log('Health data processing complete');
         setProgress(100);
         setStatus('Processing complete! Redirecting...');
         setTimeout(() => {
@@ -52,8 +63,8 @@ export default function UploadPage() {
         throw error;
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload file');
       console.error('Upload error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to upload file');
     } finally {
       setUploading(false);
     }
@@ -65,21 +76,31 @@ export default function UploadPage() {
         <h1 className="text-2xl font-bold mb-8">Upload Health Data</h1>
         
         <div className="bg-white/5 p-8 rounded-lg shadow-lg">
-          <div className="mb-4">
-            <input
-              type="file"
-              onChange={handleFileUpload}
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <input
+                name="file"
+                ref={inputFileRef}
+                type="file"
+                disabled={uploading}
+                accept=".xml"
+                className="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-full file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100
+                  disabled:opacity-50"
+              />
+            </div>
+            <button
+              type="submit"
               disabled={uploading}
-              accept=".xml"
-              className="block w-full text-sm text-gray-500
-                file:mr-4 file:py-2 file:px-4
-                file:rounded-full file:border-0
-                file:text-sm file:font-semibold
-                file:bg-blue-50 file:text-blue-700
-                hover:file:bg-blue-100
-                disabled:opacity-50"
-            />
-          </div>
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:opacity-50"
+            >
+              Upload
+            </button>
+          </form>
 
           {uploading && (
             <div className="mt-4">
@@ -98,6 +119,12 @@ export default function UploadPage() {
           {error && (
             <div className="mt-4 text-red-500 text-sm">
               {error}
+            </div>
+          )}
+
+          {blob && (
+            <div className="mt-4 text-sm">
+              Blob url: <a href={blob.url} className="text-blue-500 hover:underline">{blob.url}</a>
             </div>
           )}
         </div>
