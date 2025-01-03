@@ -4,6 +4,10 @@ import { promisify } from 'util';
 import path from 'path';
 import { promises as fs } from 'fs';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // Maximum allowed on hobby plan
+
 const execAsync = promisify(exec);
 
 async function checkFileExists(filePath: string): Promise<boolean> {
@@ -32,7 +36,7 @@ async function runScript(scriptName: string, cwd: string): Promise<void> {
     const { stdout, stderr } = await execAsync(`npx tsx scripts/${scriptName}.ts`, {
       cwd,
       maxBuffer: 1024 * 1024 * 100, // 100MB buffer
-      timeout: 300000 // 5 minute timeout
+      timeout: 55000 // 55 seconds to leave buffer for other operations
     });
 
     if (stderr) {
