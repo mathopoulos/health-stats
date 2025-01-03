@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import { XMLParser } from 'fast-xml-parser/src/fxp';
+import { setProcessingComplete } from '../health-data/status/route';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -117,6 +118,9 @@ async function processXMLData(xmlContent: string): Promise<HealthData> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    // Reset processing status at the start
+    setProcessingComplete(false);
+    
     console.log('Processing health data request received');
     
     // Debug auth information
@@ -196,6 +200,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     await Promise.all(savePromises);
     console.log('Health data processing complete');
 
+    // Set processing as complete
+    setProcessingComplete(true);
+
     return NextResponse.json({ 
       success: true,
       stats: {
@@ -205,6 +212,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     });
   } catch (error) {
+    // Ensure processing is marked as complete even on error
+    setProcessingComplete(true);
+    
     console.error('Error processing health data:', error);
     return NextResponse.json(
       { 

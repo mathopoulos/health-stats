@@ -4,18 +4,26 @@ import { useState, useRef } from 'react';
 import { upload } from '@vercel/blob/client';
 import { type PutBlobResult } from '@vercel/blob';
 
-const CHUNK_SIZE = 50 * 1024 * 1024; // Increased to 50MB chunks for faster uploads
+const CHUNK_SIZE = 200 * 1024 * 1024; // Increased to 200MB chunks
+const MAX_PARALLEL_UPLOADS = 3; // Number of parallel uploads
 
 async function* createChunks(file: File, chunkSize: number) {
   let offset = 0;
+  const chunks = [];
+  
   while (offset < file.size) {
     const chunk = file.slice(offset, offset + chunkSize);
-    offset += chunkSize;
-    yield {
+    chunks.push({
       chunk,
       offset,
-      isLastChunk: offset >= file.size
-    };
+      isLastChunk: offset + chunkSize >= file.size
+    });
+    offset += chunkSize;
+  }
+  
+  // Return chunks in groups for parallel processing
+  for (let i = 0; i < chunks.length; i += MAX_PARALLEL_UPLOADS) {
+    yield chunks.slice(i, i + MAX_PARALLEL_UPLOADS);
   }
 }
 
@@ -59,33 +67,41 @@ export default function UploadPage() {
       let chunkIndex = 0;
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
       let finalBlob: PutBlobResult | null = null;
+      let totalBytesUploaded = 0;
 
-      for await (const { chunk, offset, isLastChunk } of createChunks(file, CHUNK_SIZE)) {
-        chunkIndex++;
-        setStatus(`Uploading chunk ${chunkIndex} of ${totalChunks}...`);
-        
-        const chunkFile = new File([chunk], file.name, { type: file.type });
-        console.log(`Uploading chunk ${chunkIndex}/${totalChunks}, size: ${chunk.size}`);
+      for await (const chunkGroup of createChunks(file, CHUNK_SIZE)) {
+        const uploadPromises = chunkGroup.map(async ({ chunk, offset, isLastChunk }) => {
+          chunkIndex++;
+          const chunkFile = new File([chunk], file.name, { type: file.type });
+          console.log(`Uploading chunk ${chunkIndex}/${totalChunks}, size: ${chunk.size}`);
 
-        const newBlob = await upload(file.name, chunkFile, {
-          access: 'public',
-          handleUploadUrl: '/api/upload',
-          contentType: 'application/xml',
-          clientPayload: JSON.stringify({
-            filename: file.name,
-            chunkIndex,
-            totalChunks,
-            offset,
-            isLastChunk,
-          }),
+          const newBlob = await upload(file.name, chunkFile, {
+            access: 'public',
+            handleUploadUrl: '/api/upload',
+            contentType: 'application/xml',
+            clientPayload: JSON.stringify({
+              filename: file.name,
+              chunkIndex,
+              totalChunks,
+              offset,
+              isLastChunk,
+            }),
+          });
+
+          if (isLastChunk) {
+            finalBlob = newBlob;
+          }
+
+          totalBytesUploaded += chunk.size;
+          const uploadProgress = (totalBytesUploaded / file.size) * 100;
+          setProgress(Math.min(50, uploadProgress));
+          setStatus(`Uploading... ${Math.round(uploadProgress)}%`);
+
+          return newBlob;
         });
 
-        if (isLastChunk) {
-          finalBlob = newBlob;
-        }
-
-        const uploadProgress = (offset / file.size) * 100;
-        setProgress(Math.min(50, uploadProgress));
+        // Wait for all parallel uploads in this group to complete
+        await Promise.all(uploadPromises);
       }
 
       if (!finalBlob) {
@@ -95,36 +111,41 @@ export default function UploadPage() {
       console.log('Upload completed:', finalBlob);
       setBlob(finalBlob);
       setProgress(50);
-      setStatus('Processing health data...');
+      setStatus('Waiting for processing to complete...');
 
-      // Process the health data after upload
-      try {
-        console.log('Processing health data...');
-        const processResponse = await fetch('/api/process-health-data', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            blobUrl: finalBlob.url,
-          }),
-        });
-
-        if (!processResponse.ok) {
-          const errorData = await processResponse.text();
-          console.error('Process response error:', errorData);
-          throw new Error('Failed to process health data');
+      // Wait for the server-side processing to complete by polling the status
+      let attempts = 0;
+      const maxAttempts = 30; // 30 seconds timeout
+      while (attempts < maxAttempts) {
+        try {
+          const statusResponse = await fetch('/api/health-data/status', {
+            method: 'GET',
+          });
+          
+          if (statusResponse.ok) {
+            const status = await statusResponse.json();
+            if (status.complete) {
+              console.log('Processing complete');
+              setProgress(100);
+              setStatus('Processing complete! Redirecting...');
+              setTimeout(() => {
+                window.location.href = '/';
+              }, 1000);
+              break;
+            }
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before next attempt
+          attempts++;
+          setProgress(50 + (attempts / maxAttempts) * 50); // Progress from 50% to 100%
+        } catch (error) {
+          console.error('Error checking processing status:', error);
+          // Continue polling even if there's an error
         }
+      }
 
-        console.log('Health data processing complete');
-        setProgress(100);
-        setStatus('Processing complete! Redirecting...');
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 1000);
-      } catch (error) {
-        console.error('Failed to process health data:', error);
-        throw error;
+      if (attempts >= maxAttempts) {
+        throw new Error('Processing timed out - please check the dashboard for status');
       }
     } catch (err) {
       console.error('Upload error:', err);
