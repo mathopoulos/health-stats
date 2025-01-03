@@ -1,51 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { createFileChunks, uploadChunk } from '@/utils/fileChunker';
+import { upload } from '@vercel/blob/client';
 
 export default function UploadPage() {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>('');
-
-  const processHealthData = async () => {
-    setStatus('Processing health data...');
-    const response = await fetch('/api/process-health-data', {
-      method: 'POST'
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to process health data');
-    }
-
-    const result = await response.json();
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to process health data');
-    }
-  };
-
-  const assembleChunks = async (fileName: string, totalChunks: number) => {
-    setStatus('Assembling file chunks...');
-    const response = await fetch('/api/assemble-chunks', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ fileName, totalChunks }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to assemble file chunks');
-    }
-
-    const result = await response.json();
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to assemble file chunks');
-    }
-
-    return result.url;
-  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -57,29 +19,33 @@ export default function UploadPage() {
     setStatus('Starting upload...');
 
     try {
-      const fileChunks = createFileChunks(file);
-      let totalChunks = 0;
-      let chunkNumber = 0;
-      
-      for await (const { chunk, chunkNumber: num, totalChunks: total, isLastChunk } of fileChunks) {
-        setStatus(`Uploading chunk ${num} of ${total}...`);
-        await uploadChunk(chunk, num, total, isLastChunk, file.name);
-        chunkNumber = num;
-        totalChunks = total;
-        setProgress((num / total) * 100);
+      // Upload file directly to Vercel Blob
+      const response = await upload(file.name, file, {
+        access: 'public',
+        handleUploadUrl: '/api/upload',
+      });
+
+      if (!response.url) {
+        throw new Error('Upload failed - no URL returned');
       }
 
       setProgress(100);
-      setStatus('Upload complete. Assembling chunks...');
+      setStatus('Upload complete! Processing data...');
       
-      // Assemble chunks into final file
-      await assembleChunks(file.name, totalChunks);
-      
-      setStatus('File assembled. Processing data...');
-      
-      // Process the health data
-      await processHealthData();
-      
+      // Wait for processing to complete
+      const processResponse = await fetch('/api/process-health-data', {
+        method: 'POST'
+      });
+
+      if (!processResponse.ok) {
+        throw new Error('Failed to process health data');
+      }
+
+      const result = await processResponse.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to process health data');
+      }
+
       setStatus('Processing complete! Redirecting...');
       setTimeout(() => {
         window.location.href = '/';
