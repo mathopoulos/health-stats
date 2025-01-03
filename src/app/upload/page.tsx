@@ -25,6 +25,28 @@ export default function UploadPage() {
     }
   };
 
+  const assembleChunks = async (fileName: string, totalChunks: number) => {
+    setStatus('Assembling file chunks...');
+    const response = await fetch('/api/assemble-chunks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ fileName, totalChunks }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to assemble file chunks');
+    }
+
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to assemble file chunks');
+    }
+
+    return result.url;
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -36,17 +58,26 @@ export default function UploadPage() {
 
     try {
       const fileChunks = createFileChunks(file);
+      let totalChunks = 0;
+      let chunkNumber = 0;
       
-      for await (const { chunk, chunkNumber, totalChunks, isLastChunk } of fileChunks) {
-        setStatus(`Uploading chunk ${chunkNumber} of ${totalChunks}...`);
-        await uploadChunk(chunk, chunkNumber, totalChunks, isLastChunk, file.name);
-        setProgress((chunkNumber / totalChunks) * 100);
+      for await (const { chunk, chunkNumber: num, totalChunks: total, isLastChunk } of fileChunks) {
+        setStatus(`Uploading chunk ${num} of ${total}...`);
+        await uploadChunk(chunk, num, total, isLastChunk, file.name);
+        chunkNumber = num;
+        totalChunks = total;
+        setProgress((num / total) * 100);
       }
 
       setProgress(100);
-      setStatus('Upload complete. Processing data...');
+      setStatus('Upload complete. Assembling chunks...');
       
-      // Process the health data after successful upload
+      // Assemble chunks into final file
+      await assembleChunks(file.name, totalChunks);
+      
+      setStatus('File assembled. Processing data...');
+      
+      // Process the health data
       await processHealthData();
       
       setStatus('Processing complete! Redirecting...');

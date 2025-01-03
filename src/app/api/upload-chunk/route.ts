@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir, appendFile, rename } from 'fs/promises';
+import { put } from '@vercel/blob';
 import { join } from 'path';
-import { existsSync } from 'fs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 300; // 5 minutes
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,41 +19,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No chunk provided' }, { status: 400 });
     }
 
-    // Create temp directory if it doesn't exist
-    const tempDir = join(process.cwd(), 'public', 'temp');
-    await mkdir(tempDir, { recursive: true });
+    try {
+      // Upload chunk to Vercel Blob storage
+      const { url } = await put(
+        `temp/${fileName}.chunk${chunkNumber}`,
+        chunk,
+        { access: 'public' }
+      );
 
-    // Create a temporary file for this upload
-    const tempFilePath = join(tempDir, `${fileName}.part`);
-    const finalFilePath = join(process.cwd(), 'public', 'export.xml');
+      // If this is the last chunk, we'll need to combine them later
+      if (isLastChunk) {
+        return NextResponse.json({ 
+          success: true, 
+          message: 'File upload completed',
+          isComplete: true,
+          totalChunks,
+          fileName
+        });
+      }
 
-    // Convert chunk to Buffer
-    const buffer = Buffer.from(await chunk.arrayBuffer());
-
-    // If it's the first chunk, write it directly
-    if (chunkNumber === 1) {
-      await writeFile(tempFilePath, buffer);
-    } else {
-      // Append subsequent chunks
-      await appendFile(tempFilePath, buffer);
-    }
-
-    // If this is the last chunk, move the file to its final location
-    if (isLastChunk) {
-      await rename(tempFilePath, finalFilePath);
       return NextResponse.json({ 
         success: true, 
-        message: 'File upload completed',
-        isComplete: true
+        message: `Chunk ${chunkNumber} of ${totalChunks} uploaded successfully`,
+        isComplete: false
       });
+    } catch (uploadError) {
+      console.error('Error uploading to Vercel Blob:', uploadError);
+      throw uploadError;
     }
-
-    return NextResponse.json({ 
-      success: true, 
-      message: `Chunk ${chunkNumber} of ${totalChunks} uploaded successfully`,
-      isComplete: false
-    });
-
   } catch (error) {
     console.error('Error handling chunk upload:', error);
     return NextResponse.json(
