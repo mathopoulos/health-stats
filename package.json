@@ -12,6 +12,8 @@
     "extract-body-fat": "tsx scripts/extractBodyFat.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.722.0",
+    "@aws-sdk/s3-request-presigner": "^3.722.0",
     "@heroicons/react": "^2.2.0",
     "@types/xml2js": "^0.4.14",
     "@vercel/analytics": "^1.4.1",
