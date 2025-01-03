@@ -131,7 +131,7 @@ export default function Home() {
     return averages;
   };
 
-  // Get paginated data with specific page
+  // Get paginated data with specific paget
   const getPaginatedData = (data: DailyAverage[], page: number) => {
     // Calculate total pages
     const totalPages = Math.ceil(data.length / ENTRIES_PER_PAGE);
