@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { upload } from '@vercel/blob/client';
 import { type PutBlobResult } from '@vercel/blob';
 
-const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB chunks
+const CHUNK_SIZE = 50 * 1024 * 1024; // Increased to 50MB chunks for faster uploads
 
 async function* createChunks(file: File, chunkSize: number) {
   let offset = 0;

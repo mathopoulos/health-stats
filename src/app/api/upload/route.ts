@@ -44,7 +44,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           }
 
           return {
-            maximumSizeInBytes: 20 * 1024 * 1024, // 20MB per chunk
+            maximumSizeInBytes: 100 * 1024 * 1024, // Increased to 100MB per chunk
             allowedContentTypes: ['application/xml'],
           };
         },
@@ -69,12 +69,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                 ? `https://${process.env.VERCEL_URL}` 
                 : 'http://localhost:3000';
                 
+              const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+              if (!blobToken) {
+                console.error('Missing BLOB_READ_WRITE_TOKEN');
+                throw new Error('Server configuration error - Missing token');
+              }
+                
+              console.log('Making request to process-health-data with token present');
               const processResponse = await fetch(`${baseUrl}/api/process-health-data`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
-                  // Add host header to help with routing
+                  'Authorization': `Bearer ${blobToken}`,
                   'Host': process.env.VERCEL_URL || 'localhost:3000'
                 },
                 body: JSON.stringify({
@@ -86,7 +92,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               if (!processResponse.ok) {
                 const errorText = await processResponse.text();
                 console.error('Process response error:', errorText);
-                throw new Error('Failed to process health data');
+                console.error('Response status:', processResponse.status);
+                console.error('Response headers:', JSON.stringify(Object.fromEntries(processResponse.headers.entries()), null, 2));
+                throw new Error(`Failed to process health data: ${processResponse.status} ${errorText}`);
               }
               console.log('Health data processing complete');
             }

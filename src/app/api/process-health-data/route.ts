@@ -119,11 +119,29 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     console.log('Processing health data request received');
     
-    // Validate authentication
+    // Debug auth information
     const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.split(' ')[1] !== process.env.BLOB_READ_WRITE_TOKEN) {
-      console.error('Authentication failed');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+    
+    console.log('Auth header present:', !!authHeader);
+    console.log('Blob token present:', !!blobToken);
+    console.log('Auth header format correct:', authHeader?.startsWith('Bearer '));
+    
+    // Validate authentication
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('Authentication failed: Invalid header format');
+      return NextResponse.json({ error: 'Unauthorized - Invalid header format' }, { status: 401 });
+    }
+
+    if (!blobToken) {
+      console.error('Authentication failed: Missing BLOB_READ_WRITE_TOKEN');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
+    const providedToken = authHeader.split(' ')[1];
+    if (providedToken !== blobToken) {
+      console.error('Authentication failed: Token mismatch');
+      return NextResponse.json({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
     const { blobUrl } = await request.json();
