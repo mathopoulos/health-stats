@@ -319,20 +319,21 @@ export default function Home() {
   return (
     <main className="min-h-screen dot-grid p-8 font-sans">
       {/* Profile Section */}
-      <div className="mb-8 flex items-center space-x-6 bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.04)]">
-        <img
-          src="/images/profile.jpg"
-          alt="Lex Mathopoulos"
-          className="h-24 w-24 rounded-full object-cover border-4 border-white shadow-lg"
-        />
-        <div>
-          <h1 className="text-4xl font-bold text-gray-800 mb-2 font-mono">Lex Mathopoulos</h1>
-          <p className="text-gray-600 text-lg font-medium">Health Dashboard</p>
-        </div>
-      </div>
-
-      {/* Charts */}
       <div className="grid grid-cols-1 gap-6 p-6">
+        <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.04)]">
+          <div className="flex items-center space-x-6">
+            <img
+              src="/images/profile.jpg"
+              alt="Lex Mathopoulos"
+              className="h-24 w-24 rounded-full object-cover border-4 border-white shadow-lg"
+            />
+            <div>
+              <h1 className="text-4xl font-bold text-gray-800 mb-2 font-mono">Lex Mathopoulos</h1>
+              <p className="text-gray-600 text-lg font-medium">Health Dashboard</p>
+            </div>
+          </div>
+        </div>
+
         {/* Heart Rate Chart */}
         {dailyAverages.length > 0 && (
           <div className="bg-white rounded-xl shadow-lg p-4">
