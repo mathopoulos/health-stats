@@ -1,9 +1,9 @@
-import { createReadStream } from 'fs';
-import { Transform } from 'stream';
-import { parseString } from 'xml2js';
-import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
+import { Transform } from 'stream';
+import { createReadStream } from 'fs';
+import { parseString } from 'xml2js';
+import { promisify } from 'util';
 
 const parseXML = promisify(parseString);
 
@@ -11,6 +11,7 @@ interface HeartRateRecord {
   date: string;
   value: number;
   sourceName: string;
+  unit: string;
   startTime: string;
   endTime: string;
 }
@@ -110,6 +111,7 @@ async function extractHeartRate() {
                       date: dateStr,
                       value: parseFloat(recordData.value),
                       sourceName: recordData.sourceName,
+                      unit: recordData.unit,
                       startTime: startDate.toISOString(),
                       endTime: endDate.toISOString()
                     };
