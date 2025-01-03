@@ -1,4 +1,4 @@
-export const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
+export const CHUNK_SIZE = 1 * 1024 * 1024; // Reduced to 1MB chunks
 
 export async function* createFileChunks(file: File) {
   let offset = 0;
@@ -51,34 +51,62 @@ export async function uploadChunk(
   formData.append('isLastChunk', isLastChunk.toString());
   formData.append('fileName', fileName);
 
-  try {
-    const response = await fetch('/api/upload-chunk', {
-      method: 'POST',
-      body: formData,
-    });
+  // Add retry logic
+  const maxRetries = 3;
+  let retryCount = 0;
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('Chunk upload failed:', {
-        status: response.status,
-        statusText: response.statusText,
-        errorData
+  while (retryCount < maxRetries) {
+    try {
+      const response = await fetch('/api/upload-chunk', {
+        method: 'POST',
+        body: formData,
       });
-      throw new Error(
-        errorData.error || 
-        errorData.details || 
-        `Failed to upload chunk ${chunkNumber} (HTTP ${response.status})`
-      );
-    }
 
-    const result = await response.json();
-    console.log(`Chunk ${chunkNumber} upload result:`, result);
-    return result;
-  } catch (error) {
-    console.error('Error uploading chunk:', {
-      chunkNumber,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-    throw error;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Chunk upload failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData,
+          attempt: retryCount + 1
+        });
+
+        // If it's a 413 error, throw immediately as retrying won't help
+        if (response.status === 413) {
+          throw new Error(`Chunk size too large (${chunk.size} bytes)`);
+        }
+
+        // For other errors, retry
+        if (retryCount < maxRetries - 1) {
+          retryCount++;
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Exponential backoff
+          continue;
+        }
+
+        throw new Error(
+          errorData.error || 
+          errorData.details || 
+          `Failed to upload chunk ${chunkNumber} (HTTP ${response.status})`
+        );
+      }
+
+      const result = await response.json();
+      console.log(`Chunk ${chunkNumber} upload result:`, result);
+      return result;
+    } catch (error) {
+      if (retryCount < maxRetries - 1) {
+        console.warn(`Retry ${retryCount + 1} for chunk ${chunkNumber}...`);
+        retryCount++;
+        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+        continue;
+      }
+      console.error('Error uploading chunk:', {
+        chunkNumber,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      throw error;
+    }
   }
+
+  throw new Error(`Failed to upload chunk ${chunkNumber} after ${maxRetries} attempts`);
 } 
