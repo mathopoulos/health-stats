@@ -19,59 +19,80 @@ async function processXMLData(xmlContent: string): Promise<HealthData> {
     textNodeName: "value",
     parseAttributeValue: true,
     ignoreDeclaration: true,
-    ignorePiTags: true,
-    trimValues: true
+    trimValues: true,
+    isArray: (name) => {
+      return name === 'Record';
+    }
   });
 
   console.log('Parsing XML data...');
-  const data = parser.parse(xmlContent);
-  
   const healthData: HealthData = {
     heartRate: [],
     weight: [],
     bodyFat: []
   };
 
-  // Extract data from the parsed XML
   try {
-    if (data.HealthData && data.HealthData.Record) {
-      const records = Array.isArray(data.HealthData.Record) 
-        ? data.HealthData.Record 
-        : [data.HealthData.Record];
+    // Parse in a try-catch to handle malformed XML
+    const data = parser.parse(xmlContent);
+    console.log('XML parsed successfully');
 
-      // Process records in batches to avoid memory issues
-      const batchSize = 1000;
-      for (let i = 0; i < records.length; i += batchSize) {
-        const batch = records.slice(i, i + batchSize);
-        
-        batch.forEach((record: any) => {
+    // Validate the parsed data structure
+    if (!data?.HealthData?.Record) {
+      console.error('Invalid XML structure:', JSON.stringify(data, null, 2));
+      throw new Error('Invalid XML structure - missing HealthData or Record');
+    }
+
+    const records = data.HealthData.Record;
+    console.log(`Found ${records.length} records`);
+
+    // Process records in batches to avoid memory issues
+    const batchSize = 1000;
+    for (let i = 0; i < records.length; i += batchSize) {
+      const batch = records.slice(i, i + batchSize);
+      console.log(`Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(records.length/batchSize)}`);
+      
+      batch.forEach((record: any) => {
+        try {
+          if (!record.type || !record.value) return;
+
           const type = record.type;
           const value = parseFloat(record.value);
           const date = new Date(record.startDate || record.creationDate).toISOString();
 
-          if (type === 'HKQuantityTypeIdentifierHeartRate' && !isNaN(value)) {
-            healthData.heartRate.push({ date, value });
+          if (!isNaN(value) && date) {
+            if (type === 'HKQuantityTypeIdentifierHeartRate') {
+              healthData.heartRate.push({ date, value });
+            }
+            else if (type === 'HKQuantityTypeIdentifierBodyMass') {
+              healthData.weight.push({ date, value });
+            }
+            else if (type === 'HKQuantityTypeIdentifierBodyFatPercentage') {
+              healthData.bodyFat.push({ date, value });
+            }
           }
-          else if (type === 'HKQuantityTypeIdentifierBodyMass' && !isNaN(value)) {
-            healthData.weight.push({ date, value });
-          }
-          else if (type === 'HKQuantityTypeIdentifierBodyFatPercentage' && !isNaN(value)) {
-            healthData.bodyFat.push({ date, value });
-          }
-        });
-
-        // Sort data by date as we go
-        healthData.heartRate.sort((a, b) => a.date.localeCompare(b.date));
-        healthData.weight.sort((a, b) => a.date.localeCompare(b.date));
-        healthData.bodyFat.sort((a, b) => a.date.localeCompare(b.date));
-      }
+        } catch (recordError) {
+          console.error('Error processing record:', record, recordError);
+        }
+      });
     }
-  } catch (error) {
-    console.error('Error processing records:', error);
-    throw new Error('Failed to process health records');
-  }
 
-  return healthData;
+    // Sort all data at once at the end
+    healthData.heartRate.sort((a, b) => a.date.localeCompare(b.date));
+    healthData.weight.sort((a, b) => a.date.localeCompare(b.date));
+    healthData.bodyFat.sort((a, b) => a.date.localeCompare(b.date));
+
+    console.log('Data processing complete:', {
+      heartRateCount: healthData.heartRate.length,
+      weightCount: healthData.weight.length,
+      bodyFatCount: healthData.bodyFat.length
+    });
+
+    return healthData;
+  } catch (error) {
+    console.error('Error processing XML:', error);
+    throw new Error(`Failed to process XML: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -86,9 +107,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Download the XML content with streaming
     console.log('Downloading XML content...');
-    const response = await fetch(blobUrl);
+    const response = await fetch(blobUrl, {
+      headers: {
+        'Authorization': `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`
+      }
+    });
+
     if (!response.ok) {
-      throw new Error('Failed to download file from blob storage');
+      const errorText = await response.text();
+      console.error('Failed to download file:', response.status, errorText);
+      throw new Error(`Failed to download file: ${response.status} ${errorText}`);
     }
 
     // Process the XML content
