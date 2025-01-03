@@ -67,9 +67,14 @@ export default function UploadPage() {
         method: 'POST'
       });
 
+      const processData = await processResponse.json();
+
       if (!processResponse.ok) {
-        const data = await processResponse.json();
-        throw new Error(data.details || data.error || 'Failed to process health data');
+        throw new Error(processData.details || processData.error || 'Failed to process health data');
+      }
+
+      if (!processData.success) {
+        throw new Error('Failed to process health data');
       }
 
       setIsSuccess(true);
