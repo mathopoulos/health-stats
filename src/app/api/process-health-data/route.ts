@@ -1,122 +1,66 @@
-import { NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import path from 'path';
+import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
+import { join } from 'path';
+import { mkdir } from 'fs/promises';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60; // Maximum allowed on hobby plan
 
-const execAsync = promisify(exec);
-
-async function checkFileExists(filePath: string): Promise<boolean> {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    await fs.access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
+    console.log('Processing health data request received');
+    const { blobUrl } = await request.json();
+    console.log('Blob URL:', blobUrl);
 
-async function ensureDataDirectory(cwd: string): Promise<void> {
-  const dataDir = path.join(cwd, 'public', 'data');
-  try {
-    await fs.mkdir(dataDir, { recursive: true });
-    console.log('Data directory created/verified at:', dataDir);
-  } catch (error) {
-    console.error('Error creating data directory:', error);
-    throw error;
-  }
-}
+    if (!blobUrl) {
+      throw new Error('No blob URL provided');
+    }
 
-async function runScript(scriptName: string, cwd: string): Promise<void> {
-  console.log(`Starting ${scriptName}...`);
-  try {
-    const { stdout, stderr } = await execAsync(`npx tsx scripts/${scriptName}.ts`, {
-      cwd,
-      maxBuffer: 1024 * 1024 * 100, // 100MB buffer
-      timeout: 55000 // 55 seconds to leave buffer for other operations
+    // Create the data directory if it doesn't exist
+    const dataDir = join(process.cwd(), 'public', 'data');
+    await mkdir(dataDir, { recursive: true });
+
+    // Download the file from blob storage
+    console.log('Downloading file from blob storage...');
+    const response = await fetch(blobUrl);
+    if (!response.ok) {
+      throw new Error('Failed to download file from blob storage');
+    }
+
+    // Save the file locally
+    const xmlPath = join(process.cwd(), 'export.xml');
+    const buffer = Buffer.from(await response.arrayBuffer());
+    await fs.writeFile(xmlPath, buffer);
+    console.log('File saved locally:', xmlPath);
+
+    // Process the health data
+    console.log('Processing health data...');
+    const processResponse = await fetch(new URL('/api/extract-health-data', request.url).toString(), {
+      method: 'POST',
     });
 
-    if (stderr) {
-      console.error(`${scriptName} stderr:`, stderr);
-    }
-    if (stdout) {
-      console.log(`${scriptName} stdout:`, stdout);
-    }
-  } catch (error) {
-    console.error(`Error running ${scriptName}:`, error);
-    throw error;
-  }
-}
-
-async function ensureDataFile(filename: string, cwd: string): Promise<void> {
-  const filePath = path.join(cwd, 'public', 'data', filename);
-  const exists = await checkFileExists(filePath);
-  
-  if (!exists) {
-    // Create an empty array file if it doesn't exist
-    await fs.writeFile(filePath, '[]', 'utf8');
-    console.log(`Created empty ${filename}`);
-  }
-}
-
-async function processDataFiles(cwd: string) {
-  // Ensure all data files exist
-  await ensureDataFile('heartRate.json', cwd);
-  await ensureDataFile('weight.json', cwd);
-  await ensureDataFile('bodyFat.json', cwd);
-
-  // Run scripts sequentially
-  console.log('Processing heart rate data...');
-  await runScript('extractHeartRate', cwd);
-  
-  console.log('Processing weight data...');
-  await runScript('extractWeight', cwd);
-  
-  console.log('Processing body fat data...');
-  await runScript('extractBodyFat', cwd);
-}
-
-export async function POST() {
-  try {
-    const cwd = process.cwd();
-    console.log('Current working directory:', cwd);
-
-    // Check if export.xml exists
-    const exportPath = path.join(cwd, 'public', 'export.xml');
-    const exportExists = await checkFileExists(exportPath);
-    console.log('export.xml exists:', exportExists);
-
-    if (!exportExists) {
-      return NextResponse.json(
-        { error: 'export.xml not found' },
-        { status: 400 }
-      );
+    if (!processResponse.ok) {
+      const errorText = await processResponse.text();
+      console.error('Extract health data error:', errorText);
+      throw new Error('Failed to extract health data');
     }
 
-    // Ensure data directory exists
-    await ensureDataDirectory(cwd);
-
-    // Process all data files
-    await processDataFiles(cwd);
-
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Data processed successfully' 
-    });
-
+    console.log('Health data processing complete');
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error processing health data:', error);
     return NextResponse.json(
       { 
-        error: 'Error processing health data',
-        details: process.env.NODE_ENV === 'development' 
-          ? error instanceof Error ? error.message : 'Unknown error'
-          : 'Server error'
+        error: error instanceof Error ? error.message : 'Failed to process health data',
       },
-      { status: 500 }
+      { status: 400 }
     );
+  } finally {
+    // Clean up the temporary file
+    try {
+      await fs.unlink(join(process.cwd(), 'export.xml')).catch(() => {});
+    } catch (error) {
+      console.error('Error cleaning up temporary file:', error);
+    }
   }
 } 
