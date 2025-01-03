@@ -22,7 +22,7 @@ export default function UploadPage() {
     }
 
     const file = inputFileRef.current.files[0];
-    console.log('Starting upload for file:', file.name, 'size:', file.size);
+    console.log('Starting upload for file:', file.name, 'size:', file.size, 'type:', file.type);
 
     setUploading(true);
     setProgress(0);
@@ -34,6 +34,11 @@ export default function UploadPage() {
       const newBlob = await upload(file.name, file, {
         access: 'public',
         handleUploadUrl: '/api/upload',
+        contentType: 'application/xml',
+        clientPayload: JSON.stringify({
+          filename: file.name,
+          size: file.size,
+        }),
       });
 
       console.log('Upload completed:', newBlob);
@@ -45,10 +50,18 @@ export default function UploadPage() {
       try {
         console.log('Processing health data...');
         const processResponse = await fetch('/api/process-health-data', {
-          method: 'POST'
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            blobUrl: newBlob.url,
+          }),
         });
 
         if (!processResponse.ok) {
+          const errorData = await processResponse.text();
+          console.error('Process response error:', errorData);
           throw new Error('Failed to process health data');
         }
 
@@ -65,8 +78,11 @@ export default function UploadPage() {
     } catch (err) {
       console.error('Upload error:', err);
       setError(err instanceof Error ? err.message : 'Failed to upload file');
+      setStatus('Upload failed');
     } finally {
-      setUploading(false);
+      if (!error) {
+        setUploading(false);
+      }
     }
   };
 
@@ -83,7 +99,7 @@ export default function UploadPage() {
                 ref={inputFileRef}
                 type="file"
                 disabled={uploading}
-                accept=".xml"
+                accept=".xml,application/xml"
                 className="block w-full text-sm text-gray-500
                   file:mr-4 file:py-2 file:px-4
                   file:rounded-full file:border-0
