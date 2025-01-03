@@ -370,14 +370,14 @@ export default function Home() {
                 <button 
                   onClick={handlePrevWeightPage}
                   disabled={weightPage !== null && weightPage * ENTRIES_PER_PAGE >= weightAverages.length}
-                  className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 active:bg-gray-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-mono text-xl font-bold text-gray-700"
                 >
                   ←
                 </button>
                 <button 
                   onClick={handleNextWeightPage}
                   disabled={weightPage === 0}
-                  className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 active:bg-gray-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-mono text-xl font-bold text-gray-700"
                 >
                   →
                 </button>
@@ -420,14 +420,14 @@ export default function Home() {
                 <button 
                   onClick={handlePrevBodyFatPage}
                   disabled={bodyFatPage !== null && bodyFatPage * ENTRIES_PER_PAGE >= bodyFatAverages.length}
-                  className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 active:bg-gray-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-mono text-xl font-bold text-gray-700"
                 >
                   ←
                 </button>
                 <button 
                   onClick={handleNextBodyFatPage}
                   disabled={bodyFatPage === 0}
-                  className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 active:bg-gray-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-mono text-xl font-bold text-gray-700"
                 >
                   →
                 </button>
@@ -470,14 +470,14 @@ export default function Home() {
                 <button 
                   onClick={handlePrevHeartRatePage}
                   disabled={heartRatePage !== null && heartRatePage * ENTRIES_PER_PAGE >= dailyAverages.length}
-                  className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 active:bg-gray-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-mono text-xl font-bold text-gray-700"
                 >
                   ←
                 </button>
                 <button 
                   onClick={handleNextHeartRatePage}
                   disabled={heartRatePage === 0}
-                  className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 active:bg-gray-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-mono text-xl font-bold text-gray-700"
                 >
                   →
                 </button>
