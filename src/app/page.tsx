@@ -40,10 +40,14 @@ interface WeightRecord {
   value: number;
 }
 
+const ENTRIES_PER_PAGE = 30; // Show 1 month of data at a time
+
 export default function Home() {
   const [healthData, setHealthData] = useState<HealthData | null>(null);
   const [rawWeightData, setRawWeightData] = useState<WeightRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [heartRatePage, setHeartRatePage] = useState<number | null>(null);
+  const [weightPage, setWeightPage] = useState<number | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -61,6 +65,10 @@ export default function Home() {
 
           setHealthData(healthJson);
           setRawWeightData(weightJson);
+          
+          // Start both charts from page 0
+          setHeartRatePage(0);
+          setWeightPage(0);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -91,14 +99,55 @@ export default function Home() {
         average: Math.round(sum / count),
         count
       }))
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // Sort in reverse chronological order
     
     console.log('Calculated averages:', averages);
     return averages;
   };
 
-  // Early return for loading state
-  if (isLoading) {
+  // Get paginated data with specific page
+  const getPaginatedData = (data: DailyAverage[], page: number) => {
+    // Start from the end of the array (most recent data)
+    const endIndex = data.length;
+    const startIndex = Math.max(0, endIndex - ENTRIES_PER_PAGE - (page * ENTRIES_PER_PAGE));
+    const pageData = data.slice(startIndex, startIndex + ENTRIES_PER_PAGE);
+    
+    // If we have less than ENTRIES_PER_PAGE items, pad with the available data
+    if (pageData.length < ENTRIES_PER_PAGE && startIndex > 0) {
+      const remainingItems = ENTRIES_PER_PAGE - pageData.length;
+      const additionalData = data.slice(Math.max(0, startIndex - remainingItems), startIndex);
+      return [...additionalData, ...pageData];
+    }
+    
+    return pageData;
+  };
+
+  // Navigation handlers for heart rate
+  const handlePrevHeartRatePage = () => {
+    // Going left means increasing the page number (showing older data)
+    const maxPage = Math.ceil(dailyAverages.length / ENTRIES_PER_PAGE) - 1;
+    setHeartRatePage(prev => Math.min(maxPage, (prev || 0) + 1));
+  };
+
+  const handleNextHeartRatePage = () => {
+    // Going right means decreasing the page number (showing newer data)
+    setHeartRatePage(prev => Math.max(0, (prev || 0) - 1));
+  };
+
+  // Navigation handlers for weight
+  const handlePrevWeightPage = () => {
+    // Going left means increasing the page number (showing older data)
+    const maxPage = Math.ceil(weightAverages.length / ENTRIES_PER_PAGE) - 1;
+    setWeightPage(prev => Math.min(maxPage, (prev || 0) + 1));
+  };
+
+  const handleNextWeightPage = () => {
+    // Going right means decreasing the page number (showing newer data)
+    setWeightPage(prev => Math.max(0, (prev || 0) - 1));
+  };
+
+  // Early return for loading state or if pages are not set yet
+  if (isLoading || heartRatePage === null || weightPage === null) {
     return (
       <main className="min-h-screen dot-grid p-8 font-sans">
         <div className="flex items-center justify-center h-screen">
@@ -122,8 +171,11 @@ export default function Home() {
   const dailyAverages = healthData?.heartRate ? calculateDailyAverages(healthData.heartRate) : [];
   const weightAverages = calculateDailyAverages(rawWeightData);
 
+  const paginatedHeartRateData = getPaginatedData(dailyAverages, heartRatePage);
+  const paginatedWeightData = getPaginatedData(weightAverages, weightPage);
+
   const heartRateData = {
-    labels: dailyAverages.map(d => new Date(d.date).toLocaleDateString('en-US', { 
+    labels: paginatedHeartRateData.map(d => new Date(d.date).toLocaleDateString('en-US', { 
       month: 'short', 
       day: 'numeric',
       year: 'numeric' 
@@ -131,7 +183,7 @@ export default function Home() {
     datasets: [
       {
         label: 'Average Heart Rate (bpm)',
-        data: dailyAverages.map(d => d.average),
+        data: paginatedHeartRateData.map(d => d.average),
         borderColor: '#f59e0b',
         backgroundColor: '#f59e0b',
         tension: 0.4,
@@ -140,13 +192,13 @@ export default function Home() {
   };
 
   const weightChartData = {
-    labels: weightAverages.map(d => d.date),
+    labels: paginatedWeightData.map(d => d.date),
     datasets: [{
       label: 'Weight (kg)',
-      data: weightAverages.map(d => d.average),
+      data: paginatedWeightData.map(d => d.average),
       borderColor: 'rgb(75, 192, 192)',
       backgroundColor: 'rgba(75, 192, 192, 0.5)',
-      tension: 0.1
+      tension: 0.4
     }]
   };
 
@@ -250,12 +302,30 @@ export default function Home() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+      <div className="grid grid-cols-1 gap-6 p-6">
         {/* Heart Rate Chart */}
         {dailyAverages.length > 0 && (
-          <div className="bg-white rounded-xl shadow-lg p-4 h-[400px]">
-            <h3 className="text-lg font-medium text-gray-700 mb-4 font-mono">Daily Average Heart Rate</h3>
-            <div className="relative h-[calc(100%-3rem)] w-full">
+          <div className="bg-white rounded-xl shadow-lg p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-700 font-mono">Daily Average Heart Rate</h3>
+              <div className="flex gap-2">
+                <button 
+                  onClick={handlePrevHeartRatePage}
+                  disabled={heartRatePage >= Math.ceil(dailyAverages.length / ENTRIES_PER_PAGE) - 1}
+                  className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ←
+                </button>
+                <button 
+                  onClick={handleNextHeartRatePage}
+                  disabled={heartRatePage === 0}
+                  className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  →
+                </button>
+              </div>
+            </div>
+            <div className="relative h-[400px]">
               <Line
                 data={heartRateData}
                 options={{
@@ -270,9 +340,27 @@ export default function Home() {
 
         {/* Weight Chart */}
         {weightAverages.length > 0 && (
-          <div className="bg-white rounded-xl shadow-lg p-4 h-[400px]">
-            <h3 className="text-lg font-medium text-gray-700 mb-4 font-mono">Body Weight</h3>
-            <div className="relative h-[calc(100%-3rem)] w-full">
+          <div className="bg-white rounded-xl shadow-lg p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-700 font-mono">Body Weight</h3>
+              <div className="flex gap-2">
+                <button 
+                  onClick={handlePrevWeightPage}
+                  disabled={weightPage >= Math.ceil(weightAverages.length / ENTRIES_PER_PAGE) - 1}
+                  className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ←
+                </button>
+                <button 
+                  onClick={handleNextWeightPage}
+                  disabled={weightPage === 0}
+                  className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  →
+                </button>
+              </div>
+            </div>
+            <div className="relative h-[400px]">
               <Line
                 data={weightChartData}
                 options={{
@@ -285,7 +373,7 @@ export default function Home() {
                       ...chartOptions.plugins.tooltip,
                       callbacks: {
                         label: function(context: any) {
-                          const dataPoint = weightAverages[context.dataIndex];
+                          const dataPoint = paginatedWeightData[context.dataIndex];
                           return [
                             `Weight: ${context.parsed.y.toFixed(1)} kg`,
                             `Readings: ${dataPoint.count}`
