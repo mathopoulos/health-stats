@@ -1,6 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-const { Transform } = require('stream');
+import * as fs from 'fs';
+import * as path from 'path';
+import { Transform } from 'stream';
 
 interface BodyFatRecord {
   date: string;

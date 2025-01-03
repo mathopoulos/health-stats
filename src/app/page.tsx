@@ -13,6 +13,7 @@ import {
   Legend,
 } from 'chart.js';
 import { parseHealthData } from '@/utils/healthDataParser';
+import { useSearchParams } from 'next/navigation';
 
 ChartJS.register(
   CategoryScale,
@@ -57,6 +58,18 @@ export default function Home() {
   const [heartRatePage, setHeartRatePage] = useState<number | null>(null);
   const [weightPage, setWeightPage] = useState<number | null>(null);
   const [bodyFatPage, setBodyFatPage] = useState<number | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Show success message if redirected from upload
+    if (searchParams.get('upload') === 'success') {
+      setShowSuccess(true);
+      // Hide the message after 5 seconds
+      const timer = setTimeout(() => setShowSuccess(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     async function fetchData() {
@@ -326,6 +339,12 @@ export default function Home() {
 
   return (
     <main className="min-h-screen dot-grid p-8 font-sans">
+      {showSuccess && (
+        <div className="fixed top-4 right-4 bg-green-50 border border-green-200 text-green-800 rounded-lg p-4 shadow-lg z-50 animate-fade-in">
+          <p className="font-mono">Health data processed successfully! 🎉</p>
+        </div>
+      )}
+      
       {/* Profile Section */}
       <div className="grid grid-cols-1 gap-6 p-6">
         <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.04)]">
