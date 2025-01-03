@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { XMLParser } from 'fast-xml-parser/src/fxp';
-import { processS3XmlFile, generatePresignedUploadUrl } from '@/lib/s3';
+import { processS3XmlFile, generatePresignedUploadUrl, fetchAllHealthData } from '@/lib/s3';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -35,6 +35,7 @@ const parser = new XMLParser({
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 290000); // Abort after 4m50s
+  const BATCH_SIZE = 10000; // Save every 10,000 records
 
   try {
     console.log('Processing health data request received');
@@ -54,6 +55,80 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     console.log('Processing XML content...');
     let recordCount = 0;
     let errorCount = 0;
+    let lastSaveCount = 0;
+
+    // Function to save current batch of data
+    const saveBatch = async () => {
+      console.log('Saving batch of data...');
+      const batchPromises = [];
+
+      // For each data type, fetch existing data, merge with new data, and save back
+      if (healthData.heartRate.length > 0) {
+        try {
+          const existingData = await fetchAllHealthData('heartRate');
+          const mergedData = [...existingData, ...healthData.heartRate];
+          mergedData.sort((a, b) => a.date.localeCompare(b.date));
+
+          batchPromises.push(
+            generatePresignedUploadUrl('data/heartRate.json', 'application/json').then(async (url) => {
+              await fetch(url, {
+                method: 'PUT',
+                body: JSON.stringify(mergedData),
+                headers: { 'Content-Type': 'application/json' },
+              });
+            })
+          );
+          healthData.heartRate = []; // Clear after saving
+        } catch (error) {
+          console.error('Error merging heart rate data:', error);
+        }
+      }
+
+      if (healthData.weight.length > 0) {
+        try {
+          const existingData = await fetchAllHealthData('weight');
+          const mergedData = [...existingData, ...healthData.weight];
+          mergedData.sort((a, b) => a.date.localeCompare(b.date));
+
+          batchPromises.push(
+            generatePresignedUploadUrl('data/weight.json', 'application/json').then(async (url) => {
+              await fetch(url, {
+                method: 'PUT',
+                body: JSON.stringify(mergedData),
+                headers: { 'Content-Type': 'application/json' },
+              });
+            })
+          );
+          healthData.weight = []; // Clear after saving
+        } catch (error) {
+          console.error('Error merging weight data:', error);
+        }
+      }
+
+      if (healthData.bodyFat.length > 0) {
+        try {
+          const existingData = await fetchAllHealthData('bodyFat');
+          const mergedData = [...existingData, ...healthData.bodyFat];
+          mergedData.sort((a, b) => a.date.localeCompare(b.date));
+
+          batchPromises.push(
+            generatePresignedUploadUrl('data/bodyFat.json', 'application/json').then(async (url) => {
+              await fetch(url, {
+                method: 'PUT',
+                body: JSON.stringify(mergedData),
+                headers: { 'Content-Type': 'application/json' },
+              });
+            })
+          );
+          healthData.bodyFat = []; // Clear after saving
+        } catch (error) {
+          console.error('Error merging body fat data:', error);
+        }
+      }
+
+      await Promise.all(batchPromises);
+      console.log('Batch saved successfully');
+    };
 
     await processS3XmlFile(key, async (recordXml) => {
       try {
@@ -61,14 +136,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           throw new Error('Processing timed out');
         }
 
-        // Log the first few records for debugging
-        if (recordCount < 5) {
-          console.log('Processing record:', recordXml);
-        }
-
         const data = parser.parse(recordXml);
         
-        // Handle both array and single record cases
         const records = data?.HealthData?.Record 
           ? (Array.isArray(data.HealthData.Record) 
               ? data.HealthData.Record 
@@ -108,6 +177,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
 
         recordCount++;
+        
+        // Save batch if we've processed enough new records
+        if (recordCount - lastSaveCount >= BATCH_SIZE) {
+          await saveBatch();
+          lastSaveCount = recordCount;
+        }
+
         if (recordCount % 1000 === 0) {
           console.log(`Processed ${recordCount} records (${errorCount} errors)`);
         }
@@ -123,39 +199,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     });
 
-    // Sort all data
-    console.log('Sorting data...');
-    healthData.heartRate.sort((a, b) => a.date.localeCompare(b.date));
-    healthData.weight.sort((a, b) => a.date.localeCompare(b.date));
-    healthData.bodyFat.sort((a, b) => a.date.localeCompare(b.date));
+    // Save any remaining data
+    if (recordCount > lastSaveCount) {
+      await saveBatch();
+    }
 
-    // Save the processed data to S3
-    console.log('Saving processed data...');
-    const savePromises = [
-      generatePresignedUploadUrl('data/heartRate.json', 'application/json').then(async (url) => {
-        await fetch(url, {
-          method: 'PUT',
-          body: JSON.stringify(healthData.heartRate),
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }),
-      generatePresignedUploadUrl('data/weight.json', 'application/json').then(async (url) => {
-        await fetch(url, {
-          method: 'PUT',
-          body: JSON.stringify(healthData.weight),
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }),
-      generatePresignedUploadUrl('data/bodyFat.json', 'application/json').then(async (url) => {
-        await fetch(url, {
-          method: 'PUT',
-          body: JSON.stringify(healthData.bodyFat),
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }),
-    ];
-
-    await Promise.all(savePromises);
     console.log('Health data processing complete');
 
     clearTimeout(timeoutId);
@@ -163,9 +211,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       success: true,
       stats: {
         recordsProcessed: recordCount,
-        heartRateCount: healthData.heartRate.length,
-        weightCount: healthData.weight.length,
-        bodyFatCount: healthData.bodyFat.length
+        batchesSaved: Math.ceil(recordCount / BATCH_SIZE)
       }
     }, {
       headers: {

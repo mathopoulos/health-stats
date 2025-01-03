@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { XMLParser } from 'fast-xml-parser/src/fxp';
 
@@ -101,4 +101,57 @@ export async function processS3XmlFile(key: string, processor: (chunk: string) =
       resolve();
     });
   });
+}
+
+export async function listDataFiles(prefix: string): Promise<string[]> {
+  const command = new ListObjectsV2Command({
+    Bucket: BUCKET_NAME,
+    Prefix: prefix,
+  });
+
+  const response = await s3Client.send(command);
+  return response.Contents?.map(obj => obj.Key || '') || [];
+}
+
+export async function fetchDataFile(key: string): Promise<any> {
+  const command = new GetObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: key,
+  });
+
+  const response = await s3Client.send(command);
+  const stream = response.Body as any;
+  
+  return new Promise((resolve, reject) => {
+    let data = '';
+    
+    stream.on('data', (chunk: Buffer) => {
+      data += chunk.toString('utf-8');
+    });
+
+    stream.on('error', (error: Error) => {
+      console.error('Error reading from S3:', error);
+      reject(error);
+    });
+
+    stream.on('end', () => {
+      try {
+        resolve(JSON.parse(data));
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+}
+
+export async function fetchAllHealthData(type: 'heartRate' | 'weight' | 'bodyFat'): Promise<any[]> {
+  const key = `data/${type}.json`;
+  
+  try {
+    const data = await fetchDataFile(key);
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.log(`No existing data for ${type}`);
+    return [];
+  }
 } 

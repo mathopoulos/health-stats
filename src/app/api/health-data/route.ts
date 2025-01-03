@@ -1,48 +1,34 @@
-import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { NextRequest, NextResponse } from 'next/server';
+import { fetchAllHealthData } from '@/lib/s3';
 
-export async function GET() {
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const heartRatePath = path.join(process.cwd(), 'public', 'data', 'heartRate.json');
-    const weightPath = path.join(process.cwd(), 'public', 'data', 'weight.json');
+    const searchParams = request.nextUrl.searchParams;
+    const type = searchParams.get('type');
+
+    if (!type || !['heartRate', 'weight', 'bodyFat'].includes(type)) {
+      return NextResponse.json(
+        { error: 'Invalid type parameter. Must be one of: heartRate, weight, bodyFat' },
+        { status: 400 }
+      );
+    }
+
+    const data = await fetchAllHealthData(type as 'heartRate' | 'weight' | 'bodyFat');
     
-    let heartRateData = [];
-    let weightData = [];
-
-    // Load heart rate data
-    try {
-      await fs.access(heartRatePath);
-      heartRateData = JSON.parse(await fs.readFile(heartRatePath, 'utf-8'));
-      if (!Array.isArray(heartRateData)) {
-        console.error('Invalid heart rate data format');
-        heartRateData = [];
-      }
-    } catch {
-      console.log('Heart rate data file not found');
-    }
-
-    // Load weight data
-    try {
-      await fs.access(weightPath);
-      weightData = JSON.parse(await fs.readFile(weightPath, 'utf-8'));
-      if (!Array.isArray(weightData)) {
-        console.error('Invalid weight data format');
-        weightData = [];
-      }
-    } catch {
-      console.log('Weight data file not found');
-    }
-
     return NextResponse.json({
-      heartRate: heartRateData,
-      weight: weightData
+      success: true,
+      data,
+      count: data.length,
+      lastUpdated: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Error reading health data:', error);
+    console.error('Error fetching health data:', error);
     return NextResponse.json(
-      { heartRate: [], weight: [] },
-      { status: 200 } // Return empty arrays instead of error
+      { error: error instanceof Error ? error.message : 'Failed to fetch health data' },
+      { status: 500 }
     );
   }
 } 
