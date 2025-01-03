@@ -1,10 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import { join } from 'path';
-import { mkdir } from 'fs/promises';
+import { put } from '@vercel/blob';
+import { XMLParser } from 'fast-xml-parser/src/fxp';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 300; // 5 minutes
+
+interface HealthData {
+  heartRate: any[];
+  weight: any[];
+  bodyFat: any[];
+}
+
+async function processXMLData(xmlContent: string): Promise<HealthData> {
+  const parser = new XMLParser({
+    ignoreAttributes: false,
+    attributeNamePrefix: "",
+    textNodeName: "value",
+  });
+
+  console.log('Parsing XML data...');
+  const data = parser.parse(xmlContent);
+  
+  const healthData: HealthData = {
+    heartRate: [],
+    weight: [],
+    bodyFat: []
+  };
+
+  // Extract data from the parsed XML
+  try {
+    if (data.HealthData && data.HealthData.Record) {
+      const records = Array.isArray(data.HealthData.Record) 
+        ? data.HealthData.Record 
+        : [data.HealthData.Record];
+
+      records.forEach((record: any) => {
+        const type = record.type;
+        const value = parseFloat(record.value);
+        const date = new Date(record.startDate || record.creationDate).toISOString();
+
+        if (type === 'HKQuantityTypeIdentifierHeartRate' && !isNaN(value)) {
+          healthData.heartRate.push({ date, value });
+        }
+        else if (type === 'HKQuantityTypeIdentifierBodyMass' && !isNaN(value)) {
+          healthData.weight.push({ date, value });
+        }
+        else if (type === 'HKQuantityTypeIdentifierBodyFatPercentage' && !isNaN(value)) {
+          healthData.bodyFat.push({ date, value });
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error processing records:', error);
+    throw new Error('Failed to process health records');
+  }
+
+  return healthData;
+}
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
@@ -16,37 +69,49 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       throw new Error('No blob URL provided');
     }
 
-    // Create the data directory if it doesn't exist
-    const dataDir = join(process.cwd(), 'public', 'data');
-    await mkdir(dataDir, { recursive: true });
-
-    // Download the file from blob storage
-    console.log('Downloading file from blob storage...');
+    // Download the XML content
+    console.log('Downloading XML content...');
     const response = await fetch(blobUrl);
     if (!response.ok) {
       throw new Error('Failed to download file from blob storage');
     }
 
-    // Save the file locally
-    const xmlPath = join(process.cwd(), 'export.xml');
-    const buffer = Buffer.from(await response.arrayBuffer());
-    await fs.writeFile(xmlPath, buffer);
-    console.log('File saved locally:', xmlPath);
+    // Process the XML content
+    const xmlContent = await response.text();
+    console.log('Processing XML content...');
+    const healthData = await processXMLData(xmlContent);
 
-    // Process the health data
-    console.log('Processing health data...');
-    const processResponse = await fetch(new URL('/api/extract-health-data', request.url).toString(), {
-      method: 'POST',
-    });
+    // Save the processed data to separate blob files
+    console.log('Saving processed data...');
+    const savePromises = [
+      put('data/heartRate.json', JSON.stringify(healthData.heartRate), {
+        access: 'public',
+        contentType: 'application/json',
+        addRandomSuffix: false,
+      }),
+      put('data/weight.json', JSON.stringify(healthData.weight), {
+        access: 'public',
+        contentType: 'application/json',
+        addRandomSuffix: false,
+      }),
+      put('data/bodyFat.json', JSON.stringify(healthData.bodyFat), {
+        access: 'public',
+        contentType: 'application/json',
+        addRandomSuffix: false,
+      })
+    ];
 
-    if (!processResponse.ok) {
-      const errorText = await processResponse.text();
-      console.error('Extract health data error:', errorText);
-      throw new Error('Failed to extract health data');
-    }
-
+    await Promise.all(savePromises);
     console.log('Health data processing complete');
-    return NextResponse.json({ success: true });
+
+    return NextResponse.json({ 
+      success: true,
+      stats: {
+        heartRateCount: healthData.heartRate.length,
+        weightCount: healthData.weight.length,
+        bodyFatCount: healthData.bodyFat.length
+      }
+    });
   } catch (error) {
     console.error('Error processing health data:', error);
     return NextResponse.json(
@@ -55,12 +120,5 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       },
       { status: 400 }
     );
-  } finally {
-    // Clean up the temporary file
-    try {
-      await fs.unlink(join(process.cwd(), 'export.xml')).catch(() => {});
-    } catch (error) {
-      console.error('Error cleaning up temporary file:', error);
-    }
   }
 } 
