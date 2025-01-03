@@ -4,6 +4,21 @@ import { NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+interface ChunkInfo {
+  filename: string;
+  chunkIndex: number;
+  totalChunks: number;
+  offset: number;
+  isLastChunk: boolean;
+}
+
+interface UploadPayload {
+  pathname: string;
+  callbackUrl: string;
+  multipart: boolean;
+  clientPayload: string | null;
+}
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     console.log('Received upload request');
@@ -17,35 +32,57 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         onBeforeGenerateToken: async (pathname: string) => {
           console.log('Validating upload for pathname:', pathname);
           
+          let chunkInfo: ChunkInfo | null = null;
+          try {
+            const payload = body.payload as UploadPayload;
+            if (payload?.clientPayload) {
+              chunkInfo = JSON.parse(payload.clientPayload) as ChunkInfo;
+              console.log('Processing chunk:', chunkInfo);
+            }
+          } catch (error) {
+            console.error('Error parsing client payload:', error);
+          }
+
           return {
-            maximumSizeInBytes: 100 * 1024 * 1024, // 100MB
+            maximumSizeInBytes: 20 * 1024 * 1024, // 20MB per chunk
             allowedContentTypes: ['application/xml'],
           };
         },
         onUploadCompleted: async ({ blob, tokenPayload }) => {
-          console.log('Upload completed, blob:', JSON.stringify(blob, null, 2));
-          console.log('Token payload:', tokenPayload);
+          console.log('Chunk upload completed, blob:', JSON.stringify(blob, null, 2));
           
           try {
-            // Process the health data after upload
-            console.log('Processing health data...');
-            const processResponse = await fetch(new URL('/api/process-health-data', request.url).toString(), {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                blobUrl: blob.url,
-                tokenPayload,
-              }),
-            });
-
-            if (!processResponse.ok) {
-              const errorText = await processResponse.text();
-              console.error('Process response error:', errorText);
-              throw new Error('Failed to process health data');
+            let chunkInfo: ChunkInfo | null = null;
+            try {
+              if (tokenPayload) {
+                chunkInfo = JSON.parse(tokenPayload) as ChunkInfo;
+                console.log('Chunk upload complete:', chunkInfo);
+              }
+            } catch (error) {
+              console.error('Error parsing token payload:', error);
             }
-            console.log('Health data processing complete');
+
+            // Only process the health data after the last chunk
+            if (chunkInfo?.isLastChunk) {
+              console.log('Processing health data for completed upload...');
+              const processResponse = await fetch(new URL('/api/process-health-data', request.url).toString(), {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  blobUrl: blob.url,
+                  tokenPayload,
+                }),
+              });
+
+              if (!processResponse.ok) {
+                const errorText = await processResponse.text();
+                console.error('Process response error:', errorText);
+                throw new Error('Failed to process health data');
+              }
+              console.log('Health data processing complete');
+            }
           } catch (error) {
             console.error('Failed to process health data:', error);
             throw error;

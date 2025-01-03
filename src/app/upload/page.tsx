@@ -4,6 +4,21 @@ import { useState, useRef } from 'react';
 import { upload } from '@vercel/blob/client';
 import { type PutBlobResult } from '@vercel/blob';
 
+const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB chunks
+
+async function* createChunks(file: File, chunkSize: number) {
+  let offset = 0;
+  while (offset < file.size) {
+    const chunk = file.slice(offset, offset + chunkSize);
+    offset += chunkSize;
+    yield {
+      chunk,
+      offset,
+      isLastChunk: offset >= file.size
+    };
+  }
+}
+
 export default function UploadPage() {
   const inputFileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -30,19 +45,44 @@ export default function UploadPage() {
     setStatus('Starting upload...');
 
     try {
-      console.log('Initiating blob upload...');
-      const newBlob = await upload(file.name, file, {
-        access: 'public',
-        handleUploadUrl: '/api/upload',
-        contentType: 'application/xml',
-        clientPayload: JSON.stringify({
-          filename: file.name,
-          size: file.size,
-        }),
-      });
+      let chunkIndex = 0;
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+      let finalBlob: PutBlobResult | null = null;
 
-      console.log('Upload completed:', newBlob);
-      setBlob(newBlob);
+      for await (const { chunk, offset, isLastChunk } of createChunks(file, CHUNK_SIZE)) {
+        chunkIndex++;
+        setStatus(`Uploading chunk ${chunkIndex} of ${totalChunks}...`);
+        
+        const chunkFile = new File([chunk], file.name, { type: file.type });
+        console.log(`Uploading chunk ${chunkIndex}/${totalChunks}, size: ${chunk.size}`);
+
+        const newBlob = await upload(file.name, chunkFile, {
+          access: 'public',
+          handleUploadUrl: '/api/upload',
+          contentType: 'application/xml',
+          clientPayload: JSON.stringify({
+            filename: file.name,
+            chunkIndex,
+            totalChunks,
+            offset,
+            isLastChunk,
+          }),
+        });
+
+        if (isLastChunk) {
+          finalBlob = newBlob;
+        }
+
+        const uploadProgress = (offset / file.size) * 100;
+        setProgress(Math.min(50, uploadProgress));
+      }
+
+      if (!finalBlob) {
+        throw new Error('Upload failed - no final blob');
+      }
+
+      console.log('Upload completed:', finalBlob);
+      setBlob(finalBlob);
       setProgress(50);
       setStatus('Processing health data...');
 
@@ -55,7 +95,7 @@ export default function UploadPage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            blobUrl: newBlob.url,
+            blobUrl: finalBlob.url,
           }),
         });
 
