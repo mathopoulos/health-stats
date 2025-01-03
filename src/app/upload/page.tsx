@@ -4,21 +4,24 @@ import { useState, useRef } from 'react';
 import { upload } from '@vercel/blob/client';
 import { type PutBlobResult } from '@vercel/blob';
 
-const CHUNK_SIZE = 200 * 1024 * 1024; // Increased to 200MB chunks
-const MAX_PARALLEL_UPLOADS = 3; // Number of parallel uploads
+const CHUNK_SIZE = 95 * 1024 * 1024; // 95MB chunks to stay safely under the 100MB limit
+const MAX_PARALLEL_UPLOADS = 4; // Increased parallel uploads to compensate for smaller chunks
 
 async function* createChunks(file: File, chunkSize: number) {
   let offset = 0;
   const chunks = [];
+  const totalChunks = Math.ceil(file.size / chunkSize);
+  console.log(`File will be split into ${totalChunks} chunks of ~${Math.round(chunkSize / (1024 * 1024))}MB each`);
   
   while (offset < file.size) {
-    const chunk = file.slice(offset, offset + chunkSize);
+    const currentChunkSize = Math.min(chunkSize, file.size - offset);
+    const chunk = file.slice(offset, offset + currentChunkSize);
     chunks.push({
       chunk,
       offset,
-      isLastChunk: offset + chunkSize >= file.size
+      isLastChunk: offset + currentChunkSize >= file.size
     });
-    offset += chunkSize;
+    offset += currentChunkSize;
   }
   
   // Return chunks in groups for parallel processing

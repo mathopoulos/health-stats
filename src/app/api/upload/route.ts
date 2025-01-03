@@ -44,7 +44,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           }
 
           return {
-            maximumSizeInBytes: 100 * 1024 * 1024, // Increased to 100MB per chunk
+            maximumSizeInBytes: 95 * 1024 * 1024, // 95MB per chunk to match client-side
             allowedContentTypes: ['application/xml'],
           };
         },
