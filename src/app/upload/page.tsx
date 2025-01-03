@@ -1,201 +1,109 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { createFileChunks, uploadChunk } from '@/utils/fileChunker';
 
 export default function UploadPage() {
-  const [isDragging, setIsDragging] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processingStep, setProcessingStep] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const router = useRouter();
+  const [status, setStatus] = useState<string>('');
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
+  const processHealthData = async () => {
+    setStatus('Processing health data...');
+    const response = await fetch('/api/process-health-data', {
+      method: 'POST'
+    });
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    setError(null);
-    setIsSuccess(false);
-    setIsProcessing(true);
-    setProcessingStep('Preparing upload...');
-
-    const items = Array.from(e.dataTransfer.items);
-    const folder = items.find(item => item.kind === 'file' && item.webkitGetAsEntry()?.isDirectory);
-
-    if (!folder) {
-      setError('Please drop a folder containing your Apple Health export.');
-      setIsProcessing(false);
-      return;
+    if (!response.ok) {
+      throw new Error('Failed to process health data');
     }
 
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to process health data');
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setProgress(0);
+    setError(null);
+    setStatus('Starting upload...');
+
     try {
-      const formData = new FormData();
+      const fileChunks = createFileChunks(file);
       
-      setProcessingStep('Reading folder contents...');
-      const files = await getAllFiles(folder.webkitGetAsEntry() as FileSystemDirectoryEntry);
+      for await (const { chunk, chunkNumber, totalChunks, isLastChunk } of fileChunks) {
+        setStatus(`Uploading chunk ${chunkNumber} of ${totalChunks}...`);
+        await uploadChunk(chunk, chunkNumber, totalChunks, isLastChunk, file.name);
+        setProgress((chunkNumber / totalChunks) * 100);
+      }
+
+      setProgress(100);
+      setStatus('Upload complete. Processing data...');
       
-      const exportXml = files.find(file => file.name === 'export.xml');
-      if (!exportXml) {
-        throw new Error('No export.xml file found in the uploaded folder.');
-      }
-
-      setProcessingStep('Uploading export.xml...');
-      formData.append('file', exportXml);
-
-      const uploadResponse = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData
-      });
-
-      const uploadData = await uploadResponse.json();
-
-      if (!uploadResponse.ok || !uploadData.success) {
-        throw new Error(uploadData.error || 'Failed to upload file');
-      }
-
-      setProcessingStep('Processing health data...');
-      const processResponse = await fetch('/api/process-health-data', {
-        method: 'POST'
-      });
-
-      const processData = await processResponse.json();
-
-      if (!processResponse.ok || !processData.success) {
-        throw new Error(processData.error || processData.details || 'Failed to process health data');
-      }
-
-      setIsSuccess(true);
-      setProcessingStep('');
+      // Process the health data after successful upload
+      await processHealthData();
+      
+      setStatus('Processing complete! Redirecting...');
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
     } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload file');
       console.error('Upload error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred while processing your data.');
     } finally {
-      setIsProcessing(false);
+      setUploading(false);
     }
   };
 
   return (
-    <main className="min-h-screen dot-grid p-8 font-sans">
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 font-mono text-gray-900">Upload Health Data</h1>
-          <p className="text-gray-700">Drag and drop your Apple Health export folder here</p>
-        </div>
+    <main className="flex min-h-screen flex-col items-center justify-between p-24">
+      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
+        <h1 className="text-2xl font-bold mb-8">Upload Health Data</h1>
+        
+        <div className="bg-white/5 p-8 rounded-lg shadow-lg">
+          <div className="mb-4">
+            <input
+              type="file"
+              onChange={handleFileUpload}
+              disabled={uploading}
+              accept=".xml"
+              className="block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-full file:border-0
+                file:text-sm file:font-semibold
+                file:bg-blue-50 file:text-blue-700
+                hover:file:bg-blue-100
+                disabled:opacity-50"
+            />
+          </div>
 
-        {isSuccess ? (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-8 text-center space-y-4">
-            <div className="text-6xl mb-4">🎉</div>
-            <h2 className="text-2xl font-bold text-green-800 font-mono">Data Processed Successfully!</h2>
-            <p className="text-green-700">Your health data has been processed and is ready to view.</p>
-            <div className="flex flex-col gap-3">
-              <a 
-                href="/?upload=success" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg font-mono hover:bg-green-700 transition-colors"
-              >
-                View Health Dashboard →
-              </a>
-              <button
-                onClick={() => {
-                  setIsSuccess(false);
-                  setError(null);
-                }}
-                className="inline-block px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-mono hover:bg-gray-200 transition-colors"
-              >
-                Upload Another File
-              </button>
+          {uploading && (
+            <div className="mt-4">
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div 
+                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                {status || `Uploading... ${Math.round(progress)}%`}
+              </p>
             </div>
-          </div>
-        ) : (
-          <div 
-            className={`border-4 border-dashed rounded-xl p-12 text-center transition-colors ${
-              isDragging 
-                ? 'border-blue-500 bg-blue-50' 
-                : 'border-gray-300 hover:border-gray-400'
-            }`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            {isProcessing ? (
-              <div className="space-y-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-700 mx-auto"></div>
-                <p className="text-gray-700 font-mono">{processingStep}</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="text-6xl mb-4">📁</div>
-                <p className="text-gray-700 font-mono">
-                  Drop your Apple Health export folder here
-                </p>
-                <p className="text-gray-600 text-sm">
-                  The folder should contain an export.xml file
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+          )}
 
-        {error && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600 font-mono">{error}</p>
-          </div>
-        )}
-
-        <div className="mt-8 space-y-4">
-          <h2 className="font-medium text-gray-900">How to export your Apple Health data:</h2>
-          <ol className="list-decimal pl-5 space-y-2 text-gray-700">
-            <li>Open the Health app on your iPhone</li>
-            <li>Tap your profile picture in the top right</li>
-            <li>Scroll down and tap "Export All Health Data"</li>
-            <li>Choose a location to save the export</li>
-            <li>Upload the exported folder here</li>
-          </ol>
+          {error && (
+            <div className="mt-4 text-red-500 text-sm">
+              {error}
+            </div>
+          )}
         </div>
       </div>
     </main>
   );
-}
-
-// Helper function to recursively get all files from a directory
-async function getAllFiles(entry: FileSystemEntry): Promise<File[]> {
-  if (entry.isFile) {
-    return new Promise((resolve, reject) => {
-      (entry as FileSystemFileEntry).file(resolve, reject);
-    }).then(file => [file as File]);
-  }
-
-  if (entry.isDirectory) {
-    const dirReader = (entry as FileSystemDirectoryEntry).createReader();
-    const entries = await new Promise<FileSystemEntry[]>((resolve, reject) => {
-      const entries: FileSystemEntry[] = [];
-      function readEntries() {
-        dirReader.readEntries(async (results) => {
-          if (!results.length) {
-            resolve(entries);
-          } else {
-            entries.push(...results);
-            readEntries();
-          }
-        }, reject);
-      }
-      readEntries();
-    });
-
-    const files = await Promise.all(entries.map(entry => getAllFiles(entry)));
-    return files.flat();
-  }
-
-  return [];
 } 

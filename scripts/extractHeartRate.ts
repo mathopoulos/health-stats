@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import { Transform } from 'stream';
-import { createReadStream } from 'fs';
 import { parseString } from 'xml2js';
 import { promisify } from 'util';
+import { createReadStream } from 'fs';
+import { createInterface } from 'readline';
 
 const parseXML = promisify(parseString);
 
@@ -16,6 +16,19 @@ interface HeartRateRecord {
   endTime: string;
 }
 
+interface XMLRecord {
+  Record: {
+    $: {
+      type: string;
+      value: string;
+      sourceName: string;
+      unit: string;
+      startDate: string;
+      endDate: string;
+    };
+  };
+}
+
 async function extractHeartRate() {
   console.log('Starting heart rate data extraction...');
   
@@ -23,173 +36,118 @@ async function extractHeartRate() {
   const outputPath = path.join(process.cwd(), 'public', 'data', 'heartRate.json');
 
   // Check if input file exists
-  try {
-    if (!fs.existsSync(inputPath)) {
-      console.error('export.xml file not found in public directory');
-      return;
-    }
-    const stats = fs.statSync(inputPath);
-    console.log(`Found export.xml file (${(stats.size / 1024 / 1024).toFixed(2)} MB)`);
-  } catch (error) {
-    console.error('Error checking export.xml:', error);
-    return;
+  if (!fs.existsSync(inputPath)) {
+    throw new Error('export.xml file not found in public directory');
   }
 
-  // Create data directory if it doesn't exist
-  const dataDir = path.join(process.cwd(), 'public', 'data');
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-    console.log('Created data directory');
-  }
-  console.log('Ensured data directory exists');
+  const stats = fs.statSync(inputPath);
+  console.log(`Found export.xml file (${(stats.size / 1024 / 1024).toFixed(2)} MB)`);
 
-  // Initialize or read existing data
-  let heartRateData: HeartRateRecord[] = [];
-  if (fs.existsSync(outputPath)) {
-    try {
-      const existingData = fs.readFileSync(outputPath, 'utf8');
-      heartRateData = JSON.parse(existingData);
-      console.log(`Loaded ${heartRateData.length} existing records`);
-    } catch (error) {
-      console.error('Error reading existing data, starting fresh:', error);
-    }
-  }
-
-  let xmlChunk = '';
-  let recordsProcessed = 0;
-  let heartRateRecordsFound = heartRateData.length;
-  let bytesProcessed = 0;
-  let shouldStop = false;  // Add flag to control when to stop
-
-  // Get the date 30 days ago for a good amount of historical data
+  // Get the date 30 days ago
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  return new Promise((resolve, reject) => {
-    console.log('Starting to read export.xml...');
-    
-    const stream = createReadStream(inputPath, { 
-      encoding: 'utf-8',
-      highWaterMark: 64 * 1024 // Read in 64KB chunks
-    })
-      .pipe(new Transform({
-        async transform(chunk, encoding, callback) {
-          try {
-            // If we should stop, just pass through the chunk without processing
-            if (shouldStop) {
-              callback();
-              return;
-            }
+  const heartRateData: HeartRateRecord[] = [];
+  let recordsProcessed = 0;
+  let currentRecord = '';
+  let inHeartRateRecord = false;
 
-            bytesProcessed += chunk.length;
-            xmlChunk += chunk;
-            
-            // Look for complete heart rate records
-            const matches = xmlChunk.match(/<Record type="HKQuantityTypeIdentifierHeartRate"[^>]*>[\s\S]*?<\/Record>/g) || [];
-            
-            for (const record of matches) {
-              if (shouldStop) break;
+  return new Promise((resolve, reject) => {
+    const readStream = createReadStream(inputPath, {
+      encoding: 'utf-8',
+      highWaterMark: 64 * 1024 // 64KB chunks
+    });
+
+    const rl = createInterface({
+      input: readStream,
+      crlfDelay: Infinity
+    });
+
+    rl.on('line', async (line) => {
+      try {
+        if (line.includes('type="HKQuantityTypeIdentifierHeartRate"')) {
+          inHeartRateRecord = true;
+          currentRecord = line;
+        } else if (inHeartRateRecord) {
+          currentRecord += line;
+          if (line.includes('</Record>')) {
+            inHeartRateRecord = false;
+            recordsProcessed++;
+
+            try {
+              const result = await parseXML(currentRecord) as XMLRecord;
               
-              recordsProcessed++;
-              if (recordsProcessed % 100 === 0) {
-                console.log(`Processed ${recordsProcessed} records, found ${heartRateRecordsFound} heart rate records...`);
-                console.log(`Processed ${(bytesProcessed / 1024 / 1024).toFixed(2)} MB`);
-              }
-              
-              try {
-                const result = await parseXML(record);
-                const recordData = (result as any).Record.$;
+              if (result?.Record?.$) {
+                const recordData = result.Record.$;
+                const startDate = new Date(recordData.startDate);
                 
-                if (recordData.type === 'HKQuantityTypeIdentifierHeartRate' && recordData.unit === 'count/min') {
-                  // Parse the date, considering timezone
-                  const startDate = new Date(recordData.startDate);
+                if (startDate >= thirtyDaysAgo) {
                   const endDate = new Date(recordData.endDate);
                   const dateStr = startDate.toISOString().split('T')[0];
-                  
-                  if (startDate >= thirtyDaysAgo) {
-                    const newRecord: HeartRateRecord = {
-                      date: dateStr,
-                      value: parseFloat(recordData.value),
-                      sourceName: recordData.sourceName,
-                      unit: recordData.unit,
-                      startTime: startDate.toISOString(),
-                      endTime: endDate.toISOString()
-                    };
-                    heartRateData.push(newRecord);
-                    heartRateRecordsFound++;
 
-                    // Only write to file every 100 records to reduce disk I/O
-                    if (heartRateRecordsFound % 100 === 0) {
-                      fs.writeFileSync(outputPath, JSON.stringify(heartRateData, null, 2), 'utf8');
-                      console.log(`Saved ${heartRateRecordsFound} records to file...`);
-                    }
+                  heartRateData.push({
+                    date: dateStr,
+                    value: parseFloat(recordData.value),
+                    sourceName: recordData.sourceName || 'Unknown',
+                    unit: recordData.unit || 'count/min',
+                    startTime: startDate.toISOString(),
+                    endTime: endDate.toISOString()
+                  });
 
-                    // Set flag to stop after finding 100000 records
-                    if (heartRateRecordsFound >= 100000) {
-                      console.log('Found 100000 records, stopping...');
-                      // Write final data before stopping
-                      fs.writeFileSync(outputPath, JSON.stringify(heartRateData, null, 2), 'utf8');
-                      shouldStop = true;
-                      resolve(heartRateData);
-                      return;
-                    }
+                  if (heartRateData.length === 1) {
+                    console.log('First heart rate record:', heartRateData[0]);
                   }
                 }
-              } catch (error) {
-                console.error('Error processing record:', error);
-                continue;
               }
+            } catch (error) {
+              console.error('Error processing record:', error);
             }
 
-            // Keep only the last partial record if we're not stopping
-            if (!shouldStop) {
-              const lastRecordStart = xmlChunk.lastIndexOf('<Record type="HKQuantityTypeIdentifierHeartRate"');
-              if (lastRecordStart !== -1) {
-                xmlChunk = xmlChunk.slice(lastRecordStart);
-              } else {
-                xmlChunk = '';
-              }
+            if (recordsProcessed % 1000 === 0) {
+              console.log(`Processed ${recordsProcessed} records, found ${heartRateData.length} heart rate records...`);
             }
-
-            callback();
-          } catch (error) {
-            console.error('Error in transform:', error);
-            callback(error instanceof Error ? error : new Error(String(error)));
           }
         }
-      }));
-
-    stream.on('end', () => {
-      if (shouldStop) return; // Already resolved
-
-      console.log(`Finished processing ${recordsProcessed} total records`);
-      console.log(`Found ${heartRateRecordsFound} heart rate records`);
-      console.log(`Total data processed: ${(bytesProcessed / 1024 / 1024).toFixed(2)} MB`);
-      
-      if (heartRateRecordsFound === 0) {
-        console.log('No heart rate records found. Sample of last XML chunk:', xmlChunk.slice(0, 500));
-        resolve([]);
-        return;
+      } catch (error) {
+        console.error('Error processing line:', error);
       }
+    });
 
+    rl.on('close', () => {
+      console.log(`Found ${heartRateData.length} heart rate records in the last 30 days`);
+      
+      if (heartRateData.length > 0) {
+        heartRateData.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+        fs.writeFileSync(outputPath, JSON.stringify(heartRateData, null, 2));
+        console.log(`Saved heart rate data to ${outputPath}`);
+      } else {
+        fs.writeFileSync(outputPath, '[]');
+        console.log('No heart rate records found in the last 30 days. Saved empty array.');
+      }
+      
       resolve(heartRateData);
     });
 
-    stream.on('error', (error) => {
+    rl.on('error', (error) => {
       console.error('Error reading file:', error);
+      reject(error);
+    });
+
+    readStream.on('error', (error) => {
+      console.error('Error with read stream:', error);
       reject(error);
     });
   });
 }
 
 // Run the extraction
-console.log('Starting heart rate extraction script...');
+console.log('Starting heart rate extraction...');
 extractHeartRate()
   .then(() => {
-    console.log('Extraction completed successfully');
-    process.exit(0);  // Ensure the process exits after completion
+    console.log('Heart rate extraction completed successfully');
+    process.exit(0);
   })
   .catch(error => {
-    console.error('Extraction failed:', error);
-    process.exit(1);  // Exit with error code
+    console.error('Heart rate extraction failed:', error);
+    process.exit(1);
   }); 
