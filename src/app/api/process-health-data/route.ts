@@ -118,6 +118,14 @@ async function processXMLData(xmlContent: string): Promise<HealthData> {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     console.log('Processing health data request received');
+    
+    // Validate authentication
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.split(' ')[1] !== process.env.BLOB_READ_WRITE_TOKEN) {
+      console.error('Authentication failed');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { blobUrl } = await request.json();
     console.log('Blob URL:', blobUrl);
 

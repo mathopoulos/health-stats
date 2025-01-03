@@ -65,10 +65,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             // Only process the health data after the last chunk
             if (chunkInfo?.isLastChunk) {
               console.log('Processing health data for completed upload...');
-              const processResponse = await fetch(new URL('/api/process-health-data', request.url).toString(), {
+              const baseUrl = process.env.VERCEL_URL 
+                ? `https://${process.env.VERCEL_URL}` 
+                : 'http://localhost:3000';
+                
+              const processResponse = await fetch(`${baseUrl}/api/process-health-data`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+                  // Add host header to help with routing
+                  'Host': process.env.VERCEL_URL || 'localhost:3000'
                 },
                 body: JSON.stringify({
                   blobUrl: blob.url,
