@@ -70,11 +70,14 @@ export default function UploadPage() {
         throw new Error(data.details || data.error || 'Failed to process health data');
       }
 
+      setIsProcessing(false);
+      setProcessingStep('');
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
       router.push('/?upload=success');
     } catch (err) {
       console.error('Upload error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred while processing your data.');
-    } finally {
       setIsProcessing(false);
       setProcessingStep('');
     }
