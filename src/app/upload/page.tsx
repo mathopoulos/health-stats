@@ -8,6 +8,7 @@ export default function UploadPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
   const router = useRouter();
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -24,6 +25,7 @@ export default function UploadPage() {
     e.preventDefault();
     setIsDragging(false);
     setError(null);
+    setIsSuccess(false);
     setIsProcessing(true);
     setProcessingStep('Preparing upload...');
 
@@ -70,14 +72,11 @@ export default function UploadPage() {
         throw new Error(data.details || data.error || 'Failed to process health data');
       }
 
-      setIsProcessing(false);
-      setProcessingStep('');
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-      router.push('/?upload=success');
+      setIsSuccess(true);
     } catch (err) {
       console.error('Upload error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred while processing your data.');
+    } finally {
       setIsProcessing(false);
       setProcessingStep('');
     }
@@ -91,33 +90,60 @@ export default function UploadPage() {
           <p className="text-gray-600">Drag and drop your Apple Health export folder here</p>
         </div>
 
-        <div 
-          className={`border-4 border-dashed rounded-xl p-12 text-center transition-colors ${
-            isDragging 
-              ? 'border-blue-500 bg-blue-50' 
-              : 'border-gray-300 hover:border-gray-400'
-          }`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          {isProcessing ? (
-            <div className="space-y-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-              <p className="text-gray-600 font-mono">{processingStep}</p>
+        {isSuccess ? (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-8 text-center space-y-4">
+            <div className="text-6xl mb-4">🎉</div>
+            <h2 className="text-2xl font-bold text-green-800 font-mono">Data Processed Successfully!</h2>
+            <p className="text-green-700">Your health data has been processed and is ready to view.</p>
+            <div className="flex flex-col gap-3">
+              <a 
+                href="/?upload=success" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg font-mono hover:bg-green-700 transition-colors"
+              >
+                View Health Dashboard →
+              </a>
+              <button
+                onClick={() => {
+                  setIsSuccess(false);
+                  setError(null);
+                }}
+                className="inline-block px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-mono hover:bg-gray-200 transition-colors"
+              >
+                Upload Another File
+              </button>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="text-6xl mb-4">📁</div>
-              <p className="text-gray-600 font-mono">
-                Drop your Apple Health export folder here
-              </p>
-              <p className="text-sm text-gray-500">
-                The folder should contain an export.xml file
-              </p>
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div 
+            className={`border-4 border-dashed rounded-xl p-12 text-center transition-colors ${
+              isDragging 
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-300 hover:border-gray-400'
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            {isProcessing ? (
+              <div className="space-y-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+                <p className="text-gray-600 font-mono">{processingStep}</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="text-6xl mb-4">📁</div>
+                <p className="text-gray-600 font-mono">
+                  Drop your Apple Health export folder here
+                </p>
+                <p className="text-sm text-gray-500">
+                  The folder should contain an export.xml file
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {error && (
           <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">

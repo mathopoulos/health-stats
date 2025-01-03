@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { exec, execSync } from 'child_process';
+import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 import { promises as fs } from 'fs';
@@ -15,25 +15,45 @@ async function checkFileExists(filePath: string): Promise<boolean> {
   }
 }
 
-async function killBackgroundProcesses() {
+async function runScript(scriptName: string, cwd: string): Promise<void> {
   try {
-    // Kill any running tsx processes
-    if (process.platform === 'win32') {
-      execSync('taskkill /F /IM tsx.exe', { stdio: 'ignore' });
-    } else {
-      execSync('pkill -f tsx', { stdio: 'ignore' });
+    console.log(`Running ${scriptName}...`);
+    const { stdout, stderr } = await execAsync(`npx tsx scripts/${scriptName}.ts`, {
+      cwd,
+      maxBuffer: 1024 * 1024 * 100, // 100MB buffer
+      timeout: 300000 // 5 minute timeout
+    });
+
+    if (stderr) {
+      console.error(`${scriptName} stderr:`, stderr);
+    }
+    if (stdout) {
+      console.log(`${scriptName} stdout:`, stdout);
     }
   } catch (error) {
-    // Ignore errors if no processes found
-    console.log('No background processes found to clean up');
+    console.error(`Error running ${scriptName}:`, error);
+    throw error;
   }
+}
+
+async function verifyDataFile(filename: string, cwd: string): Promise<void> {
+  const filePath = path.join(cwd, 'public', 'data', filename);
+  const exists = await checkFileExists(filePath);
+  if (!exists) {
+    throw new Error(`Data file ${filename} was not created`);
+  }
+  console.log(`Verified ${filename} exists`);
+  
+  // Check if file has content
+  const content = await fs.readFile(filePath, 'utf8');
+  if (!content || content.trim() === '' || content === '[]') {
+    throw new Error(`Data file ${filename} is empty`);
+  }
+  console.log(`Verified ${filename} has content`);
 }
 
 export async function POST() {
   try {
-    // Kill any existing background processes first
-    await killBackgroundProcesses();
-
     const cwd = process.cwd();
     console.log('Current working directory:', cwd);
 
@@ -42,68 +62,36 @@ export async function POST() {
     const exportExists = await checkFileExists(exportPath);
     console.log('export.xml exists:', exportExists);
 
+    if (!exportExists) {
+      return NextResponse.json(
+        { error: 'export.xml not found' },
+        { status: 400 }
+      );
+    }
+
+    // Create data directory if it doesn't exist
+    const dataDir = path.join(cwd, 'public', 'data');
+    await fs.mkdir(dataDir, { recursive: true });
+
+    // Run scripts sequentially and verify their output
     console.log('Starting health data extraction...');
     
-    try {
-      console.log('Running extract-health-data...');
-      const { stdout: healthOut, stderr: healthErr } = await execAsync('npx tsx scripts/extractHeartRate.ts', { 
-        cwd,
-        timeout: 300000 // 5 minute timeout
-      });
-      if (healthErr) console.error('Health data extraction error:', healthErr);
-      console.log('Health data extraction output:', healthOut);
-      
-      const heartRateFile = path.join(cwd, 'public', 'data', 'heartRate.json');
-      console.log('Heart rate file exists:', await checkFileExists(heartRateFile));
-    } catch (error) {
-      console.error('Failed to extract heart rate data:', error);
-      throw error;
-    }
-
-    try {
-      console.log('Running extract-weight...');
-      const { stdout: weightOut, stderr: weightErr } = await execAsync('npx tsx scripts/extractWeight.ts', { 
-        cwd,
-        maxBuffer: 1024 * 1024 * 100,
-        timeout: 300000 // 5 minute timeout
-      });
-      if (weightErr) console.error('Weight data extraction error:', weightErr);
-      console.log('Weight data extraction output:', weightOut);
-      
-      const weightFile = path.join(cwd, 'public', 'data', 'weight.json');
-      console.log('Weight file exists:', await checkFileExists(weightFile));
-    } catch (error) {
-      console.error('Failed to extract weight data:', error);
-      throw error;
-    }
-
-    try {
-      console.log('Running extract-body-fat...');
-      const { stdout: bodyFatOut, stderr: bodyFatErr } = await execAsync('npx tsx scripts/extractBodyFat.ts', { 
-        cwd,
-        maxBuffer: 1024 * 1024 * 100,
-        timeout: 300000 // 5 minute timeout
-      });
-      if (bodyFatErr) console.error('Body fat data extraction error:', bodyFatErr);
-      console.log('Body fat data extraction output:', bodyFatOut);
-      
-      const bodyFatFile = path.join(cwd, 'public', 'data', 'bodyFat.json');
-      console.log('Body fat file exists:', await checkFileExists(bodyFatFile));
-    } catch (error) {
-      console.error('Failed to extract body fat data:', error);
-      throw error;
-    }
-
-    // Final cleanup of any remaining processes
-    await killBackgroundProcesses();
+    await runScript('extractHeartRate', cwd);
+    await verifyDataFile('heartRate.json', cwd);
+    console.log('Heart rate data extracted and verified');
+    
+    await runScript('extractWeight', cwd);
+    await verifyDataFile('weight.json', cwd);
+    console.log('Weight data extracted and verified');
+    
+    await runScript('extractBodyFat', cwd);
+    await verifyDataFile('bodyFat.json', cwd);
+    console.log('Body fat data extracted and verified');
 
     console.log('All data extraction completed successfully');
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    // Ensure cleanup even on error
-    await killBackgroundProcesses();
-    
     console.error('Error processing health data:', error);
     return NextResponse.json(
       { 
