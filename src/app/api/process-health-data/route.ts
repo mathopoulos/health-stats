@@ -4,7 +4,7 @@ import { XMLParser } from 'fast-xml-parser/src/fxp';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // 5 minutes
+export const maxDuration = 60; // Maximum allowed on hobby plan
 
 interface HealthData {
   heartRate: any[];
@@ -17,6 +17,10 @@ async function processXMLData(xmlContent: string): Promise<HealthData> {
     ignoreAttributes: false,
     attributeNamePrefix: "",
     textNodeName: "value",
+    parseAttributeValue: true,
+    ignoreDeclaration: true,
+    ignorePiTags: true,
+    trimValues: true
   });
 
   console.log('Parsing XML data...');
@@ -35,21 +39,32 @@ async function processXMLData(xmlContent: string): Promise<HealthData> {
         ? data.HealthData.Record 
         : [data.HealthData.Record];
 
-      records.forEach((record: any) => {
-        const type = record.type;
-        const value = parseFloat(record.value);
-        const date = new Date(record.startDate || record.creationDate).toISOString();
+      // Process records in batches to avoid memory issues
+      const batchSize = 1000;
+      for (let i = 0; i < records.length; i += batchSize) {
+        const batch = records.slice(i, i + batchSize);
+        
+        batch.forEach((record: any) => {
+          const type = record.type;
+          const value = parseFloat(record.value);
+          const date = new Date(record.startDate || record.creationDate).toISOString();
 
-        if (type === 'HKQuantityTypeIdentifierHeartRate' && !isNaN(value)) {
-          healthData.heartRate.push({ date, value });
-        }
-        else if (type === 'HKQuantityTypeIdentifierBodyMass' && !isNaN(value)) {
-          healthData.weight.push({ date, value });
-        }
-        else if (type === 'HKQuantityTypeIdentifierBodyFatPercentage' && !isNaN(value)) {
-          healthData.bodyFat.push({ date, value });
-        }
-      });
+          if (type === 'HKQuantityTypeIdentifierHeartRate' && !isNaN(value)) {
+            healthData.heartRate.push({ date, value });
+          }
+          else if (type === 'HKQuantityTypeIdentifierBodyMass' && !isNaN(value)) {
+            healthData.weight.push({ date, value });
+          }
+          else if (type === 'HKQuantityTypeIdentifierBodyFatPercentage' && !isNaN(value)) {
+            healthData.bodyFat.push({ date, value });
+          }
+        });
+
+        // Sort data by date as we go
+        healthData.heartRate.sort((a, b) => a.date.localeCompare(b.date));
+        healthData.weight.sort((a, b) => a.date.localeCompare(b.date));
+        healthData.bodyFat.sort((a, b) => a.date.localeCompare(b.date));
+      }
     }
   } catch (error) {
     console.error('Error processing records:', error);
@@ -69,7 +84,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       throw new Error('No blob URL provided');
     }
 
-    // Download the XML content
+    // Download the XML content with streaming
     console.log('Downloading XML content...');
     const response = await fetch(blobUrl);
     if (!response.ok) {
