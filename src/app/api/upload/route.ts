@@ -1,36 +1,49 @@
+import { handleUpload } from '@vercel/blob/client';
 import { NextRequest, NextResponse } from 'next/server';
-import { put } from '@vercel/blob';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const file = request.body;
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    const body = await request.json();
+
+    try {
+      const jsonResponse = await handleUpload({
+        body,
+        request,
+        onBeforeGenerateToken: async () => {
+          // Validate the upload before generating a token
+          return {
+            allowedContentTypes: ['application/xml'],
+            maximumSizeInBytes: 100 * 1024 * 1024, // 100MB
+          };
+        },
+        onUploadCompleted: async ({ blob }) => {
+          // After the file is uploaded to Vercel Blob
+          console.log('Upload completed:', blob.url);
+          
+          try {
+            // Process the health data
+            const processResponse = await fetch('/api/process-health-data', {
+              method: 'POST'
+            });
+
+            if (!processResponse.ok) {
+              throw new Error('Failed to process health data');
+            }
+          } catch (error) {
+            console.error('Failed to process health data:', error);
+            throw error;
+          }
+        },
+      });
+
+      return NextResponse.json(jsonResponse);
+    } catch (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw uploadError;
     }
-
-    // Upload to Vercel Blob
-    const { url } = await put('export.xml', file, {
-      access: 'public',
-      contentType: 'application/xml'
-    });
-
-    // Process the health data
-    const processResponse = await fetch('/api/process-health-data', {
-      method: 'POST'
-    });
-
-    if (!processResponse.ok) {
-      throw new Error('Failed to process health data');
-    }
-
-    return NextResponse.json({ 
-      success: true, 
-      url,
-      message: 'File uploaded and processed successfully' 
-    });
   } catch (error) {
     console.error('Error handling upload:', error);
     return NextResponse.json(

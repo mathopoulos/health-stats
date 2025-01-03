@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { upload } from '@vercel/blob/client';
 
 export default function UploadPage() {
   const [uploading, setUploading] = useState(false);
@@ -18,23 +19,44 @@ export default function UploadPage() {
     setStatus('Starting upload...');
 
     try {
-      // Upload file
+      // Get the blob URL from our API
       const response = await fetch('/api/upload', {
         method: 'POST',
-        body: file,
-        headers: {
-          'Content-Type': 'application/xml',
-        },
+        body: JSON.stringify({
+          filename: 'export.xml',
+          contentType: 'application/xml',
+        }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Upload failed');
+        throw new Error('Failed to get upload URL');
       }
 
-      const result = await response.json();
-      if (!result.success) {
-        throw new Error(result.error || 'Upload failed');
+      const { url, uploadUrl } = await response.json();
+
+      // Upload the file to the URL
+      const uploadResponse = await upload(uploadUrl, file, {
+        contentType: 'application/xml',
+        access: 'public',
+        handleUploadUrl: url
+      });
+
+      if (!uploadResponse) {
+        throw new Error('Upload failed');
+      }
+
+      // Process the health data after upload
+      try {
+        const processResponse = await fetch('/api/process-health-data', {
+          method: 'POST'
+        });
+
+        if (!processResponse.ok) {
+          throw new Error('Failed to process health data');
+        }
+      } catch (error) {
+        console.error('Failed to process health data:', error);
+        throw error;
       }
 
       setProgress(100);
