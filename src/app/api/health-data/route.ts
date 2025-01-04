@@ -9,15 +9,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const searchParams = request.nextUrl.searchParams;
     const type = searchParams.get('type');
 
-    if (!type || !['heartRate', 'weight', 'bodyFat'].includes(type)) {
+    if (!type || !['heartRate', 'weight', 'bodyFat', 'hrv'].includes(type)) {
       return NextResponse.json(
-        { error: 'Invalid type parameter. Must be one of: heartRate, weight, bodyFat' },
+        { error: 'Invalid type parameter. Must be one of: heartRate, weight, bodyFat, hrv' },
         { status: 400 }
       );
     }
 
     console.log(`Fetching ${type} data from S3...`);
-    const data = await fetchAllHealthData(type as 'heartRate' | 'weight' | 'bodyFat');
+    const data = await fetchAllHealthData(type as 'heartRate' | 'weight' | 'bodyFat' | 'hrv');
     console.log(`Fetched ${type} data:`, data);
     
     return NextResponse.json({

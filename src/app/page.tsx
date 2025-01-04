@@ -13,6 +13,7 @@ interface ChartData {
   heartRate: HealthData[];
   weight: HealthData[];
   bodyFat: HealthData[];
+  hrv: HealthData[];
   loading: boolean;
 }
 
@@ -21,9 +22,12 @@ export default function Home() {
     heartRate: [],
     weight: [],
     bodyFat: [],
+    hrv: [],
     loading: true
   });
-  const [currentMonth, setCurrentMonth] = useState(new Date('2020-03-01'));
+  const [weightMonth, setWeightMonth] = useState<Date | null>(null);
+  const [bodyFatMonth, setBodyFatMonth] = useState<Date | null>(null);
+  const [hrvMonth, setHrvMonth] = useState<Date | null>(null);
   const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
     end: null
@@ -31,25 +35,28 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      const [heartRateRes, weightRes, bodyFatRes] = await Promise.all([
+      const [heartRateRes, weightRes, bodyFatRes, hrvRes] = await Promise.all([
         fetch('/api/health-data?type=heartRate'),
         fetch('/api/health-data?type=weight'),
-        fetch('/api/health-data?type=bodyFat')
+        fetch('/api/health-data?type=bodyFat'),
+        fetch('/api/health-data?type=hrv')
       ]);
 
-      if (!heartRateRes.ok || !weightRes.ok || !bodyFatRes.ok) 
+      if (!heartRateRes.ok || !weightRes.ok || !bodyFatRes.ok || !hrvRes.ok) 
         throw new Error('Failed to fetch data');
 
-      const [heartRateData, weightData, bodyFatData] = await Promise.all([
+      const [heartRateData, weightData, bodyFatData, hrvData] = await Promise.all([
         heartRateRes.json(),
         weightRes.json(),
-        bodyFatRes.json()
+        bodyFatRes.json(),
+        hrvRes.json()
       ]);
 
       const allDates = [
         ...(heartRateData.data || []),
         ...(weightData.data || []),
-        ...(bodyFatData.data || [])
+        ...(bodyFatData.data || []),
+        ...(hrvData.data || [])
       ].map(item => new Date(item.date));
 
       if (allDates.length > 0) {
@@ -57,19 +64,28 @@ export default function Home() {
         const end = new Date(Math.max(...allDates.map(d => d.getTime())));
         setDateRange({ start, end });
         
-        if (currentMonth.getTime() === new Date('2020-03-01').getTime()) {
-          setCurrentMonth(new Date(start.getFullYear(), start.getMonth(), 1));
+        const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+        
+        if (!weightMonth) {
+          setWeightMonth(endMonth);
+        }
+        if (!bodyFatMonth) {
+          setBodyFatMonth(endMonth);
+        }
+        if (!hrvMonth) {
+          setHrvMonth(endMonth);
         }
       }
 
       return {
         heartRate: heartRateData.data || [],
         weight: weightData.data || [],
-        bodyFat: bodyFatData.data || []
+        bodyFat: bodyFatData.data || [],
+        hrv: hrvData.data || []
       };
     } catch (error) {
       console.error('Error fetching health data:', error);
-      return { heartRate: [], weight: [], bodyFat: [] };
+      return { heartRate: [], weight: [], bodyFat: [], hrv: [] };
     }
   };
 
@@ -96,25 +112,45 @@ export default function Home() {
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
 
-  const goToPreviousMonth = () => {
-    setCurrentMonth(prev => {
+  const goToPreviousMonth = (setter: React.Dispatch<React.SetStateAction<Date | null>>) => {
+    setter((prev: Date | null) => {
+      if (!prev) return null;
       const newDate = new Date(prev);
       newDate.setMonth(prev.getMonth() - 1);
       return newDate;
     });
   };
 
-  const goToNextMonth = () => {
-    setCurrentMonth(prev => {
+  const goToNextMonth = (setter: React.Dispatch<React.SetStateAction<Date | null>>) => {
+    setter((prev: Date | null) => {
+      if (!prev) return null;
       const newDate = new Date(prev);
       newDate.setMonth(prev.getMonth() + 1);
       return newDate;
     });
   };
 
-  const getMonthData = (data: HealthData[]) => {
-    const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-    const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59, 999);
+  const isNextMonthDisabled = (currentDate: Date | null) => {
+    if (!dateRange.end) return true;
+    if (!currentDate) return true;
+    const nextMonth = new Date(currentDate);
+    nextMonth.setMonth(currentDate.getMonth() + 1);
+    return nextMonth > dateRange.end;
+  };
+
+  const isPrevMonthDisabled = (currentDate: Date | null) => {
+    if (!dateRange.start) return true;
+    if (!currentDate) return true;
+    const prevMonth = new Date(currentDate);
+    prevMonth.setMonth(currentDate.getMonth() - 1);
+    return prevMonth < dateRange.start;
+  };
+
+  const getMonthData = (data: HealthData[], month: Date | null) => {
+    if (!month) return [];
+    
+    const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
+    const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0, 23, 59, 59, 999);
     
     const filteredData = data.filter(item => {
       const date = new Date(item.date);
@@ -145,13 +181,15 @@ export default function Home() {
     return aggregatedData;
   };
 
-  const currentHeartRateData = getMonthData(data.heartRate);
-  const currentWeightData = getMonthData(data.weight);
-  const currentBodyFatData = getMonthData(data.bodyFat);
+  const currentHeartRateData = getMonthData(data.heartRate, weightMonth);
+  const currentWeightData = getMonthData(data.weight, weightMonth);
+  const currentBodyFatData = getMonthData(data.bodyFat, bodyFatMonth);
+  const currentHRVData = getMonthData(data.hrv, hrvMonth);
   
   const hasHeartRateData = currentHeartRateData.length > 0;
   const hasWeightData = currentWeightData.length > 0;
   const hasBodyFatData = currentBodyFatData.length > 0;
+  const hasHRVData = currentHRVData.length > 0;
 
   return (
     <main className="min-h-screen p-8 bg-gray-50">
@@ -176,10 +214,32 @@ export default function Home() {
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-gray-800">Weight</h2>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => goToPreviousMonth(setWeightMonth)}
+                disabled={isPrevMonthDisabled(weightMonth)}
+                className={`p-1 rounded-full hover:bg-gray-100 ${
+                  isPrevMonthDisabled(weightMonth) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
               <span className="text-sm text-gray-600">
-                {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                {weightMonth?.toLocaleString('default', { month: 'long', year: 'numeric' }) || ''}
               </span>
+              <button
+                onClick={() => goToNextMonth(setWeightMonth)}
+                disabled={isNextMonthDisabled(weightMonth)}
+                className={`p-1 rounded-full hover:bg-gray-100 ${
+                  isNextMonthDisabled(weightMonth) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
             </div>
           </div>
           <div className="h-[300px]">
@@ -244,10 +304,32 @@ export default function Home() {
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-gray-800">Body Fat</h2>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => goToPreviousMonth(setBodyFatMonth)}
+                disabled={isPrevMonthDisabled(bodyFatMonth)}
+                className={`p-1 rounded-full hover:bg-gray-100 ${
+                  isPrevMonthDisabled(bodyFatMonth) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
               <span className="text-sm text-gray-600">
-                {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                {bodyFatMonth?.toLocaleString('default', { month: 'long', year: 'numeric' }) || ''}
               </span>
+              <button
+                onClick={() => goToNextMonth(setBodyFatMonth)}
+                disabled={isNextMonthDisabled(bodyFatMonth)}
+                className={`p-1 rounded-full hover:bg-gray-100 ${
+                  isNextMonthDisabled(bodyFatMonth) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
             </div>
           </div>
           <div className="h-[300px]">
@@ -300,6 +382,96 @@ export default function Home() {
                     stroke="#F59E0B"
                     strokeWidth={1.5}
                     dot={{ r: 2, fill: '#F59E0B' }}
+                    activeDot={{ r: 3 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        {/* HRV Chart */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800">Heart Rate Variability</h2>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => goToPreviousMonth(setHrvMonth)}
+                disabled={isPrevMonthDisabled(hrvMonth)}
+                className={`p-1 rounded-full hover:bg-gray-100 ${
+                  isPrevMonthDisabled(hrvMonth) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <span className="text-sm text-gray-600">
+                {hrvMonth?.toLocaleString('default', { month: 'long', year: 'numeric' }) || ''}
+              </span>
+              <button
+                onClick={() => goToNextMonth(setHrvMonth)}
+                disabled={isNextMonthDisabled(hrvMonth)}
+                className={`p-1 rounded-full hover:bg-gray-100 ${
+                  isNextMonthDisabled(hrvMonth) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div className="h-[300px]">
+            {data.loading && (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                Loading data...
+              </div>
+            )}
+            {!hasHRVData && !data.loading && (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                No HRV data available for this month
+              </div>
+            )}
+            {hasHRVData && !data.loading && (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={currentHRVData}>
+                  <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={formatDate}
+                    stroke="#9CA3AF"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis 
+                    stroke="#9CA3AF"
+                    fontSize={12}
+                    tickCount={8}
+                    domain={['dataMin - 2', 'dataMax + 2']}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{ 
+                      backgroundColor: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      fontSize: '12px',
+                      padding: '8px'
+                    }}
+                    labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
+                    labelFormatter={(value) => formatDate(value)}
+                    formatter={(value: number) => [`${value} ms`]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#6366F1"
+                    strokeWidth={1.5}
+                    dot={{ r: 2, fill: '#6366F1' }}
                     activeDot={{ r: 3 }}
                   />
                 </LineChart>
