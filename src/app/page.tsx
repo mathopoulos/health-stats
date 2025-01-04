@@ -22,7 +22,10 @@ export default function Home() {
     loading: true
   });
   const [currentMonth, setCurrentMonth] = useState(new Date('2020-03-01'));
-  const [availableMonths, setAvailableMonths] = useState<Date[]>([]);
+  const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+  });
 
   const fetchData = async () => {
     try {
@@ -31,26 +34,17 @@ export default function Home() {
       const result = await response.json();
       const heartRateData = result.data || [];
       
-      // Find all available months in the data
-      const months = new Set(
-        heartRateData.map((item: HealthData) => {
-          const date = new Date(item.date);
-          return `${date.getFullYear()}-${date.getMonth()}`;
-        })
-      );
-      
-      const sortedMonths = Array.from(months)
-        .map(monthStr => {
-          const [year, month] = monthStr.split('-');
-          return new Date(parseInt(year), parseInt(month), 1);
-        })
-        .sort((a, b) => a.getTime() - b.getTime());
-      
-      setAvailableMonths(sortedMonths);
-      
-      // Set initial month to earliest data if not already set
-      if (sortedMonths.length > 0 && currentMonth.getTime() === new Date('2020-03-01').getTime()) {
-        setCurrentMonth(sortedMonths[0]);
+      // Find the date range of the data
+      if (heartRateData.length > 0) {
+        const dates = heartRateData.map((item: HealthData) => new Date(item.date));
+        const start = new Date(Math.min(...dates.map((d: Date) => d.getTime())));
+        const end = new Date(Math.max(...dates.map((d: Date) => d.getTime())));
+        setDateRange({ start, end });
+        
+        // Set initial month to earliest data if not already set
+        if (currentMonth.getTime() === new Date('2020-03-01').getTime()) {
+          setCurrentMonth(new Date(start.getFullYear(), start.getMonth(), 1));
+        }
       }
       
       return heartRateData;
@@ -85,29 +79,19 @@ export default function Home() {
   };
 
   const goToPreviousMonth = () => {
-    if (availableMonths.length === 0) return;
-    
-    const currentIndex = availableMonths.findIndex(
-      date => date.getMonth() === currentMonth.getMonth() && 
-              date.getFullYear() === currentMonth.getFullYear()
-    );
-    
-    if (currentIndex > 0) {
-      setCurrentMonth(availableMonths[currentIndex - 1]);
-    }
+    setCurrentMonth(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(prev.getMonth() - 1);
+      return newDate;
+    });
   };
 
   const goToNextMonth = () => {
-    if (availableMonths.length === 0) return;
-    
-    const currentIndex = availableMonths.findIndex(
-      date => date.getMonth() === currentMonth.getMonth() && 
-              date.getFullYear() === currentMonth.getFullYear()
-    );
-    
-    if (currentIndex < availableMonths.length - 1) {
-      setCurrentMonth(availableMonths[currentIndex + 1]);
-    }
+    setCurrentMonth(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(prev.getMonth() + 1);
+      return newDate;
+    });
   };
 
   const getMonthData = (data: HealthData[]) => {
@@ -127,32 +111,35 @@ export default function Home() {
   };
 
   const currentHeartRateData = getMonthData(data.heartRate);
+  const hasData = currentHeartRateData.length > 0;
 
   return (
-    <main className="min-h-screen p-8 bg-white">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-4 mb-12">
-          <Image
-            src="/images/profile.jpg"
-            alt="Profile"
-            width={80}
-            height={80}
-            className="rounded-full"
-          />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Lex Mathopoulos</h1>
-            <p className="text-gray-600">Health Dashboard</p>
+    <main className="min-h-screen p-8 bg-gray-50">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-4">
+            <Image
+              src="/images/profile.jpg"
+              alt="Profile"
+              width={80}
+              height={80}
+              className="rounded-full"
+            />
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Lex Mathopoulos</h1>
+              <p className="text-gray-600">Health Dashboard</p>
+            </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg p-6 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-gray-800">Heart Rate</h2>
             <div className="flex items-center gap-2">
               <button 
                 onClick={goToPreviousMonth}
                 className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                disabled={availableMonths.length === 0 || availableMonths[0].getTime() === currentMonth.getTime()}
+                disabled={!!(dateRange.start && currentMonth <= dateRange.start)}
               >
                 <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -164,7 +151,7 @@ export default function Home() {
               <button 
                 onClick={goToNextMonth}
                 className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                disabled={availableMonths.length === 0 || availableMonths[availableMonths.length - 1].getTime() === currentMonth.getTime()}
+                disabled={!!(dateRange.end && currentMonth >= dateRange.end)}
               >
                 <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -173,48 +160,55 @@ export default function Home() {
             </div>
           </div>
           <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={currentHeartRateData}>
-                <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
-                <XAxis 
-                  dataKey="date" 
-                  tickFormatter={formatDate}
-                  stroke="#9CA3AF"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis 
-                  stroke="#9CA3AF"
-                  fontSize={12}
-                  tickCount={8}
-                  domain={['dataMin - 2', 'dataMax + 2']}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip
-                  contentStyle={{ 
-                    backgroundColor: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    fontSize: '12px',
-                    padding: '8px'
-                  }}
-                  labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
-                  labelFormatter={(value) => formatDate(value)}
-                  formatter={(value: number) => [`${value} bpm`]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#818CF8"
-                  strokeWidth={1.5}
-                  dot={{ r: 2, fill: '#818CF8' }}
-                  activeDot={{ r: 3 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {!hasData && !data.loading && (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                No heart rate data available for this month
+              </div>
+            )}
+            {hasData && (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={currentHeartRateData}>
+                  <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={formatDate}
+                    stroke="#9CA3AF"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis 
+                    stroke="#9CA3AF"
+                    fontSize={12}
+                    tickCount={8}
+                    domain={['dataMin - 2', 'dataMax + 2']}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{ 
+                      backgroundColor: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      fontSize: '12px',
+                      padding: '8px'
+                    }}
+                    labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
+                    labelFormatter={(value) => formatDate(value)}
+                    formatter={(value: number) => [`${value} bpm`]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#818CF8"
+                    strokeWidth={1.5}
+                    dot={{ r: 2, fill: '#818CF8' }}
+                    activeDot={{ r: 3 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
