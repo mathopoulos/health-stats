@@ -8,11 +8,12 @@ const parser = new XMLParser({
   parseAttributeValue: true,
   ignoreDeclaration: true,
   trimValues: true,
-  isArray: (name: string) => name === "Record",
+  isArray: (name: string) => name === "Record" || name === "MetadataEntry",
   allowBooleanAttributes: true,
   parseTagValue: true,
   cdataPropName: "value",
-  stopNodes: ["*.value"]
+  stopNodes: ["*.value"],
+  preserveOrder: false
 });
 
 const BATCH_SIZE = 1000; // Smaller batch size for more frequent updates
@@ -20,11 +21,11 @@ const BATCH_SIZE = 1000; // Smaller batch size for more frequent updates
 interface ProcessingStatus {
   recordsProcessed: number;
   batchesSaved: number;
-  status: 'pending' | 'processing' | 'processing weight' | 'processing body fat' | 'processing heart rate' | 'completed' | 'error';
+  status: 'pending' | 'processing' | 'processing weight' | 'processing body fat' | 'processing hrv' | 'processing heart rate' | 'completed' | 'error';
   error?: string;
 }
 
-async function saveData(type: 'weight' | 'bodyFat' | 'heartRate', newData: any[]): Promise<void> {
+async function saveData(type: 'weight' | 'bodyFat' | 'heartRate' | 'hrv', newData: any[]): Promise<void> {
   if (newData.length === 0) return;
 
   const MAX_RETRIES = 3;
@@ -234,6 +235,7 @@ async function processBodyFat(xmlKey: string, status: ProcessingStatus): Promise
   let duplicateRecords = 0;
   let seenTypes = new Set<string>();
   let foundFirstRecord = false;
+  let noRecordsThreshold = 2000000; // Increased to 2 million records
   
   // Create a map of existing dates for quick lookup
   console.log('Fetching existing body fat records...');
@@ -260,13 +262,19 @@ async function processBodyFat(xmlKey: string, status: ProcessingStatus): Promise
           - Unique record types seen: ${Array.from(seenTypes).join(', ')}
         `);
         
+        // Check if we've processed too many records without finding any valid ones
+        if (!foundFirstRecord && recordsProcessed >= noRecordsThreshold) {
+          console.log(`No body fat records found after processing ${noRecordsThreshold} records, stopping processing`);
+          return false;
+        }
+        
         // Only check for no new records if we've found at least one record
         if (foundFirstRecord) {
           if (validRecords === lastValidRecordCount) {
             unchangedIterations++;
             if (unchangedIterations >= 10) {
               console.log('No new body fat records found in last 100,000 records processed after finding some records, stopping processing');
-              return false; // This will stop the processing
+              return false;
             }
           } else {
             unchangedIterations = 0;
@@ -473,6 +481,161 @@ async function processHeartRate(xmlKey: string, status: ProcessingStatus): Promi
   `);
 }
 
+async function processHRV(xmlKey: string, status: ProcessingStatus): Promise<void> {
+  console.log('Starting HRV data processing...');
+  let recordsProcessed = 0;
+  let validRecords = 0;
+  let pendingRecords: any[] = [];
+  let lastProgressTime = Date.now();
+  let lastValidRecordCount = 0;
+  let unchangedIterations = 0;
+  let skippedRecords = 0;
+  let invalidTypeRecords = 0;
+  let invalidValueRecords = 0;
+  let invalidDateRecords = 0;
+  let duplicateRecords = 0;
+  let seenTypes = new Set<string>();
+  let foundFirstRecord = false;
+  let noRecordsThreshold = 2000000; // Increased to 2 million records
+  const PROGRESS_LOG_INTERVAL = 50000;
+  const BATCH_SAVE_SIZE = 200;
+  
+  // Create a map of existing dates for quick lookup
+  console.log('Fetching existing HRV records...');
+  const existingRecords = await fetchAllHealthData('hrv');
+  const existingDates = new Set(existingRecords.map(record => record.date));
+  console.log(`Found ${existingRecords.length} existing HRV records`);
+  
+  await processS3XmlFile(xmlKey, async (recordXml) => {
+    try {
+      recordsProcessed++;
+      
+      // Quick check for HRV records before parsing
+      if (!recordXml.includes('HKQuantityTypeIdentifierHeartRateVariabilitySDNN')) {
+        invalidTypeRecords++;
+        return;
+      }
+
+      // Log progress less frequently
+      const now = Date.now();
+      if (recordsProcessed % PROGRESS_LOG_INTERVAL === 0 || now - lastProgressTime > 60000) { // Changed to 60 seconds
+        console.log(`Progress update:
+          - Records processed: ${recordsProcessed}
+          - Valid HRV records found: ${validRecords}
+          - Invalid type records: ${invalidTypeRecords}
+          - Invalid value records: ${invalidValueRecords}
+          - Invalid date records: ${invalidDateRecords}
+          - Duplicate records: ${duplicateRecords}
+          - Pending records: ${pendingRecords.length}
+          - Time since last update: ${Math.round((now - lastProgressTime) / 1000)}s
+          - Processing speed: ${Math.round(PROGRESS_LOG_INTERVAL / ((now - lastProgressTime) / 1000))} records/second
+          - Unique record types seen: ${Array.from(seenTypes).join(', ')}
+        `);
+        
+        // Check if we've processed too many records without finding any valid ones
+        if (!foundFirstRecord && recordsProcessed >= noRecordsThreshold) {
+          console.log(`No HRV records found after processing ${noRecordsThreshold} records, stopping processing`);
+          return false;
+        }
+        
+        lastProgressTime = now;
+      }
+
+      const data = parser.parse(recordXml);
+      if (!data?.HealthData?.Record) {
+        skippedRecords++;
+        return;
+      }
+      
+      const records = Array.isArray(data.HealthData.Record) 
+        ? data.HealthData.Record 
+        : [data.HealthData.Record];
+
+      for (const record of records) {
+        if (record?.type) {
+          seenTypes.add(record.type);
+        }
+
+        if (!record?.type || record.type !== 'HKQuantityTypeIdentifierHeartRateVariabilitySDNN') {
+          continue;
+        }
+
+        // Found a valid HRV record
+        if (!foundFirstRecord) {
+          console.log('\nFound first HRV record:', JSON.stringify(record, null, 2), '\n');
+          foundFirstRecord = true;
+        }
+
+        const value = parseFloat(record.value);
+        if (isNaN(value)) {
+          invalidValueRecords++;
+          continue;
+        }
+
+        const date = new Date(record.startDate || record.creationDate || record.endDate);
+        if (!date || isNaN(date.getTime())) {
+          invalidDateRecords++;
+          continue;
+        }
+
+        const isoDate = date.toISOString();
+        
+        // Skip if we already have this date
+        if (existingDates.has(isoDate)) {
+          duplicateRecords++;
+          continue;
+        }
+
+        // Create a single record with the exact timestamp
+        const hrvRecord = {
+          date: isoDate,
+          value: Math.round(value * 100) / 100  // Round to 2 decimal places
+        };
+
+        pendingRecords.push(hrvRecord);
+        existingDates.add(isoDate);
+        validRecords++;
+        status.recordsProcessed++;
+        
+        // Save progress in larger batches
+        if (pendingRecords.length >= BATCH_SAVE_SIZE) {
+          console.log(`Saving batch of ${pendingRecords.length} HRV records...`);
+          await saveData('hrv', pendingRecords);
+          status.batchesSaved++;
+          pendingRecords = [];
+        }
+      }
+    } catch (error) {
+      console.error('Error processing HRV record:', error);
+      // Continue processing despite errors
+    }
+  });
+
+  // Save any remaining records
+  if (pendingRecords.length > 0) {
+    console.log(`Saving final batch of ${pendingRecords.length} HRV records...`);
+    await saveData('hrv', pendingRecords);
+    status.batchesSaved++;
+  }
+
+  if (!foundFirstRecord) {
+    console.log('Warning: No HRV records were found in the entire file');
+  }
+
+  console.log(`HRV processing complete:
+    - Total records processed: ${recordsProcessed}
+    - Valid HRV records found: ${validRecords}
+    - Invalid type records: ${invalidTypeRecords}
+    - Invalid value records: ${invalidValueRecords}
+    - Invalid date records: ${invalidDateRecords}
+    - Duplicate records: ${duplicateRecords}
+    - Skipped records: ${skippedRecords}
+    - Total batches saved: ${status.batchesSaved}
+    - Records unchanged after: ${unchangedIterations * 10000} records
+    - All record types seen: ${Array.from(seenTypes).join(', ')}
+  `);
+}
+
 export async function processHealthData(xmlKey: string): Promise<ProcessingStatus> {
   console.log('\nStarting health data processing...');
   console.log('XML file to process:', xmlKey);
@@ -487,26 +650,45 @@ export async function processHealthData(xmlKey: string): Promise<ProcessingStatu
     // Process weight first
     console.log('\n=== Starting Weight Processing ===');
     status.status = 'processing weight';
-    await processWeight(xmlKey, status);
-    console.log('Weight processing completed successfully');
+    try {
+      await processWeight(xmlKey, status);
+      console.log('Weight processing completed successfully');
+    } catch (error) {
+      console.error('Error during weight processing:', error);
+      throw error;
+    }
 
     // Then body fat
     console.log('\n=== Starting Body Fat Processing ===');
     status.status = 'processing body fat';
-    await processBodyFat(xmlKey, status);
-    console.log('Body fat processing completed successfully');
+    try {
+      await processBodyFat(xmlKey, status);
+      console.log('Body fat processing completed successfully');
+      console.log('Preparing to start HRV processing...');
+    } catch (error) {
+      console.error('Error during body fat processing:', error);
+      throw error;
+    }
+
+    // Then HRV
+    console.log('\n=== Starting HRV Processing ===');
+    status.status = 'processing hrv';
+    try {
+      await processHRV(xmlKey, status);
+      console.log('HRV processing completed successfully');
+    } catch (error) {
+      console.error('Error during HRV processing:', error);
+      throw error;
+    }
 
     // Temporarily skip heart rate processing
     console.log('\n=== Skipping Heart Rate Processing ===');
-    // console.log('\n=== Starting Heart Rate Processing ===');
-    // status.status = 'processing heart rate';
-    // await processHeartRate(xmlKey, status);
-    // console.log('Heart rate processing completed successfully');
 
     status.status = 'completed';
-    console.log('\n=== All Processing Complete ===');
+    console.log('\n=== Processing Complete ===');
     console.log('Total records processed:', status.recordsProcessed);
     console.log('Total batches saved:', status.batchesSaved);
+    console.log('Status:', status.status);
     return status;
   } catch (error) {
     console.error('\n=== Processing Error ===');

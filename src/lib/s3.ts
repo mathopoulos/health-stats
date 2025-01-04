@@ -48,6 +48,7 @@ export async function generatePresignedDownloadUrl(key: string): Promise<string>
 export async function processS3XmlFile(key: string, processor: (chunk: string) => Promise<boolean | void>): Promise<void> {
   const MAX_RETRIES = 3;
   const RETRY_DELAY = 2000; // 2 seconds
+  const MAX_CHUNK_SIZE = 50 * 1024 * 1024; // Increased to 50MB
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   async function attemptProcessing(attempt: number = 0): Promise<void> {
@@ -67,6 +68,8 @@ export async function processS3XmlFile(key: string, processor: (chunk: string) =
         let shouldStop = false;
         let processingPromise = Promise.resolve();
         let streamError: Error | null = null;
+        let lastProcessTime = Date.now();
+        let processedRecords = 0;
 
         const cleanup = () => {
           try {
@@ -75,6 +78,81 @@ export async function processS3XmlFile(key: string, processor: (chunk: string) =
             }
           } catch (err) {
             console.error('Error during stream cleanup:', err);
+          }
+        };
+
+        // Process chunks in smaller batches
+        const processChunk = async () => {
+          while (!shouldStop) {
+            const endIndex = xmlChunk.indexOf(recordEndMarker);
+            if (endIndex === -1) {
+              // If chunk is too large and no end marker found, try to find a safe point to trim
+              if (xmlChunk.length > MAX_CHUNK_SIZE) {
+                // Look for the last complete record
+                const lastCompleteEnd = xmlChunk.lastIndexOf(recordEndMarker);
+                if (lastCompleteEnd !== -1) {
+                  // Keep everything after the last complete record
+                  xmlChunk = xmlChunk.slice(lastCompleteEnd + recordEndMarker.length);
+                  console.log(`Trimmed chunk to ${xmlChunk.length} bytes, keeping partial record`);
+                } else {
+                  // If we can't find any complete records, we have to clear it
+                  console.log(`Warning: Clearing ${xmlChunk.length} bytes of data with no complete records`);
+                  xmlChunk = '';
+                }
+              }
+              break;
+            }
+
+            const startIndex = xmlChunk.lastIndexOf(recordStartMarker, endIndex);
+            if (startIndex === -1) {
+              // If we have a corrupted chunk, try to salvage what we can
+              const nextStart = xmlChunk.indexOf(recordStartMarker, endIndex);
+              if (nextStart !== -1) {
+                xmlChunk = xmlChunk.slice(nextStart);
+              } else {
+                xmlChunk = xmlChunk.slice(endIndex + recordEndMarker.length);
+              }
+              continue;
+            }
+
+            const record = xmlChunk.slice(startIndex, endIndex + recordEndMarker.length);
+            const wrappedRecord = `<?xml version="1.0" encoding="UTF-8"?><HealthData>${record}</HealthData>`;
+            
+            try {
+              const result = await processor(wrappedRecord);
+              processedRecords++;
+              
+              // Log progress every 10000 records
+              if (processedRecords % 10000 === 0) {
+                console.log(`Processed ${processedRecords} records`);
+              }
+              
+              if (result === false) {
+                shouldStop = true;
+                cleanup();
+                break;
+              }
+            } catch (error) {
+              console.error('Error processing record:', error);
+              // Continue with next record despite errors
+            }
+
+            xmlChunk = xmlChunk.slice(endIndex + recordEndMarker.length);
+
+            // Add periodic cleanup to prevent memory buildup
+            const now = Date.now();
+            if (now - lastProcessTime > 30000) { // Every 30 seconds
+              lastProcessTime = now;
+              console.log(`Processing status: ${processedRecords} records processed, current chunk size: ${xmlChunk.length} bytes`);
+              // Force garbage collection if available
+              if (global.gc) {
+                try {
+                  global.gc();
+                } catch (e) {
+                  // Ignore GC errors
+                }
+              }
+            }
           }
         };
 
@@ -87,38 +165,16 @@ export async function processS3XmlFile(key: string, processor: (chunk: string) =
           try {
             xmlChunk += chunk.toString('utf-8');
             
-            const processChunk = async () => {
-              while (!shouldStop) {
-                const endIndex = xmlChunk.indexOf(recordEndMarker);
-                if (endIndex === -1) break;
-
-                const startIndex = xmlChunk.lastIndexOf(recordStartMarker, endIndex);
-                if (startIndex === -1) break;
-
-                const record = xmlChunk.slice(startIndex, endIndex + recordEndMarker.length);
-                const wrappedRecord = `<?xml version="1.0" encoding="UTF-8"?><HealthData>${record}</HealthData>`;
-                
-                try {
-                  const result = await processor(wrappedRecord);
-                  if (result === false) {
-                    shouldStop = true;
-                    cleanup();
-                    break;
-                  }
-                } catch (error) {
-                  console.error('Error processing record:', error);
-                  // Continue with next record despite errors
-                }
-
-                xmlChunk = xmlChunk.slice(endIndex + recordEndMarker.length);
-              }
-            };
-
-            processingPromise = processingPromise.then(processChunk).catch(error => {
-              console.error('Error in processing promise:', error);
-              streamError = error instanceof Error ? error : new Error(String(error));
-              cleanup();
-            });
+            // Process chunk when it gets large
+            if (xmlChunk.length > MAX_CHUNK_SIZE / 2) { // Process at half max size to prevent overflow
+              processingPromise = processingPromise
+                .then(processChunk)
+                .catch(error => {
+                  console.error('Error in processing promise:', error);
+                  streamError = error instanceof Error ? error : new Error(String(error));
+                  cleanup();
+                });
+            }
           } catch (error) {
             console.error('Error processing data chunk:', error);
             streamError = error instanceof Error ? error : new Error(String(error));
@@ -134,27 +190,17 @@ export async function processS3XmlFile(key: string, processor: (chunk: string) =
         });
 
         stream.on('end', () => {
-          processingPromise.then(async () => {
-            if (streamError) {
-              reject(streamError);
-              return;
-            }
-
-            if (!shouldStop && xmlChunk.includes(recordStartMarker) && xmlChunk.includes(recordEndMarker)) {
-              try {
-                const startIndex = xmlChunk.lastIndexOf(recordStartMarker);
-                const endIndex = xmlChunk.indexOf(recordEndMarker, startIndex) + recordEndMarker.length;
-                if (startIndex !== -1 && endIndex !== -1) {
-                  const record = xmlChunk.slice(startIndex, endIndex);
-                  const wrappedRecord = `<?xml version="1.0" encoding="UTF-8"?><HealthData>${record}</HealthData>`;
-                  await processor(wrappedRecord);
-                }
-              } catch (error) {
-                console.error('Error processing final chunk:', error);
+          processingPromise
+            .then(processChunk) // Process any remaining data
+            .then(() => {
+              if (streamError) {
+                reject(streamError);
+                return;
               }
-            }
-            resolve();
-          }).catch(reject);
+              console.log(`Processing complete. Total records processed: ${processedRecords}`);
+              resolve();
+            })
+            .catch(reject);
         });
 
         stream.on('close', () => {
@@ -220,14 +266,20 @@ export async function fetchDataFile(key: string): Promise<any> {
   });
 }
 
-export async function fetchAllHealthData(type: 'heartRate' | 'weight' | 'bodyFat'): Promise<any[]> {
-  const key = `data/${type}.json`;
-  
+export async function fetchAllHealthData(type: 'heartRate' | 'weight' | 'bodyFat' | 'hrv'): Promise<any[]> {
   try {
-    const data = await fetchDataFile(key);
-    return Array.isArray(data) ? data : [];
+    const key = `data/${type}.json`;
+    console.log(`Fetching ${type} data from S3...`);
+    
+    try {
+      const data = await fetchDataFile(key);
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.log(`No existing data for ${type}`);
+      return [];
+    }
   } catch (error) {
-    console.log(`No existing data for ${type}`);
+    console.error(`Error fetching ${type} data:`, error);
     return [];
   }
 } 
