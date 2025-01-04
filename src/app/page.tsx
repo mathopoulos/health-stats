@@ -210,6 +210,96 @@ export default function Home() {
           </div>
         </div>
 
+        {/* HRV Chart */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800">Heart Rate Variability</h2>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => goToPreviousMonth(setHrvMonth)}
+                disabled={isPrevMonthDisabled(hrvMonth)}
+                className={`p-1 rounded-full hover:bg-gray-100 ${
+                  isPrevMonthDisabled(hrvMonth) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <span className="text-sm text-gray-600">
+                {hrvMonth?.toLocaleString('default', { month: 'long', year: 'numeric' }) || ''}
+              </span>
+              <button
+                onClick={() => goToNextMonth(setHrvMonth)}
+                disabled={isNextMonthDisabled(hrvMonth)}
+                className={`p-1 rounded-full hover:bg-gray-100 ${
+                  isNextMonthDisabled(hrvMonth) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div className="h-[300px]">
+            {data.loading && (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                Loading data...
+              </div>
+            )}
+            {!hasHRVData && !data.loading && (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                No HRV data available for this month
+              </div>
+            )}
+            {hasHRVData && !data.loading && (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={currentHRVData}>
+                  <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={formatDate}
+                    stroke="#9CA3AF"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis 
+                    stroke="#9CA3AF"
+                    fontSize={12}
+                    tickCount={8}
+                    domain={['dataMin - 2', 'dataMax + 2']}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{ 
+                      backgroundColor: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      fontSize: '12px',
+                      padding: '8px'
+                    }}
+                    labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
+                    labelFormatter={(value) => formatDate(value)}
+                    formatter={(value: number) => [`${value} ms`]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#6366F1"
+                    strokeWidth={1.5}
+                    dot={{ r: 2, fill: '#6366F1' }}
+                    activeDot={{ r: 3 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
         {/* Weight Chart */}
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <div className="flex justify-between items-center mb-6">
@@ -382,96 +472,6 @@ export default function Home() {
                     stroke="#F59E0B"
                     strokeWidth={1.5}
                     dot={{ r: 2, fill: '#F59E0B' }}
-                    activeDot={{ r: 3 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </div>
-
-        {/* HRV Chart */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-800">Heart Rate Variability</h2>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => goToPreviousMonth(setHrvMonth)}
-                disabled={isPrevMonthDisabled(hrvMonth)}
-                className={`p-1 rounded-full hover:bg-gray-100 ${
-                  isPrevMonthDisabled(hrvMonth) ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <span className="text-sm text-gray-600">
-                {hrvMonth?.toLocaleString('default', { month: 'long', year: 'numeric' }) || ''}
-              </span>
-              <button
-                onClick={() => goToNextMonth(setHrvMonth)}
-                disabled={isNextMonthDisabled(hrvMonth)}
-                className={`p-1 rounded-full hover:bg-gray-100 ${
-                  isNextMonthDisabled(hrvMonth) ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div className="h-[300px]">
-            {data.loading && (
-              <div className="h-full flex items-center justify-center text-gray-500">
-                Loading data...
-              </div>
-            )}
-            {!hasHRVData && !data.loading && (
-              <div className="h-full flex items-center justify-center text-gray-500">
-                No HRV data available for this month
-              </div>
-            )}
-            {hasHRVData && !data.loading && (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={currentHRVData}>
-                  <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
-                  <XAxis 
-                    dataKey="date" 
-                    tickFormatter={formatDate}
-                    stroke="#9CA3AF"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis 
-                    stroke="#9CA3AF"
-                    fontSize={12}
-                    tickCount={8}
-                    domain={['dataMin - 2', 'dataMax + 2']}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip
-                    contentStyle={{ 
-                      backgroundColor: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                      fontSize: '12px',
-                      padding: '8px'
-                    }}
-                    labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
-                    labelFormatter={(value) => formatDate(value)}
-                    formatter={(value: number) => [`${value} ms`]}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#6366F1"
-                    strokeWidth={1.5}
-                    dot={{ r: 2, fill: '#6366F1' }}
                     activeDot={{ r: 3 }}
                   />
                 </LineChart>
