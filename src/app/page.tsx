@@ -28,6 +28,7 @@ export default function Home() {
   const [weightMonth, setWeightMonth] = useState<Date | null>(null);
   const [bodyFatMonth, setBodyFatMonth] = useState<Date | null>(null);
   const [hrvMonth, setHrvMonth] = useState<Date | null>(null);
+  const [hrvYear, setHrvYear] = useState<Date | null>(null);
   const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
     end: null
@@ -65,6 +66,7 @@ export default function Home() {
         setDateRange({ start, end });
         
         const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+        const endYear = new Date(end.getFullYear(), 0, 1);
         
         if (!weightMonth) {
           setWeightMonth(endMonth);
@@ -72,8 +74,8 @@ export default function Home() {
         if (!bodyFatMonth) {
           setBodyFatMonth(endMonth);
         }
-        if (!hrvMonth) {
-          setHrvMonth(endMonth);
+        if (!hrvYear) {
+          setHrvYear(endYear);
         }
       }
 
@@ -146,6 +148,40 @@ export default function Home() {
     return prevMonth < dateRange.start;
   };
 
+  const goToPreviousYear = (setter: React.Dispatch<React.SetStateAction<Date | null>>) => {
+    setter((prev: Date | null) => {
+      if (!prev) return null;
+      const newDate = new Date(prev);
+      newDate.setFullYear(prev.getFullYear() - 1);
+      return newDate;
+    });
+  };
+
+  const goToNextYear = (setter: React.Dispatch<React.SetStateAction<Date | null>>) => {
+    setter((prev: Date | null) => {
+      if (!prev) return null;
+      const newDate = new Date(prev);
+      newDate.setFullYear(prev.getFullYear() + 1);
+      return newDate;
+    });
+  };
+
+  const isNextYearDisabled = (currentDate: Date | null) => {
+    if (!dateRange.end) return true;
+    if (!currentDate) return true;
+    const nextYear = new Date(currentDate);
+    nextYear.setFullYear(currentDate.getFullYear() + 1);
+    return nextYear > dateRange.end;
+  };
+
+  const isPrevYearDisabled = (currentDate: Date | null) => {
+    if (!dateRange.start) return true;
+    if (!currentDate) return true;
+    const prevYear = new Date(currentDate);
+    prevYear.setFullYear(currentDate.getFullYear() - 1);
+    return prevYear < dateRange.start;
+  };
+
   const getMonthData = (data: HealthData[], month: Date | null) => {
     if (!month) return [];
     
@@ -181,10 +217,49 @@ export default function Home() {
     return aggregatedData;
   };
 
+  const getYearlyHRVData = (data: HealthData[], year: Date | null) => {
+    if (!year) return [];
+    
+    const yearStart = new Date(year.getFullYear(), 0, 1);
+    const yearEnd = new Date(year.getFullYear(), 11, 31, 23, 59, 59, 999);
+    
+    const filteredData = data.filter(item => {
+      const date = new Date(item.date);
+      return date >= yearStart && date <= yearEnd;
+    });
+
+    // Group by month and calculate averages
+    const monthlyData = filteredData.reduce((acc: { [key: string]: { sum: number; count: number } }, item) => {
+      const date = new Date(item.date);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!acc[monthKey]) {
+        acc[monthKey] = { sum: 0, count: 0 };
+      }
+      
+      acc[monthKey].sum += item.value;
+      acc[monthKey].count += 1;
+      
+      return acc;
+    }, {});
+
+    const aggregatedData = Object.entries(monthlyData).map(([monthKey, { sum, count }]) => {
+      const [year, month] = monthKey.split('-');
+      return {
+        date: `${year}-${month}-15T12:00:00.000Z`, // Use middle of month for consistent display
+        value: Math.round(sum / count)
+      };
+    });
+
+    aggregatedData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    return aggregatedData;
+  };
+
   const currentHeartRateData = getMonthData(data.heartRate, weightMonth);
   const currentWeightData = getMonthData(data.weight, weightMonth);
   const currentBodyFatData = getMonthData(data.bodyFat, bodyFatMonth);
-  const currentHRVData = getMonthData(data.hrv, hrvMonth);
+  const currentHRVData = getYearlyHRVData(data.hrv, hrvYear);
   
   const hasHeartRateData = currentHeartRateData.length > 0;
   const hasWeightData = currentWeightData.length > 0;
@@ -216,10 +291,10 @@ export default function Home() {
             <h2 className="text-xl font-semibold text-gray-800">Heart Rate Variability</h2>
             <div className="flex items-center gap-4">
               <button
-                onClick={() => goToPreviousMonth(setHrvMonth)}
-                disabled={isPrevMonthDisabled(hrvMonth)}
+                onClick={() => goToPreviousYear(setHrvYear)}
+                disabled={isPrevYearDisabled(hrvYear)}
                 className={`p-1 rounded-full hover:bg-gray-100 ${
-                  isPrevMonthDisabled(hrvMonth) ? 'opacity-50 cursor-not-allowed' : ''
+                  isPrevYearDisabled(hrvYear) ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
                 <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,13 +302,13 @@ export default function Home() {
                 </svg>
               </button>
               <span className="text-sm text-gray-600">
-                {hrvMonth?.toLocaleString('default', { month: 'long', year: 'numeric' }) || ''}
+                {hrvYear?.getFullYear() || ''}
               </span>
               <button
-                onClick={() => goToNextMonth(setHrvMonth)}
-                disabled={isNextMonthDisabled(hrvMonth)}
+                onClick={() => goToNextYear(setHrvYear)}
+                disabled={isNextYearDisabled(hrvYear)}
                 className={`p-1 rounded-full hover:bg-gray-100 ${
-                  isNextMonthDisabled(hrvMonth) ? 'opacity-50 cursor-not-allowed' : ''
+                  isNextYearDisabled(hrvYear) ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
                 <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -250,7 +325,7 @@ export default function Home() {
             )}
             {!hasHRVData && !data.loading && (
               <div className="h-full flex items-center justify-center text-gray-500">
-                No HRV data available for this month
+                No HRV data available for this year
               </div>
             )}
             {hasHRVData && !data.loading && (
@@ -259,7 +334,7 @@ export default function Home() {
                   <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
                   <XAxis 
                     dataKey="date" 
-                    tickFormatter={formatDate}
+                    tickFormatter={(date) => new Date(date).toLocaleString('default', { month: 'short' })}
                     stroke="#9CA3AF"
                     fontSize={12}
                     tickLine={false}
@@ -283,7 +358,7 @@ export default function Home() {
                       padding: '8px'
                     }}
                     labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
-                    labelFormatter={(value) => formatDate(value)}
+                    labelFormatter={(value) => new Date(value).toLocaleString('default', { month: 'long', year: 'numeric' })}
                     formatter={(value: number) => [`${value} ms`]}
                   />
                   <Line
