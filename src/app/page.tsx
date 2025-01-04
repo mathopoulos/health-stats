@@ -27,8 +27,10 @@ export default function Home() {
     hrv: [],
     loading: true
   });
-  const [weightMonth, setWeightMonth] = useState<Date | null>(null);
-  const [bodyFatMonth, setBodyFatMonth] = useState<Date | null>(null);
+  const [weightTimeframe, setWeightTimeframe] = useState<TimeFrame>('monthly');
+  const [weightDate, setWeightDate] = useState<Date | null>(null);
+  const [bodyFatTimeframe, setBodyFatTimeframe] = useState<TimeFrame>('monthly');
+  const [bodyFatDate, setBodyFatDate] = useState<Date | null>(null);
   const [hrvTimeframe, setHrvTimeframe] = useState<TimeFrame>('monthly');
   const [hrvDate, setHrvDate] = useState<Date | null>(null);
   const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
@@ -69,11 +71,11 @@ export default function Home() {
         
         const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
         
-        if (!weightMonth) {
-          setWeightMonth(endMonth);
+        if (!weightDate) {
+          setWeightDate(endMonth);
         }
-        if (!bodyFatMonth) {
-          setBodyFatMonth(endMonth);
+        if (!bodyFatDate) {
+          setBodyFatDate(endMonth);
         }
         if (!hrvDate) {
           setHrvDate(endMonth);
@@ -329,28 +331,33 @@ export default function Home() {
     return aggregatedData;
   };
 
-  const getTimeframeLabel = () => {
-    if (!hrvDate) return '';
+  const getTimeframeLabel = (date: Date | null, timeframe: TimeFrame) => {
+    if (!date) return '';
     
-    switch (hrvTimeframe) {
+    switch (timeframe) {
       case 'daily':
-        return hrvDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+        return date.toLocaleString('default', { month: 'long', year: 'numeric' });
       case 'weekly':
-        const endDate = new Date(hrvDate);
-        const startDate = new Date(hrvDate);
+        const endDate = new Date(date);
+        const startDate = new Date(date);
         startDate.setDate(startDate.getDate() - 84);
         return `${startDate.toLocaleString('default', { month: 'short' })} - ${endDate.toLocaleString('default', { month: 'short' })} ${endDate.getFullYear()}`;
       case 'monthly':
-        return hrvDate.getFullYear().toString();
+        return date.getFullYear().toString();
     }
   };
 
-  const handleTimeframeNavigation = (direction: 'prev' | 'next') => {
-    setHrvDate((prev: Date | null) => {
+  const handleTimeframeNavigation = (
+    direction: 'prev' | 'next',
+    date: Date | null,
+    setDate: React.Dispatch<React.SetStateAction<Date | null>>,
+    timeframe: TimeFrame
+  ) => {
+    setDate((prev: Date | null) => {
       if (!prev) return null;
       const newDate = new Date(prev);
       
-      switch (hrvTimeframe) {
+      switch (timeframe) {
         case 'daily':
           direction === 'prev' ? newDate.setMonth(prev.getMonth() - 1) : newDate.setMonth(prev.getMonth() + 1);
           break;
@@ -366,12 +373,12 @@ export default function Home() {
     });
   };
 
-  const isNavigationDisabled = (direction: 'prev' | 'next') => {
-    if (!dateRange.start || !dateRange.end || !hrvDate) return true;
+  const isNavigationDisabled = (direction: 'prev' | 'next', date: Date | null, timeframe: TimeFrame) => {
+    if (!dateRange.start || !dateRange.end || !date) return true;
     
-    const newDate = new Date(hrvDate);
+    const newDate = new Date(date);
     
-    switch (hrvTimeframe) {
+    switch (timeframe) {
       case 'daily':
         direction === 'prev' ? newDate.setMonth(newDate.getMonth() - 1) : newDate.setMonth(newDate.getMonth() + 1);
         break;
@@ -386,9 +393,9 @@ export default function Home() {
     return direction === 'prev' ? newDate < dateRange.start : newDate > dateRange.end;
   };
 
-  const currentHeartRateData = getMonthData(data.heartRate, weightMonth);
-  const currentWeightData = getMonthData(data.weight, weightMonth);
-  const currentBodyFatData = getMonthData(data.bodyFat, bodyFatMonth);
+  const currentHeartRateData = getMonthData(data.heartRate, weightDate);
+  const currentWeightData = getHRVData(data.weight, weightDate, weightTimeframe);
+  const currentBodyFatData = getHRVData(data.bodyFat, bodyFatDate, bodyFatTimeframe);
   const currentHRVData = getHRVData(data.hrv, hrvDate, hrvTimeframe);
   
   const hasHeartRateData = currentHeartRateData.length > 0;
@@ -423,7 +430,7 @@ export default function Home() {
               <select
                 value={hrvTimeframe}
                 onChange={(e) => setHrvTimeframe(e.target.value as TimeFrame)}
-                className="mr-6 py-1.5 pl-3 pr-8 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
+                className="mr-6 h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
                 style={{
                   backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
                   backgroundPosition: 'right 0.5rem center',
@@ -435,12 +442,12 @@ export default function Home() {
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
               </select>
-              <div className="flex items-center bg-gray-50 rounded-lg p-1">
+              <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
                 <button
-                  onClick={() => handleTimeframeNavigation('prev')}
-                  disabled={isNavigationDisabled('prev')}
-                  className={`p-1.5 rounded-md hover:bg-white hover:shadow-sm transition-all ${
-                    isNavigationDisabled('prev') ? 'opacity-50 cursor-not-allowed' : ''
+                  onClick={() => handleTimeframeNavigation('prev', hrvDate, setHrvDate, hrvTimeframe)}
+                  disabled={isNavigationDisabled('prev', hrvDate, hrvTimeframe)}
+                  className={`h-full px-2 rounded-l-lg hover:bg-white hover:shadow-sm transition-all ${
+                    isNavigationDisabled('prev', hrvDate, hrvTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >
                   <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -448,13 +455,13 @@ export default function Home() {
                   </svg>
                 </button>
                 <span className="text-sm font-medium text-gray-700 mx-4 min-w-[100px] text-center">
-                  {getTimeframeLabel()}
+                  {getTimeframeLabel(hrvDate, hrvTimeframe)}
                 </span>
                 <button
-                  onClick={() => handleTimeframeNavigation('next')}
-                  disabled={isNavigationDisabled('next')}
-                  className={`p-1.5 rounded-md hover:bg-white hover:shadow-sm transition-all ${
-                    isNavigationDisabled('next') ? 'opacity-50 cursor-not-allowed' : ''
+                  onClick={() => handleTimeframeNavigation('next', hrvDate, setHrvDate, hrvTimeframe)}
+                  disabled={isNavigationDisabled('next', hrvDate, hrvTimeframe)}
+                  className={`h-full px-2 rounded-r-lg hover:bg-white hover:shadow-sm transition-all ${
+                    isNavigationDisabled('next', hrvDate, hrvTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >
                   <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -548,32 +555,49 @@ export default function Home() {
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-gray-800">Weight</h2>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => goToPreviousMonth(setWeightMonth)}
-                disabled={isPrevMonthDisabled(weightMonth)}
-                className={`p-1 rounded-full hover:bg-gray-100 ${
-                  isPrevMonthDisabled(weightMonth) ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+            <div className="flex items-center">
+              <select
+                value={weightTimeframe}
+                onChange={(e) => setWeightTimeframe(e.target.value as TimeFrame)}
+                className="mr-6 h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                  backgroundPosition: 'right 0.5rem center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '1.5em 1.5em',
+                }}
               >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <span className="text-sm text-gray-600">
-                {weightMonth?.toLocaleString('default', { month: 'long', year: 'numeric' }) || ''}
-              </span>
-              <button
-                onClick={() => goToNextMonth(setWeightMonth)}
-                disabled={isNextMonthDisabled(weightMonth)}
-                className={`p-1 rounded-full hover:bg-gray-100 ${
-                  isNextMonthDisabled(weightMonth) ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+              <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
+                <button
+                  onClick={() => handleTimeframeNavigation('prev', weightDate, setWeightDate, weightTimeframe)}
+                  disabled={isNavigationDisabled('prev', weightDate, weightTimeframe)}
+                  className={`h-full px-2 rounded-l-lg hover:bg-white hover:shadow-sm transition-all ${
+                    isNavigationDisabled('prev', weightDate, weightTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <span className="text-sm font-medium text-gray-700 mx-4 min-w-[100px] text-center">
+                  {getTimeframeLabel(weightDate, weightTimeframe)}
+                </span>
+                <button
+                  onClick={() => handleTimeframeNavigation('next', weightDate, setWeightDate, weightTimeframe)}
+                  disabled={isNavigationDisabled('next', weightDate, weightTimeframe)}
+                  className={`h-full px-2 rounded-r-lg hover:bg-white hover:shadow-sm transition-all ${
+                    isNavigationDisabled('next', weightDate, weightTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
           <div className="h-[300px]">
@@ -584,7 +608,7 @@ export default function Home() {
             )}
             {!hasWeightData && !data.loading && (
               <div className="h-full flex items-center justify-center text-gray-500">
-                No weight data available for this month
+                No weight data available for this {weightTimeframe === 'monthly' ? 'year' : weightTimeframe === 'weekly' ? '12 weeks' : 'month'}
               </div>
             )}
             {hasWeightData && !data.loading && (
@@ -593,7 +617,17 @@ export default function Home() {
                   <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
                   <XAxis 
                     dataKey="date" 
-                    tickFormatter={formatDate}
+                    tickFormatter={(date) => {
+                      const d = new Date(date);
+                      switch (weightTimeframe) {
+                        case 'daily':
+                          return d.getDate().toString();
+                        case 'weekly':
+                          return d.toLocaleString('default', { month: 'short', day: 'numeric' });
+                        case 'monthly':
+                          return d.toLocaleString('default', { month: 'short' });
+                      }
+                    }}
                     stroke="#9CA3AF"
                     fontSize={12}
                     tickLine={false}
@@ -617,7 +651,19 @@ export default function Home() {
                       padding: '8px'
                     }}
                     labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
-                    labelFormatter={(value) => formatDate(value)}
+                    labelFormatter={(value) => {
+                      const d = new Date(value);
+                      switch (weightTimeframe) {
+                        case 'daily':
+                          return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
+                        case 'weekly':
+                          const weekEnd = new Date(d);
+                          weekEnd.setDate(d.getDate() + 6);
+                          return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+                        case 'monthly':
+                          return d.toLocaleString('default', { month: 'long', year: 'numeric' });
+                      }
+                    }}
                     formatter={(value: number) => [`${value} kg`]}
                   />
                   <Line
@@ -638,32 +684,49 @@ export default function Home() {
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-gray-800">Body Fat</h2>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => goToPreviousMonth(setBodyFatMonth)}
-                disabled={isPrevMonthDisabled(bodyFatMonth)}
-                className={`p-1 rounded-full hover:bg-gray-100 ${
-                  isPrevMonthDisabled(bodyFatMonth) ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+            <div className="flex items-center">
+              <select
+                value={bodyFatTimeframe}
+                onChange={(e) => setBodyFatTimeframe(e.target.value as TimeFrame)}
+                className="mr-6 h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                  backgroundPosition: 'right 0.5rem center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '1.5em 1.5em',
+                }}
               >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <span className="text-sm text-gray-600">
-                {bodyFatMonth?.toLocaleString('default', { month: 'long', year: 'numeric' }) || ''}
-              </span>
-              <button
-                onClick={() => goToNextMonth(setBodyFatMonth)}
-                disabled={isNextMonthDisabled(bodyFatMonth)}
-                className={`p-1 rounded-full hover:bg-gray-100 ${
-                  isNextMonthDisabled(bodyFatMonth) ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+              <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
+                <button
+                  onClick={() => handleTimeframeNavigation('prev', bodyFatDate, setBodyFatDate, bodyFatTimeframe)}
+                  disabled={isNavigationDisabled('prev', bodyFatDate, bodyFatTimeframe)}
+                  className={`h-full px-2 rounded-l-lg hover:bg-white hover:shadow-sm transition-all ${
+                    isNavigationDisabled('prev', bodyFatDate, bodyFatTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <span className="text-sm font-medium text-gray-700 mx-4 min-w-[100px] text-center">
+                  {getTimeframeLabel(bodyFatDate, bodyFatTimeframe)}
+                </span>
+                <button
+                  onClick={() => handleTimeframeNavigation('next', bodyFatDate, setBodyFatDate, bodyFatTimeframe)}
+                  disabled={isNavigationDisabled('next', bodyFatDate, bodyFatTimeframe)}
+                  className={`h-full px-2 rounded-r-lg hover:bg-white hover:shadow-sm transition-all ${
+                    isNavigationDisabled('next', bodyFatDate, bodyFatTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
           <div className="h-[300px]">
@@ -674,7 +737,7 @@ export default function Home() {
             )}
             {!hasBodyFatData && !data.loading && (
               <div className="h-full flex items-center justify-center text-gray-500">
-                No body fat data available for this month
+                No body fat data available for this {bodyFatTimeframe === 'monthly' ? 'year' : bodyFatTimeframe === 'weekly' ? '12 weeks' : 'month'}
               </div>
             )}
             {hasBodyFatData && !data.loading && (
@@ -683,7 +746,17 @@ export default function Home() {
                   <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
                   <XAxis 
                     dataKey="date" 
-                    tickFormatter={formatDate}
+                    tickFormatter={(date) => {
+                      const d = new Date(date);
+                      switch (bodyFatTimeframe) {
+                        case 'daily':
+                          return d.getDate().toString();
+                        case 'weekly':
+                          return d.toLocaleString('default', { month: 'short', day: 'numeric' });
+                        case 'monthly':
+                          return d.toLocaleString('default', { month: 'short' });
+                      }
+                    }}
                     stroke="#9CA3AF"
                     fontSize={12}
                     tickLine={false}
@@ -707,7 +780,19 @@ export default function Home() {
                       padding: '8px'
                     }}
                     labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
-                    labelFormatter={(value) => formatDate(value)}
+                    labelFormatter={(value) => {
+                      const d = new Date(value);
+                      switch (bodyFatTimeframe) {
+                        case 'daily':
+                          return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
+                        case 'weekly':
+                          const weekEnd = new Date(d);
+                          weekEnd.setDate(d.getDate() + 6);
+                          return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+                        case 'monthly':
+                          return d.toLocaleString('default', { month: 'long', year: 'numeric' });
+                      }
+                    }}
                     formatter={(value: number) => [`${value}%`]}
                   />
                   <Line
