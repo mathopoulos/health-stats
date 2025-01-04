@@ -11,14 +11,16 @@ interface HealthData {
 
 interface ChartData {
   heartRate: HealthData[];
-  lastUpdated: string | null;
+  weight: HealthData[];
+  bodyFat: HealthData[];
   loading: boolean;
 }
 
 export default function Home() {
   const [data, setData] = useState<ChartData>({
     heartRate: [],
-    lastUpdated: null,
+    weight: [],
+    bodyFat: [],
     loading: true
   });
   const [currentMonth, setCurrentMonth] = useState(new Date('2020-03-01'));
@@ -29,38 +31,54 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      const response = await fetch(`/api/health-data?type=heartRate`);
-      if (!response.ok) throw new Error('Failed to fetch data');
-      const result = await response.json();
-      const heartRateData = result.data || [];
-      
-      // Find the date range of the data
-      if (heartRateData.length > 0) {
-        const dates = heartRateData.map((item: HealthData) => new Date(item.date));
-        const start = new Date(Math.min(...dates.map((d: Date) => d.getTime())));
-        const end = new Date(Math.max(...dates.map((d: Date) => d.getTime())));
+      const [heartRateRes, weightRes, bodyFatRes] = await Promise.all([
+        fetch('/api/health-data?type=heartRate'),
+        fetch('/api/health-data?type=weight'),
+        fetch('/api/health-data?type=bodyFat')
+      ]);
+
+      if (!heartRateRes.ok || !weightRes.ok || !bodyFatRes.ok) 
+        throw new Error('Failed to fetch data');
+
+      const [heartRateData, weightData, bodyFatData] = await Promise.all([
+        heartRateRes.json(),
+        weightRes.json(),
+        bodyFatRes.json()
+      ]);
+
+      const allDates = [
+        ...(heartRateData.data || []),
+        ...(weightData.data || []),
+        ...(bodyFatData.data || [])
+      ].map(item => new Date(item.date));
+
+      if (allDates.length > 0) {
+        const start = new Date(Math.min(...allDates.map(d => d.getTime())));
+        const end = new Date(Math.max(...allDates.map(d => d.getTime())));
         setDateRange({ start, end });
         
-        // Set initial month to earliest data if not already set
         if (currentMonth.getTime() === new Date('2020-03-01').getTime()) {
           setCurrentMonth(new Date(start.getFullYear(), start.getMonth(), 1));
         }
       }
-      
-      return heartRateData;
+
+      return {
+        heartRate: heartRateData.data || [],
+        weight: weightData.data || [],
+        bodyFat: bodyFatData.data || []
+      };
     } catch (error) {
-      console.error('Error fetching heart rate data:', error);
-      return [];
+      console.error('Error fetching health data:', error);
+      return { heartRate: [], weight: [], bodyFat: [] };
     }
   };
 
   const loadData = async () => {
     setData(prev => ({ ...prev, loading: true }));
     try {
-      const heartRate = await fetchData();
+      const newData = await fetchData();
       setData({
-        heartRate,
-        lastUpdated: new Date().toLocaleString(),
+        ...newData,
         loading: false
       });
     } catch (error) {
@@ -98,16 +116,14 @@ export default function Home() {
     const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
     const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59, 999);
     
-    // First filter by month
     const filteredData = data.filter(item => {
       const date = new Date(item.date);
       return date >= monthStart && date <= monthEnd;
     });
 
-    // Then aggregate by day
     const dailyData = filteredData.reduce((acc: { [key: string]: { sum: number; count: number } }, item) => {
       const date = new Date(item.date);
-      const dayKey = date.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+      const dayKey = date.toISOString().split('T')[0];
       
       if (!acc[dayKey]) {
         acc[dayKey] = { sum: 0, count: 0 };
@@ -119,24 +135,23 @@ export default function Home() {
       return acc;
     }, {});
 
-    // Convert to array and calculate averages
     const aggregatedData = Object.entries(dailyData).map(([date, { sum, count }]) => ({
-      date: `${date}T12:00:00.000Z`, // Set to noon of each day for consistent display
+      date: `${date}T12:00:00.000Z`,
       value: Math.round(sum / count)
     }));
 
-    // Sort by date
     aggregatedData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    console.log(`Showing data for ${currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}`);
-    console.log(`Found ${aggregatedData.length} daily averages from ${filteredData.length} total readings`);
-    console.log(`Date range: ${monthStart.toISOString()} to ${monthEnd.toISOString()}`);
     
     return aggregatedData;
   };
 
   const currentHeartRateData = getMonthData(data.heartRate);
-  const hasData = currentHeartRateData.length > 0;
+  const currentWeightData = getMonthData(data.weight);
+  const currentBodyFatData = getMonthData(data.bodyFat);
+  
+  const hasHeartRateData = currentHeartRateData.length > 0;
+  const hasWeightData = currentWeightData.length > 0;
+  const hasBodyFatData = currentBodyFatData.length > 0;
 
   return (
     <main className="min-h-screen p-8 bg-gray-50">
@@ -157,6 +172,7 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Heart Rate Chart */}
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-gray-800">Heart Rate</h2>
@@ -190,12 +206,12 @@ export default function Home() {
                 Loading data...
               </div>
             )}
-            {!hasData && !data.loading && (
+            {!hasHeartRateData && !data.loading && (
               <div className="h-full flex items-center justify-center text-gray-500">
                 No heart rate data available for this month
               </div>
             )}
-            {hasData && !data.loading && (
+            {hasHeartRateData && !data.loading && (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={currentHeartRateData}>
                   <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
@@ -234,6 +250,142 @@ export default function Home() {
                     stroke="#818CF8"
                     strokeWidth={1.5}
                     dot={{ r: 2, fill: '#818CF8' }}
+                    activeDot={{ r: 3 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        {/* Weight Chart */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800">Weight</h2>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">
+                {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+              </span>
+            </div>
+          </div>
+          <div className="h-[300px]">
+            {data.loading && (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                Loading data...
+              </div>
+            )}
+            {!hasWeightData && !data.loading && (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                No weight data available for this month
+              </div>
+            )}
+            {hasWeightData && !data.loading && (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={currentWeightData}>
+                  <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={formatDate}
+                    stroke="#9CA3AF"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis 
+                    stroke="#9CA3AF"
+                    fontSize={12}
+                    tickCount={8}
+                    domain={['dataMin - 2', 'dataMax + 2']}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{ 
+                      backgroundColor: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      fontSize: '12px',
+                      padding: '8px'
+                    }}
+                    labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
+                    labelFormatter={(value) => formatDate(value)}
+                    formatter={(value: number) => [`${value} kg`]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#10B981"
+                    strokeWidth={1.5}
+                    dot={{ r: 2, fill: '#10B981' }}
+                    activeDot={{ r: 3 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        {/* Body Fat Chart */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800">Body Fat</h2>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">
+                {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+              </span>
+            </div>
+          </div>
+          <div className="h-[300px]">
+            {data.loading && (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                Loading data...
+              </div>
+            )}
+            {!hasBodyFatData && !data.loading && (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                No body fat data available for this month
+              </div>
+            )}
+            {hasBodyFatData && !data.loading && (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={currentBodyFatData}>
+                  <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={formatDate}
+                    stroke="#9CA3AF"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis 
+                    stroke="#9CA3AF"
+                    fontSize={12}
+                    tickCount={8}
+                    domain={['dataMin - 2', 'dataMax + 2']}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{ 
+                      backgroundColor: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      fontSize: '12px',
+                      padding: '8px'
+                    }}
+                    labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
+                    labelFormatter={(value) => formatDate(value)}
+                    formatter={(value: number) => [`${value}%`]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#F59E0B"
+                    strokeWidth={1.5}
+                    dot={{ r: 2, fill: '#F59E0B' }}
                     activeDot={{ r: 3 }}
                   />
                 </LineChart>
