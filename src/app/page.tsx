@@ -16,6 +16,25 @@ interface ChartData {
   loading: boolean;
 }
 
+async function triggerProcessing() {
+  try {
+    const response = await fetch('/api/process', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to process data');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error triggering processing:', error);
+    throw error;
+  }
+}
+
 export default function Home() {
   const [data, setData] = useState<ChartData>({
     heartRate: [],
@@ -28,6 +47,8 @@ export default function Home() {
     start: null,
     end: null
   });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState<string>('');
 
   const fetchData = async () => {
     try {
@@ -153,6 +174,28 @@ export default function Home() {
   const hasWeightData = currentWeightData.length > 0;
   const hasBodyFatData = currentBodyFatData.length > 0;
 
+  const handleProcess = async () => {
+    setIsProcessing(true);
+    setProcessingStatus('Starting processing...');
+    try {
+      const result = await triggerProcessing();
+      if (result.success) {
+        const { recordsProcessed, batchesSaved, status } = result.status;
+        setProcessingStatus(
+          `Processing complete: ${recordsProcessed} records processed in ${batchesSaved} batches. Status: ${status}`
+        );
+        // Refresh the data
+        await loadData();
+      } else {
+        setProcessingStatus(`Error: ${result.error}`);
+      }
+    } catch (error) {
+      setProcessingStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <main className="min-h-screen p-8 bg-gray-50">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -171,6 +214,23 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={handleProcess}
+            disabled={isProcessing}
+            className={`px-4 py-2 rounded-md text-white ${
+              isProcessing ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600'
+            }`}
+          >
+            {isProcessing ? 'Processing...' : 'Process Data'}
+          </button>
+        </div>
+        {processingStatus && (
+          <div className="mb-4 text-sm text-gray-600">
+            {processingStatus}
+          </div>
+        )}
 
         {/* Heart Rate Chart */}
         <div className="bg-white rounded-2xl p-6 shadow-sm">

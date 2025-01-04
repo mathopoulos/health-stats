@@ -45,7 +45,7 @@ export async function generatePresignedDownloadUrl(key: string): Promise<string>
   return getSignedUrl(s3Client, command, { expiresIn: 3600 });
 }
 
-export async function processS3XmlFile(key: string, processor: (chunk: string) => void): Promise<void> {
+export async function processS3XmlFile(key: string, processor: (chunk: string) => Promise<boolean | void>): Promise<void> {
   const command = new GetObjectCommand({
     Bucket: BUCKET_NAME,
     Key: key,
@@ -58,47 +58,79 @@ export async function processS3XmlFile(key: string, processor: (chunk: string) =
     let xmlChunk = '';
     const recordEndMarker = '</Record>';
     const recordStartMarker = '<Record';
+    let shouldStop = false;
+    let processingPromise = Promise.resolve();
 
     stream.on('data', (chunk: Buffer) => {
+      if (shouldStop) {
+        stream.destroy();
+        return;
+      }
       xmlChunk += chunk.toString('utf-8');
       
       // Process complete records
-      while (true) {
-        const endIndex = xmlChunk.indexOf(recordEndMarker);
-        if (endIndex === -1) break;
+      const processChunk = async () => {
+        while (!shouldStop) {
+          const endIndex = xmlChunk.indexOf(recordEndMarker);
+          if (endIndex === -1) break;
 
-        const startIndex = xmlChunk.lastIndexOf(recordStartMarker, endIndex);
-        if (startIndex === -1) break;
+          const startIndex = xmlChunk.lastIndexOf(recordStartMarker, endIndex);
+          if (startIndex === -1) break;
 
-        // Extract the complete record including the Record tags
-        const record = xmlChunk.slice(startIndex, endIndex + recordEndMarker.length);
-        
-        // Wrap in HealthData tags and process
-        const wrappedRecord = `<?xml version="1.0" encoding="UTF-8"?><HealthData>${record}</HealthData>`;
-        processor(wrappedRecord);
+          // Extract the complete record including the Record tags
+          const record = xmlChunk.slice(startIndex, endIndex + recordEndMarker.length);
+          
+          // Wrap in HealthData tags and process
+          const wrappedRecord = `<?xml version="1.0" encoding="UTF-8"?><HealthData>${record}</HealthData>`;
+          const result = await processor(wrappedRecord);
+          
+          // Check if processor wants to stop
+          if (result === false) {
+            shouldStop = true;
+            stream.destroy();
+            break;
+          }
 
-        // Remove the processed record from the chunk
-        xmlChunk = xmlChunk.slice(endIndex + recordEndMarker.length);
-      }
+          // Remove the processed record from the chunk
+          xmlChunk = xmlChunk.slice(endIndex + recordEndMarker.length);
+        }
+      };
+
+      processingPromise = processingPromise.then(processChunk).catch(error => {
+        console.error('Error processing chunk:', error);
+        shouldStop = true;
+        stream.destroy();
+        reject(error);
+      });
     });
 
     stream.on('error', (error: Error) => {
       console.error('Error reading from S3:', error);
+      shouldStop = true;
+      stream.destroy();
       reject(error);
     });
 
     stream.on('end', () => {
-      // Process any remaining complete record
-      if (xmlChunk.includes(recordStartMarker) && xmlChunk.includes(recordEndMarker)) {
-        const startIndex = xmlChunk.lastIndexOf(recordStartMarker);
-        const endIndex = xmlChunk.indexOf(recordEndMarker, startIndex) + recordEndMarker.length;
-        if (startIndex !== -1 && endIndex !== -1) {
-          const record = xmlChunk.slice(startIndex, endIndex);
-          const wrappedRecord = `<?xml version="1.0" encoding="UTF-8"?><HealthData>${record}</HealthData>`;
-          processor(wrappedRecord);
+      processingPromise.then(async () => {
+        if (!shouldStop && xmlChunk.includes(recordStartMarker) && xmlChunk.includes(recordEndMarker)) {
+          const startIndex = xmlChunk.lastIndexOf(recordStartMarker);
+          const endIndex = xmlChunk.indexOf(recordEndMarker, startIndex) + recordEndMarker.length;
+          if (startIndex !== -1 && endIndex !== -1) {
+            const record = xmlChunk.slice(startIndex, endIndex);
+            const wrappedRecord = `<?xml version="1.0" encoding="UTF-8"?><HealthData>${record}</HealthData>`;
+            await processor(wrappedRecord);
+          }
         }
+        resolve();
+      }).catch(reject);
+    });
+
+    // Handle stream close/cleanup
+    stream.on('close', () => {
+      if (shouldStop) {
+        resolve();
       }
-      resolve();
     });
   });
 }
