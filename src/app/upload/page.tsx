@@ -7,12 +7,53 @@ const RETRY_DELAY = 2000;
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+async function triggerProcessing() {
+  try {
+    const response = await fetch('/api/process', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to process data');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error triggering processing:', error);
+    throw error;
+  }
+}
+
 export default function UploadPage() {
   const inputFileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState<string>('');
+
+  const handleProcess = async () => {
+    setIsProcessing(true);
+    setProcessingStatus('Starting processing...');
+    try {
+      const result = await triggerProcessing();
+      if (result.success) {
+        const { recordsProcessed, batchesSaved, status } = result.status;
+        setProcessingStatus(
+          `Processing complete: ${recordsProcessed} records processed in ${batchesSaved} batches. Status: ${status}`
+        );
+      } else {
+        setProcessingStatus(`Error: ${result.error}`);
+      }
+    } catch (error) {
+      setProcessingStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -61,7 +102,7 @@ export default function UploadPage() {
       // Upload to S3
       setStatus('Uploading to S3...');
       console.log('Uploading to S3...');
-      
+
       // Use XMLHttpRequest for upload progress
       await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -90,73 +131,17 @@ export default function UploadPage() {
         xhr.send(file);
       });
 
-      setStatus('Processing file...');
-      console.log('Upload complete, processing file...');
+      setStatus('Upload complete! You can now process the data.');
+      console.log('Upload complete');
       
-      // Process the uploaded file with retries
-      let lastError: Error | null = null;
-      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-        try {
-          if (attempt > 0) {
-            setStatus(`Retrying processing (attempt ${attempt + 1}/${MAX_RETRIES})...`);
-            await sleep(RETRY_DELAY);
-          }
-
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000); // 5 minute timeout
-
-          try {
-            const processResponse = await fetch('/api/process-health-data', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Connection': 'keep-alive',
-              },
-              body: JSON.stringify({ key }),
-              signal: controller.signal,
-              keepalive: true,
-            });
-
-            if (!processResponse.ok) {
-              const errorData = await processResponse.json();
-              throw new Error(`Failed to process file: ${errorData.error || processResponse.statusText}`);
-            }
-
-            const result = await processResponse.json();
-            console.log('Processing complete:', result);
-
-            // If we get here, processing was successful
-            setUploading(false);
-            setProgress(100);
-            setStatus('Upload and processing complete! Redirecting...');
-            setTimeout(() => {
-              window.location.href = '/';
-            }, 1000);
-            return;
-          } finally {
-            clearTimeout(timeoutId);
-          }
-        } catch (error) {
-          console.error(`Processing attempt ${attempt + 1} failed:`, error);
-          lastError = error instanceof Error ? error : new Error('Unknown error');
-          
-          // If this was the last attempt, or if it's a non-retryable error, throw
-          if (attempt === MAX_RETRIES - 1 || 
-              (error instanceof Error && error.message.includes('not found'))) {
-            throw lastError;
-          }
-        }
-      }
-
-      // If we get here and have a lastError, throw it
-      if (lastError) throw lastError;
-
     } catch (error) {
       console.error('Upload error:', error);
       setError(error instanceof Error ? error.message : 'Failed to upload file');
       setUploading(false);
       setProgress(0);
       setStatus('Upload failed');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -183,13 +168,25 @@ export default function UploadPage() {
                   disabled:opacity-50"
               />
             </div>
-            <button
-              type="submit"
-              disabled={uploading}
-              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:opacity-50"
-            >
-              Upload
-            </button>
+            <div className="flex gap-4">
+              <button
+                type="submit"
+                disabled={uploading}
+                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:opacity-50"
+              >
+                Upload
+              </button>
+              <button
+                type="button"
+                onClick={handleProcess}
+                disabled={isProcessing || uploading}
+                className={`px-4 py-2 rounded-md text-white ${
+                  isProcessing || uploading ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
+                }`}
+              >
+                {isProcessing ? 'Processing...' : 'Process Data'}
+              </button>
+            </div>
           </form>
 
           {uploading && (
@@ -203,6 +200,12 @@ export default function UploadPage() {
               <p className="text-sm text-gray-500 mt-2">
                 {status || `Uploading... ${Math.round(progress)}%`}
               </p>
+            </div>
+          )}
+
+          {processingStatus && (
+            <div className="mt-4 text-sm text-gray-600">
+              {processingStatus}
             </div>
           )}
 
