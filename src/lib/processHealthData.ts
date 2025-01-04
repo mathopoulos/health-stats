@@ -227,6 +227,13 @@ async function processBodyFat(xmlKey: string, status: ProcessingStatus): Promise
   let lastProgressTime = Date.now();
   let lastValidRecordCount = 0;
   let unchangedIterations = 0;
+  let skippedRecords = 0;
+  let invalidTypeRecords = 0;
+  let invalidValueRecords = 0;
+  let invalidDateRecords = 0;
+  let duplicateRecords = 0;
+  let seenTypes = new Set<string>();
+  let foundFirstRecord = false;
   
   // Create a map of existing dates for quick lookup
   console.log('Fetching existing body fat records...');
@@ -244,45 +251,71 @@ async function processBodyFat(xmlKey: string, status: ProcessingStatus): Promise
         console.log(`Progress update:
           - Records processed: ${recordsProcessed}
           - Valid body fat records found: ${validRecords}
+          - Invalid type records: ${invalidTypeRecords}
+          - Invalid value records: ${invalidValueRecords}
+          - Invalid date records: ${invalidDateRecords}
+          - Duplicate records: ${duplicateRecords}
           - Pending records: ${pendingRecords.length}
           - Time since last update: ${Math.round((now - lastProgressTime) / 1000)}s
+          - Unique record types seen: ${Array.from(seenTypes).join(', ')}
         `);
         
-        // Check if we haven't found any new records in a while
-        if (validRecords === lastValidRecordCount) {
-          unchangedIterations++;
-          if (unchangedIterations >= 10) {
-            console.log('No new body fat records found in last 100,000 records processed, likely reached end of body fat data');
-            return false; // This will stop the processing
+        // Only check for no new records if we've found at least one record
+        if (foundFirstRecord) {
+          if (validRecords === lastValidRecordCount) {
+            unchangedIterations++;
+            if (unchangedIterations >= 10) {
+              console.log('No new body fat records found in last 100,000 records processed after finding some records, stopping processing');
+              return false; // This will stop the processing
+            }
+          } else {
+            unchangedIterations = 0;
+            lastValidRecordCount = validRecords;
           }
-        } else {
-          unchangedIterations = 0;
-          lastValidRecordCount = validRecords;
         }
         
         lastProgressTime = now;
       }
 
       const data = parser.parse(recordXml);
-      if (!data?.HealthData?.Record) return;
+      if (!data?.HealthData?.Record) {
+        skippedRecords++;
+        return;
+      }
       
       const records = Array.isArray(data.HealthData.Record) 
         ? data.HealthData.Record 
         : [data.HealthData.Record];
 
       for (const record of records) {
-        if (!record?.type || record.type !== 'HKQuantityTypeIdentifierBodyFatPercentage') continue;
+        if (record?.type) {
+          seenTypes.add(record.type);
+        }
+
+        if (!record?.type || record.type !== 'HKQuantityTypeIdentifierBodyFatPercentage') {
+          invalidTypeRecords++;
+          continue;
+        }
 
         const value = parseFloat(record.value);
-        if (isNaN(value)) continue;
+        if (isNaN(value)) {
+          invalidValueRecords++;
+          continue;
+        }
 
         const date = new Date(record.startDate || record.creationDate || record.endDate);
-        if (!date || isNaN(date.getTime())) continue;
+        if (!date || isNaN(date.getTime())) {
+          invalidDateRecords++;
+          continue;
+        }
 
         const isoDate = date.toISOString();
         
         // Skip if we already have this date
-        if (existingDates.has(isoDate)) continue;
+        if (existingDates.has(isoDate)) {
+          duplicateRecords++;
+          continue;
+        }
 
         // Create a single record with the exact timestamp
         const bodyFatRecord = {
@@ -293,6 +326,7 @@ async function processBodyFat(xmlKey: string, status: ProcessingStatus): Promise
         pendingRecords.push(bodyFatRecord);
         existingDates.add(isoDate);
         validRecords++;
+        foundFirstRecord = true;  // Mark that we've found at least one record
         status.recordsProcessed++;
         
         // Save progress every 50 records
@@ -316,11 +350,21 @@ async function processBodyFat(xmlKey: string, status: ProcessingStatus): Promise
     status.batchesSaved++;
   }
 
+  if (!foundFirstRecord) {
+    console.log('Warning: No body fat records were found in the entire file');
+  }
+
   console.log(`Body fat processing complete:
     - Total records processed: ${recordsProcessed}
     - Valid body fat records found: ${validRecords}
+    - Invalid type records: ${invalidTypeRecords}
+    - Invalid value records: ${invalidValueRecords}
+    - Invalid date records: ${invalidDateRecords}
+    - Duplicate records: ${duplicateRecords}
+    - Skipped records: ${skippedRecords}
     - Total batches saved: ${status.batchesSaved}
     - Records unchanged after: ${unchangedIterations * 10000} records
+    - All record types seen: ${Array.from(seenTypes).join(', ')}
   `);
 }
 
@@ -452,11 +496,12 @@ export async function processHealthData(xmlKey: string): Promise<ProcessingStatu
     await processBodyFat(xmlKey, status);
     console.log('Body fat processing completed successfully');
 
-    // Finally heart rate
-    console.log('\n=== Starting Heart Rate Processing ===');
-    status.status = 'processing heart rate';
-    await processHeartRate(xmlKey, status);
-    console.log('Heart rate processing completed successfully');
+    // Temporarily skip heart rate processing
+    console.log('\n=== Skipping Heart Rate Processing ===');
+    // console.log('\n=== Starting Heart Rate Processing ===');
+    // status.status = 'processing heart rate';
+    // await processHeartRate(xmlKey, status);
+    // console.log('Heart rate processing completed successfully');
 
     status.status = 'completed';
     console.log('\n=== All Processing Complete ===');
