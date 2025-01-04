@@ -232,7 +232,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* Heart Rate Chart */}
+        {/* Temporarily hiding heart rate chart
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-gray-800">Heart Rate</h2>
@@ -317,6 +317,7 @@ export default function Home() {
             )}
           </div>
         </div>
+        */}
 
         {/* Weight Chart */}
         <div className="bg-white rounded-2xl p-6 shadow-sm">
