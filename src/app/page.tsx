@@ -484,7 +484,10 @@ export default function Home() {
             )}
             {hasHRVData && !data.loading && (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={currentHRVData}>
+                <LineChart 
+                  data={currentHRVData}
+                  margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
+                >
                   <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
                   <XAxis 
                     dataKey="date" 
@@ -503,6 +506,7 @@ export default function Home() {
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
+                    dy={12}
                   />
                   <YAxis 
                     stroke="#9CA3AF"
@@ -613,7 +617,10 @@ export default function Home() {
             )}
             {hasWeightData && !data.loading && (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={currentWeightData}>
+                <LineChart 
+                  data={currentWeightData}
+                  margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
+                >
                   <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
                   <XAxis 
                     dataKey="date" 
@@ -632,6 +639,7 @@ export default function Home() {
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
+                    dy={12}
                   />
                   <YAxis 
                     stroke="#9CA3AF"
@@ -742,7 +750,10 @@ export default function Home() {
             )}
             {hasBodyFatData && !data.loading && (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={currentBodyFatData}>
+                <LineChart 
+                  data={currentBodyFatData}
+                  margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
+                >
                   <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
                   <XAxis 
                     dataKey="date" 
@@ -761,6 +772,7 @@ export default function Home() {
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
+                    dy={12}
                   />
                   <YAxis 
                     stroke="#9CA3AF"
