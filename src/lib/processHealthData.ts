@@ -226,6 +226,7 @@ async function processBodyFat(xmlKey: string, status: ProcessingStatus): Promise
   let validRecords = 0;
   let pendingRecords: any[] = [];
   let lastProgressTime = Date.now();
+  let lastRecordCount = recordsProcessed;
   let lastValidRecordCount = 0;
   let unchangedIterations = 0;
   let skippedRecords = 0;
@@ -235,7 +236,10 @@ async function processBodyFat(xmlKey: string, status: ProcessingStatus): Promise
   let duplicateRecords = 0;
   let seenTypes = new Set<string>();
   let foundFirstRecord = false;
-  let noRecordsThreshold = 2000000; // Increased to 2 million records
+  let noRecordsThreshold = 2000000;
+  let stallCount = 0;
+  const MAX_STALL_TIME = 300000; // 5 minutes
+  const MIN_PROCESSING_SPEED = 100; // records per second
   
   // Create a map of existing dates for quick lookup
   console.log('Fetching existing body fat records...');
@@ -250,6 +254,20 @@ async function processBodyFat(xmlKey: string, status: ProcessingStatus): Promise
       // Log progress every 10000 records or if 30 seconds have passed
       const now = Date.now();
       if (recordsProcessed % 10000 === 0 || now - lastProgressTime > 30000) {
+        const timeDiff = now - lastProgressTime;
+        const recordsDiff = recordsProcessed - lastRecordCount;
+        const processingSpeed = recordsDiff / (timeDiff / 1000);
+
+        // Special logging around 780000 records
+        if (recordsProcessed >= 770000 && recordsProcessed <= 790000) {
+          console.log(`Detailed processing info at ${recordsProcessed} records:`);
+          console.log(`Current chunk size: ${recordXml.length} bytes`);
+          console.log(`Processing speed: ${processingSpeed.toFixed(2)} records/second`);
+          if (processingSpeed < MIN_PROCESSING_SPEED) {
+            console.log('Warning: Processing speed has dropped significantly');
+          }
+        }
+
         console.log(`Progress update:
           - Records processed: ${recordsProcessed}
           - Valid body fat records found: ${validRecords}
@@ -258,9 +276,28 @@ async function processBodyFat(xmlKey: string, status: ProcessingStatus): Promise
           - Invalid date records: ${invalidDateRecords}
           - Duplicate records: ${duplicateRecords}
           - Pending records: ${pendingRecords.length}
-          - Time since last update: ${Math.round((now - lastProgressTime) / 1000)}s
+          - Time since last update: ${Math.round(timeDiff / 1000)}s
+          - Processing speed: ${processingSpeed.toFixed(2)} records/second
           - Unique record types seen: ${Array.from(seenTypes).join(', ')}
         `);
+
+        // Check for processing stalls
+        if (processingSpeed < MIN_PROCESSING_SPEED) {
+          stallCount++;
+          console.log(`Warning: Low processing speed detected (${processingSpeed.toFixed(2)} records/second)`);
+          if (stallCount >= 3) {
+            console.log('Processing appears to be stalled, attempting to continue...');
+            stallCount = 0;
+          }
+        } else {
+          stallCount = 0;
+        }
+
+        // Check for timeout
+        if (now - lastProgressTime > MAX_STALL_TIME) {
+          console.log(`Processing timeout after ${MAX_STALL_TIME/1000} seconds of slow/no progress`);
+          return false;
+        }
         
         // Check if we've processed too many records without finding any valid ones
         if (!foundFirstRecord && recordsProcessed >= noRecordsThreshold) {
@@ -283,6 +320,7 @@ async function processBodyFat(xmlKey: string, status: ProcessingStatus): Promise
         }
         
         lastProgressTime = now;
+        lastRecordCount = recordsProcessed;
       }
 
       const data = parser.parse(recordXml);
@@ -487,6 +525,7 @@ async function processHRV(xmlKey: string, status: ProcessingStatus): Promise<voi
   let validRecords = 0;
   let pendingRecords: any[] = [];
   let lastProgressTime = Date.now();
+  let lastRecordCount = recordsProcessed;
   let lastValidRecordCount = 0;
   let unchangedIterations = 0;
   let skippedRecords = 0;
@@ -496,8 +535,11 @@ async function processHRV(xmlKey: string, status: ProcessingStatus): Promise<voi
   let duplicateRecords = 0;
   let seenTypes = new Set<string>();
   let foundFirstRecord = false;
-  let noRecordsThreshold = 2000000; // Increased to 2 million records
-  const PROGRESS_LOG_INTERVAL = 50000;
+  let noRecordsThreshold = 2000000;
+  let stallCount = 0;
+  const MAX_STALL_TIME = 300000; // 5 minutes
+  const MIN_PROCESSING_SPEED = 100; // records per second
+  const PROGRESS_LOG_INTERVAL = 10000;
   const BATCH_SAVE_SIZE = 200;
   
   // Create a map of existing dates for quick lookup
@@ -510,15 +552,29 @@ async function processHRV(xmlKey: string, status: ProcessingStatus): Promise<voi
     try {
       recordsProcessed++;
       
-      // Quick check for HRV records before parsing
+      // Quick check for HRV records before any other processing
       if (!recordXml.includes('HKQuantityTypeIdentifierHeartRateVariabilitySDNN')) {
         invalidTypeRecords++;
         return;
       }
 
-      // Log progress less frequently
+      // Log progress and check processing speed
       const now = Date.now();
-      if (recordsProcessed % PROGRESS_LOG_INTERVAL === 0 || now - lastProgressTime > 60000) { // Changed to 60 seconds
+      if (recordsProcessed % PROGRESS_LOG_INTERVAL === 0 || now - lastProgressTime > 30000) {
+        const timeDiff = now - lastProgressTime;
+        const recordsDiff = recordsProcessed - lastRecordCount;
+        const processingSpeed = recordsDiff / (timeDiff / 1000);
+
+        // Special logging around 777000 records
+        if (recordsProcessed >= 770000 && recordsProcessed <= 780000) {
+          console.log(`Detailed processing info at ${recordsProcessed} records:`);
+          console.log(`Current chunk size: ${recordXml.length} bytes`);
+          console.log(`Processing speed: ${processingSpeed.toFixed(2)} records/second`);
+          if (processingSpeed < MIN_PROCESSING_SPEED) {
+            console.log('Warning: Processing speed has dropped significantly');
+          }
+        }
+
         console.log(`Progress update:
           - Records processed: ${recordsProcessed}
           - Valid HRV records found: ${validRecords}
@@ -527,20 +583,40 @@ async function processHRV(xmlKey: string, status: ProcessingStatus): Promise<voi
           - Invalid date records: ${invalidDateRecords}
           - Duplicate records: ${duplicateRecords}
           - Pending records: ${pendingRecords.length}
-          - Time since last update: ${Math.round((now - lastProgressTime) / 1000)}s
-          - Processing speed: ${Math.round(PROGRESS_LOG_INTERVAL / ((now - lastProgressTime) / 1000))} records/second
+          - Time since last update: ${Math.round(timeDiff / 1000)}s
+          - Processing speed: ${processingSpeed.toFixed(2)} records/second
           - Unique record types seen: ${Array.from(seenTypes).join(', ')}
         `);
-        
+
+        // Check for processing stalls
+        if (processingSpeed < MIN_PROCESSING_SPEED) {
+          stallCount++;
+          console.log(`Warning: Low processing speed detected (${processingSpeed.toFixed(2)} records/second)`);
+          if (stallCount >= 3) {
+            console.log('Processing appears to be stalled, attempting to continue...');
+            stallCount = 0;
+          }
+        } else {
+          stallCount = 0;
+        }
+
+        // Check for timeout
+        if (now - lastProgressTime > MAX_STALL_TIME) {
+          console.log(`Processing timeout after ${MAX_STALL_TIME/1000} seconds of slow/no progress`);
+          return false;
+        }
+
         // Check if we've processed too many records without finding any valid ones
         if (!foundFirstRecord && recordsProcessed >= noRecordsThreshold) {
           console.log(`No HRV records found after processing ${noRecordsThreshold} records, stopping processing`);
           return false;
         }
-        
+
         lastProgressTime = now;
+        lastRecordCount = recordsProcessed;
       }
 
+      // Only parse XML if we know it contains an HRV record
       const data = parser.parse(recordXml);
       if (!data?.HealthData?.Record) {
         skippedRecords++;
