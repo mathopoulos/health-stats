@@ -98,16 +98,41 @@ export default function Home() {
     const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
     const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59, 999);
     
+    // First filter by month
     const filteredData = data.filter(item => {
       const date = new Date(item.date);
       return date >= monthStart && date <= monthEnd;
     });
 
+    // Then aggregate by day
+    const dailyData = filteredData.reduce((acc: { [key: string]: { sum: number; count: number } }, item) => {
+      const date = new Date(item.date);
+      const dayKey = date.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+      
+      if (!acc[dayKey]) {
+        acc[dayKey] = { sum: 0, count: 0 };
+      }
+      
+      acc[dayKey].sum += item.value;
+      acc[dayKey].count += 1;
+      
+      return acc;
+    }, {});
+
+    // Convert to array and calculate averages
+    const aggregatedData = Object.entries(dailyData).map(([date, { sum, count }]) => ({
+      date: `${date}T12:00:00.000Z`, // Set to noon of each day for consistent display
+      value: Math.round(sum / count)
+    }));
+
+    // Sort by date
+    aggregatedData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
     console.log(`Showing data for ${currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}`);
-    console.log(`Found ${filteredData.length} data points`);
+    console.log(`Found ${aggregatedData.length} daily averages from ${filteredData.length} total readings`);
     console.log(`Date range: ${monthStart.toISOString()} to ${monthEnd.toISOString()}`);
     
-    return filteredData;
+    return aggregatedData;
   };
 
   const currentHeartRateData = getMonthData(data.heartRate);
@@ -160,12 +185,17 @@ export default function Home() {
             </div>
           </div>
           <div className="h-[300px]">
+            {data.loading && (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                Loading data...
+              </div>
+            )}
             {!hasData && !data.loading && (
               <div className="h-full flex items-center justify-center text-gray-500">
                 No heart rate data available for this month
               </div>
             )}
-            {hasData && (
+            {hasData && !data.loading && (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={currentHeartRateData}>
                   <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
@@ -211,16 +241,6 @@ export default function Home() {
             )}
           </div>
         </div>
-
-        {data.loading && (
-          <div className="text-center text-gray-600 mt-4">Loading data...</div>
-        )}
-
-        {data.lastUpdated && (
-          <div className="text-sm text-gray-500 text-center mt-4">
-            Last updated: {data.lastUpdated}
-          </div>
-        )}
       </div>
     </main>
   );
