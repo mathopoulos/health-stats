@@ -24,62 +24,94 @@ interface ProcessingStatus {
   error?: string;
 }
 
-async function saveData(type: 'weight' | 'bodyFat' | 'heartRate', newData: any[]) {
+async function saveData(type: 'weight' | 'bodyFat' | 'heartRate', newData: any[]): Promise<void> {
   if (newData.length === 0) return;
 
-  try {
-    console.log(`Fetching existing ${type} data...`);
-    const existingData = await fetchAllHealthData(type);
-    console.log(`Found ${existingData.length} existing ${type} records`);
-    
-    // For single records, check if we already have this exact date
-    if (newData.length === 1) {
-      const newRecord = newData[0];
-      const exists = existingData.some(record => record.date === newRecord.date);
-      if (exists) {
-        console.log(`Record for ${newRecord.date} already exists, skipping...`);
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY = 1000; // 1 second
+
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  async function attemptSave(attempt: number = 0): Promise<void> {
+    try {
+      console.log(`Fetching existing ${type} data (attempt ${attempt + 1})...`);
+      const existingData = await fetchAllHealthData(type);
+      console.log(`Found ${existingData.length} existing ${type} records`);
+      
+      // For single records, check if we already have this exact date
+      if (newData.length === 1) {
+        const newRecord = newData[0];
+        const exists = existingData.some(record => record.date === newRecord.date);
+        if (exists) {
+          console.log(`Record for ${newRecord.date} already exists, skipping...`);
+          return;
+        }
+        
+        // If it doesn't exist, append it to existing data
+        const updatedData = [...existingData, newRecord];
+        updatedData.sort((a, b) => a.date.localeCompare(b.date));
+        
+        console.log(`Saving ${type} data to S3 with new record...`);
+        const url = await generatePresignedUploadUrl(`data/${type}.json`, 'application/json');
+        await fetch(url, {
+          method: 'PUT',
+          body: JSON.stringify(updatedData),
+          headers: { 'Content-Type': 'application/json' },
+        });
+        
+        console.log(`Successfully saved new ${type} record for ${newRecord.date}`);
         return;
       }
       
-      // If it doesn't exist, append it to existing data
-      const updatedData = [...existingData, newRecord];
-      updatedData.sort((a, b) => a.date.localeCompare(b.date));
-      
-      console.log(`Saving ${type} data to S3 with new record...`);
+      // For batch saves, merge and deduplicate
+      const mergedData = [...existingData, ...newData];
+      mergedData.sort((a, b) => a.date.localeCompare(b.date));
+
+      // Remove duplicates based on date
+      const uniqueData = mergedData.filter((item, index, self) =>
+        index === self.findIndex((t) => t.date === item.date)
+      );
+      console.log(`Total ${type} records after merging and deduplication: ${uniqueData.length}`);
+
+      console.log(`Saving ${type} data to S3...`);
       const url = await generatePresignedUploadUrl(`data/${type}.json`, 'application/json');
-      await fetch(url, {
-        method: 'PUT',
-        body: JSON.stringify(updatedData),
-        headers: { 'Content-Type': 'application/json' },
-      });
       
-      console.log(`Successfully saved new ${type} record for ${newRecord.date}`);
-      return;
+      // Use a more reliable fetch with longer timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      try {
+        const response = await fetch(url, {
+          method: 'PUT',
+          body: JSON.stringify(uniqueData),
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
+      console.log(`Successfully saved ${newData.length} new ${type} records`);
+    } catch (error) {
+      console.error(`Error saving ${type} data (attempt ${attempt + 1}):`, error);
+      
+      if (attempt < MAX_RETRIES) {
+        console.log(`Retrying in ${RETRY_DELAY}ms...`);
+        await delay(RETRY_DELAY);
+        return attemptSave(attempt + 1);
+      }
+      
+      throw error;
     }
-    
-    // For batch saves, merge and deduplicate
-    const mergedData = [...existingData, ...newData];
-    mergedData.sort((a, b) => a.date.localeCompare(b.date));
-
-    // Remove duplicates based on date
-    const uniqueData = mergedData.filter((item, index, self) =>
-      index === self.findIndex((t) => t.date === item.date)
-    );
-    console.log(`Total ${type} records after merging and deduplication: ${uniqueData.length}`);
-
-    console.log(`Saving ${type} data to S3...`);
-    const url = await generatePresignedUploadUrl(`data/${type}.json`, 'application/json');
-    await fetch(url, {
-      method: 'PUT',
-      body: JSON.stringify(uniqueData),
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    console.log(`Successfully saved ${newData.length} new ${type} records`);
-  } catch (error) {
-    console.error(`Error saving ${type} data:`, error);
-    throw error;
   }
+
+  await attemptSave();
 }
 
 async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<void> {
@@ -368,8 +400,8 @@ async function processHeartRate(xmlKey: string, status: ProcessingStatus): Promi
         validRecords++;
         status.recordsProcessed++;
         
-        // Save progress every 500 records (10x more than weight/body fat)
-        if (pendingRecords.length >= 500) {
+        // Save progress every 2000 records (40x more than weight/body fat)
+        if (pendingRecords.length >= 2000) {
           console.log(`Saving batch of ${pendingRecords.length} heart rate records...`);
           await saveData('heartRate', pendingRecords);
           status.batchesSaved++;
