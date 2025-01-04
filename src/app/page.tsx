@@ -431,9 +431,9 @@ export default function Home() {
                   backgroundSize: '1.5em 1.5em',
                 }}
               >
-                <option value="daily">Daily View</option>
-                <option value="weekly">Weekly View</option>
-                <option value="monthly">Monthly View</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
               </select>
               <div className="flex items-center bg-gray-50 rounded-lg p-1">
                 <button
