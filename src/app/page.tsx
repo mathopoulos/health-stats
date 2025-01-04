@@ -17,6 +17,8 @@ interface ChartData {
   loading: boolean;
 }
 
+type TimeFrame = 'daily' | 'weekly' | 'monthly';
+
 export default function Home() {
   const [data, setData] = useState<ChartData>({
     heartRate: [],
@@ -27,8 +29,8 @@ export default function Home() {
   });
   const [weightMonth, setWeightMonth] = useState<Date | null>(null);
   const [bodyFatMonth, setBodyFatMonth] = useState<Date | null>(null);
-  const [hrvMonth, setHrvMonth] = useState<Date | null>(null);
-  const [hrvYear, setHrvYear] = useState<Date | null>(null);
+  const [hrvTimeframe, setHrvTimeframe] = useState<TimeFrame>('monthly');
+  const [hrvDate, setHrvDate] = useState<Date | null>(null);
   const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
     end: null
@@ -66,7 +68,6 @@ export default function Home() {
         setDateRange({ start, end });
         
         const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
-        const endYear = new Date(end.getFullYear(), 0, 1);
         
         if (!weightMonth) {
           setWeightMonth(endMonth);
@@ -74,8 +75,8 @@ export default function Home() {
         if (!bodyFatMonth) {
           setBodyFatMonth(endMonth);
         }
-        if (!hrvYear) {
-          setHrvYear(endYear);
+        if (!hrvDate) {
+          setHrvDate(endMonth);
         }
       }
 
@@ -256,10 +257,139 @@ export default function Home() {
     return aggregatedData;
   };
 
+  const getHRVData = (data: HealthData[], date: Date | null, timeframe: TimeFrame) => {
+    if (!date) return [];
+    
+    let startDate: Date;
+    let endDate: Date;
+    let groupingFunction: (date: Date) => string;
+    let displayDate: (key: string) => string;
+    
+    switch (timeframe) {
+      case 'daily':
+        // Show one month of daily data
+        startDate = new Date(date.getFullYear(), date.getMonth(), 1);
+        endDate = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+        groupingFunction = (date: Date) => date.toISOString().split('T')[0];
+        displayDate = (key: string) => `${key}T12:00:00.000Z`;
+        break;
+        
+      case 'weekly':
+        // Show 12 weeks of weekly data
+        startDate = new Date(date.getTime());
+        startDate.setDate(startDate.getDate() - 84); // 12 weeks back
+        endDate = new Date(date.getTime());
+        groupingFunction = (date: Date) => {
+          const week = new Date(date.getTime());
+          week.setDate(week.getDate() - week.getDay());
+          return week.toISOString().split('T')[0];
+        };
+        displayDate = (key: string) => `${key}T12:00:00.000Z`;
+        break;
+        
+      case 'monthly':
+        // Show one year of monthly data
+        startDate = new Date(date.getFullYear(), 0, 1);
+        endDate = new Date(date.getFullYear(), 11, 31, 23, 59, 59, 999);
+        groupingFunction = (date: Date) => 
+          `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        displayDate = (key: string) => {
+          const [year, month] = key.split('-');
+          return `${year}-${month}-15T12:00:00.000Z`;
+        };
+        break;
+    }
+    
+    const filteredData = data.filter(item => {
+      const itemDate = new Date(item.date);
+      return itemDate >= startDate && itemDate <= endDate;
+    });
+
+    const groupedData = filteredData.reduce((acc: { [key: string]: { sum: number; count: number } }, item) => {
+      const date = new Date(item.date);
+      const key = groupingFunction(date);
+      
+      if (!acc[key]) {
+        acc[key] = { sum: 0, count: 0 };
+      }
+      
+      acc[key].sum += item.value;
+      acc[key].count += 1;
+      
+      return acc;
+    }, {});
+
+    const aggregatedData = Object.entries(groupedData).map(([key, { sum, count }]) => ({
+      date: displayDate(key),
+      value: Math.round(sum / count)
+    }));
+
+    aggregatedData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    return aggregatedData;
+  };
+
+  const getTimeframeLabel = () => {
+    if (!hrvDate) return '';
+    
+    switch (hrvTimeframe) {
+      case 'daily':
+        return hrvDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+      case 'weekly':
+        const endDate = new Date(hrvDate);
+        const startDate = new Date(hrvDate);
+        startDate.setDate(startDate.getDate() - 84);
+        return `${startDate.toLocaleString('default', { month: 'short' })} - ${endDate.toLocaleString('default', { month: 'short' })} ${endDate.getFullYear()}`;
+      case 'monthly':
+        return hrvDate.getFullYear().toString();
+    }
+  };
+
+  const handleTimeframeNavigation = (direction: 'prev' | 'next') => {
+    setHrvDate((prev: Date | null) => {
+      if (!prev) return null;
+      const newDate = new Date(prev);
+      
+      switch (hrvTimeframe) {
+        case 'daily':
+          direction === 'prev' ? newDate.setMonth(prev.getMonth() - 1) : newDate.setMonth(prev.getMonth() + 1);
+          break;
+        case 'weekly':
+          direction === 'prev' ? newDate.setDate(prev.getDate() - 84) : newDate.setDate(prev.getDate() + 84);
+          break;
+        case 'monthly':
+          direction === 'prev' ? newDate.setFullYear(prev.getFullYear() - 1) : newDate.setFullYear(prev.getFullYear() + 1);
+          break;
+      }
+      
+      return newDate;
+    });
+  };
+
+  const isNavigationDisabled = (direction: 'prev' | 'next') => {
+    if (!dateRange.start || !dateRange.end || !hrvDate) return true;
+    
+    const newDate = new Date(hrvDate);
+    
+    switch (hrvTimeframe) {
+      case 'daily':
+        direction === 'prev' ? newDate.setMonth(newDate.getMonth() - 1) : newDate.setMonth(newDate.getMonth() + 1);
+        break;
+      case 'weekly':
+        direction === 'prev' ? newDate.setDate(newDate.getDate() - 84) : newDate.setDate(newDate.getDate() + 84);
+        break;
+      case 'monthly':
+        direction === 'prev' ? newDate.setFullYear(newDate.getFullYear() - 1) : newDate.setFullYear(newDate.getFullYear() + 1);
+        break;
+    }
+    
+    return direction === 'prev' ? newDate < dateRange.start : newDate > dateRange.end;
+  };
+
   const currentHeartRateData = getMonthData(data.heartRate, weightMonth);
   const currentWeightData = getMonthData(data.weight, weightMonth);
   const currentBodyFatData = getMonthData(data.bodyFat, bodyFatMonth);
-  const currentHRVData = getYearlyHRVData(data.hrv, hrvYear);
+  const currentHRVData = getHRVData(data.hrv, hrvDate, hrvTimeframe);
   
   const hasHeartRateData = currentHeartRateData.length > 0;
   const hasWeightData = currentWeightData.length > 0;
@@ -289,32 +419,49 @@ export default function Home() {
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-gray-800">Heart Rate Variability</h2>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => goToPreviousYear(setHrvYear)}
-                disabled={isPrevYearDisabled(hrvYear)}
-                className={`p-1 rounded-full hover:bg-gray-100 ${
-                  isPrevYearDisabled(hrvYear) ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+            <div className="flex items-center">
+              <select
+                value={hrvTimeframe}
+                onChange={(e) => setHrvTimeframe(e.target.value as TimeFrame)}
+                className="mr-6 py-1.5 pl-3 pr-8 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                  backgroundPosition: 'right 0.5rem center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '1.5em 1.5em',
+                }}
               >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <span className="text-sm text-gray-600">
-                {hrvYear?.getFullYear() || ''}
-              </span>
-              <button
-                onClick={() => goToNextYear(setHrvYear)}
-                disabled={isNextYearDisabled(hrvYear)}
-                className={`p-1 rounded-full hover:bg-gray-100 ${
-                  isNextYearDisabled(hrvYear) ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
+                <option value="daily">Daily View</option>
+                <option value="weekly">Weekly View</option>
+                <option value="monthly">Monthly View</option>
+              </select>
+              <div className="flex items-center bg-gray-50 rounded-lg p-1">
+                <button
+                  onClick={() => handleTimeframeNavigation('prev')}
+                  disabled={isNavigationDisabled('prev')}
+                  className={`p-1.5 rounded-md hover:bg-white hover:shadow-sm transition-all ${
+                    isNavigationDisabled('prev') ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <span className="text-sm font-medium text-gray-700 mx-4 min-w-[100px] text-center">
+                  {getTimeframeLabel()}
+                </span>
+                <button
+                  onClick={() => handleTimeframeNavigation('next')}
+                  disabled={isNavigationDisabled('next')}
+                  className={`p-1.5 rounded-md hover:bg-white hover:shadow-sm transition-all ${
+                    isNavigationDisabled('next') ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
           <div className="h-[300px]">
@@ -325,7 +472,7 @@ export default function Home() {
             )}
             {!hasHRVData && !data.loading && (
               <div className="h-full flex items-center justify-center text-gray-500">
-                No HRV data available for this year
+                No HRV data available for this {hrvTimeframe === 'monthly' ? 'year' : hrvTimeframe === 'weekly' ? '12 weeks' : 'month'}
               </div>
             )}
             {hasHRVData && !data.loading && (
@@ -334,7 +481,17 @@ export default function Home() {
                   <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
                   <XAxis 
                     dataKey="date" 
-                    tickFormatter={(date) => new Date(date).toLocaleString('default', { month: 'short' })}
+                    tickFormatter={(date) => {
+                      const d = new Date(date);
+                      switch (hrvTimeframe) {
+                        case 'daily':
+                          return d.getDate().toString();
+                        case 'weekly':
+                          return d.toLocaleString('default', { month: 'short', day: 'numeric' });
+                        case 'monthly':
+                          return d.toLocaleString('default', { month: 'short' });
+                      }
+                    }}
                     stroke="#9CA3AF"
                     fontSize={12}
                     tickLine={false}
@@ -358,7 +515,19 @@ export default function Home() {
                       padding: '8px'
                     }}
                     labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
-                    labelFormatter={(value) => new Date(value).toLocaleString('default', { month: 'long', year: 'numeric' })}
+                    labelFormatter={(value) => {
+                      const d = new Date(value);
+                      switch (hrvTimeframe) {
+                        case 'daily':
+                          return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
+                        case 'weekly':
+                          const weekEnd = new Date(d);
+                          weekEnd.setDate(d.getDate() + 6);
+                          return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+                        case 'monthly':
+                          return d.toLocaleString('default', { month: 'long', year: 'numeric' });
+                      }
+                    }}
                     formatter={(value: number) => [`${value} ms`]}
                   />
                   <Line
