@@ -16,7 +16,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    console.log(`Fetching ${type} data from S3...`);
     const data = await fetchAllHealthData(type as 'heartRate' | 'weight' | 'bodyFat');
+    console.log(`Fetched ${type} data:`, data);
     
     return NextResponse.json({
       success: true,

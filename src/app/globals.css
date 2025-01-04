@@ -34,3 +34,10 @@ body {
     @apply h-full;
   }
 }
+
+@layer base {
+  :root {
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+  }
+}

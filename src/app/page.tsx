@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import Image from 'next/image';
 
 interface HealthData {
   date: string;
@@ -10,8 +11,6 @@ interface HealthData {
 
 interface ChartData {
   heartRate: HealthData[];
-  weight: HealthData[];
-  bodyFat: HealthData[];
   lastUpdated: string | null;
   loading: boolean;
 }
@@ -19,140 +18,213 @@ interface ChartData {
 export default function Home() {
   const [data, setData] = useState<ChartData>({
     heartRate: [],
-    weight: [],
-    bodyFat: [],
     lastUpdated: null,
     loading: true
   });
+  const [currentMonth, setCurrentMonth] = useState(new Date('2020-03-01'));
+  const [availableMonths, setAvailableMonths] = useState<Date[]>([]);
 
-  const fetchData = async (type: 'heartRate' | 'weight' | 'bodyFat') => {
+  const fetchData = async () => {
     try {
-      const response = await fetch(`/api/health-data?type=${type}`);
+      const response = await fetch(`/api/health-data?type=heartRate`);
       if (!response.ok) throw new Error('Failed to fetch data');
       const result = await response.json();
-      return result.data;
+      const heartRateData = result.data || [];
+      
+      // Find all available months in the data
+      const months = new Set(
+        heartRateData.map((item: HealthData) => {
+          const date = new Date(item.date);
+          return `${date.getFullYear()}-${date.getMonth()}`;
+        })
+      );
+      
+      const sortedMonths = Array.from(months)
+        .map(monthStr => {
+          const [year, month] = monthStr.split('-');
+          return new Date(parseInt(year), parseInt(month), 1);
+        })
+        .sort((a, b) => a.getTime() - b.getTime());
+      
+      setAvailableMonths(sortedMonths);
+      
+      // Set initial month to earliest data if not already set
+      if (sortedMonths.length > 0 && currentMonth.getTime() === new Date('2020-03-01').getTime()) {
+        setCurrentMonth(sortedMonths[0]);
+      }
+      
+      return heartRateData;
     } catch (error) {
-      console.error(`Error fetching ${type} data:`, error);
+      console.error('Error fetching heart rate data:', error);
       return [];
     }
   };
 
-  const loadAllData = async () => {
+  const loadData = async () => {
     setData(prev => ({ ...prev, loading: true }));
-    
-    const [heartRate, weight, bodyFat] = await Promise.all([
-      fetchData('heartRate'),
-      fetchData('weight'),
-      fetchData('bodyFat')
-    ]);
-
-    setData({
-      heartRate,
-      weight,
-      bodyFat,
-      lastUpdated: new Date().toLocaleString(),
-      loading: false
-    });
+    try {
+      const heartRate = await fetchData();
+      setData({
+        heartRate,
+        lastUpdated: new Date().toLocaleString(),
+        loading: false
+      });
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setData(prev => ({ ...prev, loading: false }));
+    }
   };
 
-  // Initial load
   useEffect(() => {
-    loadAllData();
-
-    // Set up polling for updates every 30 seconds
-    const interval = setInterval(loadAllData, 30000);
-    return () => clearInterval(interval);
+    loadData();
   }, []);
 
-  if (data.loading) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-between p-24">
-        <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
-          Loading health data...
-        </div>
-      </main>
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  };
+
+  const goToPreviousMonth = () => {
+    if (availableMonths.length === 0) return;
+    
+    const currentIndex = availableMonths.findIndex(
+      date => date.getMonth() === currentMonth.getMonth() && 
+              date.getFullYear() === currentMonth.getFullYear()
     );
-  }
+    
+    if (currentIndex > 0) {
+      setCurrentMonth(availableMonths[currentIndex - 1]);
+    }
+  };
+
+  const goToNextMonth = () => {
+    if (availableMonths.length === 0) return;
+    
+    const currentIndex = availableMonths.findIndex(
+      date => date.getMonth() === currentMonth.getMonth() && 
+              date.getFullYear() === currentMonth.getFullYear()
+    );
+    
+    if (currentIndex < availableMonths.length - 1) {
+      setCurrentMonth(availableMonths[currentIndex + 1]);
+    }
+  };
+
+  const getMonthData = (data: HealthData[]) => {
+    const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+    const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59, 999);
+    
+    const filteredData = data.filter(item => {
+      const date = new Date(item.date);
+      return date >= monthStart && date <= monthEnd;
+    });
+
+    console.log(`Showing data for ${currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}`);
+    console.log(`Found ${filteredData.length} data points`);
+    console.log(`Date range: ${monthStart.toISOString()} to ${monthEnd.toISOString()}`);
+    
+    return filteredData;
+  };
+
+  const currentHeartRateData = getMonthData(data.heartRate);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold mb-2">Health Data Dashboard</h1>
-          {data.lastUpdated && (
-            <p className="text-sm text-gray-500">Last updated: {data.lastUpdated}</p>
-          )}
-          <button
-            onClick={loadAllData}
-            className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Refresh Data
-          </button>
+    <main className="min-h-screen p-8 bg-white">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center gap-4 mb-12">
+          <Image
+            src="/images/profile.jpg"
+            alt="Profile"
+            width={80}
+            height={80}
+            className="rounded-full"
+          />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Lex Mathopoulos</h1>
+            <p className="text-gray-600">Health Dashboard</p>
+          </div>
         </div>
 
-        {data.heartRate.length > 0 && (
-          <div className="mb-8 h-[400px]">
-            <h2 className="text-xl font-bold mb-4">Heart Rate</h2>
+        <div className="bg-white rounded-lg p-6 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800">Heart Rate</h2>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={goToPreviousMonth}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                disabled={availableMonths.length === 0 || availableMonths[0].getTime() === currentMonth.getTime()}
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <span className="text-sm text-gray-600">
+                {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+              </span>
+              <button 
+                onClick={goToNextMonth}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                disabled={availableMonths.length === 0 || availableMonths[availableMonths.length - 1].getTime() === currentMonth.getTime()}
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data.heartRate}>
-                <CartesianGrid strokeDasharray="3 3" />
+              <LineChart data={currentHeartRateData}>
+                <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
                 <XAxis 
                   dataKey="date" 
-                  tickFormatter={(date) => new Date(date).toLocaleDateString()}
+                  tickFormatter={formatDate}
+                  stroke="#9CA3AF"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
                 />
-                <YAxis domain={['dataMin - 5', 'dataMax + 5']} />
-                <Tooltip 
-                  labelFormatter={(date) => new Date(date).toLocaleString()}
-                  formatter={(value: number) => [`${value} bpm`, 'Heart Rate']}
+                <YAxis 
+                  stroke="#9CA3AF"
+                  fontSize={12}
+                  tickCount={8}
+                  domain={['dataMin - 2', 'dataMax + 2']}
+                  tickLine={false}
+                  axisLine={false}
                 />
-                <Legend />
-                <Line type="monotone" dataKey="value" stroke="#8884d8" name="Heart Rate (bpm)" dot={false} />
+                <Tooltip
+                  contentStyle={{ 
+                    backgroundColor: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    fontSize: '12px',
+                    padding: '8px'
+                  }}
+                  labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
+                  labelFormatter={(value) => formatDate(value)}
+                  formatter={(value: number) => [`${value} bpm`]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#818CF8"
+                  strokeWidth={1.5}
+                  dot={{ r: 2, fill: '#818CF8' }}
+                  activeDot={{ r: 3 }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
+        </div>
+
+        {data.loading && (
+          <div className="text-center text-gray-600 mt-4">Loading data...</div>
         )}
 
-        {data.weight.length > 0 && (
-          <div className="mb-8 h-[400px]">
-            <h2 className="text-xl font-bold mb-4">Weight</h2>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data.weight}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
-                  tickFormatter={(date) => new Date(date).toLocaleDateString()}
-                />
-                <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
-                <Tooltip 
-                  labelFormatter={(date) => new Date(date).toLocaleString()}
-                  formatter={(value: number) => [`${value.toFixed(1)} kg`, 'Weight']}
-                />
-                <Legend />
-                <Line type="monotone" dataKey="value" stroke="#82ca9d" name="Weight (kg)" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-
-        {data.bodyFat.length > 0 && (
-          <div className="mb-8 h-[400px]">
-            <h2 className="text-xl font-bold mb-4">Body Fat Percentage</h2>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data.bodyFat}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
-                  tickFormatter={(date) => new Date(date).toLocaleDateString()}
-                />
-                <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
-                <Tooltip 
-                  labelFormatter={(date) => new Date(date).toLocaleString()}
-                  formatter={(value: number) => [`${value.toFixed(1)}%`, 'Body Fat']}
-                />
-                <Legend />
-                <Line type="monotone" dataKey="value" stroke="#ffc658" name="Body Fat (%)" />
-              </LineChart>
-            </ResponsiveContainer>
+        {data.lastUpdated && (
+          <div className="text-sm text-gray-500 text-center mt-4">
+            Last updated: {data.lastUpdated}
           </div>
         )}
       </div>
