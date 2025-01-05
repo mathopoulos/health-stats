@@ -470,6 +470,101 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Summary Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-gray-500">Avg Heart Rate Variability</span>
+              <div className="mt-2 flex items-baseline">
+                <span className="text-2xl font-bold text-gray-900">
+                  {data.loading ? (
+                    "..."
+                  ) : data.hrv.length > 0 ? (
+                    `${Math.round(
+                      data.hrv
+                        .slice(-30)
+                        .reduce((sum, item) => sum + item.value, 0) / 
+                      Math.min(data.hrv.slice(-30).length, 30)
+                    )} ms`
+                  ) : (
+                    "No data"
+                  )}
+                </span>
+              </div>
+              <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-gray-500">Avg VO2 Max</span>
+              <div className="mt-2 flex items-baseline">
+                <span className="text-2xl font-bold text-gray-900">
+                  {data.loading ? (
+                    "..."
+                  ) : data.vo2max.length > 0 ? (
+                    `${Math.round(
+                      data.vo2max
+                        .slice(-30)
+                        .reduce((sum, item) => sum + item.value, 0) / 
+                      Math.min(data.vo2max.slice(-30).length, 30)
+                    )} mL/kg·min`
+                  ) : (
+                    "No data"
+                  )}
+                </span>
+              </div>
+              <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-gray-500">Avg Weight</span>
+              <div className="mt-2 flex items-baseline">
+                <span className="text-2xl font-bold text-gray-900">
+                  {data.loading ? (
+                    "..."
+                  ) : data.weight.length > 0 ? (
+                    `${(
+                      data.weight
+                        .slice(-30)
+                        .reduce((sum, item) => sum + item.value, 0) / 
+                      Math.min(data.weight.slice(-30).length, 30)
+                    ).toFixed(1)} lb`
+                  ) : (
+                    "No data"
+                  )}
+                </span>
+              </div>
+              <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-gray-500">Avg Body Fat</span>
+              <div className="mt-2 flex items-baseline">
+                <span className="text-2xl font-bold text-gray-900">
+                  {data.loading ? (
+                    "..."
+                  ) : data.bodyFat.length > 0 ? (
+                    `${(
+                      data.bodyFat
+                        .slice(-30)
+                        .reduce((sum, item) => sum + item.value, 0) / 
+                      Math.min(data.bodyFat.slice(-30).length, 30)
+                    ).toFixed(1)}%`
+                  ) : (
+                    "No data"
+                  )}
+                </span>
+              </div>
+              <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
+            </div>
+          </div>
+        </div>
+
         {/* HRV Chart */}
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <div className="flex justify-between items-center mb-6">
@@ -868,7 +963,7 @@ export default function Home() {
                           return d.getFullYear().toString();
                       }
                     }}
-                    formatter={(value: number) => [`${value} kg`]}
+                    formatter={(value: number) => [`${value} lb`]}
                   />
                   <Line
                     type="monotone"
