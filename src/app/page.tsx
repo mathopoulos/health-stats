@@ -475,7 +475,7 @@ export default function Home() {
           <div className="bg-white rounded-2xl p-6 shadow-sm">
             <div className="flex flex-col">
               <span className="text-sm font-medium text-gray-500">Avg Heart Rate Variability</span>
-              <div className="mt-2 flex items-baseline">
+              <div className="mt-2 flex items-baseline space-x-2">
                 <span className="text-2xl font-bold text-gray-900">
                   {data.loading ? (
                     "..."
@@ -490,6 +490,36 @@ export default function Home() {
                     "No data"
                   )}
                 </span>
+                {!data.loading && data.hrv.length > 30 && (
+                  <div className="flex items-center">
+                    {(() => {
+                      const currentAvg = data.hrv
+                        .slice(-30)
+                        .reduce((sum, item) => sum + item.value, 0) / 
+                        Math.min(data.hrv.slice(-30).length, 30);
+                      const prevAvg = data.hrv
+                        .slice(-60, -30)
+                        .reduce((sum, item) => sum + item.value, 0) / 
+                        Math.min(data.hrv.slice(-60, -30).length, 30);
+                      const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
+                      const isIncrease = percentChange > 0;
+                      return (
+                        <span className={`text-sm flex items-center ${isIncrease ? 'text-red-500' : 'text-green-500'}`}>
+                          {isIncrease ? (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+                            </svg>
+                          )}
+                          <span className="ml-1">{Math.abs(percentChange).toFixed(1)}%</span>
+                        </span>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
               <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
             </div>
@@ -498,7 +528,7 @@ export default function Home() {
           <div className="bg-white rounded-2xl p-6 shadow-sm">
             <div className="flex flex-col">
               <span className="text-sm font-medium text-gray-500">Avg VO2 Max</span>
-              <div className="mt-2 flex items-baseline">
+              <div className="mt-2 flex items-baseline space-x-2">
                 <span className="text-2xl font-bold text-gray-900">
                   {data.loading ? (
                     "..."
@@ -513,6 +543,36 @@ export default function Home() {
                     "No data"
                   )}
                 </span>
+                {!data.loading && data.vo2max.length > 30 && (
+                  <div className="flex items-center">
+                    {(() => {
+                      const currentAvg = data.vo2max
+                        .slice(-30)
+                        .reduce((sum, item) => sum + item.value, 0) / 
+                        Math.min(data.vo2max.slice(-30).length, 30);
+                      const prevAvg = data.vo2max
+                        .slice(-60, -30)
+                        .reduce((sum, item) => sum + item.value, 0) / 
+                        Math.min(data.vo2max.slice(-60, -30).length, 30);
+                      const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
+                      const isIncrease = percentChange > 0;
+                      return (
+                        <span className={`text-sm flex items-center ${isIncrease ? 'text-red-500' : 'text-green-500'}`}>
+                          {isIncrease ? (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+                            </svg>
+                          )}
+                          <span className="ml-1">{Math.abs(percentChange).toFixed(1)}%</span>
+                        </span>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
               <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
             </div>
@@ -521,7 +581,7 @@ export default function Home() {
           <div className="bg-white rounded-2xl p-6 shadow-sm">
             <div className="flex flex-col">
               <span className="text-sm font-medium text-gray-500">Avg Weight</span>
-              <div className="mt-2 flex items-baseline">
+              <div className="mt-2 flex items-baseline space-x-2">
                 <span className="text-2xl font-bold text-gray-900">
                   {data.loading ? (
                     "..."
@@ -536,6 +596,36 @@ export default function Home() {
                     "No data"
                   )}
                 </span>
+                {!data.loading && data.weight.length > 30 && (
+                  <div className="flex items-center">
+                    {(() => {
+                      const currentAvg = data.weight
+                        .slice(-30)
+                        .reduce((sum, item) => sum + item.value, 0) / 
+                        Math.min(data.weight.slice(-30).length, 30);
+                      const prevAvg = data.weight
+                        .slice(-60, -30)
+                        .reduce((sum, item) => sum + item.value, 0) / 
+                        Math.min(data.weight.slice(-60, -30).length, 30);
+                      const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
+                      const isIncrease = percentChange > 0;
+                      return (
+                        <span className={`text-sm flex items-center ${isIncrease ? 'text-red-500' : 'text-green-500'}`}>
+                          {isIncrease ? (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+                            </svg>
+                          )}
+                          <span className="ml-1">{Math.abs(percentChange).toFixed(1)}%</span>
+                        </span>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
               <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
             </div>
@@ -544,7 +634,7 @@ export default function Home() {
           <div className="bg-white rounded-2xl p-6 shadow-sm">
             <div className="flex flex-col">
               <span className="text-sm font-medium text-gray-500">Avg Body Fat</span>
-              <div className="mt-2 flex items-baseline">
+              <div className="mt-2 flex items-baseline space-x-2">
                 <span className="text-2xl font-bold text-gray-900">
                   {data.loading ? (
                     "..."
@@ -559,6 +649,36 @@ export default function Home() {
                     "No data"
                   )}
                 </span>
+                {!data.loading && data.bodyFat.length > 30 && (
+                  <div className="flex items-center">
+                    {(() => {
+                      const currentAvg = data.bodyFat
+                        .slice(-30)
+                        .reduce((sum, item) => sum + item.value, 0) / 
+                        Math.min(data.bodyFat.slice(-30).length, 30);
+                      const prevAvg = data.bodyFat
+                        .slice(-60, -30)
+                        .reduce((sum, item) => sum + item.value, 0) / 
+                        Math.min(data.bodyFat.slice(-60, -30).length, 30);
+                      const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
+                      const isIncrease = percentChange > 0;
+                      return (
+                        <span className={`text-sm flex items-center ${isIncrease ? 'text-red-500' : 'text-green-500'}`}>
+                          {isIncrease ? (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+                            </svg>
+                          )}
+                          <span className="ml-1">{Math.abs(percentChange).toFixed(1)}%</span>
+                        </span>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
               <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
             </div>
