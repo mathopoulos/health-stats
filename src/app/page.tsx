@@ -18,7 +18,7 @@ interface ChartData {
   loading: boolean;
 }
 
-type TimeFrame = 'daily' | 'weekly' | 'monthly';
+type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export default function Home() {
   const [data, setData] = useState<ChartData>({
@@ -329,6 +329,14 @@ export default function Home() {
           return `${year}-${month}-15T12:00:00.000Z`;
         };
         break;
+
+      case 'yearly':
+        // Show 5 years of yearly data
+        startDate = new Date(date.getFullYear() - 4, 0, 1);
+        endDate = new Date(date.getFullYear(), 11, 31, 23, 59, 59, 999);
+        groupingFunction = (date: Date) => date.getFullYear().toString();
+        displayDate = (key: string) => `${key}-06-15T12:00:00.000Z`; // Middle of the year
+        break;
     }
     
     const filteredData = data.filter(item => {
@@ -373,6 +381,9 @@ export default function Home() {
         return `${startDate.toLocaleString('default', { month: 'short' })} - ${endDate.toLocaleString('default', { month: 'short' })} ${endDate.getFullYear()}`;
       case 'monthly':
         return date.getFullYear().toString();
+      case 'yearly':
+        const startYear = date.getFullYear() - 4;
+        return `${startYear} - ${date.getFullYear()}`;
     }
   };
 
@@ -396,6 +407,9 @@ export default function Home() {
         case 'monthly':
           direction === 'prev' ? newDate.setFullYear(prev.getFullYear() - 1) : newDate.setFullYear(prev.getFullYear() + 1);
           break;
+        case 'yearly':
+          direction === 'prev' ? newDate.setFullYear(prev.getFullYear() - 5) : newDate.setFullYear(prev.getFullYear() + 5);
+          break;
       }
       
       return newDate;
@@ -416,6 +430,9 @@ export default function Home() {
         break;
       case 'monthly':
         direction === 'prev' ? newDate.setFullYear(newDate.getFullYear() - 1) : newDate.setFullYear(newDate.getFullYear() + 1);
+        break;
+      case 'yearly':
+        direction === 'prev' ? newDate.setFullYear(newDate.getFullYear() - 5) : newDate.setFullYear(newDate.getFullYear() + 5);
         break;
     }
     
@@ -472,6 +489,7 @@ export default function Home() {
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
               </select>
               <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
                 <button
@@ -510,7 +528,7 @@ export default function Home() {
             )}
             {!hasHRVData && !data.loading && (
               <div className="h-full flex items-center justify-center text-gray-500">
-                No HRV data available for this {hrvTimeframe === 'monthly' ? 'year' : hrvTimeframe === 'weekly' ? '12 weeks' : 'month'}
+                No HRV data available for this {hrvTimeframe === 'yearly' ? '5 years' : hrvTimeframe === 'monthly' ? 'year' : hrvTimeframe === 'weekly' ? '12 weeks' : 'month'}
               </div>
             )}
             {hasHRVData && !data.loading && (
@@ -531,6 +549,8 @@ export default function Home() {
                           return d.toLocaleString('default', { month: 'short', day: 'numeric' });
                         case 'monthly':
                           return d.toLocaleString('default', { month: 'short' });
+                        case 'yearly':
+                          return d.getFullYear().toString();
                       }
                     }}
                     stroke="#9CA3AF"
@@ -568,6 +588,8 @@ export default function Home() {
                           return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
                         case 'monthly':
                           return d.toLocaleString('default', { month: 'long', year: 'numeric' });
+                        case 'yearly':
+                          return d.getFullYear().toString();
                       }
                     }}
                     formatter={(value: number) => [`${value} ms`]}
@@ -605,6 +627,7 @@ export default function Home() {
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
               </select>
               <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
                 <button
@@ -643,7 +666,7 @@ export default function Home() {
             )}
             {!hasVO2MaxData && !data.loading && (
               <div className="h-full flex items-center justify-center text-gray-500">
-                No VO2 max data available for this {vo2maxTimeframe === 'monthly' ? 'year' : vo2maxTimeframe === 'weekly' ? '12 weeks' : 'month'}
+                No VO2 max data available for this {vo2maxTimeframe === 'yearly' ? '5 years' : vo2maxTimeframe === 'monthly' ? 'year' : vo2maxTimeframe === 'weekly' ? '12 weeks' : 'month'}
               </div>
             )}
             {hasVO2MaxData && !data.loading && (
@@ -664,6 +687,8 @@ export default function Home() {
                           return d.toLocaleString('default', { month: 'short', day: 'numeric' });
                         case 'monthly':
                           return d.toLocaleString('default', { month: 'short' });
+                        case 'yearly':
+                          return d.getFullYear().toString();
                       }
                     }}
                     stroke="#9CA3AF"
@@ -701,6 +726,8 @@ export default function Home() {
                           return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
                         case 'monthly':
                           return d.toLocaleString('default', { month: 'long', year: 'numeric' });
+                        case 'yearly':
+                          return d.getFullYear().toString();
                       }
                     }}
                     formatter={(value: number) => [`${value} mL/kg·min`]}
@@ -738,6 +765,7 @@ export default function Home() {
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
               </select>
               <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
                 <button
@@ -776,7 +804,7 @@ export default function Home() {
             )}
             {!hasWeightData && !data.loading && (
               <div className="h-full flex items-center justify-center text-gray-500">
-                No weight data available for this {weightTimeframe === 'monthly' ? 'year' : weightTimeframe === 'weekly' ? '12 weeks' : 'month'}
+                No weight data available for this {weightTimeframe === 'yearly' ? '5 years' : weightTimeframe === 'monthly' ? 'year' : weightTimeframe === 'weekly' ? '12 weeks' : 'month'}
               </div>
             )}
             {hasWeightData && !data.loading && (
@@ -797,6 +825,8 @@ export default function Home() {
                           return d.toLocaleString('default', { month: 'short', day: 'numeric' });
                         case 'monthly':
                           return d.toLocaleString('default', { month: 'short' });
+                        case 'yearly':
+                          return d.getFullYear().toString();
                       }
                     }}
                     stroke="#9CA3AF"
@@ -834,6 +864,8 @@ export default function Home() {
                           return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
                         case 'monthly':
                           return d.toLocaleString('default', { month: 'long', year: 'numeric' });
+                        case 'yearly':
+                          return d.getFullYear().toString();
                       }
                     }}
                     formatter={(value: number) => [`${value} kg`]}
@@ -871,6 +903,7 @@ export default function Home() {
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
               </select>
               <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
                 <button
@@ -909,7 +942,7 @@ export default function Home() {
             )}
             {!hasBodyFatData && !data.loading && (
               <div className="h-full flex items-center justify-center text-gray-500">
-                No body fat data available for this {bodyFatTimeframe === 'monthly' ? 'year' : bodyFatTimeframe === 'weekly' ? '12 weeks' : 'month'}
+                No body fat data available for this {bodyFatTimeframe === 'yearly' ? '5 years' : bodyFatTimeframe === 'monthly' ? 'year' : bodyFatTimeframe === 'weekly' ? '12 weeks' : 'month'}
               </div>
             )}
             {hasBodyFatData && !data.loading && (
@@ -930,6 +963,8 @@ export default function Home() {
                           return d.toLocaleString('default', { month: 'short', day: 'numeric' });
                         case 'monthly':
                           return d.toLocaleString('default', { month: 'short' });
+                        case 'yearly':
+                          return d.getFullYear().toString();
                       }
                     }}
                     stroke="#9CA3AF"
@@ -967,6 +1002,8 @@ export default function Home() {
                           return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
                         case 'monthly':
                           return d.toLocaleString('default', { month: 'long', year: 'numeric' });
+                        case 'yearly':
+                          return d.getFullYear().toString();
                       }
                     }}
                     formatter={(value: number) => [`${value}%`]}
