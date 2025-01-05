@@ -14,6 +14,7 @@ interface ChartData {
   weight: HealthData[];
   bodyFat: HealthData[];
   hrv: HealthData[];
+  vo2max: HealthData[];
   loading: boolean;
 }
 
@@ -25,6 +26,7 @@ export default function Home() {
     weight: [],
     bodyFat: [],
     hrv: [],
+    vo2max: [],
     loading: true
   });
   const [weightTimeframe, setWeightTimeframe] = useState<TimeFrame>('monthly');
@@ -33,6 +35,8 @@ export default function Home() {
   const [bodyFatDate, setBodyFatDate] = useState<Date | null>(null);
   const [hrvTimeframe, setHrvTimeframe] = useState<TimeFrame>('monthly');
   const [hrvDate, setHrvDate] = useState<Date | null>(null);
+  const [vo2maxTimeframe, setVo2maxTimeframe] = useState<TimeFrame>('monthly');
+  const [vo2maxDate, setVo2maxDate] = useState<Date | null>(null);
   const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
     end: null
@@ -40,28 +44,35 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      const [heartRateRes, weightRes, bodyFatRes, hrvRes] = await Promise.all([
+      const [heartRateRes, weightRes, bodyFatRes, hrvRes, vo2maxRes] = await Promise.all([
         fetch('/api/health-data?type=heartRate'),
         fetch('/api/health-data?type=weight'),
         fetch('/api/health-data?type=bodyFat'),
-        fetch('/api/health-data?type=hrv')
+        fetch('/api/health-data?type=hrv'),
+        fetch('/api/health-data?type=vo2max')
       ]);
 
-      if (!heartRateRes.ok || !weightRes.ok || !bodyFatRes.ok || !hrvRes.ok) 
-        throw new Error('Failed to fetch data');
-
-      const [heartRateData, weightData, bodyFatData, hrvData] = await Promise.all([
+      const responses = await Promise.all([
         heartRateRes.json(),
         weightRes.json(),
         bodyFatRes.json(),
-        hrvRes.json()
+        hrvRes.json(),
+        vo2maxRes.json()
       ]);
+
+      const [heartRateData, weightData, bodyFatData, hrvData, vo2maxData] = responses;
+
+      if (!heartRateData.success || !weightData.success || !bodyFatData.success || !hrvData.success || !vo2maxData.success) {
+        console.error('One or more data fetches failed:', responses);
+        throw new Error('Failed to fetch some data');
+      }
 
       const allDates = [
         ...(heartRateData.data || []),
         ...(weightData.data || []),
         ...(bodyFatData.data || []),
-        ...(hrvData.data || [])
+        ...(hrvData.data || []),
+        ...(vo2maxData.data || [])
       ].map(item => new Date(item.date));
 
       if (allDates.length > 0) {
@@ -80,17 +91,27 @@ export default function Home() {
         if (!hrvDate) {
           setHrvDate(endMonth);
         }
+        if (!vo2maxDate) {
+          setVo2maxDate(endMonth);
+        }
       }
 
       return {
         heartRate: heartRateData.data || [],
         weight: weightData.data || [],
         bodyFat: bodyFatData.data || [],
-        hrv: hrvData.data || []
+        hrv: hrvData.data || [],
+        vo2max: vo2maxData.data || []
       };
     } catch (error) {
-      console.error('Error fetching health data:', error);
-      return { heartRate: [], weight: [], bodyFat: [], hrv: [] };
+      console.error('Error fetching data:', error);
+      return {
+        heartRate: [],
+        weight: [],
+        bodyFat: [],
+        hrv: [],
+        vo2max: []
+      };
     }
   };
 
@@ -104,7 +125,15 @@ export default function Home() {
       });
     } catch (error) {
       console.error('Error loading data:', error);
-      setData(prev => ({ ...prev, loading: false }));
+      setData(prev => ({
+        ...prev,
+        loading: false,
+        heartRate: [],
+        weight: [],
+        bodyFat: [],
+        hrv: [],
+        vo2max: []
+      }));
     }
   };
 
@@ -397,11 +426,13 @@ export default function Home() {
   const currentWeightData = getHRVData(data.weight, weightDate, weightTimeframe);
   const currentBodyFatData = getHRVData(data.bodyFat, bodyFatDate, bodyFatTimeframe);
   const currentHRVData = getHRVData(data.hrv, hrvDate, hrvTimeframe);
+  const currentVO2MaxData = getHRVData(data.vo2max, vo2maxDate, vo2maxTimeframe);
   
   const hasHeartRateData = currentHeartRateData.length > 0;
   const hasWeightData = currentWeightData.length > 0;
   const hasBodyFatData = currentBodyFatData.length > 0;
   const hasHRVData = currentHRVData.length > 0;
+  const hasVO2MaxData = currentVO2MaxData.length > 0;
 
   return (
     <main className="min-h-screen p-8 bg-gray-50">
@@ -547,6 +578,139 @@ export default function Home() {
                     stroke="#6366F1"
                     strokeWidth={1.5}
                     dot={{ r: 2, fill: '#6366F1' }}
+                    activeDot={{ r: 3 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        {/* VO2 Max Chart */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800">VO2 Max</h2>
+            <div className="flex items-center">
+              <select
+                value={vo2maxTimeframe}
+                onChange={(e) => setVo2maxTimeframe(e.target.value as TimeFrame)}
+                className="mr-6 h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                  backgroundPosition: 'right 0.5rem center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '1.5em 1.5em',
+                }}
+              >
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+              <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
+                <button
+                  onClick={() => handleTimeframeNavigation('prev', vo2maxDate, setVo2maxDate, vo2maxTimeframe)}
+                  disabled={isNavigationDisabled('prev', vo2maxDate, vo2maxTimeframe)}
+                  className={`h-full px-2 rounded-l-lg hover:bg-white hover:shadow-sm transition-all ${
+                    isNavigationDisabled('prev', vo2maxDate, vo2maxTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <span className="text-sm font-medium text-gray-700 mx-4 min-w-[100px] text-center">
+                  {getTimeframeLabel(vo2maxDate, vo2maxTimeframe)}
+                </span>
+                <button
+                  onClick={() => handleTimeframeNavigation('next', vo2maxDate, setVo2maxDate, vo2maxTimeframe)}
+                  disabled={isNavigationDisabled('next', vo2maxDate, vo2maxTimeframe)}
+                  className={`h-full px-2 rounded-r-lg hover:bg-white hover:shadow-sm transition-all ${
+                    isNavigationDisabled('next', vo2maxDate, vo2maxTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="h-[300px]">
+            {data.loading && (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                Loading data...
+              </div>
+            )}
+            {!hasVO2MaxData && !data.loading && (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                No VO2 max data available for this {vo2maxTimeframe === 'monthly' ? 'year' : vo2maxTimeframe === 'weekly' ? '12 weeks' : 'month'}
+              </div>
+            )}
+            {hasVO2MaxData && !data.loading && (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart 
+                  data={currentVO2MaxData}
+                  margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
+                >
+                  <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={(date) => {
+                      const d = new Date(date);
+                      switch (vo2maxTimeframe) {
+                        case 'daily':
+                          return d.getDate().toString();
+                        case 'weekly':
+                          return d.toLocaleString('default', { month: 'short', day: 'numeric' });
+                        case 'monthly':
+                          return d.toLocaleString('default', { month: 'short' });
+                      }
+                    }}
+                    stroke="#9CA3AF"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    dy={12}
+                  />
+                  <YAxis 
+                    stroke="#9CA3AF"
+                    fontSize={12}
+                    tickCount={8}
+                    domain={['dataMin - 2', 'dataMax + 2']}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{ 
+                      backgroundColor: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      fontSize: '12px',
+                      padding: '8px'
+                    }}
+                    labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
+                    labelFormatter={(value) => {
+                      const d = new Date(value);
+                      switch (vo2maxTimeframe) {
+                        case 'daily':
+                          return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
+                        case 'weekly':
+                          const weekEnd = new Date(d);
+                          weekEnd.setDate(d.getDate() + 6);
+                          return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+                        case 'monthly':
+                          return d.toLocaleString('default', { month: 'long', year: 'numeric' });
+                      }
+                    }}
+                    formatter={(value: number) => [`${value} mL/kg·min`]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#8B5CF6"
+                    strokeWidth={1.5}
+                    dot={{ r: 2, fill: '#8B5CF6' }}
                     activeDot={{ r: 3 }}
                   />
                 </LineChart>
