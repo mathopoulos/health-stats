@@ -1,5 +1,5 @@
 import { XMLParser } from 'fast-xml-parser/src/fxp';
-import { processS3XmlFile, generatePresignedUploadUrl, fetchAllHealthData } from './s3';
+import { processS3XmlFile, generatePresignedUploadUrl, fetchAllHealthData, type HealthDataType } from './s3';
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -21,11 +21,11 @@ const BATCH_SIZE = 1000; // Smaller batch size for more frequent updates
 interface ProcessingStatus {
   recordsProcessed: number;
   batchesSaved: number;
-  status: 'pending' | 'processing' | 'processing weight' | 'processing body fat' | 'processing hrv' | 'processing heart rate' | 'completed' | 'error';
+  status: 'pending' | 'processing' | `processing ${HealthDataType}` | 'completed' | 'error';
   error?: string;
 }
 
-async function saveData(type: 'weight' | 'bodyFat' | 'heartRate' | 'hrv', newData: any[]): Promise<void> {
+async function saveData(type: HealthDataType, newData: any[]): Promise<void> {
   if (newData.length === 0) return;
 
   const MAX_RETRIES = 3;
@@ -675,6 +675,161 @@ async function processHRV(xmlKey: string, status: ProcessingStatus): Promise<voi
   `);
 }
 
+async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<void> {
+  console.log('Starting VO2 max data processing...');
+  let recordsProcessed = 0;
+  let validRecords = 0;
+  let pendingRecords: any[] = [];
+  let lastProgressTime = Date.now();
+  let lastValidRecordCount = 0;
+  let unchangedIterations = 0;
+  let skippedRecords = 0;
+  let invalidTypeRecords = 0;
+  let invalidValueRecords = 0;
+  let invalidDateRecords = 0;
+  let duplicateRecords = 0;
+  let seenTypes = new Set<string>();
+  let foundFirstRecord = false;
+  let noRecordsThreshold = 2000000; // 2 million records
+  const PROGRESS_LOG_INTERVAL = 50000;
+  const BATCH_SAVE_SIZE = 200;
+  
+  // Create a map of existing dates for quick lookup
+  console.log('Fetching existing VO2 max records...');
+  const existingRecords = await fetchAllHealthData('vo2max');
+  const existingDates = new Set(existingRecords.map(record => record.date));
+  console.log(`Found ${existingRecords.length} existing VO2 max records`);
+  
+  await processS3XmlFile(xmlKey, async (recordXml) => {
+    try {
+      recordsProcessed++;
+      
+      // Quick check for VO2 max records before parsing
+      if (!recordXml.includes('HKQuantityTypeIdentifierVO2Max')) {
+        invalidTypeRecords++;
+        return;
+      }
+
+      // Log progress less frequently
+      const now = Date.now();
+      if (recordsProcessed % PROGRESS_LOG_INTERVAL === 0 || now - lastProgressTime > 60000) { // 60 seconds
+        console.log(`Progress update:
+          - Records processed: ${recordsProcessed}
+          - Valid VO2 max records found: ${validRecords}
+          - Invalid type records: ${invalidTypeRecords}
+          - Invalid value records: ${invalidValueRecords}
+          - Invalid date records: ${invalidDateRecords}
+          - Duplicate records: ${duplicateRecords}
+          - Pending records: ${pendingRecords.length}
+          - Time since last update: ${Math.round((now - lastProgressTime) / 1000)}s
+          - Processing speed: ${Math.round(PROGRESS_LOG_INTERVAL / ((now - lastProgressTime) / 1000))} records/second
+          - Unique record types seen: ${Array.from(seenTypes).join(', ')}
+        `);
+        
+        // Check if we've processed too many records without finding any valid ones
+        if (!foundFirstRecord && recordsProcessed >= noRecordsThreshold) {
+          console.log(`No VO2 max records found after processing ${noRecordsThreshold} records, stopping processing`);
+          return false;
+        }
+        
+        lastProgressTime = now;
+      }
+
+      const data = parser.parse(recordXml);
+      if (!data?.HealthData?.Record) {
+        skippedRecords++;
+        return;
+      }
+      
+      const records = Array.isArray(data.HealthData.Record) 
+        ? data.HealthData.Record 
+        : [data.HealthData.Record];
+
+      for (const record of records) {
+        if (record?.type) {
+          seenTypes.add(record.type);
+        }
+
+        if (!record?.type || record.type !== 'HKQuantityTypeIdentifierVO2Max') {
+          continue;
+        }
+
+        // Found a valid VO2 max record
+        if (!foundFirstRecord) {
+          console.log('\nFound first VO2 max record:', JSON.stringify(record, null, 2), '\n');
+          foundFirstRecord = true;
+        }
+
+        const value = parseFloat(record.value);
+        if (isNaN(value)) {
+          invalidValueRecords++;
+          continue;
+        }
+
+        const date = new Date(record.startDate || record.creationDate || record.endDate);
+        if (!date || isNaN(date.getTime())) {
+          invalidDateRecords++;
+          continue;
+        }
+
+        const isoDate = date.toISOString();
+        
+        // Skip if we already have this date
+        if (existingDates.has(isoDate)) {
+          duplicateRecords++;
+          continue;
+        }
+
+        // Create a single record with the exact timestamp
+        const vo2maxRecord = {
+          date: isoDate,
+          value: Math.round(value * 100) / 100  // Round to 2 decimal places
+        };
+
+        pendingRecords.push(vo2maxRecord);
+        existingDates.add(isoDate);
+        validRecords++;
+        status.recordsProcessed++;
+        
+        // Save progress in larger batches
+        if (pendingRecords.length >= BATCH_SAVE_SIZE) {
+          console.log(`Saving batch of ${pendingRecords.length} VO2 max records...`);
+          await saveData('vo2max', pendingRecords);
+          status.batchesSaved++;
+          pendingRecords = [];
+        }
+      }
+    } catch (error) {
+      console.error('Error processing VO2 max record:', error);
+      // Continue processing despite errors
+    }
+  });
+
+  // Save any remaining records
+  if (pendingRecords.length > 0) {
+    console.log(`Saving final batch of ${pendingRecords.length} VO2 max records...`);
+    await saveData('vo2max', pendingRecords);
+    status.batchesSaved++;
+  }
+
+  if (!foundFirstRecord) {
+    console.log('Warning: No VO2 max records were found in the entire file');
+  }
+
+  console.log(`VO2 max processing complete:
+    - Total records processed: ${recordsProcessed}
+    - Valid VO2 max records found: ${validRecords}
+    - Invalid type records: ${invalidTypeRecords}
+    - Invalid value records: ${invalidValueRecords}
+    - Invalid date records: ${invalidDateRecords}
+    - Duplicate records: ${duplicateRecords}
+    - Skipped records: ${skippedRecords}
+    - Total batches saved: ${status.batchesSaved}
+    - Records unchanged after: ${unchangedIterations * 10000} records
+    - All record types seen: ${Array.from(seenTypes).join(', ')}
+  `);
+}
+
 export async function processHealthData(xmlKey: string): Promise<ProcessingStatus> {
   console.log('\nStarting health data processing...');
   console.log('XML file to process:', xmlKey);
@@ -699,7 +854,7 @@ export async function processHealthData(xmlKey: string): Promise<ProcessingStatu
 
     // Then body fat
     console.log('\n=== Starting Body Fat Processing ===');
-    status.status = 'processing body fat';
+    status.status = 'processing bodyFat';
     try {
       await processBodyFat(xmlKey, status);
       console.log('Body fat processing completed successfully');
@@ -720,6 +875,17 @@ export async function processHealthData(xmlKey: string): Promise<ProcessingStatu
       throw error;
     }
 
+    // Then VO2 max
+    console.log('\n=== Starting VO2 Max Processing ===');
+    status.status = 'processing vo2max';
+    try {
+      await processVO2Max(xmlKey, status);
+      console.log('VO2 max processing completed successfully');
+    } catch (error) {
+      console.error('Error during VO2 max processing:', error);
+      throw error;
+    }
+
     // Temporarily skip heart rate processing
     console.log('\n=== Skipping Heart Rate Processing ===');
 
@@ -736,4 +902,4 @@ export async function processHealthData(xmlKey: string): Promise<ProcessingStatu
     status.error = error instanceof Error ? error.message : 'Unknown error';
     throw error;
   }
-} 
+}

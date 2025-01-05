@@ -2,6 +2,8 @@ import { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command } fr
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { XMLParser } from 'fast-xml-parser/src/fxp';
 
+export type HealthDataType = 'heartRate' | 'weight' | 'bodyFat' | 'hrv' | 'vo2max';
+
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || 'us-east-1',
   credentials: {
@@ -266,7 +268,7 @@ export async function fetchDataFile(key: string): Promise<any> {
   });
 }
 
-export async function fetchAllHealthData(type: 'heartRate' | 'weight' | 'bodyFat' | 'hrv'): Promise<any[]> {
+export async function fetchAllHealthData(type: 'heartRate' | 'weight' | 'bodyFat' | 'hrv' | 'vo2max'): Promise<any[]> {
   try {
     const key = `data/${type}.json`;
     console.log(`Fetching ${type} data from S3...`);
