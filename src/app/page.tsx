@@ -573,6 +573,25 @@ export default function Home() {
     );
   };
 
+  const TrendIndicator = ({ current, previous }: { current: number, previous: number }) => {
+    const percentChange = ((current - previous) / previous) * 100;
+    const isIncrease = percentChange > 0;
+    return (
+      <span className={`text-sm flex items-center ${isIncrease ? 'text-green-500' : 'text-red-500'}`}>
+        {isIncrease ? (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+        ) : (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+          </svg>
+        )}
+        <span className="ml-1">{Math.abs(percentChange).toFixed(1)}%</span>
+      </span>
+    );
+  };
+
   return (
     <main className="min-h-screen p-8 bg-gray-50">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -656,18 +675,7 @@ export default function Home() {
                           const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
                           const isIncrease = percentChange > 0;
                           return (
-                            <span className={`text-sm flex items-center ${isIncrease ? 'text-red-500' : 'text-green-500'}`}>
-                              {isIncrease ? (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                </svg>
-                              ) : (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
-                                </svg>
-                              )}
-                              <span className="ml-1">{Math.abs(percentChange).toFixed(1)}%</span>
-                            </span>
+                            <TrendIndicator current={currentAvg} previous={prevAvg} />
                           );
                         })()}
                       </div>
@@ -709,18 +717,7 @@ export default function Home() {
                           const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
                           const isIncrease = percentChange > 0;
                           return (
-                            <span className={`text-sm flex items-center ${isIncrease ? 'text-red-500' : 'text-green-500'}`}>
-                              {isIncrease ? (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                </svg>
-                              ) : (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
-                                </svg>
-                              )}
-                              <span className="ml-1">{Math.abs(percentChange).toFixed(1)}%</span>
-                            </span>
+                            <TrendIndicator current={currentAvg} previous={prevAvg} />
                           );
                         })()}
                       </div>
@@ -762,18 +759,7 @@ export default function Home() {
                           const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
                           const isIncrease = percentChange > 0;
                           return (
-                            <span className={`text-sm flex items-center ${isIncrease ? 'text-red-500' : 'text-green-500'}`}>
-                              {isIncrease ? (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                </svg>
-                              ) : (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
-                                </svg>
-                              )}
-                              <span className="ml-1">{Math.abs(percentChange).toFixed(1)}%</span>
-                            </span>
+                            <TrendIndicator current={currentAvg} previous={prevAvg} />
                           );
                         })()}
                       </div>
@@ -815,18 +801,7 @@ export default function Home() {
                           const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
                           const isIncrease = percentChange > 0;
                           return (
-                            <span className={`text-sm flex items-center ${isIncrease ? 'text-red-500' : 'text-green-500'}`}>
-                              {isIncrease ? (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                </svg>
-                              ) : (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
-                                </svg>
-                              )}
-                              <span className="ml-1">{Math.abs(percentChange).toFixed(1)}%</span>
-                            </span>
+                            <TrendIndicator current={currentAvg} previous={prevAvg} />
                           );
                         })()}
                       </div>
@@ -1413,15 +1388,23 @@ export default function Home() {
                     </div>
                     <div className="flex items-center gap-3">
                       {data.bloodMarkers.testosterone.length > 0 && (
-                        <div className={`w-2 h-2 rounded-full ${
-                          data.bloodMarkers.testosterone[0].value < (data.bloodMarkers.testosterone[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                          data.bloodMarkers.testosterone[0].value > (data.bloodMarkers.testosterone[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-                          'bg-green-500'
-                        }`} title={
-                          data.bloodMarkers.testosterone[0].value < (data.bloodMarkers.testosterone[0].referenceRange?.min || 0) ? 'Low' :
-                          data.bloodMarkers.testosterone[0].value > (data.bloodMarkers.testosterone[0].referenceRange?.max || 0) ? 'High' :
-                          'Normal'
-                        } />
+                        <>
+                          <div className={`w-2 h-2 rounded-full ${
+                            data.bloodMarkers.testosterone[0].value < (data.bloodMarkers.testosterone[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                            data.bloodMarkers.testosterone[0].value > (data.bloodMarkers.testosterone[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+                            'bg-green-500'
+                          }`} title={
+                            data.bloodMarkers.testosterone[0].value < (data.bloodMarkers.testosterone[0].referenceRange?.min || 0) ? 'Low' :
+                            data.bloodMarkers.testosterone[0].value > (data.bloodMarkers.testosterone[0].referenceRange?.max || 0) ? 'High' :
+                            'Normal'
+                          } />
+                          {data.bloodMarkers.testosterone.length > 1 && (
+                            <TrendIndicator 
+                              current={data.bloodMarkers.testosterone[0].value}
+                              previous={data.bloodMarkers.testosterone[1].value}
+                            />
+                          )}
+                        </>
                       )}
                       <span className="text-lg font-semibold text-gray-900">
                         {data.loading ? "..." :
@@ -1439,15 +1422,23 @@ export default function Home() {
                     </div>
                     <div className="flex items-center gap-3">
                       {data.bloodMarkers.freeTesto.length > 0 && (
-                        <div className={`w-2 h-2 rounded-full ${
-                          data.bloodMarkers.freeTesto[0].value < (data.bloodMarkers.freeTesto[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                          data.bloodMarkers.freeTesto[0].value > (data.bloodMarkers.freeTesto[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-                          'bg-green-500'
-                        }`} title={
-                          data.bloodMarkers.freeTesto[0].value < (data.bloodMarkers.freeTesto[0].referenceRange?.min || 0) ? 'Low' :
-                          data.bloodMarkers.freeTesto[0].value > (data.bloodMarkers.freeTesto[0].referenceRange?.max || 0) ? 'High' :
-                          'Normal'
-                        } />
+                        <>
+                          <div className={`w-2 h-2 rounded-full ${
+                            data.bloodMarkers.freeTesto[0].value < (data.bloodMarkers.freeTesto[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                            data.bloodMarkers.freeTesto[0].value > (data.bloodMarkers.freeTesto[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+                            'bg-green-500'
+                          }`} title={
+                            data.bloodMarkers.freeTesto[0].value < (data.bloodMarkers.freeTesto[0].referenceRange?.min || 0) ? 'Low' :
+                            data.bloodMarkers.freeTesto[0].value > (data.bloodMarkers.freeTesto[0].referenceRange?.max || 0) ? 'High' :
+                            'Normal'
+                          } />
+                          {data.bloodMarkers.freeTesto.length > 1 && (
+                            <TrendIndicator 
+                              current={data.bloodMarkers.freeTesto[0].value}
+                              previous={data.bloodMarkers.freeTesto[1].value}
+                            />
+                          )}
+                        </>
                       )}
                       <span className="text-lg font-semibold text-gray-900">
                         {data.loading ? "..." :
@@ -1465,15 +1456,23 @@ export default function Home() {
                     </div>
                     <div className="flex items-center gap-3">
                       {data.bloodMarkers.dheas.length > 0 && (
-                        <div className={`w-2 h-2 rounded-full ${
-                          data.bloodMarkers.dheas[0].value < (data.bloodMarkers.dheas[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                          data.bloodMarkers.dheas[0].value > (data.bloodMarkers.dheas[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-                          'bg-green-500'
-                        }`} title={
-                          data.bloodMarkers.dheas[0].value < (data.bloodMarkers.dheas[0].referenceRange?.min || 0) ? 'Low' :
-                          data.bloodMarkers.dheas[0].value > (data.bloodMarkers.dheas[0].referenceRange?.max || 0) ? 'High' :
-                          'Normal'
-                        } />
+                        <>
+                          <div className={`w-2 h-2 rounded-full ${
+                            data.bloodMarkers.dheas[0].value < (data.bloodMarkers.dheas[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                            data.bloodMarkers.dheas[0].value > (data.bloodMarkers.dheas[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+                            'bg-green-500'
+                          }`} title={
+                            data.bloodMarkers.dheas[0].value < (data.bloodMarkers.dheas[0].referenceRange?.min || 0) ? 'Low' :
+                            data.bloodMarkers.dheas[0].value > (data.bloodMarkers.dheas[0].referenceRange?.max || 0) ? 'High' :
+                            'Normal'
+                          } />
+                          {data.bloodMarkers.dheas.length > 1 && (
+                            <TrendIndicator 
+                              current={data.bloodMarkers.dheas[0].value}
+                              previous={data.bloodMarkers.dheas[1].value}
+                            />
+                          )}
+                        </>
                       )}
                       <span className="text-lg font-semibold text-gray-900">
                         {data.loading ? "..." :
@@ -1491,15 +1490,23 @@ export default function Home() {
                     </div>
                     <div className="flex items-center gap-3">
                       {data.bloodMarkers.igf1.length > 0 && (
-                        <div className={`w-2 h-2 rounded-full ${
-                          data.bloodMarkers.igf1[0].value < (data.bloodMarkers.igf1[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                          data.bloodMarkers.igf1[0].value > (data.bloodMarkers.igf1[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-                          'bg-green-500'
-                        }`} title={
-                          data.bloodMarkers.igf1[0].value < (data.bloodMarkers.igf1[0].referenceRange?.min || 0) ? 'Low' :
-                          data.bloodMarkers.igf1[0].value > (data.bloodMarkers.igf1[0].referenceRange?.max || 0) ? 'High' :
-                          'Normal'
-                        } />
+                        <>
+                          <div className={`w-2 h-2 rounded-full ${
+                            data.bloodMarkers.igf1[0].value < (data.bloodMarkers.igf1[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                            data.bloodMarkers.igf1[0].value > (data.bloodMarkers.igf1[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+                            'bg-green-500'
+                          }`} title={
+                            data.bloodMarkers.igf1[0].value < (data.bloodMarkers.igf1[0].referenceRange?.min || 0) ? 'Low' :
+                            data.bloodMarkers.igf1[0].value > (data.bloodMarkers.igf1[0].referenceRange?.max || 0) ? 'High' :
+                            'Normal'
+                          } />
+                          {data.bloodMarkers.igf1.length > 1 && (
+                            <TrendIndicator 
+                              current={data.bloodMarkers.igf1[0].value}
+                              previous={data.bloodMarkers.igf1[1].value}
+                            />
+                          )}
+                        </>
                       )}
                       <span className="text-lg font-semibold text-gray-900">
                         {data.loading ? "..." :
@@ -1525,15 +1532,23 @@ export default function Home() {
                     <span className="text-sm font-medium text-gray-600">Total Cholesterol</span>
                     <div className="flex items-center gap-3">
                       {data.bloodMarkers.totalCholesterol.length > 0 && (
-                        <div className={`w-2 h-2 rounded-full ${
-                          data.bloodMarkers.totalCholesterol[0].value < (data.bloodMarkers.totalCholesterol[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                          data.bloodMarkers.totalCholesterol[0].value > (data.bloodMarkers.totalCholesterol[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-                          'bg-green-500'
-                        }`} title={
-                          data.bloodMarkers.totalCholesterol[0].value < (data.bloodMarkers.totalCholesterol[0].referenceRange?.min || 0) ? 'Low' :
-                          data.bloodMarkers.totalCholesterol[0].value > (data.bloodMarkers.totalCholesterol[0].referenceRange?.max || 0) ? 'High' :
-                          'Normal'
-                        } />
+                        <>
+                          <div className={`w-2 h-2 rounded-full ${
+                            data.bloodMarkers.totalCholesterol[0].value < (data.bloodMarkers.totalCholesterol[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                            data.bloodMarkers.totalCholesterol[0].value > (data.bloodMarkers.totalCholesterol[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+                            'bg-green-500'
+                          }`} title={
+                            data.bloodMarkers.totalCholesterol[0].value < (data.bloodMarkers.totalCholesterol[0].referenceRange?.min || 0) ? 'Low' :
+                            data.bloodMarkers.totalCholesterol[0].value > (data.bloodMarkers.totalCholesterol[0].referenceRange?.max || 0) ? 'High' :
+                            'Normal'
+                          } />
+                          {data.bloodMarkers.totalCholesterol.length > 1 && (
+                            <TrendIndicator 
+                              current={data.bloodMarkers.totalCholesterol[0].value}
+                              previous={data.bloodMarkers.totalCholesterol[1].value}
+                            />
+                          )}
+                        </>
                       )}
                       <span className="text-lg font-semibold text-gray-900">
                         {data.loading ? "..." :
@@ -1547,15 +1562,23 @@ export default function Home() {
                     <span className="text-sm font-medium text-gray-600">LDL</span>
                     <div className="flex items-center gap-3">
                       {data.bloodMarkers.ldl.length > 0 && (
-                        <div className={`w-2 h-2 rounded-full ${
-                          data.bloodMarkers.ldl[0].value < (data.bloodMarkers.ldl[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                          data.bloodMarkers.ldl[0].value > (data.bloodMarkers.ldl[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-                          'bg-green-500'
-                        }`} title={
-                          data.bloodMarkers.ldl[0].value < (data.bloodMarkers.ldl[0].referenceRange?.min || 0) ? 'Low' :
-                          data.bloodMarkers.ldl[0].value > (data.bloodMarkers.ldl[0].referenceRange?.max || 0) ? 'High' :
-                          'Normal'
-                        } />
+                        <>
+                          <div className={`w-2 h-2 rounded-full ${
+                            data.bloodMarkers.ldl[0].value < (data.bloodMarkers.ldl[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                            data.bloodMarkers.ldl[0].value > (data.bloodMarkers.ldl[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+                            'bg-green-500'
+                          }`} title={
+                            data.bloodMarkers.ldl[0].value < (data.bloodMarkers.ldl[0].referenceRange?.min || 0) ? 'Low' :
+                            data.bloodMarkers.ldl[0].value > (data.bloodMarkers.ldl[0].referenceRange?.max || 0) ? 'High' :
+                            'Normal'
+                          } />
+                          {data.bloodMarkers.ldl.length > 1 && (
+                            <TrendIndicator 
+                              current={data.bloodMarkers.ldl[0].value}
+                              previous={data.bloodMarkers.ldl[1].value}
+                            />
+                          )}
+                        </>
                       )}
                       <span className="text-lg font-semibold text-gray-900">
                         {data.loading ? "..." :
@@ -1569,15 +1592,23 @@ export default function Home() {
                     <span className="text-sm font-medium text-gray-600">HDL</span>
                     <div className="flex items-center gap-3">
                       {data.bloodMarkers.hdl.length > 0 && (
-                        <div className={`w-2 h-2 rounded-full ${
-                          data.bloodMarkers.hdl[0].value < (data.bloodMarkers.hdl[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                          data.bloodMarkers.hdl[0].value > (data.bloodMarkers.hdl[0].referenceRange?.max || 0) ? 'bg-green-500' :
-                          'bg-green-500'
-                        }`} title={
-                          data.bloodMarkers.hdl[0].value < (data.bloodMarkers.hdl[0].referenceRange?.min || 0) ? 'Low' :
-                          data.bloodMarkers.hdl[0].value > (data.bloodMarkers.hdl[0].referenceRange?.max || 0) ? 'Optimal' :
-                          'Normal'
-                        } />
+                        <>
+                          <div className={`w-2 h-2 rounded-full ${
+                            data.bloodMarkers.hdl[0].value < (data.bloodMarkers.hdl[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                            data.bloodMarkers.hdl[0].value > (data.bloodMarkers.hdl[0].referenceRange?.max || 0) ? 'bg-green-500' :
+                            'bg-green-500'
+                          }`} title={
+                            data.bloodMarkers.hdl[0].value < (data.bloodMarkers.hdl[0].referenceRange?.min || 0) ? 'Low' :
+                            data.bloodMarkers.hdl[0].value > (data.bloodMarkers.hdl[0].referenceRange?.max || 0) ? 'Optimal' :
+                            'Normal'
+                          } />
+                          {data.bloodMarkers.hdl.length > 1 && (
+                            <TrendIndicator 
+                              current={data.bloodMarkers.hdl[0].value}
+                              previous={data.bloodMarkers.hdl[1].value}
+                            />
+                          )}
+                        </>
                       )}
                       <span className="text-lg font-semibold text-gray-900">
                         {data.loading ? "..." :
@@ -1591,15 +1622,23 @@ export default function Home() {
                     <span className="text-sm font-medium text-gray-600">Triglycerides</span>
                     <div className="flex items-center gap-3">
                       {data.bloodMarkers.triglycerides.length > 0 && (
-                        <div className={`w-2 h-2 rounded-full ${
-                          data.bloodMarkers.triglycerides[0].value < (data.bloodMarkers.triglycerides[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                          data.bloodMarkers.triglycerides[0].value > (data.bloodMarkers.triglycerides[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-                          'bg-green-500'
-                        }`} title={
-                          data.bloodMarkers.triglycerides[0].value < (data.bloodMarkers.triglycerides[0].referenceRange?.min || 0) ? 'Low' :
-                          data.bloodMarkers.triglycerides[0].value > (data.bloodMarkers.triglycerides[0].referenceRange?.max || 0) ? 'High' :
-                          'Normal'
-                        } />
+                        <>
+                          <div className={`w-2 h-2 rounded-full ${
+                            data.bloodMarkers.triglycerides[0].value < (data.bloodMarkers.triglycerides[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                            data.bloodMarkers.triglycerides[0].value > (data.bloodMarkers.triglycerides[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+                            'bg-green-500'
+                          }`} title={
+                            data.bloodMarkers.triglycerides[0].value < (data.bloodMarkers.triglycerides[0].referenceRange?.min || 0) ? 'Low' :
+                            data.bloodMarkers.triglycerides[0].value > (data.bloodMarkers.triglycerides[0].referenceRange?.max || 0) ? 'High' :
+                            'Normal'
+                          } />
+                          {data.bloodMarkers.triglycerides.length > 1 && (
+                            <TrendIndicator 
+                              current={data.bloodMarkers.triglycerides[0].value}
+                              previous={data.bloodMarkers.triglycerides[1].value}
+                            />
+                          )}
+                        </>
                       )}
                       <span className="text-lg font-semibold text-gray-900">
                         {data.loading ? "..." :
@@ -1625,15 +1664,23 @@ export default function Home() {
                     <span className="text-sm font-medium text-gray-600">Glucose</span>
                     <div className="flex items-center gap-3">
                       {data.bloodMarkers.glucose.length > 0 && (
-                        <div className={`w-2 h-2 rounded-full ${
-                          data.bloodMarkers.glucose[0].value < (data.bloodMarkers.glucose[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                          data.bloodMarkers.glucose[0].value > (data.bloodMarkers.glucose[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-                          'bg-green-500'
-                        }`} title={
-                          data.bloodMarkers.glucose[0].value < (data.bloodMarkers.glucose[0].referenceRange?.min || 0) ? 'Low' :
-                          data.bloodMarkers.glucose[0].value > (data.bloodMarkers.glucose[0].referenceRange?.max || 0) ? 'High' :
-                          'Normal'
-                        } />
+                        <>
+                          <div className={`w-2 h-2 rounded-full ${
+                            data.bloodMarkers.glucose[0].value < (data.bloodMarkers.glucose[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                            data.bloodMarkers.glucose[0].value > (data.bloodMarkers.glucose[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+                            'bg-green-500'
+                          }`} title={
+                            data.bloodMarkers.glucose[0].value < (data.bloodMarkers.glucose[0].referenceRange?.min || 0) ? 'Low' :
+                            data.bloodMarkers.glucose[0].value > (data.bloodMarkers.glucose[0].referenceRange?.max || 0) ? 'High' :
+                            'Normal'
+                          } />
+                          {data.bloodMarkers.glucose.length > 1 && (
+                            <TrendIndicator 
+                              current={data.bloodMarkers.glucose[0].value}
+                              previous={data.bloodMarkers.glucose[1].value}
+                            />
+                          )}
+                        </>
                       )}
                       <span className="text-lg font-semibold text-gray-900">
                         {data.loading ? "..." :
@@ -1647,15 +1694,23 @@ export default function Home() {
                     <span className="text-sm font-medium text-gray-600">CRP</span>
                     <div className="flex items-center gap-3">
                       {data.bloodMarkers.crp.length > 0 && (
-                        <div className={`w-2 h-2 rounded-full ${
-                          data.bloodMarkers.crp[0].value < (data.bloodMarkers.crp[0].referenceRange?.min || 0) ? 'bg-green-500' :
-                          data.bloodMarkers.crp[0].value > (data.bloodMarkers.crp[0].referenceRange?.max || 0) ? 'bg-red-500' :
-                          'bg-green-500'
-                        }`} title={
-                          data.bloodMarkers.crp[0].value < (data.bloodMarkers.crp[0].referenceRange?.min || 0) ? 'Optimal' :
-                          data.bloodMarkers.crp[0].value > (data.bloodMarkers.crp[0].referenceRange?.max || 0) ? 'High' :
-                          'Normal'
-                        } />
+                        <>
+                          <div className={`w-2 h-2 rounded-full ${
+                            data.bloodMarkers.crp[0].value < (data.bloodMarkers.crp[0].referenceRange?.min || 0) ? 'bg-green-500' :
+                            data.bloodMarkers.crp[0].value > (data.bloodMarkers.crp[0].referenceRange?.max || 0) ? 'bg-red-500' :
+                            'bg-green-500'
+                          }`} title={
+                            data.bloodMarkers.crp[0].value < (data.bloodMarkers.crp[0].referenceRange?.min || 0) ? 'Optimal' :
+                            data.bloodMarkers.crp[0].value > (data.bloodMarkers.crp[0].referenceRange?.max || 0) ? 'High' :
+                            'Normal'
+                          } />
+                          {data.bloodMarkers.crp.length > 1 && (
+                            <TrendIndicator 
+                              current={data.bloodMarkers.crp[0].value}
+                              previous={data.bloodMarkers.crp[1].value}
+                            />
+                          )}
+                        </>
                       )}
                       <span className="text-lg font-semibold text-gray-900">
                         {data.loading ? "..." :
@@ -1681,17 +1736,25 @@ export default function Home() {
                     <span className="text-sm font-medium text-gray-600">Vitamin D</span>
                     <div className="flex items-center gap-3">
                       {data.bloodMarkers.vitaminD.length > 0 && (
-                        <div className={`w-2 h-2 rounded-full ${
-                          data.bloodMarkers.vitaminD[0].value < (data.bloodMarkers.vitaminD[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                          data.bloodMarkers.vitaminD[0].value > (data.bloodMarkers.vitaminD[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-                          data.bloodMarkers.vitaminD[0].value >= 50 ? 'bg-green-500' :
-                          'bg-blue-500'
-                        }`} title={
-                          data.bloodMarkers.vitaminD[0].value < (data.bloodMarkers.vitaminD[0].referenceRange?.min || 0) ? 'Low' :
-                          data.bloodMarkers.vitaminD[0].value > (data.bloodMarkers.vitaminD[0].referenceRange?.max || 0) ? 'High' :
-                          data.bloodMarkers.vitaminD[0].value >= 50 ? 'Optimal' :
-                          'Normal'
-                        } />
+                        <>
+                          <div className={`w-2 h-2 rounded-full ${
+                            data.bloodMarkers.vitaminD[0].value < (data.bloodMarkers.vitaminD[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                            data.bloodMarkers.vitaminD[0].value > (data.bloodMarkers.vitaminD[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+                            data.bloodMarkers.vitaminD[0].value >= 50 ? 'bg-green-500' :
+                            'bg-blue-500'
+                          }`} title={
+                            data.bloodMarkers.vitaminD[0].value < (data.bloodMarkers.vitaminD[0].referenceRange?.min || 0) ? 'Low' :
+                            data.bloodMarkers.vitaminD[0].value > (data.bloodMarkers.vitaminD[0].referenceRange?.max || 0) ? 'High' :
+                            data.bloodMarkers.vitaminD[0].value >= 50 ? 'Optimal' :
+                            'Normal'
+                          } />
+                          {data.bloodMarkers.vitaminD.length > 1 && (
+                            <TrendIndicator 
+                              current={data.bloodMarkers.vitaminD[0].value}
+                              previous={data.bloodMarkers.vitaminD[1].value}
+                            />
+                          )}
+                        </>
                       )}
                       <span className="text-lg font-semibold text-gray-900">
                         {data.loading ? "..." :
@@ -1705,17 +1768,25 @@ export default function Home() {
                     <span className="text-sm font-medium text-gray-600">Homocysteine</span>
                     <div className="flex items-center gap-3">
                       {data.bloodMarkers.homocysteine.length > 0 && (
-                        <div className={`w-2 h-2 rounded-full ${
-                          data.bloodMarkers.homocysteine[0].value < (data.bloodMarkers.homocysteine[0].referenceRange?.min || 0) ? 'bg-green-500' :
-                          data.bloodMarkers.homocysteine[0].value > (data.bloodMarkers.homocysteine[0].referenceRange?.max || 0) ? 'bg-red-500' :
-                          data.bloodMarkers.homocysteine[0].value <= 7 ? 'bg-green-500' :
-                          'bg-blue-500'
-                        }`} title={
-                          data.bloodMarkers.homocysteine[0].value < (data.bloodMarkers.homocysteine[0].referenceRange?.min || 0) ? 'Low' :
-                          data.bloodMarkers.homocysteine[0].value > (data.bloodMarkers.homocysteine[0].referenceRange?.max || 0) ? 'High' :
-                          data.bloodMarkers.homocysteine[0].value <= 7 ? 'Optimal' :
-                          'Normal'
-                        } />
+                        <>
+                          <div className={`w-2 h-2 rounded-full ${
+                            data.bloodMarkers.homocysteine[0].value < (data.bloodMarkers.homocysteine[0].referenceRange?.min || 0) ? 'bg-green-500' :
+                            data.bloodMarkers.homocysteine[0].value > (data.bloodMarkers.homocysteine[0].referenceRange?.max || 0) ? 'bg-red-500' :
+                            data.bloodMarkers.homocysteine[0].value <= 7 ? 'bg-green-500' :
+                            'bg-blue-500'
+                          }`} title={
+                            data.bloodMarkers.homocysteine[0].value < (data.bloodMarkers.homocysteine[0].referenceRange?.min || 0) ? 'Low' :
+                            data.bloodMarkers.homocysteine[0].value > (data.bloodMarkers.homocysteine[0].referenceRange?.max || 0) ? 'High' :
+                            data.bloodMarkers.homocysteine[0].value <= 7 ? 'Optimal' :
+                            'Normal'
+                          } />
+                          {data.bloodMarkers.homocysteine.length > 1 && (
+                            <TrendIndicator 
+                              current={data.bloodMarkers.homocysteine[0].value}
+                              previous={data.bloodMarkers.homocysteine[1].value}
+                            />
+                          )}
+                        </>
                       )}
                       <span className="text-lg font-semibold text-gray-900">
                         {data.loading ? "..." :
