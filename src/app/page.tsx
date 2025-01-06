@@ -27,6 +27,9 @@ interface ChartData {
   vo2max: HealthData[];
   bloodMarkers: {
     testosterone: BloodMarker[];
+    freeTesto: BloodMarker[];
+    dheas: BloodMarker[];
+    igf1: BloodMarker[];
     totalCholesterol: BloodMarker[];
     ldl: BloodMarker[];
     hdl: BloodMarker[];
@@ -50,6 +53,9 @@ export default function Home() {
     vo2max: [],
     bloodMarkers: {
       testosterone: [],
+      freeTesto: [],
+      dheas: [],
+      igf1: [],
       totalCholesterol: [],
       ldl: [],
       hdl: [],
@@ -155,15 +161,66 @@ export default function Home() {
       setData({
         ...newData,
         bloodMarkers: {
-          testosterone: [],
-          totalCholesterol: [],
-          ldl: [],
-          hdl: [],
-          triglycerides: [],
-          glucose: [],
-          crp: [],
-          vitaminD: [],
-          homocysteine: []
+          testosterone: [
+            { date: '2024-01-15', value: 750, unit: 'ng/dL', referenceRange: { min: 300, max: 1000 } },
+            { date: '2023-12-15', value: 680, unit: 'ng/dL', referenceRange: { min: 300, max: 1000 } },
+            { date: '2023-11-15', value: 620, unit: 'ng/dL', referenceRange: { min: 300, max: 1000 } }
+          ],
+          freeTesto: [
+            { date: '2024-01-15', value: 15.5, unit: 'pg/mL', referenceRange: { min: 8.7, max: 25.1 } },
+            { date: '2023-12-15', value: 14.2, unit: 'pg/mL', referenceRange: { min: 8.7, max: 25.1 } },
+            { date: '2023-11-15', value: 13.8, unit: 'pg/mL', referenceRange: { min: 8.7, max: 25.1 } }
+          ],
+          dheas: [
+            { date: '2024-01-15', value: 325, unit: 'µg/dL', referenceRange: { min: 138, max: 475 } },
+            { date: '2023-12-15', value: 310, unit: 'µg/dL', referenceRange: { min: 138, max: 475 } },
+            { date: '2023-11-15', value: 295, unit: 'µg/dL', referenceRange: { min: 138, max: 475 } }
+          ],
+          igf1: [
+            { date: '2024-01-15', value: 185, unit: 'ng/mL', referenceRange: { min: 115, max: 355 } },
+            { date: '2023-12-15', value: 175, unit: 'ng/mL', referenceRange: { min: 115, max: 355 } },
+            { date: '2023-11-15', value: 165, unit: 'ng/mL', referenceRange: { min: 115, max: 355 } }
+          ],
+          totalCholesterol: [
+            { date: '2024-01-15', value: 185, unit: 'mg/dL', referenceRange: { min: 125, max: 200 } },
+            { date: '2023-12-15', value: 195, unit: 'mg/dL', referenceRange: { min: 125, max: 200 } },
+            { date: '2023-11-15', value: 205, unit: 'mg/dL', referenceRange: { min: 125, max: 200 } }
+          ],
+          ldl: [
+            { date: '2024-01-15', value: 110, unit: 'mg/dL', referenceRange: { min: 0, max: 130 } },
+            { date: '2023-12-15', value: 115, unit: 'mg/dL', referenceRange: { min: 0, max: 130 } },
+            { date: '2023-11-15', value: 120, unit: 'mg/dL', referenceRange: { min: 0, max: 130 } }
+          ],
+          hdl: [
+            { date: '2024-01-15', value: 65, unit: 'mg/dL', referenceRange: { min: 40, max: 60 } },
+            { date: '2023-12-15', value: 62, unit: 'mg/dL', referenceRange: { min: 40, max: 60 } },
+            { date: '2023-11-15', value: 58, unit: 'mg/dL', referenceRange: { min: 40, max: 60 } }
+          ],
+          triglycerides: [
+            { date: '2024-01-15', value: 120, unit: 'mg/dL', referenceRange: { min: 0, max: 150 } },
+            { date: '2023-12-15', value: 135, unit: 'mg/dL', referenceRange: { min: 0, max: 150 } },
+            { date: '2023-11-15', value: 145, unit: 'mg/dL', referenceRange: { min: 0, max: 150 } }
+          ],
+          glucose: [
+            { date: '2024-01-15', value: 85, unit: 'mg/dL', referenceRange: { min: 70, max: 100 } },
+            { date: '2023-12-15', value: 88, unit: 'mg/dL', referenceRange: { min: 70, max: 100 } },
+            { date: '2023-11-15', value: 92, unit: 'mg/dL', referenceRange: { min: 70, max: 100 } }
+          ],
+          crp: [
+            { date: '2024-01-15', value: 0.8, unit: 'mg/L', referenceRange: { min: 0, max: 3 } },
+            { date: '2023-12-15', value: 1.2, unit: 'mg/L', referenceRange: { min: 0, max: 3 } },
+            { date: '2023-11-15', value: 1.5, unit: 'mg/L', referenceRange: { min: 0, max: 3 } }
+          ],
+          vitaminD: [
+            { date: '2024-01-15', value: 45, unit: 'ng/mL', referenceRange: { min: 30, max: 100 } },
+            { date: '2023-12-15', value: 42, unit: 'ng/mL', referenceRange: { min: 30, max: 100 } },
+            { date: '2023-11-15', value: 38, unit: 'ng/mL', referenceRange: { min: 30, max: 100 } }
+          ],
+          homocysteine: [
+            { date: '2024-01-15', value: 8.5, unit: 'µmol/L', referenceRange: { min: 4, max: 15 } },
+            { date: '2023-12-15', value: 9.2, unit: 'µmol/L', referenceRange: { min: 4, max: 15 } },
+            { date: '2023-11-15', value: 9.8, unit: 'µmol/L', referenceRange: { min: 4, max: 15 } }
+          ]
         },
         loading: false
       });
@@ -494,6 +551,27 @@ export default function Home() {
   const hasBodyFatData = currentBodyFatData.length > 0;
   const hasHRVData = currentHRVData.length > 0;
   const hasVO2MaxData = currentVO2MaxData.length > 0;
+
+  const MiniChart = ({ data, color }: { data: BloodMarker[], color: string }) => {
+    if (data.length < 2) return null;
+    
+    return (
+      <div className="w-[120px] h-[35px] bg-gray-50 rounded-md border border-gray-100 px-2">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data.slice(-3)} margin={{ top: 3, right: 3, bottom: 3, left: 3 }}>
+            <Line
+              type="natural"
+              dataKey="value"
+              stroke={color}
+              strokeWidth={2}
+              dot={{ r: 2.5, fill: color, strokeWidth: 0 }}
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  };
 
   return (
     <main className="min-h-screen p-8 bg-gray-50">
@@ -1324,88 +1402,216 @@ export default function Home() {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Testosterone */}
+              {/* Hormones */}
               <div className="border border-gray-100 rounded-xl p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">Testosterone</h3>
-                    <p className="text-sm text-gray-500">Total</p>
-                  </div>
-                  {data.bloodMarkers.testosterone.length > 0 && (
-                    <span className={`text-sm px-3 py-1 rounded-full ${
-                      data.bloodMarkers.testosterone[0].value < (data.bloodMarkers.testosterone[0].referenceRange?.min || 0) ? 'bg-red-50 text-red-600' :
-                      data.bloodMarkers.testosterone[0].value > (data.bloodMarkers.testosterone[0].referenceRange?.max || 0) ? 'bg-yellow-50 text-yellow-600' :
-                      'bg-green-50 text-green-600'
-                    }`}>
-                      {data.bloodMarkers.testosterone[0].value < (data.bloodMarkers.testosterone[0].referenceRange?.min || 0) ? 'Low' :
-                       data.bloodMarkers.testosterone[0].value > (data.bloodMarkers.testosterone[0].referenceRange?.max || 0) ? 'High' :
-                       'Normal'}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-2">
-                  <span className="text-3xl font-bold text-gray-900">
-                    {data.loading ? "..." :
-                     data.bloodMarkers.testosterone.length > 0 ?
-                     `${data.bloodMarkers.testosterone[0].value} ${data.bloodMarkers.testosterone[0].unit}` :
-                     "No data"}
-                  </span>
-                  {data.bloodMarkers.testosterone.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      <p className="text-sm text-gray-500">
-                        Reference range: {data.bloodMarkers.testosterone[0].referenceRange?.min} - {data.bloodMarkers.testosterone[0].referenceRange?.max} {data.bloodMarkers.testosterone[0].unit}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Last tested: {new Date(data.bloodMarkers.testosterone[0].date).toLocaleDateString()}
-                      </p>
+                <h3 className="text-lg font-medium text-gray-900 mb-6">Hormones</h3>
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Testosterone</span>
+                      <p className="text-xs text-gray-500">Total</p>
                     </div>
-                  )}
+                    <div className="flex items-center gap-3">
+                      {data.bloodMarkers.testosterone.length > 0 && (
+                        <div className={`w-2 h-2 rounded-full ${
+                          data.bloodMarkers.testosterone[0].value < (data.bloodMarkers.testosterone[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                          data.bloodMarkers.testosterone[0].value > (data.bloodMarkers.testosterone[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+                          'bg-green-500'
+                        }`} title={
+                          data.bloodMarkers.testosterone[0].value < (data.bloodMarkers.testosterone[0].referenceRange?.min || 0) ? 'Low' :
+                          data.bloodMarkers.testosterone[0].value > (data.bloodMarkers.testosterone[0].referenceRange?.max || 0) ? 'High' :
+                          'Normal'
+                        } />
+                      )}
+                      <span className="text-lg font-semibold text-gray-900">
+                        {data.loading ? "..." :
+                         data.bloodMarkers.testosterone.length > 0 ?
+                         `${data.bloodMarkers.testosterone[0].value} ${data.bloodMarkers.testosterone[0].unit}` :
+                         "No data"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Free Testosterone</span>
+                      <p className="text-xs text-gray-500">Bioavailable</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {data.bloodMarkers.freeTesto.length > 0 && (
+                        <div className={`w-2 h-2 rounded-full ${
+                          data.bloodMarkers.freeTesto[0].value < (data.bloodMarkers.freeTesto[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                          data.bloodMarkers.freeTesto[0].value > (data.bloodMarkers.freeTesto[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+                          'bg-green-500'
+                        }`} title={
+                          data.bloodMarkers.freeTesto[0].value < (data.bloodMarkers.freeTesto[0].referenceRange?.min || 0) ? 'Low' :
+                          data.bloodMarkers.freeTesto[0].value > (data.bloodMarkers.freeTesto[0].referenceRange?.max || 0) ? 'High' :
+                          'Normal'
+                        } />
+                      )}
+                      <span className="text-lg font-semibold text-gray-900">
+                        {data.loading ? "..." :
+                         data.bloodMarkers.freeTesto.length > 0 ?
+                         `${data.bloodMarkers.freeTesto[0].value} ${data.bloodMarkers.freeTesto[0].unit}` :
+                         "No data"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">DHEA-S</span>
+                      <p className="text-xs text-gray-500">Precursor hormone</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {data.bloodMarkers.dheas.length > 0 && (
+                        <div className={`w-2 h-2 rounded-full ${
+                          data.bloodMarkers.dheas[0].value < (data.bloodMarkers.dheas[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                          data.bloodMarkers.dheas[0].value > (data.bloodMarkers.dheas[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+                          'bg-green-500'
+                        }`} title={
+                          data.bloodMarkers.dheas[0].value < (data.bloodMarkers.dheas[0].referenceRange?.min || 0) ? 'Low' :
+                          data.bloodMarkers.dheas[0].value > (data.bloodMarkers.dheas[0].referenceRange?.max || 0) ? 'High' :
+                          'Normal'
+                        } />
+                      )}
+                      <span className="text-lg font-semibold text-gray-900">
+                        {data.loading ? "..." :
+                         data.bloodMarkers.dheas.length > 0 ?
+                         `${data.bloodMarkers.dheas[0].value} ${data.bloodMarkers.dheas[0].unit}` :
+                         "No data"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">IGF-1</span>
+                      <p className="text-xs text-gray-500">Growth factor</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {data.bloodMarkers.igf1.length > 0 && (
+                        <div className={`w-2 h-2 rounded-full ${
+                          data.bloodMarkers.igf1[0].value < (data.bloodMarkers.igf1[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                          data.bloodMarkers.igf1[0].value > (data.bloodMarkers.igf1[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+                          'bg-green-500'
+                        }`} title={
+                          data.bloodMarkers.igf1[0].value < (data.bloodMarkers.igf1[0].referenceRange?.min || 0) ? 'Low' :
+                          data.bloodMarkers.igf1[0].value > (data.bloodMarkers.igf1[0].referenceRange?.max || 0) ? 'High' :
+                          'Normal'
+                        } />
+                      )}
+                      <span className="text-lg font-semibold text-gray-900">
+                        {data.loading ? "..." :
+                         data.bloodMarkers.igf1.length > 0 ?
+                         `${data.bloodMarkers.igf1[0].value} ${data.bloodMarkers.igf1[0].unit}` :
+                         "No data"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
+                {data.bloodMarkers.testosterone.length > 0 && (
+                  <p className="text-sm text-gray-500 mt-6">
+                    Last tested: {new Date(data.bloodMarkers.testosterone[0].date).toLocaleDateString()}
+                  </p>
+                )}
               </div>
 
               {/* Cholesterol Panel */}
               <div className="border border-gray-100 rounded-xl p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Cholesterol Panel</h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-baseline border-b border-gray-100 pb-3">
-                    <span className="text-sm text-gray-600">Total Cholesterol</span>
-                    <span className="text-lg font-medium text-gray-900">
-                      {data.loading ? "..." :
-                       data.bloodMarkers.totalCholesterol.length > 0 ?
-                       `${data.bloodMarkers.totalCholesterol[0].value} ${data.bloodMarkers.totalCholesterol[0].unit}` :
-                       "No data"}
-                    </span>
+                <h3 className="text-lg font-medium text-gray-900 mb-6">Cholesterol Panel</h3>
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+                    <span className="text-sm font-medium text-gray-600">Total Cholesterol</span>
+                    <div className="flex items-center gap-3">
+                      {data.bloodMarkers.totalCholesterol.length > 0 && (
+                        <div className={`w-2 h-2 rounded-full ${
+                          data.bloodMarkers.totalCholesterol[0].value < (data.bloodMarkers.totalCholesterol[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                          data.bloodMarkers.totalCholesterol[0].value > (data.bloodMarkers.totalCholesterol[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+                          'bg-green-500'
+                        }`} title={
+                          data.bloodMarkers.totalCholesterol[0].value < (data.bloodMarkers.totalCholesterol[0].referenceRange?.min || 0) ? 'Low' :
+                          data.bloodMarkers.totalCholesterol[0].value > (data.bloodMarkers.totalCholesterol[0].referenceRange?.max || 0) ? 'High' :
+                          'Normal'
+                        } />
+                      )}
+                      <span className="text-lg font-semibold text-gray-900">
+                        {data.loading ? "..." :
+                         data.bloodMarkers.totalCholesterol.length > 0 ?
+                         `${data.bloodMarkers.totalCholesterol[0].value} ${data.bloodMarkers.totalCholesterol[0].unit}` :
+                         "No data"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-baseline border-b border-gray-100 pb-3">
-                    <span className="text-sm text-gray-600">LDL</span>
-                    <span className="text-lg font-medium text-gray-900">
-                      {data.loading ? "..." :
-                       data.bloodMarkers.ldl.length > 0 ?
-                       `${data.bloodMarkers.ldl[0].value} ${data.bloodMarkers.ldl[0].unit}` :
-                       "No data"}
-                    </span>
+                  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+                    <span className="text-sm font-medium text-gray-600">LDL</span>
+                    <div className="flex items-center gap-3">
+                      {data.bloodMarkers.ldl.length > 0 && (
+                        <div className={`w-2 h-2 rounded-full ${
+                          data.bloodMarkers.ldl[0].value < (data.bloodMarkers.ldl[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                          data.bloodMarkers.ldl[0].value > (data.bloodMarkers.ldl[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+                          'bg-green-500'
+                        }`} title={
+                          data.bloodMarkers.ldl[0].value < (data.bloodMarkers.ldl[0].referenceRange?.min || 0) ? 'Low' :
+                          data.bloodMarkers.ldl[0].value > (data.bloodMarkers.ldl[0].referenceRange?.max || 0) ? 'High' :
+                          'Normal'
+                        } />
+                      )}
+                      <span className="text-lg font-semibold text-gray-900">
+                        {data.loading ? "..." :
+                         data.bloodMarkers.ldl.length > 0 ?
+                         `${data.bloodMarkers.ldl[0].value} ${data.bloodMarkers.ldl[0].unit}` :
+                         "No data"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-baseline border-b border-gray-100 pb-3">
-                    <span className="text-sm text-gray-600">HDL</span>
-                    <span className="text-lg font-medium text-gray-900">
-                      {data.loading ? "..." :
-                       data.bloodMarkers.hdl.length > 0 ?
-                       `${data.bloodMarkers.hdl[0].value} ${data.bloodMarkers.hdl[0].unit}` :
-                       "No data"}
-                    </span>
+                  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+                    <span className="text-sm font-medium text-gray-600">HDL</span>
+                    <div className="flex items-center gap-3">
+                      {data.bloodMarkers.hdl.length > 0 && (
+                        <div className={`w-2 h-2 rounded-full ${
+                          data.bloodMarkers.hdl[0].value < (data.bloodMarkers.hdl[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                          data.bloodMarkers.hdl[0].value > (data.bloodMarkers.hdl[0].referenceRange?.max || 0) ? 'bg-green-500' :
+                          'bg-green-500'
+                        }`} title={
+                          data.bloodMarkers.hdl[0].value < (data.bloodMarkers.hdl[0].referenceRange?.min || 0) ? 'Low' :
+                          data.bloodMarkers.hdl[0].value > (data.bloodMarkers.hdl[0].referenceRange?.max || 0) ? 'Optimal' :
+                          'Normal'
+                        } />
+                      )}
+                      <span className="text-lg font-semibold text-gray-900">
+                        {data.loading ? "..." :
+                         data.bloodMarkers.hdl.length > 0 ?
+                         `${data.bloodMarkers.hdl[0].value} ${data.bloodMarkers.hdl[0].unit}` :
+                         "No data"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-sm text-gray-600">Triglycerides</span>
-                    <span className="text-lg font-medium text-gray-900">
-                      {data.loading ? "..." :
-                       data.bloodMarkers.triglycerides.length > 0 ?
-                       `${data.bloodMarkers.triglycerides[0].value} ${data.bloodMarkers.triglycerides[0].unit}` :
-                       "No data"}
-                    </span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-600">Triglycerides</span>
+                    <div className="flex items-center gap-3">
+                      {data.bloodMarkers.triglycerides.length > 0 && (
+                        <div className={`w-2 h-2 rounded-full ${
+                          data.bloodMarkers.triglycerides[0].value < (data.bloodMarkers.triglycerides[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                          data.bloodMarkers.triglycerides[0].value > (data.bloodMarkers.triglycerides[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+                          'bg-green-500'
+                        }`} title={
+                          data.bloodMarkers.triglycerides[0].value < (data.bloodMarkers.triglycerides[0].referenceRange?.min || 0) ? 'Low' :
+                          data.bloodMarkers.triglycerides[0].value > (data.bloodMarkers.triglycerides[0].referenceRange?.max || 0) ? 'High' :
+                          'Normal'
+                        } />
+                      )}
+                      <span className="text-lg font-semibold text-gray-900">
+                        {data.loading ? "..." :
+                         data.bloodMarkers.triglycerides.length > 0 ?
+                         `${data.bloodMarkers.triglycerides[0].value} ${data.bloodMarkers.triglycerides[0].unit}` :
+                         "No data"}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 {data.bloodMarkers.totalCholesterol.length > 0 && (
-                  <p className="text-sm text-gray-500 mt-4">
+                  <p className="text-sm text-gray-500 mt-6">
                     Last tested: {new Date(data.bloodMarkers.totalCholesterol[0].date).toLocaleDateString()}
                   </p>
                 )}
@@ -1413,29 +1619,55 @@ export default function Home() {
 
               {/* Metabolic Health */}
               <div className="border border-gray-100 rounded-xl p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Metabolic Health</h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-baseline border-b border-gray-100 pb-3">
-                    <span className="text-sm text-gray-600">Glucose</span>
-                    <span className="text-lg font-medium text-gray-900">
-                      {data.loading ? "..." :
-                       data.bloodMarkers.glucose.length > 0 ?
-                       `${data.bloodMarkers.glucose[0].value} ${data.bloodMarkers.glucose[0].unit}` :
-                       "No data"}
-                    </span>
+                <h3 className="text-lg font-medium text-gray-900 mb-6">Metabolic Health</h3>
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+                    <span className="text-sm font-medium text-gray-600">Glucose</span>
+                    <div className="flex items-center gap-3">
+                      {data.bloodMarkers.glucose.length > 0 && (
+                        <div className={`w-2 h-2 rounded-full ${
+                          data.bloodMarkers.glucose[0].value < (data.bloodMarkers.glucose[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                          data.bloodMarkers.glucose[0].value > (data.bloodMarkers.glucose[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+                          'bg-green-500'
+                        }`} title={
+                          data.bloodMarkers.glucose[0].value < (data.bloodMarkers.glucose[0].referenceRange?.min || 0) ? 'Low' :
+                          data.bloodMarkers.glucose[0].value > (data.bloodMarkers.glucose[0].referenceRange?.max || 0) ? 'High' :
+                          'Normal'
+                        } />
+                      )}
+                      <span className="text-lg font-semibold text-gray-900">
+                        {data.loading ? "..." :
+                         data.bloodMarkers.glucose.length > 0 ?
+                         `${data.bloodMarkers.glucose[0].value} ${data.bloodMarkers.glucose[0].unit}` :
+                         "No data"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-sm text-gray-600">CRP</span>
-                    <span className="text-lg font-medium text-gray-900">
-                      {data.loading ? "..." :
-                       data.bloodMarkers.crp.length > 0 ?
-                       `${data.bloodMarkers.crp[0].value} ${data.bloodMarkers.crp[0].unit}` :
-                       "No data"}
-                    </span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-600">CRP</span>
+                    <div className="flex items-center gap-3">
+                      {data.bloodMarkers.crp.length > 0 && (
+                        <div className={`w-2 h-2 rounded-full ${
+                          data.bloodMarkers.crp[0].value < (data.bloodMarkers.crp[0].referenceRange?.min || 0) ? 'bg-green-500' :
+                          data.bloodMarkers.crp[0].value > (data.bloodMarkers.crp[0].referenceRange?.max || 0) ? 'bg-red-500' :
+                          'bg-green-500'
+                        }`} title={
+                          data.bloodMarkers.crp[0].value < (data.bloodMarkers.crp[0].referenceRange?.min || 0) ? 'Optimal' :
+                          data.bloodMarkers.crp[0].value > (data.bloodMarkers.crp[0].referenceRange?.max || 0) ? 'High' :
+                          'Normal'
+                        } />
+                      )}
+                      <span className="text-lg font-semibold text-gray-900">
+                        {data.loading ? "..." :
+                         data.bloodMarkers.crp.length > 0 ?
+                         `${data.bloodMarkers.crp[0].value} ${data.bloodMarkers.crp[0].unit}` :
+                         "No data"}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 {data.bloodMarkers.glucose.length > 0 && (
-                  <p className="text-sm text-gray-500 mt-4">
+                  <p className="text-sm text-gray-500 mt-6">
                     Last tested: {new Date(data.bloodMarkers.glucose[0].date).toLocaleDateString()}
                   </p>
                 )}
@@ -1443,29 +1675,59 @@ export default function Home() {
 
               {/* Other Markers */}
               <div className="border border-gray-100 rounded-xl p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Other Markers</h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-baseline border-b border-gray-100 pb-3">
-                    <span className="text-sm text-gray-600">Vitamin D</span>
-                    <span className="text-lg font-medium text-gray-900">
-                      {data.loading ? "..." :
-                       data.bloodMarkers.vitaminD.length > 0 ?
-                       `${data.bloodMarkers.vitaminD[0].value} ${data.bloodMarkers.vitaminD[0].unit}` :
-                       "No data"}
-                    </span>
+                <h3 className="text-lg font-medium text-gray-900 mb-6">Other Markers</h3>
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+                    <span className="text-sm font-medium text-gray-600">Vitamin D</span>
+                    <div className="flex items-center gap-3">
+                      {data.bloodMarkers.vitaminD.length > 0 && (
+                        <div className={`w-2 h-2 rounded-full ${
+                          data.bloodMarkers.vitaminD[0].value < (data.bloodMarkers.vitaminD[0].referenceRange?.min || 0) ? 'bg-red-500' :
+                          data.bloodMarkers.vitaminD[0].value > (data.bloodMarkers.vitaminD[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+                          data.bloodMarkers.vitaminD[0].value >= 50 ? 'bg-green-500' :
+                          'bg-blue-500'
+                        }`} title={
+                          data.bloodMarkers.vitaminD[0].value < (data.bloodMarkers.vitaminD[0].referenceRange?.min || 0) ? 'Low' :
+                          data.bloodMarkers.vitaminD[0].value > (data.bloodMarkers.vitaminD[0].referenceRange?.max || 0) ? 'High' :
+                          data.bloodMarkers.vitaminD[0].value >= 50 ? 'Optimal' :
+                          'Normal'
+                        } />
+                      )}
+                      <span className="text-lg font-semibold text-gray-900">
+                        {data.loading ? "..." :
+                         data.bloodMarkers.vitaminD.length > 0 ?
+                         `${data.bloodMarkers.vitaminD[0].value} ${data.bloodMarkers.vitaminD[0].unit}` :
+                         "No data"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-sm text-gray-600">Homocysteine</span>
-                    <span className="text-lg font-medium text-gray-900">
-                      {data.loading ? "..." :
-                       data.bloodMarkers.homocysteine.length > 0 ?
-                       `${data.bloodMarkers.homocysteine[0].value} ${data.bloodMarkers.homocysteine[0].unit}` :
-                       "No data"}
-                    </span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-600">Homocysteine</span>
+                    <div className="flex items-center gap-3">
+                      {data.bloodMarkers.homocysteine.length > 0 && (
+                        <div className={`w-2 h-2 rounded-full ${
+                          data.bloodMarkers.homocysteine[0].value < (data.bloodMarkers.homocysteine[0].referenceRange?.min || 0) ? 'bg-green-500' :
+                          data.bloodMarkers.homocysteine[0].value > (data.bloodMarkers.homocysteine[0].referenceRange?.max || 0) ? 'bg-red-500' :
+                          data.bloodMarkers.homocysteine[0].value <= 7 ? 'bg-green-500' :
+                          'bg-blue-500'
+                        }`} title={
+                          data.bloodMarkers.homocysteine[0].value < (data.bloodMarkers.homocysteine[0].referenceRange?.min || 0) ? 'Low' :
+                          data.bloodMarkers.homocysteine[0].value > (data.bloodMarkers.homocysteine[0].referenceRange?.max || 0) ? 'High' :
+                          data.bloodMarkers.homocysteine[0].value <= 7 ? 'Optimal' :
+                          'Normal'
+                        } />
+                      )}
+                      <span className="text-lg font-semibold text-gray-900">
+                        {data.loading ? "..." :
+                         data.bloodMarkers.homocysteine.length > 0 ?
+                         `${data.bloodMarkers.homocysteine[0].value} ${data.bloodMarkers.homocysteine[0].unit}` :
+                         "No data"}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 {data.bloodMarkers.vitaminD.length > 0 && (
-                  <p className="text-sm text-gray-500 mt-4">
+                  <p className="text-sm text-gray-500 mt-6">
                     Last tested: {new Date(data.bloodMarkers.vitaminD[0].date).toLocaleDateString()}
                   </p>
                 )}
