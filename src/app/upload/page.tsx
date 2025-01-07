@@ -6,9 +6,18 @@ import AddResultsModal from '../components/AddResultsModal';
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
 
+interface ProcessingResult {
+  success: boolean;
+  message: string;
+  error?: string;
+  results: Array<{
+    message: string;
+  }>;
+}
+
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function triggerProcessing() {
+async function triggerProcessing(): Promise<ProcessingResult> {
   try {
     const response = await fetch('/api/process', {
       method: 'POST',
