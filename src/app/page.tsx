@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Image from 'next/image';
+import AddResultsModal from './components/AddResultsModal';
 
 interface HealthData {
   date: string;
@@ -366,6 +367,7 @@ export default function Home() {
     end: null
   });
   const [activeTab, setActiveTab] = useState<'metrics' | 'blood'>('metrics');
+  const [isAddResultsModalOpen, setIsAddResultsModalOpen] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -1059,6 +1061,11 @@ export default function Home() {
         <span className="ml-1">{Math.abs(percentChange).toFixed(1)}%</span>
       </span>
     );
+  };
+
+  const handleAddResults = (newResults: any) => {
+    // TODO: Implement adding results to the data
+    console.log('New results:', newResults);
   };
 
   return (
@@ -1839,7 +1846,7 @@ export default function Home() {
               <h2 className="text-2xl font-semibold text-gray-800">Blood Markers & Longevity</h2>
               <button 
                 className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-medium hover:bg-indigo-100 transition-colors"
-                onClick={() => {/* TODO: Add modal for adding new blood test results */}}
+                onClick={() => setIsAddResultsModalOpen(true)}
               >
                 Add Results
               </button>
@@ -1973,6 +1980,13 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Add Modal */}
+      <AddResultsModal
+        isOpen={isAddResultsModalOpen}
+        onClose={() => setIsAddResultsModalOpen(false)}
+        onSubmit={handleAddResults}
+      />
     </main>
   );
 }
