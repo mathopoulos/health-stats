@@ -26,18 +26,73 @@ interface ChartData {
   hrv: HealthData[];
   vo2max: HealthData[];
   bloodMarkers: {
-    testosterone: BloodMarker[];
-    freeTesto: BloodMarker[];
-    dheas: BloodMarker[];
-    igf1: BloodMarker[];
+    // Lipid Panel
     totalCholesterol: BloodMarker[];
     ldl: BloodMarker[];
     hdl: BloodMarker[];
     triglycerides: BloodMarker[];
+    apoB: BloodMarker[];
+    lpA: BloodMarker[];
+    
+    // Complete Blood Count
+    whiteBloodCells: BloodMarker[];
+    redBloodCells: BloodMarker[];
+    hematocrit: BloodMarker[];
+    hemoglobin: BloodMarker[];
+    platelets: BloodMarker[];
+    
+    // Glucose Markers
+    hba1c: BloodMarker[];
+    fastingInsulin: BloodMarker[];
     glucose: BloodMarker[];
-    crp: BloodMarker[];
+    
+    // Liver Markers
+    alt: BloodMarker[];
+    ast: BloodMarker[];
+    ggt: BloodMarker[];
+    
+    // Kidney Markers
+    egfr: BloodMarker[];
+    cystatinC: BloodMarker[];
+    bun: BloodMarker[];
+    creatinine: BloodMarker[];
+    albumin: BloodMarker[];
+    
+    // Sex Hormones
+    testosterone: BloodMarker[];
+    freeTesto: BloodMarker[];
+    estradiol: BloodMarker[];
+    shbg: BloodMarker[];
+    
+    // Thyroid Markers
+    t3: BloodMarker[];
+    t4: BloodMarker[];
+    tsh: BloodMarker[];
+    
+    // Vitamins
     vitaminD: BloodMarker[];
+    
+    // Inflammation
+    crp: BloodMarker[];
     homocysteine: BloodMarker[];
+    
+    // Growth Factors
+    igf1: BloodMarker[];
+    
+    // Iron Panel
+    ferritin: BloodMarker[];
+    serumIron: BloodMarker[];
+    tibc: BloodMarker[];
+    transferrinSaturation: BloodMarker[];
+    
+    // Electrolytes
+    sodium: BloodMarker[];
+    potassium: BloodMarker[];
+    calcium: BloodMarker[];
+    phosphorus: BloodMarker[];
+    magnesium: BloodMarker[];
+    bicarbonate: BloodMarker[];
+    chloride: BloodMarker[];
   };
   loading: boolean;
 }
@@ -52,18 +107,249 @@ export default function Home() {
     hrv: [],
     vo2max: [],
     bloodMarkers: {
-      testosterone: [],
-      freeTesto: [],
-      dheas: [],
-      igf1: [],
-      totalCholesterol: [],
-      ldl: [],
-      hdl: [],
-      triglycerides: [],
-      glucose: [],
-      crp: [],
-      vitaminD: [],
-      homocysteine: []
+      // Lipid Panel
+      totalCholesterol: [
+        { date: '2024-01-15', value: 185, unit: 'mg/dL', referenceRange: { min: 125, max: 200 } },
+        { date: '2023-12-15', value: 195, unit: 'mg/dL', referenceRange: { min: 125, max: 200 } },
+        { date: '2023-11-15', value: 205, unit: 'mg/dL', referenceRange: { min: 125, max: 200 } }
+      ],
+      ldl: [
+        { date: '2024-01-15', value: 110, unit: 'mg/dL', referenceRange: { min: 0, max: 130 } },
+        { date: '2023-12-15', value: 115, unit: 'mg/dL', referenceRange: { min: 0, max: 130 } },
+        { date: '2023-11-15', value: 120, unit: 'mg/dL', referenceRange: { min: 0, max: 130 } }
+      ],
+      hdl: [
+        { date: '2024-01-15', value: 65, unit: 'mg/dL', referenceRange: { min: 40, max: 60 } },
+        { date: '2023-12-15', value: 62, unit: 'mg/dL', referenceRange: { min: 40, max: 60 } },
+        { date: '2023-11-15', value: 58, unit: 'mg/dL', referenceRange: { min: 40, max: 60 } }
+      ],
+      triglycerides: [
+        { date: '2024-01-15', value: 120, unit: 'mg/dL', referenceRange: { min: 0, max: 150 } },
+        { date: '2023-12-15', value: 135, unit: 'mg/dL', referenceRange: { min: 0, max: 150 } },
+        { date: '2023-11-15', value: 145, unit: 'mg/dL', referenceRange: { min: 0, max: 150 } }
+      ],
+      apoB: [
+        { date: '2024-01-15', value: 85, unit: 'mg/dL', referenceRange: { min: 40, max: 125 } },
+        { date: '2023-12-15', value: 90, unit: 'mg/dL', referenceRange: { min: 40, max: 125 } },
+        { date: '2023-11-15', value: 95, unit: 'mg/dL', referenceRange: { min: 40, max: 125 } }
+      ],
+      lpA: [
+        { date: '2024-01-15', value: 25, unit: 'nmol/L', referenceRange: { min: 0, max: 75 } },
+        { date: '2023-12-15', value: 28, unit: 'nmol/L', referenceRange: { min: 0, max: 75 } },
+        { date: '2023-11-15', value: 30, unit: 'nmol/L', referenceRange: { min: 0, max: 75 } }
+      ],
+      
+      // Complete Blood Count
+      whiteBloodCells: [
+        { date: '2024-01-15', value: 6.5, unit: 'K/µL', referenceRange: { min: 4.5, max: 11.0 } },
+        { date: '2023-12-15', value: 6.8, unit: 'K/µL', referenceRange: { min: 4.5, max: 11.0 } },
+        { date: '2023-11-15', value: 7.0, unit: 'K/µL', referenceRange: { min: 4.5, max: 11.0 } }
+      ],
+      redBloodCells: [
+        { date: '2024-01-15', value: 5.2, unit: 'M/µL', referenceRange: { min: 4.5, max: 5.9 } },
+        { date: '2023-12-15', value: 5.1, unit: 'M/µL', referenceRange: { min: 4.5, max: 5.9 } },
+        { date: '2023-11-15', value: 5.0, unit: 'M/µL', referenceRange: { min: 4.5, max: 5.9 } }
+      ],
+      hematocrit: [
+        { date: '2024-01-15', value: 45, unit: '%', referenceRange: { min: 41, max: 50 } },
+        { date: '2023-12-15', value: 44, unit: '%', referenceRange: { min: 41, max: 50 } },
+        { date: '2023-11-15', value: 43, unit: '%', referenceRange: { min: 41, max: 50 } }
+      ],
+      hemoglobin: [
+        { date: '2024-01-15', value: 15.2, unit: 'g/dL', referenceRange: { min: 13.5, max: 17.5 } },
+        { date: '2023-12-15', value: 15.0, unit: 'g/dL', referenceRange: { min: 13.5, max: 17.5 } },
+        { date: '2023-11-15', value: 14.8, unit: 'g/dL', referenceRange: { min: 13.5, max: 17.5 } }
+      ],
+      platelets: [
+        { date: '2024-01-15', value: 250, unit: 'K/µL', referenceRange: { min: 150, max: 450 } },
+        { date: '2023-12-15', value: 245, unit: 'K/µL', referenceRange: { min: 150, max: 450 } },
+        { date: '2023-11-15', value: 240, unit: 'K/µL', referenceRange: { min: 150, max: 450 } }
+      ],
+      
+      // Glucose Markers
+      hba1c: [
+        { date: '2024-01-15', value: 5.2, unit: '%', referenceRange: { min: 4.0, max: 5.6 } },
+        { date: '2023-12-15', value: 5.3, unit: '%', referenceRange: { min: 4.0, max: 5.6 } },
+        { date: '2023-11-15', value: 5.4, unit: '%', referenceRange: { min: 4.0, max: 5.6 } }
+      ],
+      fastingInsulin: [
+        { date: '2024-01-15', value: 4.5, unit: 'µIU/mL', referenceRange: { min: 2.6, max: 24.9 } },
+        { date: '2023-12-15', value: 4.8, unit: 'µIU/mL', referenceRange: { min: 2.6, max: 24.9 } },
+        { date: '2023-11-15', value: 5.0, unit: 'µIU/mL', referenceRange: { min: 2.6, max: 24.9 } }
+      ],
+      glucose: [
+        { date: '2024-01-15', value: 85, unit: 'mg/dL', referenceRange: { min: 70, max: 100 } },
+        { date: '2023-12-15', value: 88, unit: 'mg/dL', referenceRange: { min: 70, max: 100 } },
+        { date: '2023-11-15', value: 92, unit: 'mg/dL', referenceRange: { min: 70, max: 100 } }
+      ],
+      
+      // Liver Markers
+      alt: [
+        { date: '2024-01-15', value: 25, unit: 'U/L', referenceRange: { min: 0, max: 55 } },
+        { date: '2023-12-15', value: 28, unit: 'U/L', referenceRange: { min: 0, max: 55 } },
+        { date: '2023-11-15', value: 30, unit: 'U/L', referenceRange: { min: 0, max: 55 } }
+      ],
+      ast: [
+        { date: '2024-01-15', value: 22, unit: 'U/L', referenceRange: { min: 5, max: 34 } },
+        { date: '2023-12-15', value: 24, unit: 'U/L', referenceRange: { min: 5, max: 34 } },
+        { date: '2023-11-15', value: 26, unit: 'U/L', referenceRange: { min: 5, max: 34 } }
+      ],
+      ggt: [
+        { date: '2024-01-15', value: 20, unit: 'U/L', referenceRange: { min: 9, max: 64 } },
+        { date: '2023-12-15', value: 22, unit: 'U/L', referenceRange: { min: 9, max: 64 } },
+        { date: '2023-11-15', value: 24, unit: 'U/L', referenceRange: { min: 9, max: 64 } }
+      ],
+      
+      // Kidney Markers
+      egfr: [
+        { date: '2024-01-15', value: 95, unit: 'mL/min/1.73m²', referenceRange: { min: 90, max: 120 } },
+        { date: '2023-12-15', value: 93, unit: 'mL/min/1.73m²', referenceRange: { min: 90, max: 120 } },
+        { date: '2023-11-15', value: 92, unit: 'mL/min/1.73m²', referenceRange: { min: 90, max: 120 } }
+      ],
+      cystatinC: [
+        { date: '2024-01-15', value: 0.9, unit: 'mg/L', referenceRange: { min: 0.5, max: 1.2 } },
+        { date: '2023-12-15', value: 0.92, unit: 'mg/L', referenceRange: { min: 0.5, max: 1.2 } },
+        { date: '2023-11-15', value: 0.94, unit: 'mg/L', referenceRange: { min: 0.5, max: 1.2 } }
+      ],
+      bun: [
+        { date: '2024-01-15', value: 15, unit: 'mg/dL', referenceRange: { min: 7, max: 20 } },
+        { date: '2023-12-15', value: 16, unit: 'mg/dL', referenceRange: { min: 7, max: 20 } },
+        { date: '2023-11-15', value: 17, unit: 'mg/dL', referenceRange: { min: 7, max: 20 } }
+      ],
+      creatinine: [
+        { date: '2024-01-15', value: 0.9, unit: 'mg/dL', referenceRange: { min: 0.7, max: 1.3 } },
+        { date: '2023-12-15', value: 0.92, unit: 'mg/dL', referenceRange: { min: 0.7, max: 1.3 } },
+        { date: '2023-11-15', value: 0.94, unit: 'mg/dL', referenceRange: { min: 0.7, max: 1.3 } }
+      ],
+      albumin: [
+        { date: '2024-01-15', value: 4.5, unit: 'g/dL', referenceRange: { min: 3.4, max: 5.4 } },
+        { date: '2023-12-15', value: 4.4, unit: 'g/dL', referenceRange: { min: 3.4, max: 5.4 } },
+        { date: '2023-11-15', value: 4.3, unit: 'g/dL', referenceRange: { min: 3.4, max: 5.4 } }
+      ],
+      
+      // Sex Hormones
+      testosterone: [
+        { date: '2024-01-15', value: 750, unit: 'ng/dL', referenceRange: { min: 300, max: 1000 } },
+        { date: '2023-12-15', value: 680, unit: 'ng/dL', referenceRange: { min: 300, max: 1000 } },
+        { date: '2023-11-15', value: 620, unit: 'ng/dL', referenceRange: { min: 300, max: 1000 } }
+      ],
+      freeTesto: [
+        { date: '2024-01-15', value: 15.5, unit: 'pg/mL', referenceRange: { min: 8.7, max: 25.1 } },
+        { date: '2023-12-15', value: 14.2, unit: 'pg/mL', referenceRange: { min: 8.7, max: 25.1 } },
+        { date: '2023-11-15', value: 13.8, unit: 'pg/mL', referenceRange: { min: 8.7, max: 25.1 } }
+      ],
+      estradiol: [
+        { date: '2024-01-15', value: 25, unit: 'pg/mL', referenceRange: { min: 10, max: 40 } },
+        { date: '2023-12-15', value: 28, unit: 'pg/mL', referenceRange: { min: 10, max: 40 } },
+        { date: '2023-11-15', value: 30, unit: 'pg/mL', referenceRange: { min: 10, max: 40 } }
+      ],
+      shbg: [
+        { date: '2024-01-15', value: 35, unit: 'nmol/L', referenceRange: { min: 10, max: 57 } },
+        { date: '2023-12-15', value: 38, unit: 'nmol/L', referenceRange: { min: 10, max: 57 } },
+        { date: '2023-11-15', value: 40, unit: 'nmol/L', referenceRange: { min: 10, max: 57 } }
+      ],
+      
+      // Thyroid Markers
+      t3: [
+        { date: '2024-01-15', value: 3.2, unit: 'pg/mL', referenceRange: { min: 2.3, max: 4.2 } },
+        { date: '2023-12-15', value: 3.3, unit: 'pg/mL', referenceRange: { min: 2.3, max: 4.2 } },
+        { date: '2023-11-15', value: 3.4, unit: 'pg/mL', referenceRange: { min: 2.3, max: 4.2 } }
+      ],
+      t4: [
+        { date: '2024-01-15', value: 1.3, unit: 'ng/dL', referenceRange: { min: 0.8, max: 1.8 } },
+        { date: '2023-12-15', value: 1.4, unit: 'ng/dL', referenceRange: { min: 0.8, max: 1.8 } },
+        { date: '2023-11-15', value: 1.5, unit: 'ng/dL', referenceRange: { min: 0.8, max: 1.8 } }
+      ],
+      tsh: [
+        { date: '2024-01-15', value: 2.1, unit: 'mIU/L', referenceRange: { min: 0.4, max: 4.0 } },
+        { date: '2023-12-15', value: 2.3, unit: 'mIU/L', referenceRange: { min: 0.4, max: 4.0 } },
+        { date: '2023-11-15', value: 2.5, unit: 'mIU/L', referenceRange: { min: 0.4, max: 4.0 } }
+      ],
+      
+      // Vitamins
+      vitaminD: [
+        { date: '2024-01-15', value: 45, unit: 'ng/mL', referenceRange: { min: 30, max: 100 } },
+        { date: '2023-12-15', value: 42, unit: 'ng/mL', referenceRange: { min: 30, max: 100 } },
+        { date: '2023-11-15', value: 38, unit: 'ng/mL', referenceRange: { min: 30, max: 100 } }
+      ],
+      
+      // Inflammation
+      crp: [
+        { date: '2024-01-15', value: 0.8, unit: 'mg/L', referenceRange: { min: 0, max: 3 } },
+        { date: '2023-12-15', value: 1.2, unit: 'mg/L', referenceRange: { min: 0, max: 3 } },
+        { date: '2023-11-15', value: 1.5, unit: 'mg/L', referenceRange: { min: 0, max: 3 } }
+      ],
+      homocysteine: [
+        { date: '2024-01-15', value: 8.5, unit: 'µmol/L', referenceRange: { min: 4, max: 15 } },
+        { date: '2023-12-15', value: 9.2, unit: 'µmol/L', referenceRange: { min: 4, max: 15 } },
+        { date: '2023-11-15', value: 9.8, unit: 'µmol/L', referenceRange: { min: 4, max: 15 } }
+      ],
+      
+      // Growth Factors
+      igf1: [
+        { date: '2024-01-15', value: 185, unit: 'ng/mL', referenceRange: { min: 115, max: 355 } },
+        { date: '2023-12-15', value: 175, unit: 'ng/mL', referenceRange: { min: 115, max: 355 } },
+        { date: '2023-11-15', value: 165, unit: 'ng/mL', referenceRange: { min: 115, max: 355 } }
+      ],
+      
+      // Iron Panel
+      ferritin: [
+        { date: '2024-01-15', value: 150, unit: 'ng/mL', referenceRange: { min: 30, max: 400 } },
+        { date: '2023-12-15', value: 145, unit: 'ng/mL', referenceRange: { min: 30, max: 400 } },
+        { date: '2023-11-15', value: 140, unit: 'ng/mL', referenceRange: { min: 30, max: 400 } }
+      ],
+      serumIron: [
+        { date: '2024-01-15', value: 95, unit: 'µg/dL', referenceRange: { min: 65, max: 175 } },
+        { date: '2023-12-15', value: 90, unit: 'µg/dL', referenceRange: { min: 65, max: 175 } },
+        { date: '2023-11-15', value: 85, unit: 'µg/dL', referenceRange: { min: 65, max: 175 } }
+      ],
+      tibc: [
+        { date: '2024-01-15', value: 320, unit: 'µg/dL', referenceRange: { min: 250, max: 450 } },
+        { date: '2023-12-15', value: 325, unit: 'µg/dL', referenceRange: { min: 250, max: 450 } },
+        { date: '2023-11-15', value: 330, unit: 'µg/dL', referenceRange: { min: 250, max: 450 } }
+      ],
+      transferrinSaturation: [
+        { date: '2024-01-15', value: 30, unit: '%', referenceRange: { min: 20, max: 50 } },
+        { date: '2023-12-15', value: 28, unit: '%', referenceRange: { min: 20, max: 50 } },
+        { date: '2023-11-15', value: 26, unit: '%', referenceRange: { min: 20, max: 50 } }
+      ],
+      
+      // Electrolytes
+      sodium: [
+        { date: '2024-01-15', value: 140, unit: 'mEq/L', referenceRange: { min: 135, max: 145 } },
+        { date: '2023-12-15', value: 139, unit: 'mEq/L', referenceRange: { min: 135, max: 145 } },
+        { date: '2023-11-15', value: 138, unit: 'mEq/L', referenceRange: { min: 135, max: 145 } }
+      ],
+      potassium: [
+        { date: '2024-01-15', value: 4.2, unit: 'mEq/L', referenceRange: { min: 3.5, max: 5.0 } },
+        { date: '2023-12-15', value: 4.1, unit: 'mEq/L', referenceRange: { min: 3.5, max: 5.0 } },
+        { date: '2023-11-15', value: 4.0, unit: 'mEq/L', referenceRange: { min: 3.5, max: 5.0 } }
+      ],
+      calcium: [
+        { date: '2024-01-15', value: 9.5, unit: 'mg/dL', referenceRange: { min: 8.5, max: 10.5 } },
+        { date: '2023-12-15', value: 9.4, unit: 'mg/dL', referenceRange: { min: 8.5, max: 10.5 } },
+        { date: '2023-11-15', value: 9.3, unit: 'mg/dL', referenceRange: { min: 8.5, max: 10.5 } }
+      ],
+      phosphorus: [
+        { date: '2024-01-15', value: 3.5, unit: 'mg/dL', referenceRange: { min: 2.5, max: 4.5 } },
+        { date: '2023-12-15', value: 3.4, unit: 'mg/dL', referenceRange: { min: 2.5, max: 4.5 } },
+        { date: '2023-11-15', value: 3.3, unit: 'mg/dL', referenceRange: { min: 2.5, max: 4.5 } }
+      ],
+      magnesium: [
+        { date: '2024-01-15', value: 2.1, unit: 'mg/dL', referenceRange: { min: 1.7, max: 2.4 } },
+        { date: '2023-12-15', value: 2.0, unit: 'mg/dL', referenceRange: { min: 1.7, max: 2.4 } },
+        { date: '2023-11-15', value: 1.9, unit: 'mg/dL', referenceRange: { min: 1.7, max: 2.4 } }
+      ],
+      bicarbonate: [
+        { date: '2024-01-15', value: 24, unit: 'mEq/L', referenceRange: { min: 22, max: 29 } },
+        { date: '2023-12-15', value: 25, unit: 'mEq/L', referenceRange: { min: 22, max: 29 } },
+        { date: '2023-11-15', value: 26, unit: 'mEq/L', referenceRange: { min: 22, max: 29 } }
+      ],
+      chloride: [
+        { date: '2024-01-15', value: 102, unit: 'mEq/L', referenceRange: { min: 96, max: 106 } },
+        { date: '2023-12-15', value: 101, unit: 'mEq/L', referenceRange: { min: 96, max: 106 } },
+        { date: '2023-11-15', value: 100, unit: 'mEq/L', referenceRange: { min: 96, max: 106 } }
+      ]
     },
     loading: true
   });
@@ -161,26 +447,7 @@ export default function Home() {
       setData({
         ...newData,
         bloodMarkers: {
-          testosterone: [
-            { date: '2024-01-15', value: 750, unit: 'ng/dL', referenceRange: { min: 300, max: 1000 } },
-            { date: '2023-12-15', value: 680, unit: 'ng/dL', referenceRange: { min: 300, max: 1000 } },
-            { date: '2023-11-15', value: 620, unit: 'ng/dL', referenceRange: { min: 300, max: 1000 } }
-          ],
-          freeTesto: [
-            { date: '2024-01-15', value: 15.5, unit: 'pg/mL', referenceRange: { min: 8.7, max: 25.1 } },
-            { date: '2023-12-15', value: 14.2, unit: 'pg/mL', referenceRange: { min: 8.7, max: 25.1 } },
-            { date: '2023-11-15', value: 13.8, unit: 'pg/mL', referenceRange: { min: 8.7, max: 25.1 } }
-          ],
-          dheas: [
-            { date: '2024-01-15', value: 325, unit: 'µg/dL', referenceRange: { min: 138, max: 475 } },
-            { date: '2023-12-15', value: 310, unit: 'µg/dL', referenceRange: { min: 138, max: 475 } },
-            { date: '2023-11-15', value: 295, unit: 'µg/dL', referenceRange: { min: 138, max: 475 } }
-          ],
-          igf1: [
-            { date: '2024-01-15', value: 185, unit: 'ng/mL', referenceRange: { min: 115, max: 355 } },
-            { date: '2023-12-15', value: 175, unit: 'ng/mL', referenceRange: { min: 115, max: 355 } },
-            { date: '2023-11-15', value: 165, unit: 'ng/mL', referenceRange: { min: 115, max: 355 } }
-          ],
+          // Lipid Panel
           totalCholesterol: [
             { date: '2024-01-15', value: 185, unit: 'mg/dL', referenceRange: { min: 125, max: 200 } },
             { date: '2023-12-15', value: 195, unit: 'mg/dL', referenceRange: { min: 125, max: 200 } },
@@ -201,25 +468,227 @@ export default function Home() {
             { date: '2023-12-15', value: 135, unit: 'mg/dL', referenceRange: { min: 0, max: 150 } },
             { date: '2023-11-15', value: 145, unit: 'mg/dL', referenceRange: { min: 0, max: 150 } }
           ],
+          apoB: [
+            { date: '2024-01-15', value: 85, unit: 'mg/dL', referenceRange: { min: 40, max: 125 } },
+            { date: '2023-12-15', value: 90, unit: 'mg/dL', referenceRange: { min: 40, max: 125 } },
+            { date: '2023-11-15', value: 95, unit: 'mg/dL', referenceRange: { min: 40, max: 125 } }
+          ],
+          lpA: [
+            { date: '2024-01-15', value: 25, unit: 'nmol/L', referenceRange: { min: 0, max: 75 } },
+            { date: '2023-12-15', value: 28, unit: 'nmol/L', referenceRange: { min: 0, max: 75 } },
+            { date: '2023-11-15', value: 30, unit: 'nmol/L', referenceRange: { min: 0, max: 75 } }
+          ],
+          
+          // Complete Blood Count
+          whiteBloodCells: [
+            { date: '2024-01-15', value: 6.5, unit: 'K/µL', referenceRange: { min: 4.5, max: 11.0 } },
+            { date: '2023-12-15', value: 6.8, unit: 'K/µL', referenceRange: { min: 4.5, max: 11.0 } },
+            { date: '2023-11-15', value: 7.0, unit: 'K/µL', referenceRange: { min: 4.5, max: 11.0 } }
+          ],
+          redBloodCells: [
+            { date: '2024-01-15', value: 5.2, unit: 'M/µL', referenceRange: { min: 4.5, max: 5.9 } },
+            { date: '2023-12-15', value: 5.1, unit: 'M/µL', referenceRange: { min: 4.5, max: 5.9 } },
+            { date: '2023-11-15', value: 5.0, unit: 'M/µL', referenceRange: { min: 4.5, max: 5.9 } }
+          ],
+          hematocrit: [
+            { date: '2024-01-15', value: 45, unit: '%', referenceRange: { min: 41, max: 50 } },
+            { date: '2023-12-15', value: 44, unit: '%', referenceRange: { min: 41, max: 50 } },
+            { date: '2023-11-15', value: 43, unit: '%', referenceRange: { min: 41, max: 50 } }
+          ],
+          hemoglobin: [
+            { date: '2024-01-15', value: 15.2, unit: 'g/dL', referenceRange: { min: 13.5, max: 17.5 } },
+            { date: '2023-12-15', value: 15.0, unit: 'g/dL', referenceRange: { min: 13.5, max: 17.5 } },
+            { date: '2023-11-15', value: 14.8, unit: 'g/dL', referenceRange: { min: 13.5, max: 17.5 } }
+          ],
+          platelets: [
+            { date: '2024-01-15', value: 250, unit: 'K/µL', referenceRange: { min: 150, max: 450 } },
+            { date: '2023-12-15', value: 245, unit: 'K/µL', referenceRange: { min: 150, max: 450 } },
+            { date: '2023-11-15', value: 240, unit: 'K/µL', referenceRange: { min: 150, max: 450 } }
+          ],
+          
+          // Glucose Markers
+          hba1c: [
+            { date: '2024-01-15', value: 5.2, unit: '%', referenceRange: { min: 4.0, max: 5.6 } },
+            { date: '2023-12-15', value: 5.3, unit: '%', referenceRange: { min: 4.0, max: 5.6 } },
+            { date: '2023-11-15', value: 5.4, unit: '%', referenceRange: { min: 4.0, max: 5.6 } }
+          ],
+          fastingInsulin: [
+            { date: '2024-01-15', value: 4.5, unit: 'µIU/mL', referenceRange: { min: 2.6, max: 24.9 } },
+            { date: '2023-12-15', value: 4.8, unit: 'µIU/mL', referenceRange: { min: 2.6, max: 24.9 } },
+            { date: '2023-11-15', value: 5.0, unit: 'µIU/mL', referenceRange: { min: 2.6, max: 24.9 } }
+          ],
           glucose: [
             { date: '2024-01-15', value: 85, unit: 'mg/dL', referenceRange: { min: 70, max: 100 } },
             { date: '2023-12-15', value: 88, unit: 'mg/dL', referenceRange: { min: 70, max: 100 } },
             { date: '2023-11-15', value: 92, unit: 'mg/dL', referenceRange: { min: 70, max: 100 } }
           ],
-          crp: [
-            { date: '2024-01-15', value: 0.8, unit: 'mg/L', referenceRange: { min: 0, max: 3 } },
-            { date: '2023-12-15', value: 1.2, unit: 'mg/L', referenceRange: { min: 0, max: 3 } },
-            { date: '2023-11-15', value: 1.5, unit: 'mg/L', referenceRange: { min: 0, max: 3 } }
+          
+          // Liver Markers
+          alt: [
+            { date: '2024-01-15', value: 25, unit: 'U/L', referenceRange: { min: 0, max: 55 } },
+            { date: '2023-12-15', value: 28, unit: 'U/L', referenceRange: { min: 0, max: 55 } },
+            { date: '2023-11-15', value: 30, unit: 'U/L', referenceRange: { min: 0, max: 55 } }
           ],
+          ast: [
+            { date: '2024-01-15', value: 22, unit: 'U/L', referenceRange: { min: 5, max: 34 } },
+            { date: '2023-12-15', value: 24, unit: 'U/L', referenceRange: { min: 5, max: 34 } },
+            { date: '2023-11-15', value: 26, unit: 'U/L', referenceRange: { min: 5, max: 34 } }
+          ],
+          ggt: [
+            { date: '2024-01-15', value: 20, unit: 'U/L', referenceRange: { min: 9, max: 64 } },
+            { date: '2023-12-15', value: 22, unit: 'U/L', referenceRange: { min: 9, max: 64 } },
+            { date: '2023-11-15', value: 24, unit: 'U/L', referenceRange: { min: 9, max: 64 } }
+          ],
+          
+          // Kidney Markers
+          egfr: [
+            { date: '2024-01-15', value: 95, unit: 'mL/min/1.73m²', referenceRange: { min: 90, max: 120 } },
+            { date: '2023-12-15', value: 93, unit: 'mL/min/1.73m²', referenceRange: { min: 90, max: 120 } },
+            { date: '2023-11-15', value: 92, unit: 'mL/min/1.73m²', referenceRange: { min: 90, max: 120 } }
+          ],
+          cystatinC: [
+            { date: '2024-01-15', value: 0.9, unit: 'mg/L', referenceRange: { min: 0.5, max: 1.2 } },
+            { date: '2023-12-15', value: 0.92, unit: 'mg/L', referenceRange: { min: 0.5, max: 1.2 } },
+            { date: '2023-11-15', value: 0.94, unit: 'mg/L', referenceRange: { min: 0.5, max: 1.2 } }
+          ],
+          bun: [
+            { date: '2024-01-15', value: 15, unit: 'mg/dL', referenceRange: { min: 7, max: 20 } },
+            { date: '2023-12-15', value: 16, unit: 'mg/dL', referenceRange: { min: 7, max: 20 } },
+            { date: '2023-11-15', value: 17, unit: 'mg/dL', referenceRange: { min: 7, max: 20 } }
+          ],
+          creatinine: [
+            { date: '2024-01-15', value: 0.9, unit: 'mg/dL', referenceRange: { min: 0.7, max: 1.3 } },
+            { date: '2023-12-15', value: 0.92, unit: 'mg/dL', referenceRange: { min: 0.7, max: 1.3 } },
+            { date: '2023-11-15', value: 0.94, unit: 'mg/dL', referenceRange: { min: 0.7, max: 1.3 } }
+          ],
+          albumin: [
+            { date: '2024-01-15', value: 4.5, unit: 'g/dL', referenceRange: { min: 3.4, max: 5.4 } },
+            { date: '2023-12-15', value: 4.4, unit: 'g/dL', referenceRange: { min: 3.4, max: 5.4 } },
+            { date: '2023-11-15', value: 4.3, unit: 'g/dL', referenceRange: { min: 3.4, max: 5.4 } }
+          ],
+          
+          // Sex Hormones
+          testosterone: [
+            { date: '2024-01-15', value: 750, unit: 'ng/dL', referenceRange: { min: 300, max: 1000 } },
+            { date: '2023-12-15', value: 680, unit: 'ng/dL', referenceRange: { min: 300, max: 1000 } },
+            { date: '2023-11-15', value: 620, unit: 'ng/dL', referenceRange: { min: 300, max: 1000 } }
+          ],
+          freeTesto: [
+            { date: '2024-01-15', value: 15.5, unit: 'pg/mL', referenceRange: { min: 8.7, max: 25.1 } },
+            { date: '2023-12-15', value: 14.2, unit: 'pg/mL', referenceRange: { min: 8.7, max: 25.1 } },
+            { date: '2023-11-15', value: 13.8, unit: 'pg/mL', referenceRange: { min: 8.7, max: 25.1 } }
+          ],
+          estradiol: [
+            { date: '2024-01-15', value: 25, unit: 'pg/mL', referenceRange: { min: 10, max: 40 } },
+            { date: '2023-12-15', value: 28, unit: 'pg/mL', referenceRange: { min: 10, max: 40 } },
+            { date: '2023-11-15', value: 30, unit: 'pg/mL', referenceRange: { min: 10, max: 40 } }
+          ],
+          shbg: [
+            { date: '2024-01-15', value: 35, unit: 'nmol/L', referenceRange: { min: 10, max: 57 } },
+            { date: '2023-12-15', value: 38, unit: 'nmol/L', referenceRange: { min: 10, max: 57 } },
+            { date: '2023-11-15', value: 40, unit: 'nmol/L', referenceRange: { min: 10, max: 57 } }
+          ],
+          
+          // Thyroid Markers
+          t3: [
+            { date: '2024-01-15', value: 3.2, unit: 'pg/mL', referenceRange: { min: 2.3, max: 4.2 } },
+            { date: '2023-12-15', value: 3.3, unit: 'pg/mL', referenceRange: { min: 2.3, max: 4.2 } },
+            { date: '2023-11-15', value: 3.4, unit: 'pg/mL', referenceRange: { min: 2.3, max: 4.2 } }
+          ],
+          t4: [
+            { date: '2024-01-15', value: 1.3, unit: 'ng/dL', referenceRange: { min: 0.8, max: 1.8 } },
+            { date: '2023-12-15', value: 1.4, unit: 'ng/dL', referenceRange: { min: 0.8, max: 1.8 } },
+            { date: '2023-11-15', value: 1.5, unit: 'ng/dL', referenceRange: { min: 0.8, max: 1.8 } }
+          ],
+          tsh: [
+            { date: '2024-01-15', value: 2.1, unit: 'mIU/L', referenceRange: { min: 0.4, max: 4.0 } },
+            { date: '2023-12-15', value: 2.3, unit: 'mIU/L', referenceRange: { min: 0.4, max: 4.0 } },
+            { date: '2023-11-15', value: 2.5, unit: 'mIU/L', referenceRange: { min: 0.4, max: 4.0 } }
+          ],
+          
+          // Vitamins
           vitaminD: [
             { date: '2024-01-15', value: 45, unit: 'ng/mL', referenceRange: { min: 30, max: 100 } },
             { date: '2023-12-15', value: 42, unit: 'ng/mL', referenceRange: { min: 30, max: 100 } },
             { date: '2023-11-15', value: 38, unit: 'ng/mL', referenceRange: { min: 30, max: 100 } }
           ],
+          
+          // Inflammation
+          crp: [
+            { date: '2024-01-15', value: 0.8, unit: 'mg/L', referenceRange: { min: 0, max: 3 } },
+            { date: '2023-12-15', value: 1.2, unit: 'mg/L', referenceRange: { min: 0, max: 3 } },
+            { date: '2023-11-15', value: 1.5, unit: 'mg/L', referenceRange: { min: 0, max: 3 } }
+          ],
           homocysteine: [
             { date: '2024-01-15', value: 8.5, unit: 'µmol/L', referenceRange: { min: 4, max: 15 } },
             { date: '2023-12-15', value: 9.2, unit: 'µmol/L', referenceRange: { min: 4, max: 15 } },
             { date: '2023-11-15', value: 9.8, unit: 'µmol/L', referenceRange: { min: 4, max: 15 } }
+          ],
+          
+          // Growth Factors
+          igf1: [
+            { date: '2024-01-15', value: 185, unit: 'ng/mL', referenceRange: { min: 115, max: 355 } },
+            { date: '2023-12-15', value: 175, unit: 'ng/mL', referenceRange: { min: 115, max: 355 } },
+            { date: '2023-11-15', value: 165, unit: 'ng/mL', referenceRange: { min: 115, max: 355 } }
+          ],
+          
+          // Iron Panel
+          ferritin: [
+            { date: '2024-01-15', value: 150, unit: 'ng/mL', referenceRange: { min: 30, max: 400 } },
+            { date: '2023-12-15', value: 145, unit: 'ng/mL', referenceRange: { min: 30, max: 400 } },
+            { date: '2023-11-15', value: 140, unit: 'ng/mL', referenceRange: { min: 30, max: 400 } }
+          ],
+          serumIron: [
+            { date: '2024-01-15', value: 95, unit: 'µg/dL', referenceRange: { min: 65, max: 175 } },
+            { date: '2023-12-15', value: 90, unit: 'µg/dL', referenceRange: { min: 65, max: 175 } },
+            { date: '2023-11-15', value: 85, unit: 'µg/dL', referenceRange: { min: 65, max: 175 } }
+          ],
+          tibc: [
+            { date: '2024-01-15', value: 320, unit: 'µg/dL', referenceRange: { min: 250, max: 450 } },
+            { date: '2023-12-15', value: 325, unit: 'µg/dL', referenceRange: { min: 250, max: 450 } },
+            { date: '2023-11-15', value: 330, unit: 'µg/dL', referenceRange: { min: 250, max: 450 } }
+          ],
+          transferrinSaturation: [
+            { date: '2024-01-15', value: 30, unit: '%', referenceRange: { min: 20, max: 50 } },
+            { date: '2023-12-15', value: 28, unit: '%', referenceRange: { min: 20, max: 50 } },
+            { date: '2023-11-15', value: 26, unit: '%', referenceRange: { min: 20, max: 50 } }
+          ],
+          
+          // Electrolytes
+          sodium: [
+            { date: '2024-01-15', value: 140, unit: 'mEq/L', referenceRange: { min: 135, max: 145 } },
+            { date: '2023-12-15', value: 139, unit: 'mEq/L', referenceRange: { min: 135, max: 145 } },
+            { date: '2023-11-15', value: 138, unit: 'mEq/L', referenceRange: { min: 135, max: 145 } }
+          ],
+          potassium: [
+            { date: '2024-01-15', value: 4.2, unit: 'mEq/L', referenceRange: { min: 3.5, max: 5.0 } },
+            { date: '2023-12-15', value: 4.1, unit: 'mEq/L', referenceRange: { min: 3.5, max: 5.0 } },
+            { date: '2023-11-15', value: 4.0, unit: 'mEq/L', referenceRange: { min: 3.5, max: 5.0 } }
+          ],
+          calcium: [
+            { date: '2024-01-15', value: 9.5, unit: 'mg/dL', referenceRange: { min: 8.5, max: 10.5 } },
+            { date: '2023-12-15', value: 9.4, unit: 'mg/dL', referenceRange: { min: 8.5, max: 10.5 } },
+            { date: '2023-11-15', value: 9.3, unit: 'mg/dL', referenceRange: { min: 8.5, max: 10.5 } }
+          ],
+          phosphorus: [
+            { date: '2024-01-15', value: 3.5, unit: 'mg/dL', referenceRange: { min: 2.5, max: 4.5 } },
+            { date: '2023-12-15', value: 3.4, unit: 'mg/dL', referenceRange: { min: 2.5, max: 4.5 } },
+            { date: '2023-11-15', value: 3.3, unit: 'mg/dL', referenceRange: { min: 2.5, max: 4.5 } }
+          ],
+          magnesium: [
+            { date: '2024-01-15', value: 2.1, unit: 'mg/dL', referenceRange: { min: 1.7, max: 2.4 } },
+            { date: '2023-12-15', value: 2.0, unit: 'mg/dL', referenceRange: { min: 1.7, max: 2.4 } },
+            { date: '2023-11-15', value: 1.9, unit: 'mg/dL', referenceRange: { min: 1.7, max: 2.4 } }
+          ],
+          bicarbonate: [
+            { date: '2024-01-15', value: 24, unit: 'mEq/L', referenceRange: { min: 22, max: 29 } },
+            { date: '2023-12-15', value: 25, unit: 'mEq/L', referenceRange: { min: 22, max: 29 } },
+            { date: '2023-11-15', value: 26, unit: 'mEq/L', referenceRange: { min: 22, max: 29 } }
+          ],
+          chloride: [
+            { date: '2024-01-15', value: 102, unit: 'mEq/L', referenceRange: { min: 96, max: 106 } },
+            { date: '2023-12-15', value: 101, unit: 'mEq/L', referenceRange: { min: 96, max: 106 } },
+            { date: '2023-11-15', value: 100, unit: 'mEq/L', referenceRange: { min: 96, max: 106 } }
           ]
         },
         loading: false
@@ -1377,431 +1846,128 @@ export default function Home() {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Hormones */}
+              {/* Lipid Panel */}
               <div className="border border-gray-100 rounded-xl p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-6">Hormones</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-6">Lipid Panel</h3>
                 <div className="space-y-6">
-                  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">Testosterone</span>
-                      <p className="text-xs text-gray-500">Total</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {data.bloodMarkers.testosterone.length > 0 && (
-                        <>
-                          <div className={`w-2 h-2 rounded-full ${
-                            data.bloodMarkers.testosterone[0].value < (data.bloodMarkers.testosterone[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                            data.bloodMarkers.testosterone[0].value > (data.bloodMarkers.testosterone[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-                            'bg-green-500'
-                          }`} title={
-                            data.bloodMarkers.testosterone[0].value < (data.bloodMarkers.testosterone[0].referenceRange?.min || 0) ? 'Low' :
-                            data.bloodMarkers.testosterone[0].value > (data.bloodMarkers.testosterone[0].referenceRange?.max || 0) ? 'High' :
-                            'Normal'
-                          } />
-                          {data.bloodMarkers.testosterone.length > 1 && (
-                            <TrendIndicator 
-                              current={data.bloodMarkers.testosterone[0].value}
-                              previous={data.bloodMarkers.testosterone[1].value}
-                            />
-                          )}
-                        </>
-                      )}
-                      <span className="text-lg font-semibold text-gray-900">
-                        {data.loading ? "..." :
-                         data.bloodMarkers.testosterone.length > 0 ?
-                         `${data.bloodMarkers.testosterone[0].value} ${data.bloodMarkers.testosterone[0].unit}` :
-                         "No data"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">Free Testosterone</span>
-                      <p className="text-xs text-gray-500">Bioavailable</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {data.bloodMarkers.freeTesto.length > 0 && (
-                        <>
-                          <div className={`w-2 h-2 rounded-full ${
-                            data.bloodMarkers.freeTesto[0].value < (data.bloodMarkers.freeTesto[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                            data.bloodMarkers.freeTesto[0].value > (data.bloodMarkers.freeTesto[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-                            'bg-green-500'
-                          }`} title={
-                            data.bloodMarkers.freeTesto[0].value < (data.bloodMarkers.freeTesto[0].referenceRange?.min || 0) ? 'Low' :
-                            data.bloodMarkers.freeTesto[0].value > (data.bloodMarkers.freeTesto[0].referenceRange?.max || 0) ? 'High' :
-                            'Normal'
-                          } />
-                          {data.bloodMarkers.freeTesto.length > 1 && (
-                            <TrendIndicator 
-                              current={data.bloodMarkers.freeTesto[0].value}
-                              previous={data.bloodMarkers.freeTesto[1].value}
-                            />
-                          )}
-                        </>
-                      )}
-                      <span className="text-lg font-semibold text-gray-900">
-                        {data.loading ? "..." :
-                         data.bloodMarkers.freeTesto.length > 0 ?
-                         `${data.bloodMarkers.freeTesto[0].value} ${data.bloodMarkers.freeTesto[0].unit}` :
-                         "No data"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">DHEA-S</span>
-                      <p className="text-xs text-gray-500">Precursor hormone</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {data.bloodMarkers.dheas.length > 0 && (
-                        <>
-                          <div className={`w-2 h-2 rounded-full ${
-                            data.bloodMarkers.dheas[0].value < (data.bloodMarkers.dheas[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                            data.bloodMarkers.dheas[0].value > (data.bloodMarkers.dheas[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-                            'bg-green-500'
-                          }`} title={
-                            data.bloodMarkers.dheas[0].value < (data.bloodMarkers.dheas[0].referenceRange?.min || 0) ? 'Low' :
-                            data.bloodMarkers.dheas[0].value > (data.bloodMarkers.dheas[0].referenceRange?.max || 0) ? 'High' :
-                            'Normal'
-                          } />
-                          {data.bloodMarkers.dheas.length > 1 && (
-                            <TrendIndicator 
-                              current={data.bloodMarkers.dheas[0].value}
-                              previous={data.bloodMarkers.dheas[1].value}
-                            />
-                          )}
-                        </>
-                      )}
-                      <span className="text-lg font-semibold text-gray-900">
-                        {data.loading ? "..." :
-                         data.bloodMarkers.dheas.length > 0 ?
-                         `${data.bloodMarkers.dheas[0].value} ${data.bloodMarkers.dheas[0].unit}` :
-                         "No data"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">IGF-1</span>
-                      <p className="text-xs text-gray-500">Growth factor</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {data.bloodMarkers.igf1.length > 0 && (
-                        <>
-                          <div className={`w-2 h-2 rounded-full ${
-                            data.bloodMarkers.igf1[0].value < (data.bloodMarkers.igf1[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                            data.bloodMarkers.igf1[0].value > (data.bloodMarkers.igf1[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-                            'bg-green-500'
-                          }`} title={
-                            data.bloodMarkers.igf1[0].value < (data.bloodMarkers.igf1[0].referenceRange?.min || 0) ? 'Low' :
-                            data.bloodMarkers.igf1[0].value > (data.bloodMarkers.igf1[0].referenceRange?.max || 0) ? 'High' :
-                            'Normal'
-                          } />
-                          {data.bloodMarkers.igf1.length > 1 && (
-                            <TrendIndicator 
-                              current={data.bloodMarkers.igf1[0].value}
-                              previous={data.bloodMarkers.igf1[1].value}
-                            />
-                          )}
-                        </>
-                      )}
-                      <span className="text-lg font-semibold text-gray-900">
-                        {data.loading ? "..." :
-                         data.bloodMarkers.igf1.length > 0 ?
-                         `${data.bloodMarkers.igf1[0].value} ${data.bloodMarkers.igf1[0].unit}` :
-                         "No data"}
-                      </span>
-                    </div>
-                  </div>
+                  <MarkerRow label="Total Cholesterol" data={data.bloodMarkers.totalCholesterol} />
+                  <MarkerRow label="LDL-C" data={data.bloodMarkers.ldl} />
+                  <MarkerRow label="HDL-C" data={data.bloodMarkers.hdl} />
+                  <MarkerRow label="Triglycerides" data={data.bloodMarkers.triglycerides} />
+                  <MarkerRow label="ApoB" data={data.bloodMarkers.apoB} />
+                  <MarkerRow label="Lp(a)" data={data.bloodMarkers.lpA} />
                 </div>
-                {data.bloodMarkers.testosterone.length > 0 && (
-                  <p className="text-sm text-gray-500 mt-6">
-                    Last tested: {new Date(data.bloodMarkers.testosterone[0].date).toLocaleDateString()}
-                  </p>
-                )}
+                <LastTestedDate data={data.bloodMarkers.totalCholesterol} />
               </div>
 
-              {/* Cholesterol Panel */}
+              {/* Complete Blood Count */}
               <div className="border border-gray-100 rounded-xl p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-6">Cholesterol Panel</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-6">Complete Blood Count</h3>
                 <div className="space-y-6">
-                  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-                    <span className="text-sm font-medium text-gray-600">Total Cholesterol</span>
-                    <div className="flex items-center gap-3">
-                      {data.bloodMarkers.totalCholesterol.length > 0 && (
-                        <>
-                          <div className={`w-2 h-2 rounded-full ${
-                            data.bloodMarkers.totalCholesterol[0].value < (data.bloodMarkers.totalCholesterol[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                            data.bloodMarkers.totalCholesterol[0].value > (data.bloodMarkers.totalCholesterol[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-                            'bg-green-500'
-                          }`} title={
-                            data.bloodMarkers.totalCholesterol[0].value < (data.bloodMarkers.totalCholesterol[0].referenceRange?.min || 0) ? 'Low' :
-                            data.bloodMarkers.totalCholesterol[0].value > (data.bloodMarkers.totalCholesterol[0].referenceRange?.max || 0) ? 'High' :
-                            'Normal'
-                          } />
-                          {data.bloodMarkers.totalCholesterol.length > 1 && (
-                            <TrendIndicator 
-                              current={data.bloodMarkers.totalCholesterol[0].value}
-                              previous={data.bloodMarkers.totalCholesterol[1].value}
-                            />
-                          )}
-                        </>
-                      )}
-                      <span className="text-lg font-semibold text-gray-900">
-                        {data.loading ? "..." :
-                         data.bloodMarkers.totalCholesterol.length > 0 ?
-                         `${data.bloodMarkers.totalCholesterol[0].value} ${data.bloodMarkers.totalCholesterol[0].unit}` :
-                         "No data"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-                    <span className="text-sm font-medium text-gray-600">LDL</span>
-                    <div className="flex items-center gap-3">
-                      {data.bloodMarkers.ldl.length > 0 && (
-                        <>
-                          <div className={`w-2 h-2 rounded-full ${
-                            data.bloodMarkers.ldl[0].value < (data.bloodMarkers.ldl[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                            data.bloodMarkers.ldl[0].value > (data.bloodMarkers.ldl[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-                            'bg-green-500'
-                          }`} title={
-                            data.bloodMarkers.ldl[0].value < (data.bloodMarkers.ldl[0].referenceRange?.min || 0) ? 'Low' :
-                            data.bloodMarkers.ldl[0].value > (data.bloodMarkers.ldl[0].referenceRange?.max || 0) ? 'High' :
-                            'Normal'
-                          } />
-                          {data.bloodMarkers.ldl.length > 1 && (
-                            <TrendIndicator 
-                              current={data.bloodMarkers.ldl[0].value}
-                              previous={data.bloodMarkers.ldl[1].value}
-                            />
-                          )}
-                        </>
-                      )}
-                      <span className="text-lg font-semibold text-gray-900">
-                        {data.loading ? "..." :
-                         data.bloodMarkers.ldl.length > 0 ?
-                         `${data.bloodMarkers.ldl[0].value} ${data.bloodMarkers.ldl[0].unit}` :
-                         "No data"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-                    <span className="text-sm font-medium text-gray-600">HDL</span>
-                    <div className="flex items-center gap-3">
-                      {data.bloodMarkers.hdl.length > 0 && (
-                        <>
-                          <div className={`w-2 h-2 rounded-full ${
-                            data.bloodMarkers.hdl[0].value < (data.bloodMarkers.hdl[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                            data.bloodMarkers.hdl[0].value > (data.bloodMarkers.hdl[0].referenceRange?.max || 0) ? 'bg-green-500' :
-                            'bg-green-500'
-                          }`} title={
-                            data.bloodMarkers.hdl[0].value < (data.bloodMarkers.hdl[0].referenceRange?.min || 0) ? 'Low' :
-                            data.bloodMarkers.hdl[0].value > (data.bloodMarkers.hdl[0].referenceRange?.max || 0) ? 'Optimal' :
-                            'Normal'
-                          } />
-                          {data.bloodMarkers.hdl.length > 1 && (
-                            <TrendIndicator 
-                              current={data.bloodMarkers.hdl[0].value}
-                              previous={data.bloodMarkers.hdl[1].value}
-                            />
-                          )}
-                        </>
-                      )}
-                      <span className="text-lg font-semibold text-gray-900">
-                        {data.loading ? "..." :
-                         data.bloodMarkers.hdl.length > 0 ?
-                         `${data.bloodMarkers.hdl[0].value} ${data.bloodMarkers.hdl[0].unit}` :
-                         "No data"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-600">Triglycerides</span>
-                    <div className="flex items-center gap-3">
-                      {data.bloodMarkers.triglycerides.length > 0 && (
-                        <>
-                          <div className={`w-2 h-2 rounded-full ${
-                            data.bloodMarkers.triglycerides[0].value < (data.bloodMarkers.triglycerides[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                            data.bloodMarkers.triglycerides[0].value > (data.bloodMarkers.triglycerides[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-                            'bg-green-500'
-                          }`} title={
-                            data.bloodMarkers.triglycerides[0].value < (data.bloodMarkers.triglycerides[0].referenceRange?.min || 0) ? 'Low' :
-                            data.bloodMarkers.triglycerides[0].value > (data.bloodMarkers.triglycerides[0].referenceRange?.max || 0) ? 'High' :
-                            'Normal'
-                          } />
-                          {data.bloodMarkers.triglycerides.length > 1 && (
-                            <TrendIndicator 
-                              current={data.bloodMarkers.triglycerides[0].value}
-                              previous={data.bloodMarkers.triglycerides[1].value}
-                            />
-                          )}
-                        </>
-                      )}
-                      <span className="text-lg font-semibold text-gray-900">
-                        {data.loading ? "..." :
-                         data.bloodMarkers.triglycerides.length > 0 ?
-                         `${data.bloodMarkers.triglycerides[0].value} ${data.bloodMarkers.triglycerides[0].unit}` :
-                         "No data"}
-                      </span>
-                    </div>
-                  </div>
+                  <MarkerRow label="White Blood Cells" data={data.bloodMarkers.whiteBloodCells} />
+                  <MarkerRow label="Red Blood Cells" data={data.bloodMarkers.redBloodCells} />
+                  <MarkerRow label="Hematocrit" data={data.bloodMarkers.hematocrit} />
+                  <MarkerRow label="Hemoglobin" data={data.bloodMarkers.hemoglobin} />
+                  <MarkerRow label="Platelets" data={data.bloodMarkers.platelets} />
                 </div>
-                {data.bloodMarkers.totalCholesterol.length > 0 && (
-                  <p className="text-sm text-gray-500 mt-6">
-                    Last tested: {new Date(data.bloodMarkers.totalCholesterol[0].date).toLocaleDateString()}
-                  </p>
-                )}
+                <LastTestedDate data={data.bloodMarkers.whiteBloodCells} />
               </div>
 
-              {/* Metabolic Health */}
+              {/* Glucose Markers */}
               <div className="border border-gray-100 rounded-xl p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-6">Metabolic Health</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-6">Glucose Markers</h3>
                 <div className="space-y-6">
-                  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-                    <span className="text-sm font-medium text-gray-600">Glucose</span>
-                    <div className="flex items-center gap-3">
-                      {data.bloodMarkers.glucose.length > 0 && (
-                        <>
-                          <div className={`w-2 h-2 rounded-full ${
-                            data.bloodMarkers.glucose[0].value < (data.bloodMarkers.glucose[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                            data.bloodMarkers.glucose[0].value > (data.bloodMarkers.glucose[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-                            'bg-green-500'
-                          }`} title={
-                            data.bloodMarkers.glucose[0].value < (data.bloodMarkers.glucose[0].referenceRange?.min || 0) ? 'Low' :
-                            data.bloodMarkers.glucose[0].value > (data.bloodMarkers.glucose[0].referenceRange?.max || 0) ? 'High' :
-                            'Normal'
-                          } />
-                          {data.bloodMarkers.glucose.length > 1 && (
-                            <TrendIndicator 
-                              current={data.bloodMarkers.glucose[0].value}
-                              previous={data.bloodMarkers.glucose[1].value}
-                            />
-                          )}
-                        </>
-                      )}
-                      <span className="text-lg font-semibold text-gray-900">
-                        {data.loading ? "..." :
-                         data.bloodMarkers.glucose.length > 0 ?
-                         `${data.bloodMarkers.glucose[0].value} ${data.bloodMarkers.glucose[0].unit}` :
-                         "No data"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-600">CRP</span>
-                    <div className="flex items-center gap-3">
-                      {data.bloodMarkers.crp.length > 0 && (
-                        <>
-                          <div className={`w-2 h-2 rounded-full ${
-                            data.bloodMarkers.crp[0].value < (data.bloodMarkers.crp[0].referenceRange?.min || 0) ? 'bg-green-500' :
-                            data.bloodMarkers.crp[0].value > (data.bloodMarkers.crp[0].referenceRange?.max || 0) ? 'bg-red-500' :
-                            'bg-green-500'
-                          }`} title={
-                            data.bloodMarkers.crp[0].value < (data.bloodMarkers.crp[0].referenceRange?.min || 0) ? 'Optimal' :
-                            data.bloodMarkers.crp[0].value > (data.bloodMarkers.crp[0].referenceRange?.max || 0) ? 'High' :
-                            'Normal'
-                          } />
-                          {data.bloodMarkers.crp.length > 1 && (
-                            <TrendIndicator 
-                              current={data.bloodMarkers.crp[0].value}
-                              previous={data.bloodMarkers.crp[1].value}
-                            />
-                          )}
-                        </>
-                      )}
-                      <span className="text-lg font-semibold text-gray-900">
-                        {data.loading ? "..." :
-                         data.bloodMarkers.crp.length > 0 ?
-                         `${data.bloodMarkers.crp[0].value} ${data.bloodMarkers.crp[0].unit}` :
-                         "No data"}
-                      </span>
-                    </div>
-                  </div>
+                  <MarkerRow label="HbA1c" data={data.bloodMarkers.hba1c} />
+                  <MarkerRow label="Fasting Insulin" data={data.bloodMarkers.fastingInsulin} />
+                  <MarkerRow label="Glucose" data={data.bloodMarkers.glucose} />
                 </div>
-                {data.bloodMarkers.glucose.length > 0 && (
-                  <p className="text-sm text-gray-500 mt-6">
-                    Last tested: {new Date(data.bloodMarkers.glucose[0].date).toLocaleDateString()}
-                  </p>
-                )}
+                <LastTestedDate data={data.bloodMarkers.glucose} />
               </div>
 
-              {/* Other Markers */}
+              {/* Liver Markers */}
               <div className="border border-gray-100 rounded-xl p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-6">Other Markers</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-6">Liver Markers</h3>
                 <div className="space-y-6">
-                  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-                    <span className="text-sm font-medium text-gray-600">Vitamin D</span>
-                    <div className="flex items-center gap-3">
-                      {data.bloodMarkers.vitaminD.length > 0 && (
-                        <>
-                          <div className={`w-2 h-2 rounded-full ${
-                            data.bloodMarkers.vitaminD[0].value < (data.bloodMarkers.vitaminD[0].referenceRange?.min || 0) ? 'bg-red-500' :
-                            data.bloodMarkers.vitaminD[0].value > (data.bloodMarkers.vitaminD[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-                            data.bloodMarkers.vitaminD[0].value >= 50 ? 'bg-green-500' :
-                            'bg-blue-500'
-                          }`} title={
-                            data.bloodMarkers.vitaminD[0].value < (data.bloodMarkers.vitaminD[0].referenceRange?.min || 0) ? 'Low' :
-                            data.bloodMarkers.vitaminD[0].value > (data.bloodMarkers.vitaminD[0].referenceRange?.max || 0) ? 'High' :
-                            data.bloodMarkers.vitaminD[0].value >= 50 ? 'Optimal' :
-                            'Normal'
-                          } />
-                          {data.bloodMarkers.vitaminD.length > 1 && (
-                            <TrendIndicator 
-                              current={data.bloodMarkers.vitaminD[0].value}
-                              previous={data.bloodMarkers.vitaminD[1].value}
-                            />
-                          )}
-                        </>
-                      )}
-                      <span className="text-lg font-semibold text-gray-900">
-                        {data.loading ? "..." :
-                         data.bloodMarkers.vitaminD.length > 0 ?
-                         `${data.bloodMarkers.vitaminD[0].value} ${data.bloodMarkers.vitaminD[0].unit}` :
-                         "No data"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-600">Homocysteine</span>
-                    <div className="flex items-center gap-3">
-                      {data.bloodMarkers.homocysteine.length > 0 && (
-                        <>
-                          <div className={`w-2 h-2 rounded-full ${
-                            data.bloodMarkers.homocysteine[0].value < (data.bloodMarkers.homocysteine[0].referenceRange?.min || 0) ? 'bg-green-500' :
-                            data.bloodMarkers.homocysteine[0].value > (data.bloodMarkers.homocysteine[0].referenceRange?.max || 0) ? 'bg-red-500' :
-                            data.bloodMarkers.homocysteine[0].value <= 7 ? 'bg-green-500' :
-                            'bg-blue-500'
-                          }`} title={
-                            data.bloodMarkers.homocysteine[0].value < (data.bloodMarkers.homocysteine[0].referenceRange?.min || 0) ? 'Low' :
-                            data.bloodMarkers.homocysteine[0].value > (data.bloodMarkers.homocysteine[0].referenceRange?.max || 0) ? 'High' :
-                            data.bloodMarkers.homocysteine[0].value <= 7 ? 'Optimal' :
-                            'Normal'
-                          } />
-                          {data.bloodMarkers.homocysteine.length > 1 && (
-                            <TrendIndicator 
-                              current={data.bloodMarkers.homocysteine[0].value}
-                              previous={data.bloodMarkers.homocysteine[1].value}
-                            />
-                          )}
-                        </>
-                      )}
-                      <span className="text-lg font-semibold text-gray-900">
-                        {data.loading ? "..." :
-                         data.bloodMarkers.homocysteine.length > 0 ?
-                         `${data.bloodMarkers.homocysteine[0].value} ${data.bloodMarkers.homocysteine[0].unit}` :
-                         "No data"}
-                      </span>
-                    </div>
-                  </div>
+                  <MarkerRow label="ALT" data={data.bloodMarkers.alt} />
+                  <MarkerRow label="AST" data={data.bloodMarkers.ast} />
+                  <MarkerRow label="GGT" data={data.bloodMarkers.ggt} />
                 </div>
-                {data.bloodMarkers.vitaminD.length > 0 && (
-                  <p className="text-sm text-gray-500 mt-6">
-                    Last tested: {new Date(data.bloodMarkers.vitaminD[0].date).toLocaleDateString()}
-                  </p>
-                )}
+                <LastTestedDate data={data.bloodMarkers.alt} />
+              </div>
+
+              {/* Kidney Markers */}
+              <div className="border border-gray-100 rounded-xl p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-6">Kidney Markers</h3>
+                <div className="space-y-6">
+                  <MarkerRow label="eGFR" data={data.bloodMarkers.egfr} />
+                  <MarkerRow label="Cystatin C" data={data.bloodMarkers.cystatinC} />
+                  <MarkerRow label="BUN" data={data.bloodMarkers.bun} />
+                  <MarkerRow label="Creatinine" data={data.bloodMarkers.creatinine} />
+                  <MarkerRow label="Albumin" data={data.bloodMarkers.albumin} />
+                </div>
+                <LastTestedDate data={data.bloodMarkers.egfr} />
+              </div>
+
+              {/* Sex Hormones */}
+              <div className="border border-gray-100 rounded-xl p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-6">Sex Hormones</h3>
+                <div className="space-y-6">
+                  <MarkerRow label="Testosterone" data={data.bloodMarkers.testosterone} />
+                  <MarkerRow label="Free Testosterone" data={data.bloodMarkers.freeTesto} />
+                  <MarkerRow label="Estradiol" data={data.bloodMarkers.estradiol} />
+                  <MarkerRow label="SHBG" data={data.bloodMarkers.shbg} />
+                </div>
+                <LastTestedDate data={data.bloodMarkers.testosterone} />
+              </div>
+
+              {/* Thyroid Markers */}
+              <div className="border border-gray-100 rounded-xl p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-6">Thyroid Markers</h3>
+                <div className="space-y-6">
+                  <MarkerRow label="T3" data={data.bloodMarkers.t3} />
+                  <MarkerRow label="T4" data={data.bloodMarkers.t4} />
+                  <MarkerRow label="TSH" data={data.bloodMarkers.tsh} />
+                </div>
+                <LastTestedDate data={data.bloodMarkers.t3} />
+              </div>
+
+              {/* Vitamins & Inflammation */}
+              <div className="border border-gray-100 rounded-xl p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-6">Vitamins & Inflammation</h3>
+                <div className="space-y-6">
+                  <MarkerRow label="Vitamin D3" data={data.bloodMarkers.vitaminD} />
+                  <MarkerRow label="hs-CRP" data={data.bloodMarkers.crp} />
+                  <MarkerRow label="Homocysteine" data={data.bloodMarkers.homocysteine} />
+                  <MarkerRow label="IGF-1" data={data.bloodMarkers.igf1} />
+                </div>
+                <LastTestedDate data={data.bloodMarkers.vitaminD} />
+              </div>
+
+              {/* Iron Panel */}
+              <div className="border border-gray-100 rounded-xl p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-6">Iron Panel</h3>
+                <div className="space-y-6">
+                  <MarkerRow label="Ferritin" data={data.bloodMarkers.ferritin} />
+                  <MarkerRow label="Serum Iron" data={data.bloodMarkers.serumIron} />
+                  <MarkerRow label="TIBC" data={data.bloodMarkers.tibc} />
+                  <MarkerRow label="Transferrin Saturation" data={data.bloodMarkers.transferrinSaturation} />
+                </div>
+                <LastTestedDate data={data.bloodMarkers.ferritin} />
+              </div>
+
+              {/* Electrolytes */}
+              <div className="border border-gray-100 rounded-xl p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-6">Electrolytes</h3>
+                <div className="space-y-6">
+                  <MarkerRow label="Sodium" data={data.bloodMarkers.sodium} />
+                  <MarkerRow label="Potassium" data={data.bloodMarkers.potassium} />
+                  <MarkerRow label="Calcium" data={data.bloodMarkers.calcium} />
+                  <MarkerRow label="Phosphorus" data={data.bloodMarkers.phosphorus} />
+                  <MarkerRow label="Magnesium" data={data.bloodMarkers.magnesium} />
+                  <MarkerRow label="Bicarbonate" data={data.bloodMarkers.bicarbonate} />
+                  <MarkerRow label="Chloride" data={data.bloodMarkers.chloride} />
+                </div>
+                <LastTestedDate data={data.bloodMarkers.sodium} />
               </div>
             </div>
           </div>
@@ -1810,3 +1976,63 @@ export default function Home() {
     </main>
   );
 }
+
+// Helper Components
+const TrendIndicator = ({ current, previous }: { current: number, previous: number }) => {
+  const percentChange = ((current - previous) / previous) * 100;
+  const isIncrease = percentChange > 0;
+  return (
+    <span className={`text-sm flex items-center ${isIncrease ? 'text-green-500' : 'text-red-500'}`}>
+      {isIncrease ? (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+        </svg>
+      ) : (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+        </svg>
+      )}
+      <span className="ml-1">{Math.abs(percentChange).toFixed(1)}%</span>
+    </span>
+  );
+};
+
+const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => (
+  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+    <span className="text-sm font-medium text-gray-600">{label}</span>
+    <div className="flex items-center gap-3">
+      {data.length > 0 && (
+        <>
+          <div className={`w-2 h-2 rounded-full ${
+            data[0].value < (data[0].referenceRange?.min || 0) ? 'bg-red-500' :
+            data[0].value > (data[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
+            'bg-green-500'
+          }`} title={
+            data[0].value < (data[0].referenceRange?.min || 0) ? 'Low' :
+            data[0].value > (data[0].referenceRange?.max || 0) ? 'High' :
+            'Normal'
+          } />
+          {data.length > 1 && (
+            <TrendIndicator 
+              current={data[0].value}
+              previous={data[1].value}
+            />
+          )}
+        </>
+      )}
+      <span className="text-lg font-semibold text-gray-900">
+        {data.length > 0 ?
+         `${data[0].value} ${data[0].unit}` :
+         "No data"}
+      </span>
+    </div>
+  </div>
+);
+
+const LastTestedDate = ({ data }: { data: BloodMarker[] }) => (
+  data.length > 0 && (
+    <p className="text-sm text-gray-500 mt-6">
+      Last tested: {new Date(data[0].date).toLocaleDateString()}
+    </p>
+  )
+);
