@@ -1720,12 +1720,6 @@ export default function Home() {
           <div className="bg-white rounded-2xl p-6 shadow-sm">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-2xl font-semibold text-gray-800">Blood Markers & Longevity</h2>
-              <button 
-                className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-medium hover:bg-indigo-100 transition-colors"
-                onClick={() => setIsAddResultsModalOpen(true)}
-              >
-                Add Results
-              </button>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -1856,13 +1850,6 @@ export default function Home() {
           </div>
         )}
       </div>
-
-      {/* Add Modal */}
-      <AddResultsModal
-        isOpen={isAddResultsModalOpen}
-        onClose={() => setIsAddResultsModalOpen(false)}
-        onSubmit={handleAddResults}
-      />
     </main>
   );
 }

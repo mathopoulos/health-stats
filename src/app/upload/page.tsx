@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import AddResultsModal from '../components/AddResultsModal';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
@@ -34,6 +35,7 @@ export default function UploadPage() {
   const [status, setStatus] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState<string>('');
+  const [isAddResultsModalOpen, setIsAddResultsModalOpen] = useState(false);
 
   const handleProcess = async () => {
     setIsProcessing(true);
@@ -41,9 +43,8 @@ export default function UploadPage() {
     try {
       const result = await triggerProcessing();
       if (result.success) {
-        const { recordsProcessed, batchesSaved, status } = result.status;
         setProcessingStatus(
-          `Processing complete: ${recordsProcessed} records processed in ${batchesSaved} batches. Status: ${status}`
+          `Processing complete: ${result.message}. ${result.results.map(r => r.message).join(', ')}`
         );
       } else {
         setProcessingStatus(`Error: ${result.error}`);
@@ -148,7 +149,15 @@ export default function UploadPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
-        <h1 className="text-2xl font-bold mb-8">Upload Health Data</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold">Upload Health Data</h1>
+          <button 
+            className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-medium hover:bg-indigo-100 transition-colors"
+            onClick={() => setIsAddResultsModalOpen(true)}
+          >
+            Add Blood Test Results
+          </button>
+        </div>
         
         <div className="bg-white/5 p-8 rounded-lg shadow-lg">
           <form onSubmit={handleSubmit}>
@@ -216,6 +225,16 @@ export default function UploadPage() {
           )}
         </div>
       </div>
+
+      {/* Add Results Modal */}
+      <AddResultsModal
+        isOpen={isAddResultsModalOpen}
+        onClose={() => setIsAddResultsModalOpen(false)}
+        onSuccess={() => {
+          setStatus('Blood test results added successfully');
+          setTimeout(() => setStatus(''), 3000);
+        }}
+      />
     </main>
   );
 } 
