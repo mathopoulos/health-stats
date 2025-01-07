@@ -371,12 +371,13 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      const [heartRateRes, weightRes, bodyFatRes, hrvRes, vo2maxRes] = await Promise.all([
+      const [heartRateRes, weightRes, bodyFatRes, hrvRes, vo2maxRes, bloodMarkersRes] = await Promise.all([
         fetch('/api/health-data?type=heartRate'),
         fetch('/api/health-data?type=weight'),
         fetch('/api/health-data?type=bodyFat'),
         fetch('/api/health-data?type=hrv'),
-        fetch('/api/health-data?type=vo2max')
+        fetch('/api/health-data?type=vo2max'),
+        fetch('/api/blood-markers')
       ]);
 
       const responses = await Promise.all([
@@ -384,15 +385,106 @@ export default function Home() {
         weightRes.json(),
         bodyFatRes.json(),
         hrvRes.json(),
-        vo2maxRes.json()
+        vo2maxRes.json(),
+        bloodMarkersRes.json()
       ]);
 
-      const [heartRateData, weightData, bodyFatData, hrvData, vo2maxData] = responses;
+      const [heartRateData, weightData, bodyFatData, hrvData, vo2maxData, bloodMarkersData] = responses;
 
-      if (!heartRateData.success || !weightData.success || !bodyFatData.success || !hrvData.success || !vo2maxData.success) {
+      if (!heartRateData.success || !weightData.success || !bodyFatData.success || !hrvData.success || !vo2maxData.success || !bloodMarkersData.success) {
         console.error('One or more data fetches failed:', responses);
         throw new Error('Failed to fetch some data');
       }
+
+      // Process blood markers data
+      const processedBloodMarkers: ChartData['bloodMarkers'] = {
+        // Initialize all marker arrays
+        totalCholesterol: [], ldl: [], hdl: [], triglycerides: [], apoB: [], lpA: [],
+        whiteBloodCells: [], redBloodCells: [], hematocrit: [], hemoglobin: [], platelets: [],
+        hba1c: [], fastingInsulin: [], glucose: [],
+        alt: [], ast: [], ggt: [],
+        egfr: [], cystatinC: [], bun: [], creatinine: [], albumin: [],
+        testosterone: [], freeTesto: [], estradiol: [], shbg: [],
+        t3: [], t4: [], tsh: [],
+        vitaminD: [],
+        crp: [], homocysteine: [],
+        igf1: [],
+        ferritin: [], serumIron: [], tibc: [], transferrinSaturation: [],
+        sodium: [], potassium: [], calcium: [], phosphorus: [], magnesium: [], bicarbonate: [], chloride: []
+      };
+
+      // Map marker names from API to chart data keys
+      const markerNameToKey: Record<string, keyof ChartData['bloodMarkers']> = {
+        'Total Cholesterol': 'totalCholesterol',
+        'LDL-C': 'ldl',
+        'HDL-C': 'hdl',
+        'Triglycerides': 'triglycerides',
+        'ApoB': 'apoB',
+        'Lp(a)': 'lpA',
+        'White Blood Cells': 'whiteBloodCells',
+        'Red Blood Cells': 'redBloodCells',
+        'Hematocrit': 'hematocrit',
+        'Hemoglobin': 'hemoglobin',
+        'Platelets': 'platelets',
+        'HbA1c': 'hba1c',
+        'Fasting Insulin': 'fastingInsulin',
+        'Glucose': 'glucose',
+        'ALT': 'alt',
+        'AST': 'ast',
+        'GGT': 'ggt',
+        'eGFR': 'egfr',
+        'Cystatin C': 'cystatinC',
+        'BUN': 'bun',
+        'Creatinine': 'creatinine',
+        'Albumin': 'albumin',
+        'Testosterone': 'testosterone',
+        'Free Testosterone': 'freeTesto',
+        'Estradiol': 'estradiol',
+        'SHBG': 'shbg',
+        'T3': 't3',
+        'T4': 't4',
+        'TSH': 'tsh',
+        'Vitamin D3': 'vitaminD',
+        'hs-CRP': 'crp',
+        'Homocysteine': 'homocysteine',
+        'IGF-1': 'igf1',
+        'Ferritin': 'ferritin',
+        'Serum Iron': 'serumIron',
+        'TIBC': 'tibc',
+        'Transferrin Saturation': 'transferrinSaturation',
+        'Sodium': 'sodium',
+        'Potassium': 'potassium',
+        'Calcium': 'calcium',
+        'Phosphorus': 'phosphorus',
+        'Magnesium': 'magnesium',
+        'Bicarbonate': 'bicarbonate',
+        'Chloride': 'chloride'
+      };
+
+      // Process each blood marker entry
+      bloodMarkersData.data.forEach((entry: any) => {
+        entry.markers.forEach((marker: any) => {
+          const key = markerNameToKey[marker.name];
+          if (key) {
+            processedBloodMarkers[key].push({
+              date: entry.date,
+              value: marker.value,
+              unit: marker.unit,
+              referenceRange: {
+                min: 0, // TODO: Add proper reference ranges
+                max: 100
+              }
+            });
+          }
+        });
+      });
+
+      // Sort each marker's data by date
+      Object.keys(processedBloodMarkers).forEach((key) => {
+        processedBloodMarkers[key as keyof ChartData['bloodMarkers']].sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+      });
 
       const allDates = [
         ...(heartRateData.data || []),
@@ -428,7 +520,8 @@ export default function Home() {
         weight: weightData.data || [],
         bodyFat: bodyFatData.data || [],
         hrv: hrvData.data || [],
-        vo2max: vo2maxData.data || []
+        vo2max: vo2maxData.data || [],
+        bloodMarkers: processedBloodMarkers
       };
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -437,7 +530,21 @@ export default function Home() {
         weight: [],
         bodyFat: [],
         hrv: [],
-        vo2max: []
+        vo2max: [],
+        bloodMarkers: {
+          totalCholesterol: [], ldl: [], hdl: [], triglycerides: [], apoB: [], lpA: [],
+          whiteBloodCells: [], redBloodCells: [], hematocrit: [], hemoglobin: [], platelets: [],
+          hba1c: [], fastingInsulin: [], glucose: [],
+          alt: [], ast: [], ggt: [],
+          egfr: [], cystatinC: [], bun: [], creatinine: [], albumin: [],
+          testosterone: [], freeTesto: [], estradiol: [], shbg: [],
+          t3: [], t4: [], tsh: [],
+          vitaminD: [],
+          crp: [], homocysteine: [],
+          igf1: [],
+          ferritin: [], serumIron: [], tibc: [], transferrinSaturation: [],
+          sodium: [], potassium: [], calcium: [], phosphorus: [], magnesium: [], bicarbonate: [], chloride: []
+        }
       };
     }
   };
@@ -448,251 +555,6 @@ export default function Home() {
       const newData = await fetchData();
       setData({
         ...newData,
-        bloodMarkers: {
-          // Lipid Panel
-          totalCholesterol: [
-            { date: '2024-01-15', value: 185, unit: 'mg/dL', referenceRange: { min: 125, max: 200 } },
-            { date: '2023-12-15', value: 195, unit: 'mg/dL', referenceRange: { min: 125, max: 200 } },
-            { date: '2023-11-15', value: 205, unit: 'mg/dL', referenceRange: { min: 125, max: 200 } }
-          ],
-          ldl: [
-            { date: '2024-01-15', value: 110, unit: 'mg/dL', referenceRange: { min: 0, max: 130 } },
-            { date: '2023-12-15', value: 115, unit: 'mg/dL', referenceRange: { min: 0, max: 130 } },
-            { date: '2023-11-15', value: 120, unit: 'mg/dL', referenceRange: { min: 0, max: 130 } }
-          ],
-          hdl: [
-            { date: '2024-01-15', value: 65, unit: 'mg/dL', referenceRange: { min: 40, max: 60 } },
-            { date: '2023-12-15', value: 62, unit: 'mg/dL', referenceRange: { min: 40, max: 60 } },
-            { date: '2023-11-15', value: 58, unit: 'mg/dL', referenceRange: { min: 40, max: 60 } }
-          ],
-          triglycerides: [
-            { date: '2024-01-15', value: 120, unit: 'mg/dL', referenceRange: { min: 0, max: 150 } },
-            { date: '2023-12-15', value: 135, unit: 'mg/dL', referenceRange: { min: 0, max: 150 } },
-            { date: '2023-11-15', value: 145, unit: 'mg/dL', referenceRange: { min: 0, max: 150 } }
-          ],
-          apoB: [
-            { date: '2024-01-15', value: 85, unit: 'mg/dL', referenceRange: { min: 40, max: 125 } },
-            { date: '2023-12-15', value: 90, unit: 'mg/dL', referenceRange: { min: 40, max: 125 } },
-            { date: '2023-11-15', value: 95, unit: 'mg/dL', referenceRange: { min: 40, max: 125 } }
-          ],
-          lpA: [
-            { date: '2024-01-15', value: 25, unit: 'nmol/L', referenceRange: { min: 0, max: 75 } },
-            { date: '2023-12-15', value: 28, unit: 'nmol/L', referenceRange: { min: 0, max: 75 } },
-            { date: '2023-11-15', value: 30, unit: 'nmol/L', referenceRange: { min: 0, max: 75 } }
-          ],
-          
-          // Complete Blood Count
-          whiteBloodCells: [
-            { date: '2024-01-15', value: 6.5, unit: 'K/µL', referenceRange: { min: 4.5, max: 11.0 } },
-            { date: '2023-12-15', value: 6.8, unit: 'K/µL', referenceRange: { min: 4.5, max: 11.0 } },
-            { date: '2023-11-15', value: 7.0, unit: 'K/µL', referenceRange: { min: 4.5, max: 11.0 } }
-          ],
-          redBloodCells: [
-            { date: '2024-01-15', value: 5.2, unit: 'M/µL', referenceRange: { min: 4.5, max: 5.9 } },
-            { date: '2023-12-15', value: 5.1, unit: 'M/µL', referenceRange: { min: 4.5, max: 5.9 } },
-            { date: '2023-11-15', value: 5.0, unit: 'M/µL', referenceRange: { min: 4.5, max: 5.9 } }
-          ],
-          hematocrit: [
-            { date: '2024-01-15', value: 45, unit: '%', referenceRange: { min: 41, max: 50 } },
-            { date: '2023-12-15', value: 44, unit: '%', referenceRange: { min: 41, max: 50 } },
-            { date: '2023-11-15', value: 43, unit: '%', referenceRange: { min: 41, max: 50 } }
-          ],
-          hemoglobin: [
-            { date: '2024-01-15', value: 15.2, unit: 'g/dL', referenceRange: { min: 13.5, max: 17.5 } },
-            { date: '2023-12-15', value: 15.0, unit: 'g/dL', referenceRange: { min: 13.5, max: 17.5 } },
-            { date: '2023-11-15', value: 14.8, unit: 'g/dL', referenceRange: { min: 13.5, max: 17.5 } }
-          ],
-          platelets: [
-            { date: '2024-01-15', value: 250, unit: 'K/µL', referenceRange: { min: 150, max: 450 } },
-            { date: '2023-12-15', value: 245, unit: 'K/µL', referenceRange: { min: 150, max: 450 } },
-            { date: '2023-11-15', value: 240, unit: 'K/µL', referenceRange: { min: 150, max: 450 } }
-          ],
-          
-          // Glucose Markers
-          hba1c: [
-            { date: '2024-01-15', value: 5.2, unit: '%', referenceRange: { min: 4.0, max: 5.6 } },
-            { date: '2023-12-15', value: 5.3, unit: '%', referenceRange: { min: 4.0, max: 5.6 } },
-            { date: '2023-11-15', value: 5.4, unit: '%', referenceRange: { min: 4.0, max: 5.6 } }
-          ],
-          fastingInsulin: [
-            { date: '2024-01-15', value: 4.5, unit: 'µIU/mL', referenceRange: { min: 2.6, max: 24.9 } },
-            { date: '2023-12-15', value: 4.8, unit: 'µIU/mL', referenceRange: { min: 2.6, max: 24.9 } },
-            { date: '2023-11-15', value: 5.0, unit: 'µIU/mL', referenceRange: { min: 2.6, max: 24.9 } }
-          ],
-          glucose: [
-            { date: '2024-01-15', value: 85, unit: 'mg/dL', referenceRange: { min: 70, max: 100 } },
-            { date: '2023-12-15', value: 88, unit: 'mg/dL', referenceRange: { min: 70, max: 100 } },
-            { date: '2023-11-15', value: 92, unit: 'mg/dL', referenceRange: { min: 70, max: 100 } }
-          ],
-          
-          // Liver Markers
-          alt: [
-            { date: '2024-01-15', value: 25, unit: 'U/L', referenceRange: { min: 0, max: 55 } },
-            { date: '2023-12-15', value: 28, unit: 'U/L', referenceRange: { min: 0, max: 55 } },
-            { date: '2023-11-15', value: 30, unit: 'U/L', referenceRange: { min: 0, max: 55 } }
-          ],
-          ast: [
-            { date: '2024-01-15', value: 22, unit: 'U/L', referenceRange: { min: 5, max: 34 } },
-            { date: '2023-12-15', value: 24, unit: 'U/L', referenceRange: { min: 5, max: 34 } },
-            { date: '2023-11-15', value: 26, unit: 'U/L', referenceRange: { min: 5, max: 34 } }
-          ],
-          ggt: [
-            { date: '2024-01-15', value: 20, unit: 'U/L', referenceRange: { min: 9, max: 64 } },
-            { date: '2023-12-15', value: 22, unit: 'U/L', referenceRange: { min: 9, max: 64 } },
-            { date: '2023-11-15', value: 24, unit: 'U/L', referenceRange: { min: 9, max: 64 } }
-          ],
-          
-          // Kidney Markers
-          egfr: [
-            { date: '2024-01-15', value: 95, unit: 'mL/min/1.73m²', referenceRange: { min: 90, max: 120 } },
-            { date: '2023-12-15', value: 93, unit: 'mL/min/1.73m²', referenceRange: { min: 90, max: 120 } },
-            { date: '2023-11-15', value: 92, unit: 'mL/min/1.73m²', referenceRange: { min: 90, max: 120 } }
-          ],
-          cystatinC: [
-            { date: '2024-01-15', value: 0.9, unit: 'mg/L', referenceRange: { min: 0.5, max: 1.2 } },
-            { date: '2023-12-15', value: 0.92, unit: 'mg/L', referenceRange: { min: 0.5, max: 1.2 } },
-            { date: '2023-11-15', value: 0.94, unit: 'mg/L', referenceRange: { min: 0.5, max: 1.2 } }
-          ],
-          bun: [
-            { date: '2024-01-15', value: 15, unit: 'mg/dL', referenceRange: { min: 7, max: 20 } },
-            { date: '2023-12-15', value: 16, unit: 'mg/dL', referenceRange: { min: 7, max: 20 } },
-            { date: '2023-11-15', value: 17, unit: 'mg/dL', referenceRange: { min: 7, max: 20 } }
-          ],
-          creatinine: [
-            { date: '2024-01-15', value: 0.9, unit: 'mg/dL', referenceRange: { min: 0.7, max: 1.3 } },
-            { date: '2023-12-15', value: 0.92, unit: 'mg/dL', referenceRange: { min: 0.7, max: 1.3 } },
-            { date: '2023-11-15', value: 0.94, unit: 'mg/dL', referenceRange: { min: 0.7, max: 1.3 } }
-          ],
-          albumin: [
-            { date: '2024-01-15', value: 4.5, unit: 'g/dL', referenceRange: { min: 3.4, max: 5.4 } },
-            { date: '2023-12-15', value: 4.4, unit: 'g/dL', referenceRange: { min: 3.4, max: 5.4 } },
-            { date: '2023-11-15', value: 4.3, unit: 'g/dL', referenceRange: { min: 3.4, max: 5.4 } }
-          ],
-          
-          // Sex Hormones
-          testosterone: [
-            { date: '2024-01-15', value: 750, unit: 'ng/dL', referenceRange: { min: 300, max: 1000 } },
-            { date: '2023-12-15', value: 680, unit: 'ng/dL', referenceRange: { min: 300, max: 1000 } },
-            { date: '2023-11-15', value: 620, unit: 'ng/dL', referenceRange: { min: 300, max: 1000 } }
-          ],
-          freeTesto: [
-            { date: '2024-01-15', value: 15.5, unit: 'pg/mL', referenceRange: { min: 8.7, max: 25.1 } },
-            { date: '2023-12-15', value: 14.2, unit: 'pg/mL', referenceRange: { min: 8.7, max: 25.1 } },
-            { date: '2023-11-15', value: 13.8, unit: 'pg/mL', referenceRange: { min: 8.7, max: 25.1 } }
-          ],
-          estradiol: [
-            { date: '2024-01-15', value: 25, unit: 'pg/mL', referenceRange: { min: 10, max: 40 } },
-            { date: '2023-12-15', value: 28, unit: 'pg/mL', referenceRange: { min: 10, max: 40 } },
-            { date: '2023-11-15', value: 30, unit: 'pg/mL', referenceRange: { min: 10, max: 40 } }
-          ],
-          shbg: [
-            { date: '2024-01-15', value: 35, unit: 'nmol/L', referenceRange: { min: 10, max: 57 } },
-            { date: '2023-12-15', value: 38, unit: 'nmol/L', referenceRange: { min: 10, max: 57 } },
-            { date: '2023-11-15', value: 40, unit: 'nmol/L', referenceRange: { min: 10, max: 57 } }
-          ],
-          
-          // Thyroid Markers
-          t3: [
-            { date: '2024-01-15', value: 3.2, unit: 'pg/mL', referenceRange: { min: 2.3, max: 4.2 } },
-            { date: '2023-12-15', value: 3.3, unit: 'pg/mL', referenceRange: { min: 2.3, max: 4.2 } },
-            { date: '2023-11-15', value: 3.4, unit: 'pg/mL', referenceRange: { min: 2.3, max: 4.2 } }
-          ],
-          t4: [
-            { date: '2024-01-15', value: 1.3, unit: 'ng/dL', referenceRange: { min: 0.8, max: 1.8 } },
-            { date: '2023-12-15', value: 1.4, unit: 'ng/dL', referenceRange: { min: 0.8, max: 1.8 } },
-            { date: '2023-11-15', value: 1.5, unit: 'ng/dL', referenceRange: { min: 0.8, max: 1.8 } }
-          ],
-          tsh: [
-            { date: '2024-01-15', value: 2.1, unit: 'mIU/L', referenceRange: { min: 0.4, max: 4.0 } },
-            { date: '2023-12-15', value: 2.3, unit: 'mIU/L', referenceRange: { min: 0.4, max: 4.0 } },
-            { date: '2023-11-15', value: 2.5, unit: 'mIU/L', referenceRange: { min: 0.4, max: 4.0 } }
-          ],
-          
-          // Vitamins
-          vitaminD: [
-            { date: '2024-01-15', value: 45, unit: 'ng/mL', referenceRange: { min: 30, max: 100 } },
-            { date: '2023-12-15', value: 42, unit: 'ng/mL', referenceRange: { min: 30, max: 100 } },
-            { date: '2023-11-15', value: 38, unit: 'ng/mL', referenceRange: { min: 30, max: 100 } }
-          ],
-          
-          // Inflammation
-          crp: [
-            { date: '2024-01-15', value: 0.8, unit: 'mg/L', referenceRange: { min: 0, max: 3 } },
-            { date: '2023-12-15', value: 1.2, unit: 'mg/L', referenceRange: { min: 0, max: 3 } },
-            { date: '2023-11-15', value: 1.5, unit: 'mg/L', referenceRange: { min: 0, max: 3 } }
-          ],
-          homocysteine: [
-            { date: '2024-01-15', value: 8.5, unit: 'µmol/L', referenceRange: { min: 4, max: 15 } },
-            { date: '2023-12-15', value: 9.2, unit: 'µmol/L', referenceRange: { min: 4, max: 15 } },
-            { date: '2023-11-15', value: 9.8, unit: 'µmol/L', referenceRange: { min: 4, max: 15 } }
-          ],
-          
-          // Growth Factors
-          igf1: [
-            { date: '2024-01-15', value: 185, unit: 'ng/mL', referenceRange: { min: 115, max: 355 } },
-            { date: '2023-12-15', value: 175, unit: 'ng/mL', referenceRange: { min: 115, max: 355 } },
-            { date: '2023-11-15', value: 165, unit: 'ng/mL', referenceRange: { min: 115, max: 355 } }
-          ],
-          
-          // Iron Panel
-          ferritin: [
-            { date: '2024-01-15', value: 150, unit: 'ng/mL', referenceRange: { min: 30, max: 400 } },
-            { date: '2023-12-15', value: 145, unit: 'ng/mL', referenceRange: { min: 30, max: 400 } },
-            { date: '2023-11-15', value: 140, unit: 'ng/mL', referenceRange: { min: 30, max: 400 } }
-          ],
-          serumIron: [
-            { date: '2024-01-15', value: 95, unit: 'µg/dL', referenceRange: { min: 65, max: 175 } },
-            { date: '2023-12-15', value: 90, unit: 'µg/dL', referenceRange: { min: 65, max: 175 } },
-            { date: '2023-11-15', value: 85, unit: 'µg/dL', referenceRange: { min: 65, max: 175 } }
-          ],
-          tibc: [
-            { date: '2024-01-15', value: 320, unit: 'µg/dL', referenceRange: { min: 250, max: 450 } },
-            { date: '2023-12-15', value: 325, unit: 'µg/dL', referenceRange: { min: 250, max: 450 } },
-            { date: '2023-11-15', value: 330, unit: 'µg/dL', referenceRange: { min: 250, max: 450 } }
-          ],
-          transferrinSaturation: [
-            { date: '2024-01-15', value: 30, unit: '%', referenceRange: { min: 20, max: 50 } },
-            { date: '2023-12-15', value: 28, unit: '%', referenceRange: { min: 20, max: 50 } },
-            { date: '2023-11-15', value: 26, unit: '%', referenceRange: { min: 20, max: 50 } }
-          ],
-          
-          // Electrolytes
-          sodium: [
-            { date: '2024-01-15', value: 140, unit: 'mEq/L', referenceRange: { min: 135, max: 145 } },
-            { date: '2023-12-15', value: 139, unit: 'mEq/L', referenceRange: { min: 135, max: 145 } },
-            { date: '2023-11-15', value: 138, unit: 'mEq/L', referenceRange: { min: 135, max: 145 } }
-          ],
-          potassium: [
-            { date: '2024-01-15', value: 4.2, unit: 'mEq/L', referenceRange: { min: 3.5, max: 5.0 } },
-            { date: '2023-12-15', value: 4.1, unit: 'mEq/L', referenceRange: { min: 3.5, max: 5.0 } },
-            { date: '2023-11-15', value: 4.0, unit: 'mEq/L', referenceRange: { min: 3.5, max: 5.0 } }
-          ],
-          calcium: [
-            { date: '2024-01-15', value: 9.5, unit: 'mg/dL', referenceRange: { min: 8.5, max: 10.5 } },
-            { date: '2023-12-15', value: 9.4, unit: 'mg/dL', referenceRange: { min: 8.5, max: 10.5 } },
-            { date: '2023-11-15', value: 9.3, unit: 'mg/dL', referenceRange: { min: 8.5, max: 10.5 } }
-          ],
-          phosphorus: [
-            { date: '2024-01-15', value: 3.5, unit: 'mg/dL', referenceRange: { min: 2.5, max: 4.5 } },
-            { date: '2023-12-15', value: 3.4, unit: 'mg/dL', referenceRange: { min: 2.5, max: 4.5 } },
-            { date: '2023-11-15', value: 3.3, unit: 'mg/dL', referenceRange: { min: 2.5, max: 4.5 } }
-          ],
-          magnesium: [
-            { date: '2024-01-15', value: 2.1, unit: 'mg/dL', referenceRange: { min: 1.7, max: 2.4 } },
-            { date: '2023-12-15', value: 2.0, unit: 'mg/dL', referenceRange: { min: 1.7, max: 2.4 } },
-            { date: '2023-11-15', value: 1.9, unit: 'mg/dL', referenceRange: { min: 1.7, max: 2.4 } }
-          ],
-          bicarbonate: [
-            { date: '2024-01-15', value: 24, unit: 'mEq/L', referenceRange: { min: 22, max: 29 } },
-            { date: '2023-12-15', value: 25, unit: 'mEq/L', referenceRange: { min: 22, max: 29 } },
-            { date: '2023-11-15', value: 26, unit: 'mEq/L', referenceRange: { min: 22, max: 29 } }
-          ],
-          chloride: [
-            { date: '2024-01-15', value: 102, unit: 'mEq/L', referenceRange: { min: 96, max: 106 } },
-            { date: '2023-12-15', value: 101, unit: 'mEq/L', referenceRange: { min: 96, max: 106 } },
-            { date: '2023-11-15', value: 100, unit: 'mEq/L', referenceRange: { min: 96, max: 106 } }
-          ]
-        },
         loading: false
       });
     } catch (error) {
@@ -704,7 +566,21 @@ export default function Home() {
         weight: [],
         bodyFat: [],
         hrv: [],
-        vo2max: []
+        vo2max: [],
+        bloodMarkers: {
+          totalCholesterol: [], ldl: [], hdl: [], triglycerides: [], apoB: [], lpA: [],
+          whiteBloodCells: [], redBloodCells: [], hematocrit: [], hemoglobin: [], platelets: [],
+          hba1c: [], fastingInsulin: [], glucose: [],
+          alt: [], ast: [], ggt: [],
+          egfr: [], cystatinC: [], bun: [], creatinine: [], albumin: [],
+          testosterone: [], freeTesto: [], estradiol: [], shbg: [],
+          t3: [], t4: [], tsh: [],
+          vitaminD: [],
+          crp: [], homocysteine: [],
+          igf1: [],
+          ferritin: [], serumIron: [], tibc: [], transferrinSaturation: [],
+          sodium: [], potassium: [], calcium: [], phosphorus: [], magnesium: [], bicarbonate: [], chloride: []
+        }
       }));
     }
   };

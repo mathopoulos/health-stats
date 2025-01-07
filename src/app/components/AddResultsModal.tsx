@@ -9,7 +9,8 @@ import "./datepicker.css";
 interface AddResultsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (results: any) => void;
+  onSubmit?: (results: any) => void;
+  onSuccess?: () => void;
 }
 
 // Flatten all markers into a single array with their categories
@@ -60,12 +61,14 @@ const allMarkers = [
   { name: 'Chloride', category: 'Electrolytes', unit: 'mEq/L' }
 ];
 
-export default function AddResultsModal({ isOpen, onClose, onSubmit }: AddResultsModalProps) {
+export default function AddResultsModal({ isOpen, onClose, onSuccess }: AddResultsModalProps) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMarkers, setSelectedMarkers] = useState<typeof allMarkers[0][]>([]);
   const [results, setResults] = useState<Record<string, number>>({});
   const [step, setStep] = useState<'select' | 'input'>('select');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const filteredMarkers = allMarkers.filter(marker => 
     marker.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -83,22 +86,57 @@ export default function AddResultsModal({ isOpen, onClose, onSubmit }: AddResult
     });
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (step === 'select') {
       setStep('input');
       return;
     }
+
+    setError(null);
+    setIsSubmitting(true);
     
-    onSubmit({
-      date: selectedDate,
-      results: Object.entries(results).map(([name, value]) => ({
-        name,
-        value,
-        unit: allMarkers.find(m => m.name === name)?.unit
-      }))
-    });
-    onClose();
+    try {
+      const response = await fetch('/api/blood-markers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          date: selectedDate,
+          markers: Object.entries(results).map(([name, value]) => {
+            const marker = allMarkers.find(m => m.name === name);
+            return {
+              name,
+              value,
+              unit: marker?.unit || '',
+              category: marker?.category || ''
+            };
+          })
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save results');
+      }
+
+      // Reset form
+      setSelectedDate(new Date());
+      setSearchTerm('');
+      setSelectedMarkers([]);
+      setResults({});
+      setStep('select');
+      
+      // Notify parent of success
+      onSuccess?.();
+      onClose();
+    } catch (error) {
+      console.error('Error saving results:', error);
+      setError(error instanceof Error ? error.message : 'Failed to save results');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleValueChange = (marker: string, value: string) => {
@@ -113,7 +151,17 @@ export default function AddResultsModal({ isOpen, onClose, onSubmit }: AddResult
     setSearchTerm('');
     setSelectedMarkers([]);
     setResults({});
+    setError(null);
     onClose();
+  };
+
+  const isFormValid = () => {
+    if (step === 'select') {
+      return selectedMarkers.length > 0;
+    }
+    return selectedMarkers.every(marker => 
+      typeof results[marker.name] === 'number' && !isNaN(results[marker.name])
+    );
   };
 
   return (
@@ -125,6 +173,12 @@ export default function AddResultsModal({ isOpen, onClose, onSubmit }: AddResult
           <Dialog.Title className="text-2xl font-semibold text-gray-900 mb-6">
             Add Blood Test Results
           </Dialog.Title>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-md">
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {step === 'select' ? (
@@ -140,6 +194,7 @@ export default function AddResultsModal({ isOpen, onClose, onSubmit }: AddResult
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 placeholder-gray-900"
                     placeholderText="Select a date"
                     dateFormat="MM/dd/yyyy"
+                    maxDate={new Date()}
                   />
                 </div>
 
@@ -157,28 +212,34 @@ export default function AddResultsModal({ isOpen, onClose, onSubmit }: AddResult
                   />
 
                   <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-md">
-                    {filteredMarkers.map((marker) => (
-                      <div
-                        key={marker.name}
-                        className={`flex items-center justify-between p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-200 last:border-b-0 ${
-                          selectedMarkers.some(m => m.name === marker.name) ? 'bg-indigo-50' : ''
-                        }`}
-                        onClick={() => handleMarkerToggle(marker)}
-                      >
-                        <div>
-                          <span className="font-medium text-gray-900">{marker.name}</span>
-                          <span className="text-sm text-gray-500 ml-2">({marker.category})</span>
-                        </div>
-                        <div className="flex items-center">
-                          <span className="text-sm text-gray-500 mr-2">{marker.unit}</span>
-                          {selectedMarkers.some(m => m.name === marker.name) && (
-                            <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                        </div>
+                    {filteredMarkers.length === 0 ? (
+                      <div className="p-4 text-gray-500 text-center">
+                        No markers found matching "{searchTerm}"
                       </div>
-                    ))}
+                    ) : (
+                      filteredMarkers.map((marker) => (
+                        <div
+                          key={marker.name}
+                          className={`flex items-center justify-between p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-200 last:border-b-0 ${
+                            selectedMarkers.some(m => m.name === marker.name) ? 'bg-indigo-50' : ''
+                          }`}
+                          onClick={() => handleMarkerToggle(marker)}
+                        >
+                          <div>
+                            <span className="font-medium text-gray-900">{marker.name}</span>
+                            <span className="text-sm text-gray-500 ml-2">({marker.category})</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-sm text-gray-500 mr-2">{marker.unit}</span>
+                            {selectedMarkers.some(m => m.name === marker.name) && (
+                              <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -198,7 +259,7 @@ export default function AddResultsModal({ isOpen, onClose, onSubmit }: AddResult
                     <button
                       type="button"
                       onClick={() => setStep('input')}
-                      disabled={selectedMarkers.length === 0}
+                      disabled={!isFormValid()}
                       className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Next
@@ -227,6 +288,7 @@ export default function AddResultsModal({ isOpen, onClose, onSubmit }: AddResult
                           onChange={(e) => handleValueChange(marker.name, e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                           placeholder={`Enter value in ${marker.unit}`}
+                          required
                         />
                       </div>
                     ))}
@@ -238,15 +300,27 @@ export default function AddResultsModal({ isOpen, onClose, onSubmit }: AddResult
                   <button
                     type="button"
                     onClick={() => setStep('select')}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    disabled={isSubmitting}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                   >
                     Back
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    disabled={!isFormValid() || isSubmitting}
+                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center"
                   >
-                    Save Results
+                    {isSubmitting ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Results'
+                    )}
                   </button>
                 </div>
               </>
