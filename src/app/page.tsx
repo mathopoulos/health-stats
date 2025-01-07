@@ -479,10 +479,10 @@ export default function Home() {
         });
       });
 
-      // Sort each marker's data by date
+      // Sort each marker's data by date in descending order (newest first)
       Object.keys(processedBloodMarkers).forEach((key) => {
         processedBloodMarkers[key as keyof ChartData['bloodMarkers']].sort(
-          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         );
       });
 
