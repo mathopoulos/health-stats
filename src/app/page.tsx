@@ -354,13 +354,13 @@ export default function Home() {
     },
     loading: true
   });
-  const [weightTimeframe, setWeightTimeframe] = useState<TimeFrame>('monthly');
+  const [weightTimeframe, setWeightTimeframe] = useState<TimeFrame>('weekly');
   const [weightDate, setWeightDate] = useState<Date | null>(null);
-  const [bodyFatTimeframe, setBodyFatTimeframe] = useState<TimeFrame>('monthly');
+  const [bodyFatTimeframe, setBodyFatTimeframe] = useState<TimeFrame>('weekly');
   const [bodyFatDate, setBodyFatDate] = useState<Date | null>(null);
-  const [hrvTimeframe, setHrvTimeframe] = useState<TimeFrame>('monthly');
+  const [hrvTimeframe, setHrvTimeframe] = useState<TimeFrame>('weekly');
   const [hrvDate, setHrvDate] = useState<Date | null>(null);
-  const [vo2maxTimeframe, setVo2maxTimeframe] = useState<TimeFrame>('monthly');
+  const [vo2maxTimeframe, setVo2maxTimeframe] = useState<TimeFrame>('weekly');
   const [vo2maxDate, setVo2maxDate] = useState<Date | null>(null);
   const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
