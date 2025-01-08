@@ -920,11 +920,12 @@ export default function Home() {
     );
   };
 
-  const TrendIndicator = ({ current, previous }: { current: number, previous: number }) => {
+  const TrendIndicator = ({ current, previous, isBodyFat = false }: { current: number, previous: number, isBodyFat?: boolean }) => {
     const percentChange = ((current - previous) / previous) * 100;
     const isIncrease = percentChange > 0;
+    const color = isBodyFat ? (!isIncrease ? 'text-green-500' : 'text-red-500') : (isIncrease ? 'text-green-500' : 'text-red-500');
     return (
-      <span className={`text-sm flex items-center ${isIncrease ? 'text-green-500' : 'text-red-500'}`}>
+      <span className={`text-sm flex items-center ${color}`}>
         {isIncrease ? (
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
@@ -1068,7 +1069,7 @@ export default function Home() {
                             Math.min(data.vo2max.slice(-60, -30).length, 30);
                           const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
                           const isIncrease = percentChange > 0;
-                          return (
+                            return (
                             <TrendIndicator current={currentAvg} previous={prevAvg} />
                           );
                         })()}
@@ -1153,7 +1154,7 @@ export default function Home() {
                           const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
                           const isIncrease = percentChange > 0;
                           return (
-                            <TrendIndicator current={currentAvg} previous={prevAvg} />
+                            <TrendIndicator current={currentAvg} previous={prevAvg} isBodyFat={true} />
                           );
                         })()}
                       </div>
@@ -1863,11 +1864,12 @@ export default function Home() {
 }
 
 // Helper Components
-const TrendIndicator = ({ current, previous }: { current: number, previous: number }) => {
+const TrendIndicator = ({ current, previous, isBodyFat = false }: { current: number, previous: number, isBodyFat?: boolean }) => {
   const percentChange = ((current - previous) / previous) * 100;
   const isIncrease = percentChange > 0;
+  const color = isBodyFat ? (!isIncrease ? 'text-green-500' : 'text-red-500') : (isIncrease ? 'text-green-500' : 'text-red-500');
   return (
-    <span className={`text-sm flex items-center ${isIncrease ? 'text-green-500' : 'text-red-500'}`}>
+    <span className={`text-sm flex items-center ${color}`}>
       {isIncrease ? (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
