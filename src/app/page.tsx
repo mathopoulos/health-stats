@@ -2014,7 +2014,7 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
           <>
             <div className="group relative">
               <div 
-                className={`w-2 h-2 rounded-full cursor-help transition-transform duration-200 group-hover:scale-125 ${
+                className={`w-2 h-2 rounded-full transition-transform duration-200 group-hover:scale-125 ${
                   getDotColor(data[0].value)
                 }`}
               />
