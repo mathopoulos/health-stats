@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useRef, DragEvent } from 'react';
+import { useSession, signOut } from "next-auth/react";
 import AddResultsModal from '../components/AddResultsModal';
+import Image from 'next/image';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
@@ -37,6 +39,7 @@ async function triggerProcessing(): Promise<ProcessingResult> {
 }
 
 export default function UploadPage() {
+  const { data: session } = useSession();
   const inputFileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -200,13 +203,28 @@ export default function UploadPage() {
       <div className="max-w-5xl mx-auto">
         <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Add Health Data</h1>
-            <button 
-              className="px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 rounded-lg text-sm font-medium transition-colors"
-              onClick={() => setIsAddResultsModalOpen(true)}
-            >
-              Add Blood Test Results
-            </button>
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-bold text-gray-900">Add Health Data</h1>
+              {session?.user?.email && (
+                <span className="text-sm text-gray-500">
+                  ({session.user.email})
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-4">
+              <button 
+                className="px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 rounded-lg text-sm font-medium transition-colors"
+                onClick={() => setIsAddResultsModalOpen(true)}
+              >
+                Add Blood Test Results
+              </button>
+              <button
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
           </div>
         </div>
         
