@@ -1968,17 +1968,43 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
   };
 
   const getStatusInfo = (value: number) => {
-    return value < config.min ? 'Low' : value > config.max ? 'High' : 'Normal';
+    // Define optimal range as middle 50% of normal range
+    const range = config.max - config.min;
+    const optimalMin = config.min + (range * 0.25);
+    const optimalMax = config.max - (range * 0.25);
+
+    if (value < config.min || value > config.max) {
+      return 'Abnormal';
+    } else if (value >= optimalMin && value <= optimalMax) {
+      return 'Optimal';
+    } else {
+      return 'Normal';
+    }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Low': return 'text-red-500';
-      case 'High': return 'text-yellow-500';
-      case 'Normal': return 'text-green-500';
+      case 'Abnormal': return 'text-red-500';
+      case 'Normal': return 'text-yellow-500';
+      case 'Optimal': return 'text-green-500';
       default: return 'text-gray-500';
     }
   };
+
+  const getDotColor = (value: number) => {
+    const status = getStatusInfo(value);
+    switch (status) {
+      case 'Abnormal': return 'bg-red-500';
+      case 'Normal': return 'bg-yellow-500';
+      case 'Optimal': return 'bg-green-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  // Define optimal range as middle 50% of normal range
+  const range = config.max - config.min;
+  const optimalMin = config.min + (range * 0.25);
+  const optimalMax = config.max - (range * 0.25);
 
   return (
     <div className="flex justify-between items-center border-b border-gray-100 pb-4">
@@ -1989,20 +2015,29 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
             <div className="group relative">
               <div 
                 className={`w-2 h-2 rounded-full cursor-help transition-transform duration-200 group-hover:scale-125 ${
-                  data[0].value < config.min ? 'bg-red-500' :
-                  data[0].value > config.max ? 'bg-yellow-500' :
-                  'bg-green-500'
+                  getDotColor(data[0].value)
                 }`}
               />
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
-                <div className="bg-white rounded-lg py-2.5 px-3 shadow-lg border border-gray-100 min-w-[160px]">
+                <div className="bg-white rounded-lg py-2.5 px-3 shadow-lg border border-gray-100 min-w-[180px]">
                   <div className={`text-sm font-medium ${getStatusColor(getStatusInfo(data[0].value))}`}>
                     {getStatusInfo(data[0].value)}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1.5">
-                    Optimal Range
-                    <div className="font-medium text-gray-900 mt-0.5">
-                      {config.min}-{config.max} {data[0].unit}
+                  <div className="text-xs text-gray-500 mt-2 space-y-1.5">
+                    <div>
+                      <span className="text-red-500 font-medium">Abnormal:</span>
+                      <span className="text-gray-900 ml-1">&lt;{config.min} or &gt;{config.max}</span>
+                    </div>
+                    <div>
+                      <span className="text-yellow-500 font-medium">Normal:</span>
+                      <span className="text-gray-900 ml-1">{config.min}-{optimalMin.toFixed(1)} or {optimalMax.toFixed(1)}-{config.max}</span>
+                    </div>
+                    <div>
+                      <span className="text-green-500 font-medium">Optimal:</span>
+                      <span className="text-gray-900 ml-1">{optimalMin.toFixed(1)}-{optimalMax.toFixed(1)}</span>
+                    </div>
+                    <div className="pt-1 text-[11px] text-gray-400">
+                      All values in {data[0].unit}
                     </div>
                   </div>
                 </div>
