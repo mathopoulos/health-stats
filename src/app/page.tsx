@@ -1079,7 +1079,7 @@ export default function Home() {
                           const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
                           const isIncrease = percentChange > 0;
                           return (
-                            <TrendIndicator current={currentAvg} previous={prevAvg} />
+                            <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
                           );
                         })()}
                       </div>
@@ -1121,7 +1121,7 @@ export default function Home() {
                           const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
                           const isIncrease = percentChange > 0;
                             return (
-                            <TrendIndicator current={currentAvg} previous={prevAvg} />
+                            <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
                           );
                         })()}
                       </div>
@@ -1163,7 +1163,7 @@ export default function Home() {
                           const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
                           const isIncrease = percentChange > 0;
                           return (
-                            <TrendIndicator current={currentAvg} previous={prevAvg} />
+                            <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
                           );
                         })()}
                       </div>
@@ -1205,7 +1205,7 @@ export default function Home() {
                           const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
                           const isIncrease = percentChange > 0;
                           return (
-                            <TrendIndicator current={currentAvg} previous={prevAvg} isBodyFat={true} />
+                            <TrendIndicator current={currentAvg} previous={prevAvg} isBodyFat={true} isFitnessMetric={true} />
                           );
                         })()}
                       </div>
@@ -1921,24 +1921,51 @@ const TrendIndicator = ({
   isBodyFat = false,
   decreaseIsGood = null,
   min = 0,
-  max = 100
+  max = 100,
+  isFitnessMetric = false
 }: { 
   current: number, 
   previous: number, 
   isBodyFat?: boolean,
   decreaseIsGood?: boolean | null,
   min?: number,
-  max?: number
+  max?: number,
+  isFitnessMetric?: boolean
 }) => {
   const percentChange = ((current - previous) / previous) * 100;
   const isIncrease = percentChange > 0;
+
+  // Handle fitness metrics differently
+  if (isFitnessMetric) {
+    let color = 'text-gray-500';
+    if (isBodyFat) {
+      // For body fat, decrease is good
+      color = !isIncrease ? 'text-green-500' : 'text-red-500';
+    } else {
+      // For HRV, VO2 max, and weight, increase is good
+      color = isIncrease ? 'text-green-500' : 'text-red-500';
+    }
+    return (
+      <span className={`text-sm flex items-center ${color}`}>
+        {isIncrease ? (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+        ) : (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+          </svg>
+        )}
+        <span className="ml-1">{Math.abs(percentChange).toFixed(1)}%</span>
+      </span>
+    );
+  }
   
-  // Calculate optimal range (middle 50% of normal range)
+  // Blood marker logic
   const range = max - min;
   const optimalMin = min + (range * 0.25);
   const optimalMax = max - (range * 0.25);
 
-  // Helper functions to determine value positions
   const isInOptimalRange = (value: number) => value >= optimalMin && value <= optimalMax;
   const isInNormalRange = (value: number) => value >= min && value <= max;
   const isMovingTowardsOptimal = () => {
@@ -1954,19 +1981,13 @@ const TrendIndicator = ({
     return (current > max && previous < current) || (current < min && previous > current);
   };
 
-  // Determine color based on movement and ranges
-  let color = 'text-gray-500'; // Default color
+  let color = 'text-gray-500';
   if (isMovingTowardsOptimal()) {
     color = 'text-green-500';
   } else if (isMovingFromOptimalToNormal() || isMovingTowardsAbnormal()) {
-    // Show red for both moving away from optimal and towards abnormal
     color = 'text-red-500';
   } else if (decreaseIsGood !== null) {
-    // Fall back to simple decrease/increase logic if specified
     color = (isIncrease !== decreaseIsGood) ? 'text-green-500' : 'text-red-500';
-  } else if (isBodyFat) {
-    // Special case for body fat
-    color = !isIncrease ? 'text-green-500' : 'text-red-500';
   }
 
   return (
