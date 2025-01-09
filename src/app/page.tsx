@@ -2018,30 +2018,29 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
                   getDotColor(data[0].value)
                 }`}
               />
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
-                <div className="bg-white rounded-lg py-2.5 px-3 shadow-lg border border-gray-100 min-w-[180px]">
-                  <div className={`text-sm font-medium ${getStatusColor(getStatusInfo(data[0].value))}`}>
-                    {getStatusInfo(data[0].value)}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-2 space-y-1.5">
-                    <div>
-                      <span className="text-red-500 font-medium">Abnormal:</span>
-                      <span className="text-gray-900 ml-1">&lt;{config.min} or &gt;{config.max}</span>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
+                <div className="bg-white rounded-lg py-3 px-4 shadow-sm border border-gray-100 min-w-[200px]">
+                  <div className="flex flex-col gap-3">
+                    <div className={`text-sm font-medium ${getStatusColor(getStatusInfo(data[0].value))}`}>
+                      {getStatusInfo(data[0].value)}
                     </div>
-                    <div>
-                      <span className="text-yellow-500 font-medium">Normal:</span>
-                      <span className="text-gray-900 ml-1">{config.min}-{optimalMin.toFixed(1)} or {optimalMax.toFixed(1)}-{config.max}</span>
-                    </div>
-                    <div>
-                      <span className="text-green-500 font-medium">Optimal:</span>
-                      <span className="text-gray-900 ml-1">{optimalMin.toFixed(1)}-{optimalMax.toFixed(1)}</span>
-                    </div>
-                    <div className="pt-1 text-[11px] text-gray-400">
-                      All values in {data[0].unit}
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-red-500 font-medium">Abnormal</span>
+                        <span className="text-gray-600">&lt;{config.min} or &gt;{config.max}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-yellow-500 font-medium">Normal</span>
+                        <span className="text-gray-600">{config.min}-{config.max}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-green-500 font-medium">Optimal</span>
+                        <span className="text-gray-600">{optimalMin.toFixed(1)}-{optimalMax.toFixed(1)}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="w-3 h-3 bg-white border-r border-b border-gray-100 absolute -bottom-1.5 left-1/2 -translate-x-1/2 transform rotate-45"></div>
+                <div className="w-2 h-2 bg-white border-r border-b border-gray-100 absolute -bottom-1 left-1/2 -translate-x-1/2 transform rotate-45"></div>
               </div>
             </div>
             {data.length > 1 && (
