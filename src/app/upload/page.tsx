@@ -156,19 +156,21 @@ export default function UploadPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">Upload Health Data</h1>
-          <button 
-            className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-medium hover:bg-indigo-100 transition-colors"
-            onClick={() => setIsAddResultsModalOpen(true)}
-          >
-            Add Blood Test Results
-          </button>
+    <main className="min-h-screen p-8 bg-gray-50">
+      <div className="max-w-5xl mx-auto">
+        <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-gray-900">Upload Health Data</h1>
+            <button 
+              className="px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 rounded-lg text-sm font-medium transition-colors"
+              onClick={() => setIsAddResultsModalOpen(true)}
+            >
+              Add Blood Test Results
+            </button>
+          </div>
         </div>
         
-        <div className="bg-white/5 p-8 rounded-lg shadow-lg">
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
               <input
@@ -179,10 +181,10 @@ export default function UploadPage() {
                 accept=".xml,application/xml"
                 className="block w-full text-sm text-gray-500
                   file:mr-4 file:py-2 file:px-4
-                  file:rounded-full file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-blue-50 file:text-blue-700
-                  hover:file:bg-blue-100
+                  file:rounded-lg file:border-0
+                  file:text-sm file:font-medium
+                  file:bg-indigo-500/10 file:text-indigo-600
+                  hover:file:bg-indigo-500/20
                   disabled:opacity-50"
               />
             </div>
@@ -190,7 +192,7 @@ export default function UploadPage() {
               <button
                 type="submit"
                 disabled={uploading}
-                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:opacity-50"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm font-medium transition-colors"
               >
                 Upload
               </button>
@@ -198,8 +200,8 @@ export default function UploadPage() {
                 type="button"
                 onClick={handleProcess}
                 disabled={isProcessing || uploading}
-                className={`px-4 py-2 rounded-md text-white ${
-                  isProcessing || uploading ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
+                className={`px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors ${
+                  isProcessing || uploading ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'
                 }`}
               >
                 {isProcessing ? 'Processing...' : 'Process Data'}
@@ -209,13 +211,13 @@ export default function UploadPage() {
 
           {uploading && (
             <div className="mt-4">
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div className="w-full bg-gray-100 rounded-full h-2">
                 <div 
-                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                  className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm text-gray-600 mt-2">
                 {status || `Uploading... ${Math.round(progress)}%`}
               </p>
             </div>
@@ -228,7 +230,7 @@ export default function UploadPage() {
           )}
 
           {error && (
-            <div className="mt-4 text-red-500 text-sm">
+            <div className="mt-4 text-sm text-red-600">
               {error}
             </div>
           )}
