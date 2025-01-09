@@ -1919,23 +1919,55 @@ const TrendIndicator = ({
   current, 
   previous, 
   isBodyFat = false,
-  decreaseIsGood = null 
+  decreaseIsGood = null,
+  min = 0,
+  max = 100
 }: { 
   current: number, 
   previous: number, 
   isBodyFat?: boolean,
-  decreaseIsGood?: boolean | null 
+  decreaseIsGood?: boolean | null,
+  min?: number,
+  max?: number
 }) => {
   const percentChange = ((current - previous) / previous) * 100;
   const isIncrease = percentChange > 0;
   
-  let color = 'text-gray-500'; // Default color when no preference
-  if (decreaseIsGood !== null) {
+  // Calculate optimal range (middle 50% of normal range)
+  const range = max - min;
+  const optimalMin = min + (range * 0.25);
+  const optimalMax = max - (range * 0.25);
+
+  // Helper functions to determine value positions
+  const isInOptimalRange = (value: number) => value >= optimalMin && value <= optimalMax;
+  const isInNormalRange = (value: number) => value >= min && value <= max;
+  const isMovingTowardsOptimal = () => {
+    if (isInOptimalRange(current)) return true;
+    if (current > optimalMax && previous > current) return true;
+    if (current < optimalMin && previous < current) return true;
+    return false;
+  };
+  const isMovingFromOptimalToNormal = () => {
+    return isInOptimalRange(previous) && !isInOptimalRange(current) && isInNormalRange(current);
+  };
+  const isMovingTowardsAbnormal = () => {
+    return (current > max && previous < current) || (current < min && previous > current);
+  };
+
+  // Determine color based on movement and ranges
+  let color = 'text-gray-500'; // Default color
+  if (isMovingTowardsOptimal()) {
+    color = 'text-green-500';
+  } else if (isMovingFromOptimalToNormal()) {
+    color = 'text-yellow-500';
+  } else if (isMovingTowardsAbnormal()) {
+    color = 'text-red-500';
+  } else if (decreaseIsGood !== null) {
+    // Fall back to simple decrease/increase logic if specified
     color = (isIncrease !== decreaseIsGood) ? 'text-green-500' : 'text-red-500';
   } else if (isBodyFat) {
+    // Special case for body fat
     color = !isIncrease ? 'text-green-500' : 'text-red-500';
-  } else {
-    color = isIncrease ? 'text-green-500' : 'text-red-500';
   }
 
   return (
@@ -2048,6 +2080,8 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
                 current={data[0].value}
                 previous={data[1].value}
                 decreaseIsGood={config.decreaseIsGood}
+                min={config.min}
+                max={config.max}
               />
             )}
           </>
