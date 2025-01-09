@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, DragEvent } from 'react';
 import AddResultsModal from '../components/AddResultsModal';
 
 const MAX_RETRIES = 3;
@@ -45,6 +45,7 @@ export default function UploadPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState<string>('');
   const [isAddResultsModalOpen, setIsAddResultsModalOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleProcess = async () => {
     setIsProcessing(true);
@@ -155,12 +156,47 @@ export default function UploadPage() {
     }
   };
 
+  const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      if (inputFileRef.current) {
+        // Create a new DataTransfer object
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(files[0]);
+        
+        // Set the file input's files
+        inputFileRef.current.files = dataTransfer.files;
+      }
+    }
+  };
+
   return (
     <main className="min-h-screen p-8 bg-gray-50">
       <div className="max-w-5xl mx-auto">
         <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Upload Health Data</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Add Health Data</h1>
             <button 
               className="px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 rounded-lg text-sm font-medium transition-colors"
               onClick={() => setIsAddResultsModalOpen(true)}
@@ -171,22 +207,68 @@ export default function UploadPage() {
         </div>
         
         <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-lg font-medium text-gray-900">Apple Health Fitness Data</h2>
+            <div className="flex items-center text-xs text-gray-500">
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              XML files exported from Apple Health
+            </div>
+          </div>
           <form onSubmit={handleSubmit}>
-            <div className="mb-4">
+            <div 
+              className={`mb-4 relative ${
+                isDragging ? 'border-indigo-500 bg-indigo-50' : 'border-dashed border-gray-300 bg-gray-50'
+              } border-2 rounded-xl p-8 transition-all duration-200 ease-in-out`}
+              onDragEnter={handleDragEnter}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               <input
                 name="file"
                 ref={inputFileRef}
                 type="file"
                 disabled={uploading}
                 accept=".xml,application/xml"
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-lg file:border-0
-                  file:text-sm file:font-medium
-                  file:bg-indigo-500/10 file:text-indigo-600
-                  hover:file:bg-indigo-500/20
-                  disabled:opacity-50"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                onChange={() => setError(null)}
               />
+              <div className="flex flex-col items-center justify-center gap-3">
+                <div className={`p-3 rounded-full ${
+                  isDragging ? 'bg-indigo-100' : 'bg-gray-100'
+                } transition-colors duration-200`}>
+                  <svg 
+                    className={`w-6 h-6 ${
+                      isDragging ? 'text-indigo-500' : 'text-gray-500'
+                    }`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-700">
+                    {isDragging ? 'Drop your file here' : 'Drag and drop your file here, or click to browse'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Only XML files are supported
+                  </p>
+                  {inputFileRef.current?.files?.[0] && (
+                    <p className="text-sm font-medium text-indigo-600 mt-2">
+                      Selected: {inputFileRef.current.files[0].name}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
             <div className="flex gap-4">
               <button
