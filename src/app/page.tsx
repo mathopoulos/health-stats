@@ -1958,9 +1958,8 @@ const TrendIndicator = ({
   let color = 'text-gray-500'; // Default color
   if (isMovingTowardsOptimal()) {
     color = 'text-green-500';
-  } else if (isMovingFromOptimalToNormal()) {
-    color = 'text-yellow-500';
-  } else if (isMovingTowardsAbnormal()) {
+  } else if (isMovingFromOptimalToNormal() || isMovingTowardsAbnormal()) {
+    // Show red for both moving away from optimal and towards abnormal
     color = 'text-red-500';
   } else if (decreaseIsGood !== null) {
     // Fall back to simple decrease/increase logic if specified
