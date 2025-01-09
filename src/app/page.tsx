@@ -100,6 +100,77 @@ interface ChartData {
 
 type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
+// Add this before the component definitions
+const BLOOD_MARKER_CONFIG = {
+  // Lipid Panel
+  totalcholesterol: { min: 125, max: 200, decreaseIsGood: true },
+  ldlc: { min: 0, max: 100, decreaseIsGood: true },
+  hdlc: { min: 40, max: 90, decreaseIsGood: false },
+  triglycerides: { min: 0, max: 150, decreaseIsGood: true },
+  apob: { min: 40, max: 100, decreaseIsGood: true },
+  lpa: { min: 0, max: 50, decreaseIsGood: true },
+  
+  // Complete Blood Count
+  whitebloodcells: { min: 4.5, max: 11.0, decreaseIsGood: null },
+  redbloodcells: { min: 4.5, max: 5.9, decreaseIsGood: null },
+  hematocrit: { min: 41, max: 50, decreaseIsGood: null },
+  hemoglobin: { min: 13.5, max: 17.5, decreaseIsGood: null },
+  platelets: { min: 150, max: 450, decreaseIsGood: null },
+  
+  // Glucose Markers
+  hba1c: { min: 4.0, max: 5.6, decreaseIsGood: true },
+  fastingInsulin: { min: 2.6, max: 5.0, decreaseIsGood: true },
+  glucose: { min: 70, max: 90, decreaseIsGood: true },
+  
+  // Liver Markers
+  alt: { min: 0, max: 30, decreaseIsGood: true },
+  ast: { min: 5, max: 30, decreaseIsGood: true },
+  ggt: { min: 9, max: 40, decreaseIsGood: true },
+  
+  // Kidney Markers
+  egfr: { min: 90, max: 120, decreaseIsGood: false },
+  cystatinC: { min: 0.5, max: 1.0, decreaseIsGood: true },
+  bun: { min: 7, max: 20, decreaseIsGood: true },
+  creatinine: { min: 0.7, max: 1.3, decreaseIsGood: true },
+  albumin: { min: 3.8, max: 5.0, decreaseIsGood: null },
+  
+  // Sex Hormones
+  testosterone: { min: 300, max: 1000, decreaseIsGood: null },
+  freeTesto: { min: 8.7, max: 25.1, decreaseIsGood: null },
+  estradiol: { min: 10, max: 40, decreaseIsGood: null },
+  shbg: { min: 10, max: 57, decreaseIsGood: null },
+  
+  // Thyroid Markers
+  t3: { min: 2.3, max: 4.2, decreaseIsGood: null },
+  t4: { min: 0.8, max: 1.8, decreaseIsGood: null },
+  tsh: { min: 0.4, max: 4.0, decreaseIsGood: null },
+  
+  // Vitamins
+  vitaminD: { min: 40, max: 80, decreaseIsGood: false },
+  
+  // Inflammation
+  crp: { min: 0, max: 1.0, decreaseIsGood: true },
+  homocysteine: { min: 4, max: 10, decreaseIsGood: true },
+  
+  // Growth Factors
+  igf1: { min: 115, max: 355, decreaseIsGood: null },
+  
+  // Iron Panel
+  ferritin: { min: 30, max: 300, decreaseIsGood: null },
+  serumIron: { min: 65, max: 175, decreaseIsGood: null },
+  tibc: { min: 250, max: 450, decreaseIsGood: null },
+  transferrinSaturation: { min: 20, max: 50, decreaseIsGood: null },
+  
+  // Electrolytes
+  sodium: { min: 135, max: 145, decreaseIsGood: null },
+  potassium: { min: 3.5, max: 5.0, decreaseIsGood: null },
+  calcium: { min: 8.5, max: 10.5, decreaseIsGood: null },
+  phosphorus: { min: 2.5, max: 4.5, decreaseIsGood: null },
+  magnesium: { min: 1.7, max: 2.4, decreaseIsGood: null },
+  bicarbonate: { min: 22, max: 29, decreaseIsGood: null },
+  chloride: { min: 96, max: 106, decreaseIsGood: null }
+} as const;
+
 export default function Home() {
   const [data, setData] = useState<ChartData>({
     heartRate: [],
@@ -917,26 +988,6 @@ export default function Home() {
           </LineChart>
         </ResponsiveContainer>
       </div>
-    );
-  };
-
-  const TrendIndicator = ({ current, previous, isBodyFat = false }: { current: number, previous: number, isBodyFat?: boolean }) => {
-    const percentChange = ((current - previous) / previous) * 100;
-    const isIncrease = percentChange > 0;
-    const color = isBodyFat ? (!isIncrease ? 'text-green-500' : 'text-red-500') : (isIncrease ? 'text-green-500' : 'text-red-500');
-    return (
-      <span className={`text-sm flex items-center ${color}`}>
-        {isIncrease ? (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-          </svg>
-        ) : (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
-          </svg>
-        )}
-        <span className="ml-1">{Math.abs(percentChange).toFixed(1)}%</span>
-      </span>
     );
   };
 
@@ -1864,10 +1915,29 @@ export default function Home() {
 }
 
 // Helper Components
-const TrendIndicator = ({ current, previous, isBodyFat = false }: { current: number, previous: number, isBodyFat?: boolean }) => {
+const TrendIndicator = ({ 
+  current, 
+  previous, 
+  isBodyFat = false,
+  decreaseIsGood = null 
+}: { 
+  current: number, 
+  previous: number, 
+  isBodyFat?: boolean,
+  decreaseIsGood?: boolean | null 
+}) => {
   const percentChange = ((current - previous) / previous) * 100;
   const isIncrease = percentChange > 0;
-  const color = isBodyFat ? (!isIncrease ? 'text-green-500' : 'text-red-500') : (isIncrease ? 'text-green-500' : 'text-red-500');
+  
+  let color = 'text-gray-500'; // Default color when no preference
+  if (decreaseIsGood !== null) {
+    color = (isIncrease !== decreaseIsGood) ? 'text-green-500' : 'text-red-500';
+  } else if (isBodyFat) {
+    color = !isIncrease ? 'text-green-500' : 'text-red-500';
+  } else {
+    color = isIncrease ? 'text-green-500' : 'text-red-500';
+  }
+
   return (
     <span className={`text-sm flex items-center ${color}`}>
       {isIncrease ? (
@@ -1884,37 +1954,79 @@ const TrendIndicator = ({ current, previous, isBodyFat = false }: { current: num
   );
 };
 
-const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => (
-  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-    <span className="text-sm font-medium text-gray-600">{label}</span>
-    <div className="flex items-center gap-3">
-      {data.length > 0 && (
-        <>
-          <div className={`w-2 h-2 rounded-full ${
-            data[0].value < (data[0].referenceRange?.min || 0) ? 'bg-red-500' :
-            data[0].value > (data[0].referenceRange?.max || 0) ? 'bg-yellow-500' :
-            'bg-green-500'
-          }`} title={
-            data[0].value < (data[0].referenceRange?.min || 0) ? 'Low' :
-            data[0].value > (data[0].referenceRange?.max || 0) ? 'High' :
-            'Normal'
-          } />
-          {data.length > 1 && (
-            <TrendIndicator 
-              current={data[0].value}
-              previous={data[1].value}
-            />
-          )}
-        </>
-      )}
-      <span className="text-lg font-semibold text-gray-900">
-        {data.length > 0 ?
-         `${data[0].value} ${data[0].unit}` :
-         "No data"}
-      </span>
+const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
+  // Convert label to config key
+  const configKey = label.toLowerCase()
+    .replace(/-/g, '')
+    .replace(/[()]/g, '')
+    .replace(/\s+/g, '') as keyof typeof BLOOD_MARKER_CONFIG;
+  
+  const config = BLOOD_MARKER_CONFIG[configKey] || {
+    min: data[0]?.referenceRange?.min || 0,
+    max: data[0]?.referenceRange?.max || 100,
+    decreaseIsGood: null
+  };
+
+  const getStatusInfo = (value: number) => {
+    return value < config.min ? 'Low' : value > config.max ? 'High' : 'Normal';
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Low': return 'text-red-500';
+      case 'High': return 'text-yellow-500';
+      case 'Normal': return 'text-green-500';
+      default: return 'text-gray-500';
+    }
+  };
+
+  return (
+    <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+      <span className="text-sm font-medium text-gray-600">{label}</span>
+      <div className="flex items-center gap-3">
+        {data.length > 0 && (
+          <>
+            <div className="group relative">
+              <div 
+                className={`w-2 h-2 rounded-full cursor-help transition-transform duration-200 group-hover:scale-125 ${
+                  data[0].value < config.min ? 'bg-red-500' :
+                  data[0].value > config.max ? 'bg-yellow-500' :
+                  'bg-green-500'
+                }`}
+              />
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
+                <div className="bg-white rounded-lg py-2.5 px-3 shadow-lg border border-gray-100 min-w-[160px]">
+                  <div className={`text-sm font-medium ${getStatusColor(getStatusInfo(data[0].value))}`}>
+                    {getStatusInfo(data[0].value)}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1.5">
+                    Optimal Range
+                    <div className="font-medium text-gray-900 mt-0.5">
+                      {config.min}-{config.max} {data[0].unit}
+                    </div>
+                  </div>
+                </div>
+                <div className="w-3 h-3 bg-white border-r border-b border-gray-100 absolute -bottom-1.5 left-1/2 -translate-x-1/2 transform rotate-45"></div>
+              </div>
+            </div>
+            {data.length > 1 && (
+              <TrendIndicator 
+                current={data[0].value}
+                previous={data[1].value}
+                decreaseIsGood={config.decreaseIsGood}
+              />
+            )}
+          </>
+        )}
+        <span className="text-lg font-semibold text-gray-900">
+          {data.length > 0 ?
+           `${data[0].value} ${data[0].unit}` :
+           "No data"}
+        </span>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const LastTestedDate = ({ data }: { data: BloodMarker[] }) => (
   data.length > 0 && (
