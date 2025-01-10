@@ -1,24 +1,28 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { processHealthData } from '@/lib/processHealthData';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 
-const OWNER_ID = 'usr_W2LWz83EurLxZwfjqT_EL';
-
-export async function POST(request: Request) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const { xmlKey } = await request.json();
-    if (!xmlKey) {
-      return NextResponse.json(
-        { success: false, error: 'No XML key provided' },
-        { status: 400 }
-      );
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const status = await processHealthData(xmlKey, OWNER_ID);
+    const { blobUrl } = await request.json();
+    if (!blobUrl) {
+      return NextResponse.json({ error: 'No blob URL provided' }, { status: 400 });
+    }
+
+    console.log('Processing health data from blob:', blobUrl);
+    const status = await processHealthData(blobUrl, session.user.id);
+
     return NextResponse.json({ success: true, status });
   } catch (error) {
     console.error('Error processing health data:', error);
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
+      { error: error instanceof Error ? error.message : 'Failed to process health data' },
       { status: 500 }
     );
   }

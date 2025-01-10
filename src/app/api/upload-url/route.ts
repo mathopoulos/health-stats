@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generatePresignedUploadUrl } from '@/lib/s3';
 import { randomUUID } from 'crypto';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { filename, contentType } = await request.json();
 
     if (!filename) {
@@ -16,11 +23,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Generate a unique key for the file
     const fileExtension = filename.split('.').pop() || 'xml';
     const uniqueFilename = `${randomUUID()}.${fileExtension}`;
-    const key = `uploads/${uniqueFilename}`;
+    const key = `uploads/${session.user.id}/${uniqueFilename}`;
 
     // Generate the presigned URL
     console.log('Generating presigned URL for:', key, 'contentType:', contentType);
-    const url = await generatePresignedUploadUrl(key, contentType || 'application/xml');
+    const url = await generatePresignedUploadUrl(key, contentType || 'application/xml', session.user.id);
 
     return NextResponse.json({ url, key });
   } catch (error) {

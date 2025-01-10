@@ -14,9 +14,15 @@ const s3Client = new S3Client({
 
 const BUCKET_NAME = process.env.AWS_BUCKET_NAME || '';
 
-export async function generatePresignedUploadUrl(key: string, contentType: string): Promise<string> {
+export async function generatePresignedUploadUrl(key: string, contentType: string, userId?: string): Promise<string> {
   if (!BUCKET_NAME) {
     throw new Error('AWS_BUCKET_NAME environment variable is not set');
+  }
+
+  // If userId is provided and the key is for data storage (not temporary uploads),
+  // include it in the path
+  if (userId && key.startsWith('data/')) {
+    key = `data/${userId}/${key.slice(5)}`;
   }
 
   const command = new PutObjectCommand({
@@ -268,9 +274,8 @@ export async function fetchDataFile(key: string): Promise<any> {
   });
 }
 
-export async function fetchAllHealthData(type: 'heartRate' | 'weight' | 'bodyFat' | 'hrv' | 'vo2max'): Promise<any[]> {
+export async function fetchAllHealthData(type: HealthDataType, userId: string): Promise<any[]> {
   try {
-    const userId = 'usr_W2LWz83EurLxZwfjqT_EL';
     const key = `data/${userId}/${type}.json`;
     console.log(`Fetching ${type} data from S3...`);
     

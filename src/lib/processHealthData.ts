@@ -23,9 +23,10 @@ interface ProcessingStatus {
   batchesSaved: number;
   status: 'pending' | 'processing' | `processing ${HealthDataType}` | 'completed' | 'error';
   error?: string;
+  userId?: string;
 }
 
-async function saveData(type: HealthDataType, newData: any[]): Promise<void> {
+async function saveData(type: HealthDataType, newData: any[], userId: string): Promise<void> {
   if (newData.length === 0) return;
 
   const MAX_RETRIES = 3;
@@ -36,7 +37,7 @@ async function saveData(type: HealthDataType, newData: any[]): Promise<void> {
   async function attemptSave(attempt: number = 0): Promise<void> {
     try {
       console.log(`Fetching existing ${type} data (attempt ${attempt + 1})...`);
-      const existingData = await fetchAllHealthData(type);
+      const existingData = await fetchAllHealthData(type, userId);
       console.log(`Found ${existingData.length} existing ${type} records`);
       
       // For single records, check if we already have this exact date
@@ -53,7 +54,7 @@ async function saveData(type: HealthDataType, newData: any[]): Promise<void> {
         updatedData.sort((a, b) => a.date.localeCompare(b.date));
         
         console.log(`Saving ${type} data to S3 with new record...`);
-        const url = await generatePresignedUploadUrl(`data/${type}.json`, 'application/json');
+        const url = await generatePresignedUploadUrl(`data/${type}.json`, 'application/json', userId);
         await fetch(url, {
           method: 'PUT',
           body: JSON.stringify(updatedData),
@@ -75,7 +76,7 @@ async function saveData(type: HealthDataType, newData: any[]): Promise<void> {
       console.log(`Total ${type} records after merging and deduplication: ${uniqueData.length}`);
 
       console.log(`Saving ${type} data to S3...`);
-      const url = await generatePresignedUploadUrl(`data/${type}.json`, 'application/json');
+      const url = await generatePresignedUploadUrl(`data/${type}.json`, 'application/json', userId);
       
       // Use a more reliable fetch with longer timeout
       const controller = new AbortController();
@@ -116,6 +117,9 @@ async function saveData(type: HealthDataType, newData: any[]): Promise<void> {
 }
 
 async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<void> {
+  const userId = status.userId;
+  if (!userId) throw new Error('User ID is required');
+  
   console.log('Starting weight data processing...');
   let recordsProcessed = 0;
   let validRecords = 0;
@@ -126,7 +130,7 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
   
   // Create a map of existing dates for quick lookup
   console.log('Fetching existing weight records...');
-  const existingRecords = await fetchAllHealthData('weight');
+  const existingRecords = await fetchAllHealthData('weight', userId);
   const existingDates = new Set(existingRecords.map(record => record.date));
   console.log(`Found ${existingRecords.length} existing weight records`);
   
@@ -194,7 +198,7 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
         // Save progress every 50 records
         if (pendingRecords.length >= 50) {
           console.log(`Saving batch of ${pendingRecords.length} weight records...`);
-          await saveData('weight', pendingRecords);
+          await saveData('weight', pendingRecords, userId);
           status.batchesSaved++;
           pendingRecords = [];
         }
@@ -208,7 +212,7 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
   // Save any remaining records
   if (pendingRecords.length > 0) {
     console.log(`Saving final batch of ${pendingRecords.length} weight records...`);
-    await saveData('weight', pendingRecords);
+    await saveData('weight', pendingRecords, userId);
     status.batchesSaved++;
   }
 
@@ -221,6 +225,9 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
 }
 
 async function processBodyFat(xmlKey: string, status: ProcessingStatus): Promise<void> {
+  const userId = status.userId;
+  if (!userId) throw new Error('User ID is required');
+
   console.log('Starting body fat data processing...');
   let recordsProcessed = 0;
   let validRecords = 0;
@@ -240,10 +247,10 @@ async function processBodyFat(xmlKey: string, status: ProcessingStatus): Promise
   let stallCount = 0;
   const MAX_STALL_TIME = 300000; // 5 minutes
   const MIN_PROCESSING_SPEED = 100; // records per second
-  
+
   // Create a map of existing dates for quick lookup
   console.log('Fetching existing body fat records...');
-  const existingRecords = await fetchAllHealthData('bodyFat');
+  const existingRecords = await fetchAllHealthData('bodyFat', userId);
   const existingDates = new Set(existingRecords.map(record => record.date));
   console.log(`Found ${existingRecords.length} existing body fat records`);
   
@@ -379,7 +386,7 @@ async function processBodyFat(xmlKey: string, status: ProcessingStatus): Promise
         // Save progress every 50 records
         if (pendingRecords.length >= 50) {
           console.log(`Saving batch of ${pendingRecords.length} body fat records...`);
-          await saveData('bodyFat', pendingRecords);
+          await saveData('bodyFat', pendingRecords, userId);
           status.batchesSaved++;
           pendingRecords = [];
         }
@@ -393,7 +400,7 @@ async function processBodyFat(xmlKey: string, status: ProcessingStatus): Promise
   // Save any remaining records
   if (pendingRecords.length > 0) {
     console.log(`Saving final batch of ${pendingRecords.length} body fat records...`);
-    await saveData('bodyFat', pendingRecords);
+    await saveData('bodyFat', pendingRecords, userId);
     status.batchesSaved++;
   }
 
@@ -416,6 +423,9 @@ async function processBodyFat(xmlKey: string, status: ProcessingStatus): Promise
 }
 
 async function processHeartRate(xmlKey: string, status: ProcessingStatus): Promise<void> {
+  const userId = status.userId;
+  if (!userId) throw new Error('User ID is required');
+
   console.log('Starting heart rate data processing...');
   let recordsProcessed = 0;
   let validRecords = 0;
@@ -423,10 +433,10 @@ async function processHeartRate(xmlKey: string, status: ProcessingStatus): Promi
   let lastProgressTime = Date.now();
   let lastValidRecordCount = 0;
   let unchangedIterations = 0;
-  
+
   // Create a map of existing dates for quick lookup
   console.log('Fetching existing heart rate records...');
-  const existingRecords = await fetchAllHealthData('heartRate');
+  const existingRecords = await fetchAllHealthData('heartRate', userId);
   const existingDates = new Set(existingRecords.map(record => record.date));
   console.log(`Found ${existingRecords.length} existing heart rate records`);
   
@@ -491,10 +501,10 @@ async function processHeartRate(xmlKey: string, status: ProcessingStatus): Promi
         validRecords++;
         status.recordsProcessed++;
         
-        // Save progress every 2000 records (40x more than weight/body fat)
+        // Save progress every 2000 records
         if (pendingRecords.length >= 2000) {
           console.log(`Saving batch of ${pendingRecords.length} heart rate records...`);
-          await saveData('heartRate', pendingRecords);
+          await saveData('heartRate', pendingRecords, userId);
           status.batchesSaved++;
           pendingRecords = [];
         }
@@ -508,7 +518,7 @@ async function processHeartRate(xmlKey: string, status: ProcessingStatus): Promi
   // Save any remaining records
   if (pendingRecords.length > 0) {
     console.log(`Saving final batch of ${pendingRecords.length} heart rate records...`);
-    await saveData('heartRate', pendingRecords);
+    await saveData('heartRate', pendingRecords, userId);
     status.batchesSaved++;
   }
 
@@ -521,6 +531,9 @@ async function processHeartRate(xmlKey: string, status: ProcessingStatus): Promi
 }
 
 async function processHRV(xmlKey: string, status: ProcessingStatus): Promise<void> {
+  const userId = status.userId;
+  if (!userId) throw new Error('User ID is required');
+
   console.log('Starting HRV data processing...');
   let recordsProcessed = 0;
   let validRecords = 0;
@@ -537,11 +550,11 @@ async function processHRV(xmlKey: string, status: ProcessingStatus): Promise<voi
   let foundFirstRecord = false;
   let noRecordsThreshold = 2000000; // Increased to 2 million records
   const PROGRESS_LOG_INTERVAL = 50000;
-  const BATCH_SAVE_SIZE = 200;
-  
+  const BATCH_SAVE_SIZE = 50;
+
   // Create a map of existing dates for quick lookup
   console.log('Fetching existing HRV records...');
-  const existingRecords = await fetchAllHealthData('hrv');
+  const existingRecords = await fetchAllHealthData('hrv', userId);
   const existingDates = new Set(existingRecords.map(record => record.date));
   console.log(`Found ${existingRecords.length} existing HRV records`);
   
@@ -639,7 +652,7 @@ async function processHRV(xmlKey: string, status: ProcessingStatus): Promise<voi
         // Save progress in larger batches
         if (pendingRecords.length >= BATCH_SAVE_SIZE) {
           console.log(`Saving batch of ${pendingRecords.length} HRV records...`);
-          await saveData('hrv', pendingRecords);
+          await saveData('hrv', pendingRecords, userId);
           status.batchesSaved++;
           pendingRecords = [];
         }
@@ -653,7 +666,7 @@ async function processHRV(xmlKey: string, status: ProcessingStatus): Promise<voi
   // Save any remaining records
   if (pendingRecords.length > 0) {
     console.log(`Saving final batch of ${pendingRecords.length} HRV records...`);
-    await saveData('hrv', pendingRecords);
+    await saveData('hrv', pendingRecords, userId);
     status.batchesSaved++;
   }
 
@@ -676,6 +689,9 @@ async function processHRV(xmlKey: string, status: ProcessingStatus): Promise<voi
 }
 
 async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<void> {
+  const userId = status.userId;
+  if (!userId) throw new Error('User ID is required');
+
   console.log('Starting VO2 max data processing...');
   let recordsProcessed = 0;
   let validRecords = 0;
@@ -692,11 +708,11 @@ async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<
   let foundFirstRecord = false;
   let noRecordsThreshold = 2000000; // 2 million records
   const PROGRESS_LOG_INTERVAL = 50000;
-  const BATCH_SAVE_SIZE = 200;
-  
+  const BATCH_SAVE_SIZE = 50;
+
   // Create a map of existing dates for quick lookup
   console.log('Fetching existing VO2 max records...');
-  const existingRecords = await fetchAllHealthData('vo2max');
+  const existingRecords = await fetchAllHealthData('vo2max', userId);
   const existingDates = new Set(existingRecords.map(record => record.date));
   console.log(`Found ${existingRecords.length} existing VO2 max records`);
   
@@ -794,7 +810,7 @@ async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<
         // Save progress in larger batches
         if (pendingRecords.length >= BATCH_SAVE_SIZE) {
           console.log(`Saving batch of ${pendingRecords.length} VO2 max records...`);
-          await saveData('vo2max', pendingRecords);
+          await saveData('vo2max', pendingRecords, userId);
           status.batchesSaved++;
           pendingRecords = [];
         }
@@ -808,7 +824,7 @@ async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<
   // Save any remaining records
   if (pendingRecords.length > 0) {
     console.log(`Saving final batch of ${pendingRecords.length} VO2 max records...`);
-    await saveData('vo2max', pendingRecords);
+    await saveData('vo2max', pendingRecords, userId);
     status.batchesSaved++;
   }
 
@@ -830,14 +846,15 @@ async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<
   `);
 }
 
-export async function processHealthData(xmlKey: string): Promise<ProcessingStatus> {
+export async function processHealthData(xmlKey: string, userId: string): Promise<ProcessingStatus> {
   console.log('\nStarting health data processing...');
   console.log('XML file to process:', xmlKey);
   
   const status: ProcessingStatus = {
     recordsProcessed: 0,
     batchesSaved: 0,
-    status: 'processing'
+    status: 'processing',
+    userId
   };
 
   try {

@@ -14,6 +14,20 @@ export const authOptions: NextAuthOptions = {
       const allowedEmails = process.env.ALLOWED_EMAILS?.split(',') || [];
       return allowedEmails.includes(user.email || '');
     },
+    async session({ session, token }) {
+      if (session.user && token.sub) {
+        // Add the user ID to the session
+        session.user.id = token.sub;
+      }
+      return session;
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        // Add any additional user info to the token if needed
+        token.id = user.id;
+      }
+      return token;
+    }
   },
   pages: {
     signIn: '/auth/signin',
