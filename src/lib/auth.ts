@@ -27,9 +27,15 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
       }
       return token;
+    },
+    async redirect({ url, baseUrl }) {
+      // Always redirect to upload page after sign in
+      return `${baseUrl}/upload`;
     }
   },
   pages: {
     signIn: '/auth/signin',
+    error: '/auth/signin',
+    signOut: '/auth/signin',
   },
 }; 
