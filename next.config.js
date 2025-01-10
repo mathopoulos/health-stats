@@ -11,6 +11,9 @@ const nextConfig = {
     // Remove unused CSS in production
     removeConsole: false,
   },
+  images: {
+    domains: ['healthdatalex.s3.us-east-1.amazonaws.com'],
+  },
 }
 
 module.exports = nextConfig

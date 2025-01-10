@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, DragEvent } from 'react';
+import { useState, useRef, DragEvent, useEffect } from 'react';
 import { useSession, signOut } from "next-auth/react";
 import AddResultsModal from '../components/AddResultsModal';
 import Image from 'next/image';
@@ -53,6 +53,49 @@ export default function UploadPage() {
   const [name, setName] = useState('');
   const [isSavingName, setIsSavingName] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const profileImageRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!session?.user?.id) return;
+      
+      try {
+        const response = await fetch(`/api/users/${session.user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.user) {
+            setName(data.user.name || '');
+            setProfileImage(data.user.profileImage || null);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    fetchUserData();
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    // Refresh user data (including presigned URL) every 45 minutes
+    const interval = setInterval(() => {
+      if (session?.user?.id) {
+        fetch(`/api/users/${session.user.id}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.success && data.user) {
+              setProfileImage(data.user.profileImage || null);
+            }
+          })
+          .catch(console.error);
+      }
+    }, 45 * 60 * 1000); // 45 minutes
+
+    return () => clearInterval(interval);
+  }, [session?.user?.id]);
 
   const handleUpdateName = async () => {
     if (!name.trim()) {
@@ -233,6 +276,55 @@ export default function UploadPage() {
     }
   };
 
+  const handleProfileImageUpload = async (file: File) => {
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      setImageError('Please select an image file');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    setImageError(null);
+
+    try {
+      // Get presigned URL
+      const response = await fetch('/api/update-profile-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contentType: file.type,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to get upload URL');
+      }
+
+      const { url, imageUrl } = await response.json();
+
+      // Upload to S3
+      await fetch(url, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+
+      setProfileImage(imageUrl);
+      setStatus('Profile image updated successfully');
+      setTimeout(() => setStatus(''), 3000);
+    } catch (error) {
+      setImageError(error instanceof Error ? error.message : 'Failed to upload image');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   return (
     <main className="min-h-screen p-8 bg-gray-50">
       <div className="max-w-5xl mx-auto">
@@ -274,38 +366,103 @@ export default function UploadPage() {
         {/* Add Name Section */}
         <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Your Profile</h2>
-          <div className="flex items-end gap-4">
+          <div className="flex gap-8">
+            {/* Profile Image Section */}
+            <div className="flex flex-col items-center">
+              <div className="relative group">
+                <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 mb-2">
+                  {profileImage ? (
+                    <Image
+                      src={profileImage}
+                      alt="Profile"
+                      width={96}
+                      height={96}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  ref={profileImageRef}
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleProfileImageUpload(file);
+                  }}
+                />
+                <button
+                  onClick={() => profileImageRef.current?.click()}
+                  disabled={isUploadingImage}
+                  className="absolute inset-0 flex items-center justify-center bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity rounded-full"
+                >
+                  {isUploadingImage ? (
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              <button
+                onClick={() => profileImageRef.current?.click()}
+                disabled={isUploadingImage}
+                className="text-sm text-indigo-600 hover:text-indigo-700"
+              >
+                Change Photo
+              </button>
+              {imageError && (
+                <p className="mt-1 text-sm text-red-500">{imageError}</p>
+              )}
+            </div>
+
+            {/* Name Input Section */}
             <div className="flex-1">
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                 Display Name
               </label>
-              <input
-                type="text"
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your name"
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
-              />
-              {nameError && (
-                <p className="mt-1 text-sm text-red-500">{nameError}</p>
-              )}
+              <div className="flex items-end gap-4">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your name"
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+                  />
+                  {nameError && (
+                    <p className="mt-1 text-sm text-red-500">{nameError}</p>
+                  )}
+                </div>
+                <button
+                  onClick={handleUpdateName}
+                  disabled={isSavingName}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm font-medium transition-colors flex items-center gap-2"
+                >
+                  {isSavingName ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Saving...
+                    </>
+                  ) : 'Save Name'}
+                </button>
+              </div>
             </div>
-            <button
-              onClick={handleUpdateName}
-              disabled={isSavingName}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm font-medium transition-colors flex items-center gap-2"
-            >
-              {isSavingName ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Saving...
-                </>
-              ) : 'Save Name'}
-            </button>
           </div>
         </div>
 

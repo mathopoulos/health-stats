@@ -181,6 +181,7 @@ interface UserData {
   name: string;
   email: string;
   userId: string;
+  profileImage?: string;
 }
 
 export default function Home() {
@@ -526,6 +527,25 @@ export default function Home() {
     };
 
     fetchUserData();
+  }, [userId]);
+
+  // Add this useEffect after the existing useEffect declarations
+  useEffect(() => {
+    // Refresh user data (including presigned URL) every 45 minutes
+    const interval = setInterval(() => {
+      if (userId) {
+        fetch(`/api/users/${userId}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              setUserData(data.user);
+            }
+          })
+          .catch(console.error);
+      }
+    }, 45 * 60 * 1000); // 45 minutes
+
+    return () => clearInterval(interval);
   }, [userId]);
 
   const formatDate = (dateStr: string) => {
@@ -907,13 +927,23 @@ export default function Home() {
           <div className="flex items-center gap-4">
             {userId === session?.user?.id ? (
               <>
-                <Image
-                  src="/images/profile.jpg"
-                  alt="Profile"
-                  width={80}
-                  height={80}
-                  className="rounded-full"
-                />
+                <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100">
+                  {userData?.profileImage ? (
+                    <Image
+                      src={userData.profileImage}
+                      alt="Profile"
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">
                     {userData?.name || 'Your'}
