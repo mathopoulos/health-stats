@@ -218,6 +218,14 @@ export default function UploadPage() {
               >
                 Add Blood Test Results
               </button>
+              {session?.user?.id && (
+                <a
+                  href={`/?userId=${session.user.id}`}
+                  className="px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-600 rounded-lg text-sm font-medium transition-colors"
+                >
+                  View Dashboard
+                </a>
+              )}
               <button
                 onClick={() => signOut({ callbackUrl: '/' })}
                 className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
@@ -368,6 +376,16 @@ export default function UploadPage() {
                 'bg-blue-50 text-blue-600'
               }`}>
                 {processingStatus}
+                {processingStatus.includes('complete') && session?.user?.id && (
+                  <div className="mt-2">
+                    <a 
+                      href={`/dashboard/${session.user.id}`}
+                      className="text-green-700 hover:text-green-800 font-medium underline"
+                    >
+                      View your dashboard →
+                    </a>
+                  </div>
+                )}
               </div>
             )}
 

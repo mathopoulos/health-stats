@@ -6,6 +6,8 @@ import Image from 'next/image';
 import AddResultsModal from './components/AddResultsModal';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 interface HealthData {
   date: string;
@@ -177,6 +179,10 @@ const OWNER_ID = 'usr_W2LWz83EurLxZwfjqT_EL';
 
 export default function Home() {
   const { data: session, status } = useSession();
+  const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const userId = searchParams.get('userId') || session?.user?.id;
   const [data, setData] = useState<ChartData>({
     heartRate: [],
     weight: [],
@@ -247,12 +253,12 @@ export default function Home() {
       }
 
       const [heartRateRes, weightRes, bodyFatRes, hrvRes, vo2maxRes, bloodMarkersRes] = await Promise.all([
-        fetch(`/api/health-data?type=heartRate&userId=${OWNER_ID}`),
-        fetch(`/api/health-data?type=weight&userId=${OWNER_ID}`),
-        fetch(`/api/health-data?type=bodyFat&userId=${OWNER_ID}`),
-        fetch(`/api/health-data?type=hrv&userId=${OWNER_ID}`),
-        fetch(`/api/health-data?type=vo2max&userId=${OWNER_ID}`),
-        fetch(`/api/blood-markers?userId=${OWNER_ID}`)
+        fetch(`/api/health-data?type=heartRate&userId=${userId}`),
+        fetch(`/api/health-data?type=weight&userId=${userId}`),
+        fetch(`/api/health-data?type=bodyFat&userId=${userId}`),
+        fetch(`/api/health-data?type=hrv&userId=${userId}`),
+        fetch(`/api/health-data?type=vo2max&userId=${userId}`),
+        fetch(`/api/blood-markers?userId=${userId}`)
       ]);
 
       // Check if any request failed
@@ -480,8 +486,9 @@ export default function Home() {
   useEffect(() => {
     if (status === 'loading') return;
     
-    if (!session?.user) {
-      redirect('/auth/signin');
+    // Only redirect if there's no session and no userId parameter
+    if (!session?.user && !userId) {
+      router.push('/auth/signin');
       return;
     }
 
@@ -492,7 +499,7 @@ export default function Home() {
     };
 
     loadData();
-  }, [session?.user, status]);
+  }, [session?.user, status, userId, router]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -871,17 +878,26 @@ export default function Home() {
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-4">
-            <Image
-              src="/images/profile.jpg"
-              alt="Profile"
-              width={80}
-              height={80}
-              className="rounded-full"
-            />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Lex Mathopoulos</h1>
-              <p className="text-gray-600">Health Dashboard</p>
-            </div>
+            {userId === session?.user?.id ? (
+              <>
+                <Image
+                  src="/images/profile.jpg"
+                  alt="Profile"
+                  width={80}
+                  height={80}
+                  className="rounded-full"
+                />
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Lex Mathopoulos</h1>
+                  <p className="text-gray-600">Health Dashboard</p>
+                </div>
+              </>
+            ) : (
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Health Dashboard</h1>
+                <p className="text-gray-600">Viewing user data</p>
+              </div>
+            )}
           </div>
         </div>
 

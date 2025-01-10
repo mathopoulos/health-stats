@@ -21,7 +21,10 @@ export async function middleware(request: NextRequest) {
   const isUploadPage = request.nextUrl.pathname.startsWith("/upload");
 
   // Allow public access to the dashboard, auth routes, and public API routes
-  if (request.nextUrl.pathname === "/" || request.nextUrl.pathname === "/dashboard" || isApiAuthRoute || isPublicApiRoute) {
+  if (request.nextUrl.pathname === "/" || 
+      request.nextUrl.pathname.startsWith("/dashboard") || 
+      isApiAuthRoute || 
+      isPublicApiRoute) {
     return NextResponse.next();
   }
 
@@ -39,5 +42,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/upload/:path*", "/api/:path*", "/auth/:path*", "/dashboard"],
+  matcher: ["/upload/:path*", "/api/:path*", "/auth/:path*", "/dashboard/:path*"],
 }; 
