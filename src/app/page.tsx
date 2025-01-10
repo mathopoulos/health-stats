@@ -177,6 +177,12 @@ const BLOOD_MARKER_CONFIG = {
 
 const OWNER_ID = 'usr_W2LWz83EurLxZwfjqT_EL';
 
+interface UserData {
+  name: string;
+  email: string;
+  userId: string;
+}
+
 export default function Home() {
   const { data: session, status } = useSession();
   const params = useParams();
@@ -221,6 +227,7 @@ export default function Home() {
   });
   const [activeTab, setActiveTab] = useState<'metrics' | 'blood'>('metrics');
   const [isAddResultsModalOpen, setIsAddResultsModalOpen] = useState(false);
+  const [userData, setUserData] = useState<UserData | null>(null);
 
   const fetchData = async () => {
     try {
@@ -500,6 +507,26 @@ export default function Home() {
 
     loadData();
   }, [session?.user, status, userId, router]);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!userId) return;
+      
+      try {
+        const response = await fetch(`/api/users/${userId}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setUserData(data.user);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    fetchUserData();
+  }, [userId]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -888,13 +915,17 @@ export default function Home() {
                   className="rounded-full"
                 />
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Lex Mathopoulos</h1>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {userData?.name || 'Your'}
+                  </h1>
                   <p className="text-gray-600">Health Dashboard</p>
                 </div>
               </>
             ) : (
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Health Dashboard</h1>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {userData?.name ? `${userData.name}'s` : ''} Health Dashboard
+                </h1>
                 <p className="text-gray-600">Viewing user data</p>
               </div>
             )}

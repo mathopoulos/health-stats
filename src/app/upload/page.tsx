@@ -50,6 +50,41 @@ export default function UploadPage() {
   const [isAddResultsModalOpen, setIsAddResultsModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [name, setName] = useState('');
+  const [isSavingName, setIsSavingName] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+
+  const handleUpdateName = async () => {
+    if (!name.trim()) {
+      setNameError('Name is required');
+      return;
+    }
+
+    setIsSavingName(true);
+    setNameError(null);
+
+    try {
+      const response = await fetch('/api/update-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: name.trim() }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update name');
+      }
+
+      setStatus('Name updated successfully');
+      setTimeout(() => setStatus(''), 3000);
+    } catch (error) {
+      setNameError(error instanceof Error ? error.message : 'Failed to update name');
+    } finally {
+      setIsSavingName(false);
+    }
+  };
 
   const handleProcess = async () => {
     setIsProcessing(true);
@@ -235,7 +270,45 @@ export default function UploadPage() {
             </div>
           </div>
         </div>
-        
+
+        {/* Add Name Section */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">Your Profile</h2>
+          <div className="flex items-end gap-4">
+            <div className="flex-1">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                Display Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your name"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+              />
+              {nameError && (
+                <p className="mt-1 text-sm text-red-500">{nameError}</p>
+              )}
+            </div>
+            <button
+              onClick={handleUpdateName}
+              disabled={isSavingName}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm font-medium transition-colors flex items-center gap-2"
+            >
+              {isSavingName ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Saving...
+                </>
+              ) : 'Save Name'}
+            </button>
+          </div>
+        </div>
+
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-medium text-gray-900">Apple Health Fitness Data</h2>
