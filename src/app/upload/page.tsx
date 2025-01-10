@@ -60,6 +60,11 @@ export default function UploadPage() {
 
   useEffect(() => {
     const fetchUserData = async () => {
+      if (sessionStatus === 'loading') {
+        console.log('Session is loading...');
+        return;
+      }
+
       if (!session?.user?.id) {
         console.log('No user session, skipping fetch');
         return;
@@ -96,7 +101,7 @@ export default function UploadPage() {
     };
 
     fetchUserData();
-  }, [session?.user?.id]);
+  }, [session?.user?.id, sessionStatus]);
 
   useEffect(() => {
     // Refresh user data (including presigned URL) every 45 minutes
@@ -351,9 +356,25 @@ export default function UploadPage() {
       session: session,
       userEmail: session?.user?.email,
       userId: session?.user?.id,
-      isAuthenticated: !!session
+      isAuthenticated: !!session,
+      timestamp: new Date().toISOString(),
     });
   }, [session, sessionStatus]);
+
+  if (sessionStatus === 'loading') {
+    return (
+      <main className="min-h-screen p-8 bg-gray-50">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
+            <div className="flex justify-center items-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+              <span className="ml-2 text-gray-600">Loading session...</span>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen p-8 bg-gray-50">
