@@ -39,7 +39,7 @@ async function triggerProcessing(): Promise<ProcessingResult> {
 }
 
 export default function UploadPage() {
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const inputFileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -60,16 +60,35 @@ export default function UploadPage() {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!session?.user?.id) return;
+      if (!session?.user?.id) {
+        console.log('No user session, skipping fetch');
+        return;
+      }
       
+      console.log('Fetching user data for:', session.user.id);
       try {
         const response = await fetch(`/api/users/${session.user.id}`);
+        console.log('User data response:', {
+          status: response.status,
+          ok: response.ok
+        });
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('User data received:', {
+            success: data.success,
+            hasUser: !!data.user,
+            hasName: !!data.user?.name,
+            hasProfileImage: !!data.user?.profileImage
+          });
+          
           if (data.success && data.user) {
             setName(data.user.name || '');
             setProfileImage(data.user.profileImage || null);
           }
+        } else {
+          const errorData = await response.json();
+          console.error('Error response:', errorData);
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -325,6 +344,17 @@ export default function UploadPage() {
     }
   };
 
+  // Add session debugging log
+  useEffect(() => {
+    console.log('Session state:', {
+      status: sessionStatus,
+      session: session,
+      userEmail: session?.user?.email,
+      userId: session?.user?.id,
+      isAuthenticated: !!session
+    });
+  }, [session, sessionStatus]);
+
   return (
     <main className="min-h-screen p-8 bg-gray-50">
       <div className="max-w-5xl mx-auto">
@@ -332,9 +362,13 @@ export default function UploadPage() {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               <h1 className="text-2xl font-bold text-gray-900">Add Health Data</h1>
-              {session?.user?.email && (
+              {session?.user?.email ? (
                 <span className="text-sm text-gray-500">
                   ({session.user.email})
+                </span>
+              ) : (
+                <span className="text-sm text-gray-500">
+                  (Not signed in)
                 </span>
               )}
             </div>
@@ -345,7 +379,7 @@ export default function UploadPage() {
               >
                 Add Blood Test Results
               </button>
-              {session?.user && (
+              {session?.user?.id && (
                 <a
                   href={`/?userId=${session.user.id}`}
                   className="px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-600 rounded-lg text-sm font-medium transition-colors"
@@ -372,13 +406,29 @@ export default function UploadPage() {
               <div className="relative group">
                 <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 mb-2">
                   {profileImage ? (
-                    <Image
-                      src={profileImage}
-                      alt="Profile"
-                      width={96}
-                      height={96}
-                      className="w-full h-full object-cover"
-                    />
+                    <div className="w-full h-full">
+                      <div onError={(e) => {
+                        console.error('Image loading error:', e);
+                        setProfileImage(null);
+                        setImageError('Failed to load profile image');
+                      }}>
+                        <Image
+                          src={profileImage}
+                          alt="Profile"
+                          width={96}
+                          height={96}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.error('Next/Image error:', {
+                              src: profileImage,
+                              error: e
+                            });
+                            setProfileImage(null);
+                            setImageError('Failed to load profile image');
+                          }}
+                        />
+                      </div>
+                    </div>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400">
                       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
