@@ -1,17 +1,22 @@
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { CreateBloodMarkerEntry, BloodMarkerEntry } from '@/types/bloodMarker';
-
-const OWNER_ID = 'usr_W2LWz83EurLxZwfjqT_EL';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body: CreateBloodMarkerEntry = await request.json();
     const client = await clientPromise;
     const db = client.db("health-stats");
 
     const entry: BloodMarkerEntry = {
-      userId: OWNER_ID,
+      userId: session.user.id,
       date: body.date,
       markers: body.markers,
       createdAt: new Date(),
@@ -36,11 +41,19 @@ export async function GET(request: Request) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const category = searchParams.get('category');
+    const userId = searchParams.get('userId');
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: 'User ID is required' },
+        { status: 400 }
+      );
+    }
 
     const client = await clientPromise;
     const db = client.db("health-stats");
 
-    let query: any = { userId: OWNER_ID };
+    let query: any = { userId };
 
     if (startDate || endDate) {
       query.date = {};

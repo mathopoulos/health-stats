@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchAllHealthData, type HealthDataType } from '@/lib/s3';
 
-const OWNER_ID = 'usr_W2LWz83EurLxZwfjqT_EL';
-
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -10,6 +8,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const searchParams = request.nextUrl.searchParams;
     const type = searchParams.get('type');
+    const userId = searchParams.get('userId');
 
     if (!type || !['heartRate', 'weight', 'bodyFat', 'hrv', 'vo2max'].includes(type)) {
       return NextResponse.json(
@@ -23,10 +22,22 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    if (!userId) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'User ID is required',
+          data: [],
+          count: 0
+        },
+        { status: 400 }
+      );
+    }
+
     let data: Array<{ date: string; value: number }> = [];
     try {
-      console.log(`Fetching ${type} data from S3...`);
-      data = await fetchAllHealthData(type as HealthDataType, OWNER_ID);
+      console.log(`Fetching ${type} data from S3 for user ${userId}...`);
+      data = await fetchAllHealthData(type as HealthDataType, userId);
       console.log(`Fetched ${type} data:`, data);
     } catch (error) {
       console.error(`Error fetching ${type} data from S3:`, error);
