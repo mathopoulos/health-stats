@@ -1,5 +1,6 @@
 import NextAuth, { AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import { nanoid } from 'nanoid';
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -21,9 +22,15 @@ export const authOptions: AuthOptions = {
       return allowedEmails.includes(user.email || '');
     },
     async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.sub || '';
+      }
       return session;
     },
-    async jwt({ token }) {
+    async jwt({ token, user }) {
+      if (user) {
+        token.sub = token.sub || nanoid();
+      }
       return token;
     },
   },

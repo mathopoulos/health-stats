@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchAllHealthData, type HealthDataType } from '@/lib/s3';
 
+const OWNER_ID = 'usr_W2LWz83EurLxZwfjqT_EL';
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +26,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     let data: Array<{ date: string; value: number }> = [];
     try {
       console.log(`Fetching ${type} data from S3...`);
-      data = await fetchAllHealthData(type as HealthDataType);
+      data = await fetchAllHealthData(type as HealthDataType, OWNER_ID);
       console.log(`Fetched ${type} data:`, data);
     } catch (error) {
       console.error(`Error fetching ${type} data from S3:`, error);

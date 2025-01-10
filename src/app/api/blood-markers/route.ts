@@ -2,17 +2,16 @@ import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { CreateBloodMarkerEntry, BloodMarkerEntry } from '@/types/bloodMarker';
 
+const OWNER_ID = 'usr_W2LWz83EurLxZwfjqT_EL';
+
 export async function POST(request: Request) {
   try {
     const body: CreateBloodMarkerEntry = await request.json();
     const client = await clientPromise;
     const db = client.db("health-stats");
 
-    // TODO: Get actual user ID from authentication
-    const userId = "test-user";
-
     const entry: BloodMarkerEntry = {
-      userId,
+      userId: OWNER_ID,
       date: body.date,
       markers: body.markers,
       createdAt: new Date(),
@@ -41,10 +40,7 @@ export async function GET(request: Request) {
     const client = await clientPromise;
     const db = client.db("health-stats");
 
-    // TODO: Get actual user ID from authentication
-    const userId = "test-user";
-
-    let query: any = { userId };
+    let query: any = { userId: OWNER_ID };
 
     if (startDate || endDate) {
       query.date = {};

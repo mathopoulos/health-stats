@@ -9,7 +9,13 @@
     "lint": "next lint",
     "extract-health-data": "tsx scripts/extractHeartRate.ts",
     "extract-weight": "tsx scripts/extractWeight.ts",
-    "extract-body-fat": "tsx scripts/extractBodyFat.ts"
+    "extract-body-fat": "tsx scripts/extractBodyFat.ts",
+    "migrate-user-id": "tsx scripts/migrate-to-user-id.ts",
+    "verify-migration": "tsx scripts/verify-migration.ts",
+    "check-old-paths": "tsx scripts/check-old-paths.ts",
+    "check-user-ids": "tsx scripts/check-user-ids.ts",
+    "cleanup-users": "tsx scripts/cleanup-users.ts",
+    "test-apis": "ts-node scripts/test-apis.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.722.0",
@@ -26,6 +32,7 @@
     "chart.js": "^4.4.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^16.4.7",
     "fast-xml-parser": "^4.5.1",
     "lucide-react": "^0.469.0",
     "mongodb": "^6.12.0",
@@ -37,7 +44,9 @@
     "react-dom": "^18.2.0",
     "recharts": "^2.15.0",
     "tailwind-merge": "^2.6.0",
-    "xml2js": "^0.6.2"
+    "xml2js": "^0.6.2",
+    "node-fetch": "^2.6.7",
+    "@types/node-fetch": "^2.6.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

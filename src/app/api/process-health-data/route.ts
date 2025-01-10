@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { processHealthData } from '@/lib/processHealthData';
 
+const OWNER_ID = 'usr_W2LWz83EurLxZwfjqT_EL';
+
 export async function POST(request: Request) {
   try {
     const { xmlKey } = await request.json();
@@ -11,7 +13,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const status = await processHealthData(xmlKey);
+    const status = await processHealthData(xmlKey, OWNER_ID);
     return NextResponse.json({ success: true, status });
   } catch (error) {
     console.error('Error processing health data:', error);

@@ -270,7 +270,8 @@ export async function fetchDataFile(key: string): Promise<any> {
 
 export async function fetchAllHealthData(type: 'heartRate' | 'weight' | 'bodyFat' | 'hrv' | 'vo2max'): Promise<any[]> {
   try {
-    const key = `data/${type}.json`;
+    const userId = 'usr_W2LWz83EurLxZwfjqT_EL';
+    const key = `data/${userId}/${type}.json`;
     console.log(`Fetching ${type} data from S3...`);
     
     try {
