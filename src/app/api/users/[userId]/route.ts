@@ -17,7 +17,10 @@ export async function GET(
 ) {
   try {
     const userId = params.userId;
+    console.log('Fetching user data for userId:', userId);
+
     if (!userId) {
+      console.log('No userId provided');
       return NextResponse.json(
         { error: 'User ID is required' },
         { status: 400 }
@@ -32,7 +35,10 @@ export async function GET(
       { projection: { _id: 0, name: 1, email: 1, userId: 1, profileImage: 1 } }
     );
 
+    console.log('Found user:', user);
+
     if (!user) {
+      console.log('No user found for userId:', userId);
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
@@ -41,6 +47,7 @@ export async function GET(
 
     // If user has a profile image, generate a presigned URL
     if (user.profileImage) {
+      console.log('Generating presigned URL for profile image');
       const key = new URL(user.profileImage).pathname.slice(1); // Remove leading slash
       const command = new GetObjectCommand({
         Bucket: process.env.AWS_BUCKET_NAME!,
@@ -50,6 +57,7 @@ export async function GET(
       user.profileImage = presignedUrl;
     }
 
+    console.log('Returning user data with success');
     return NextResponse.json({ success: true, user });
   } catch (error) {
     console.error('Error fetching user:', error);

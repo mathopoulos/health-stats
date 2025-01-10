@@ -345,7 +345,7 @@ export default function UploadPage() {
               >
                 Add Blood Test Results
               </button>
-              {session?.user?.id && (
+              {session?.user && (
                 <a
                   href={`/?userId=${session.user.id}`}
                   className="px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-600 rounded-lg text-sm font-medium transition-colors"
