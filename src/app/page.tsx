@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
+import Head from 'next/head';
 
 interface HealthData {
   date: string;
@@ -229,6 +230,15 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'metrics' | 'blood'>('metrics');
   const [isAddResultsModalOpen, setIsAddResultsModalOpen] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
+
+  // Add useEffect for title update
+  useEffect(() => {
+    if (userData?.name) {
+      document.title = `${userData.name}'s Health Stats`;
+    } else {
+      document.title = 'Health Stats';
+    }
+  }, [userData?.name]);
 
   const fetchData = async () => {
     try {
@@ -921,943 +931,948 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen p-8 bg-gray-50">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-4">
-            {userId === session?.user?.id ? (
-              <>
-                <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100">
-                  {userData?.profileImage ? (
-                    <Image
-                      src={userData.profileImage}
-                      alt="Profile"
-                      width={80}
-                      height={80}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
+    <>
+      <Head>
+        <title>{userData?.name ? `${userData.name}'s Health Stats` : 'Health Stats'}</title>
+      </Head>
+      <main className="min-h-screen p-8 bg-gray-50">
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center gap-4">
+              {userId === session?.user?.id ? (
+                <>
+                  <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100">
+                    {userData?.profileImage ? (
+                      <Image
+                        src={userData.profileImage}
+                        alt="Profile"
+                        width={80}
+                        height={80}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                      {userData?.name || 'Your'}
+                    </h1>
+                    <p className="text-gray-600">Health Dashboard</p>
+                  </div>
+                </>
+              ) : (
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">
-                    {userData?.name || 'Your'}
+                    {userData?.name ? `${userData.name}'s` : ''} Health Dashboard
                   </h1>
-                  <p className="text-gray-600">Health Dashboard</p>
+                  <p className="text-gray-600">Viewing user data</p>
                 </div>
-              </>
-            ) : (
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {userData?.name ? `${userData.name}'s` : ''} Health Dashboard
-                </h1>
-                <p className="text-gray-600">Viewing user data</p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Tab Navigation */}
-        <div className="bg-white rounded-2xl shadow-sm">
-          <div>
-            <nav className="flex space-x-8 px-6" aria-label="Tabs">
-              <button
-                onClick={() => setActiveTab('metrics')}
-                className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm ${
-                  activeTab === 'metrics'
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Fitness Metrics
-              </button>
-              <button
-                onClick={() => setActiveTab('blood')}
-                className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm ${
-                  activeTab === 'blood'
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Blood Markers
-              </button>
-            </nav>
+          {/* Tab Navigation */}
+          <div className="bg-white rounded-2xl shadow-sm">
+            <div>
+              <nav className="flex space-x-8 px-6" aria-label="Tabs">
+                <button
+                  onClick={() => setActiveTab('metrics')}
+                  className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm ${
+                    activeTab === 'metrics'
+                      ? 'border-indigo-500 text-indigo-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Fitness Metrics
+                </button>
+                <button
+                  onClick={() => setActiveTab('blood')}
+                  className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm ${
+                    activeTab === 'blood'
+                      ? 'border-indigo-500 text-indigo-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Blood Markers
+                </button>
+              </nav>
+            </div>
           </div>
-        </div>
 
-        {activeTab === 'metrics' ? (
-          <>
-            {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-gray-500">Avg Heart Rate Variability</span>
-                  <div className="mt-2 flex items-baseline space-x-2">
-                    <span className="text-2xl font-bold text-gray-900">
-                      {data.loading ? (
-                        "..."
-                      ) : data.hrv.length > 0 ? (
-                        `${Math.round(
-                          data.hrv
-                            .slice(-30)
-                            .reduce((sum, item) => sum + item.value, 0) / 
-                          Math.min(data.hrv.slice(-30).length, 30)
-                        )} ms`
-                      ) : (
-                        "No data"
-                      )}
-                    </span>
-                    {!data.loading && data.hrv.length > 30 && (
-                      <div className="flex items-center">
-                        {(() => {
-                          const currentAvg = data.hrv
-                            .slice(-30)
-                            .reduce((sum, item) => sum + item.value, 0) / 
-                            Math.min(data.hrv.slice(-30).length, 30);
-                          const prevAvg = data.hrv
-                            .slice(-60, -30)
-                            .reduce((sum, item) => sum + item.value, 0) / 
-                            Math.min(data.hrv.slice(-60, -30).length, 30);
-                          const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
-                          const isIncrease = percentChange > 0;
-                          return (
-                            <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
-                          );
-                        })()}
-                      </div>
-                    )}
-                  </div>
-                  <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-gray-500">Avg VO2 Max</span>
-                  <div className="mt-2 flex items-baseline space-x-2">
-                    <span className="text-2xl font-bold text-gray-900">
-                      {data.loading ? (
-                        "..."
-                      ) : data.vo2max.length > 0 ? (
-                        `${Math.round(
-                          data.vo2max
-                            .slice(-30)
-                            .reduce((sum, item) => sum + item.value, 0) / 
-                          Math.min(data.vo2max.slice(-30).length, 30)
-                        )} mL/kg·min`
-                      ) : (
-                        "No data"
-                      )}
-                    </span>
-                    {!data.loading && data.vo2max.length > 30 && (
-                      <div className="flex items-center">
-                        {(() => {
-                          const currentAvg = data.vo2max
-                            .slice(-30)
-                            .reduce((sum, item) => sum + item.value, 0) / 
-                            Math.min(data.vo2max.slice(-30).length, 30);
-                          const prevAvg = data.vo2max
-                            .slice(-60, -30)
-                            .reduce((sum, item) => sum + item.value, 0) / 
-                            Math.min(data.vo2max.slice(-60, -30).length, 30);
-                          const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
-                          const isIncrease = percentChange > 0;
+          {activeTab === 'metrics' ? (
+            <>
+              {/* Summary Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-white rounded-2xl p-6 shadow-sm">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-500">Avg Heart Rate Variability</span>
+                    <div className="mt-2 flex items-baseline space-x-2">
+                      <span className="text-2xl font-bold text-gray-900">
+                        {data.loading ? (
+                          "..."
+                        ) : data.hrv.length > 0 ? (
+                          `${Math.round(
+                            data.hrv
+                              .slice(-30)
+                              .reduce((sum, item) => sum + item.value, 0) / 
+                            Math.min(data.hrv.slice(-30).length, 30)
+                          )} ms`
+                        ) : (
+                          "No data"
+                        )}
+                      </span>
+                      {!data.loading && data.hrv.length > 30 && (
+                        <div className="flex items-center">
+                          {(() => {
+                            const currentAvg = data.hrv
+                              .slice(-30)
+                              .reduce((sum, item) => sum + item.value, 0) / 
+                              Math.min(data.hrv.slice(-30).length, 30);
+                            const prevAvg = data.hrv
+                              .slice(-60, -30)
+                              .reduce((sum, item) => sum + item.value, 0) / 
+                              Math.min(data.hrv.slice(-60, -30).length, 30);
+                            const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
+                            const isIncrease = percentChange > 0;
                             return (
-                            <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
-                          );
-                        })()}
-                      </div>
-                    )}
-                  </div>
-                  <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-gray-500">Avg Weight</span>
-                  <div className="mt-2 flex items-baseline space-x-2">
-                    <span className="text-2xl font-bold text-gray-900">
-                      {data.loading ? (
-                        "..."
-                      ) : data.weight.length > 0 ? (
-                        `${(
-                          data.weight
-                            .slice(-30)
-                            .reduce((sum, item) => sum + item.value, 0) / 
-                          Math.min(data.weight.slice(-30).length, 30)
-                        ).toFixed(1)} lb`
-                      ) : (
-                        "No data"
+                              <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
+                            );
+                          })()}
+                        </div>
                       )}
-                    </span>
-                    {!data.loading && data.weight.length > 30 && (
-                      <div className="flex items-center">
-                        {(() => {
-                          const currentAvg = data.weight
-                            .slice(-30)
-                            .reduce((sum, item) => sum + item.value, 0) / 
-                            Math.min(data.weight.slice(-30).length, 30);
-                          const prevAvg = data.weight
-                            .slice(-60, -30)
-                            .reduce((sum, item) => sum + item.value, 0) / 
-                            Math.min(data.weight.slice(-60, -30).length, 30);
-                          const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
-                          const isIncrease = percentChange > 0;
-                          return (
-                            <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
-                          );
-                        })()}
-                      </div>
-                    )}
+                    </div>
+                    <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
                   </div>
-                  <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
                 </div>
-              </div>
 
-              <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-gray-500">Avg Body Fat</span>
-                  <div className="mt-2 flex items-baseline space-x-2">
-                    <span className="text-2xl font-bold text-gray-900">
-                      {data.loading ? (
-                        "..."
-                      ) : data.bodyFat.length > 0 ? (
-                        `${(
-                          data.bodyFat
-                            .slice(-30)
-                            .reduce((sum, item) => sum + item.value, 0) / 
-                          Math.min(data.bodyFat.slice(-30).length, 30)
-                        ).toFixed(1)}%`
-                      ) : (
-                        "No data"
+                <div className="bg-white rounded-2xl p-6 shadow-sm">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-500">Avg VO2 Max</span>
+                    <div className="mt-2 flex items-baseline space-x-2">
+                      <span className="text-2xl font-bold text-gray-900">
+                        {data.loading ? (
+                          "..."
+                        ) : data.vo2max.length > 0 ? (
+                          `${Math.round(
+                            data.vo2max
+                              .slice(-30)
+                              .reduce((sum, item) => sum + item.value, 0) / 
+                            Math.min(data.vo2max.slice(-30).length, 30)
+                          )} mL/kg·min`
+                        ) : (
+                          "No data"
+                        )}
+                      </span>
+                      {!data.loading && data.vo2max.length > 30 && (
+                        <div className="flex items-center">
+                          {(() => {
+                            const currentAvg = data.vo2max
+                              .slice(-30)
+                              .reduce((sum, item) => sum + item.value, 0) / 
+                              Math.min(data.vo2max.slice(-30).length, 30);
+                            const prevAvg = data.vo2max
+                              .slice(-60, -30)
+                              .reduce((sum, item) => sum + item.value, 0) / 
+                              Math.min(data.vo2max.slice(-60, -30).length, 30);
+                            const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
+                            const isIncrease = percentChange > 0;
+                              return (
+                              <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
+                            );
+                          })()}
+                        </div>
                       )}
-                    </span>
-                    {!data.loading && data.bodyFat.length > 30 && (
-                      <div className="flex items-center">
-                        {(() => {
-                          const currentAvg = data.bodyFat
-                            .slice(-30)
-                            .reduce((sum, item) => sum + item.value, 0) / 
-                            Math.min(data.bodyFat.slice(-30).length, 30);
-                          const prevAvg = data.bodyFat
-                            .slice(-60, -30)
-                            .reduce((sum, item) => sum + item.value, 0) / 
-                            Math.min(data.bodyFat.slice(-60, -30).length, 30);
-                          const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
-                          const isIncrease = percentChange > 0;
-                          return (
-                            <TrendIndicator current={currentAvg} previous={prevAvg} isBodyFat={true} isFitnessMetric={true} />
-                          );
-                        })()}
-                      </div>
-                    )}
+                    </div>
+                    <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
                   </div>
-                  <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
+                </div>
+
+                <div className="bg-white rounded-2xl p-6 shadow-sm">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-500">Avg Weight</span>
+                    <div className="mt-2 flex items-baseline space-x-2">
+                      <span className="text-2xl font-bold text-gray-900">
+                        {data.loading ? (
+                          "..."
+                        ) : data.weight.length > 0 ? (
+                          `${(
+                            data.weight
+                              .slice(-30)
+                              .reduce((sum, item) => sum + item.value, 0) / 
+                            Math.min(data.weight.slice(-30).length, 30)
+                          ).toFixed(1)} lb`
+                        ) : (
+                          "No data"
+                        )}
+                      </span>
+                      {!data.loading && data.weight.length > 30 && (
+                        <div className="flex items-center">
+                          {(() => {
+                            const currentAvg = data.weight
+                              .slice(-30)
+                              .reduce((sum, item) => sum + item.value, 0) / 
+                              Math.min(data.weight.slice(-30).length, 30);
+                            const prevAvg = data.weight
+                              .slice(-60, -30)
+                              .reduce((sum, item) => sum + item.value, 0) / 
+                              Math.min(data.weight.slice(-60, -30).length, 30);
+                            const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
+                            const isIncrease = percentChange > 0;
+                            return (
+                              <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                    <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl p-6 shadow-sm">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-500">Avg Body Fat</span>
+                    <div className="mt-2 flex items-baseline space-x-2">
+                      <span className="text-2xl font-bold text-gray-900">
+                        {data.loading ? (
+                          "..."
+                        ) : data.bodyFat.length > 0 ? (
+                          `${(
+                            data.bodyFat
+                              .slice(-30)
+                              .reduce((sum, item) => sum + item.value, 0) / 
+                            Math.min(data.bodyFat.slice(-30).length, 30)
+                          ).toFixed(1)}%`
+                        ) : (
+                          "No data"
+                        )}
+                      </span>
+                      {!data.loading && data.bodyFat.length > 30 && (
+                        <div className="flex items-center">
+                          {(() => {
+                            const currentAvg = data.bodyFat
+                              .slice(-30)
+                              .reduce((sum, item) => sum + item.value, 0) / 
+                              Math.min(data.bodyFat.slice(-30).length, 30);
+                            const prevAvg = data.bodyFat
+                              .slice(-60, -30)
+                              .reduce((sum, item) => sum + item.value, 0) / 
+                              Math.min(data.bodyFat.slice(-60, -30).length, 30);
+                            const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
+                            const isIncrease = percentChange > 0;
+                            return (
+                              <TrendIndicator current={currentAvg} previous={prevAvg} isBodyFat={true} isFitnessMetric={true} />
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                    <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* HRV Chart */}
+              {/* HRV Chart */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold text-gray-800">Heart Rate Variability</h2>
+                  <div className="flex items-center">
+                    <select
+                      value={hrvTimeframe}
+                      onChange={(e) => setHrvTimeframe(e.target.value as TimeFrame)}
+                      className="mr-6 h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                        backgroundPosition: 'right 0.5rem center',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundSize: '1.5em 1.5em',
+                      }}
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+                    <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
+                      <button
+                        onClick={() => handleTimeframeNavigation('prev', hrvDate, setHrvDate, hrvTimeframe)}
+                        disabled={isNavigationDisabled('prev', hrvDate, hrvTimeframe)}
+                        className={`h-full px-2 rounded-l-lg hover:bg-white hover:shadow-sm transition-all ${
+                          isNavigationDisabled('prev', hrvDate, hrvTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      <span className="text-sm font-medium text-gray-700 mx-4 min-w-[100px] text-center">
+                        {getTimeframeLabel(hrvDate, hrvTimeframe)}
+                      </span>
+                      <button
+                        onClick={() => handleTimeframeNavigation('next', hrvDate, setHrvDate, hrvTimeframe)}
+                        disabled={isNavigationDisabled('next', hrvDate, hrvTimeframe)}
+                        className={`h-full px-2 rounded-r-lg hover:bg-white hover:shadow-sm transition-all ${
+                          isNavigationDisabled('next', hrvDate, hrvTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="h-[300px]">
+                  {data.loading && (
+                    <div className="h-full flex items-center justify-center text-gray-500">
+                      Loading data...
+                    </div>
+                  )}
+                  {!hasHRVData && !data.loading && (
+                    <div className="h-full flex items-center justify-center text-gray-500">
+                      No HRV data available for this {hrvTimeframe === 'yearly' ? '5 years' : hrvTimeframe === 'monthly' ? 'year' : hrvTimeframe === 'weekly' ? '12 weeks' : 'month'}
+                    </div>
+                  )}
+                  {hasHRVData && !data.loading && (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart 
+                        data={currentHRVData}
+                        margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
+                      >
+                        <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
+                        <XAxis 
+                          dataKey="date" 
+                          tickFormatter={(date) => {
+                            const d = new Date(date);
+                            switch (hrvTimeframe) {
+                              case 'daily':
+                                return d.getDate().toString();
+                              case 'weekly':
+                                return d.toLocaleString('default', { month: 'short', day: 'numeric' });
+                              case 'monthly':
+                                return d.toLocaleString('default', { month: 'short' });
+                              case 'yearly':
+                                return d.getFullYear().toString();
+                            }
+                          }}
+                          stroke="#9CA3AF"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                          dy={12}
+                        />
+                        <YAxis 
+                          stroke="#9CA3AF"
+                          fontSize={12}
+                          tickCount={8}
+                          domain={['dataMin - 2', 'dataMax + 2']}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip
+                          contentStyle={{ 
+                            backgroundColor: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            fontSize: '12px',
+                            padding: '8px'
+                          }}
+                          labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
+                          labelFormatter={(value) => {
+                            const d = new Date(value);
+                            switch (hrvTimeframe) {
+                              case 'daily':
+                                return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
+                              case 'weekly':
+                                const weekEnd = new Date(d);
+                                weekEnd.setDate(d.getDate() + 6);
+                                return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+                              case 'monthly':
+                                return d.toLocaleString('default', { month: 'long', year: 'numeric' });
+                              case 'yearly':
+                                return d.getFullYear().toString();
+                            }
+                          }}
+                          formatter={(value: number) => [`${value} ms`]}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          stroke="#6366F1"
+                          strokeWidth={1.5}
+                          dot={{ r: 2, fill: '#6366F1' }}
+                          activeDot={{ r: 3 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </div>
+
+              {/* VO2 Max Chart */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold text-gray-800">VO2 Max</h2>
+                  <div className="flex items-center">
+                    <select
+                      value={vo2maxTimeframe}
+                      onChange={(e) => setVo2maxTimeframe(e.target.value as TimeFrame)}
+                      className="mr-6 h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                        backgroundPosition: 'right 0.5rem center',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundSize: '1.5em 1.5em',
+                      }}
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+                    <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
+                      <button
+                        onClick={() => handleTimeframeNavigation('prev', vo2maxDate, setVo2maxDate, vo2maxTimeframe)}
+                        disabled={isNavigationDisabled('prev', vo2maxDate, vo2maxTimeframe)}
+                        className={`h-full px-2 rounded-l-lg hover:bg-white hover:shadow-sm transition-all ${
+                          isNavigationDisabled('prev', vo2maxDate, vo2maxTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      <span className="text-sm font-medium text-gray-700 mx-4 min-w-[100px] text-center">
+                        {getTimeframeLabel(vo2maxDate, vo2maxTimeframe)}
+                      </span>
+                      <button
+                        onClick={() => handleTimeframeNavigation('next', vo2maxDate, setVo2maxDate, vo2maxTimeframe)}
+                        disabled={isNavigationDisabled('next', vo2maxDate, vo2maxTimeframe)}
+                        className={`h-full px-2 rounded-r-lg hover:bg-white hover:shadow-sm transition-all ${
+                          isNavigationDisabled('next', vo2maxDate, vo2maxTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="h-[300px]">
+                  {data.loading && (
+                    <div className="h-full flex items-center justify-center text-gray-500">
+                      Loading data...
+                    </div>
+                  )}
+                  {!hasVO2MaxData && !data.loading && (
+                    <div className="h-full flex items-center justify-center text-gray-500">
+                      No VO2 max data available for this {vo2maxTimeframe === 'yearly' ? '5 years' : vo2maxTimeframe === 'monthly' ? 'year' : vo2maxTimeframe === 'weekly' ? '12 weeks' : 'month'}
+                    </div>
+                  )}
+                  {hasVO2MaxData && !data.loading && (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart 
+                        data={currentVO2MaxData}
+                        margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
+                      >
+                        <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
+                        <XAxis 
+                          dataKey="date" 
+                          tickFormatter={(date) => {
+                            const d = new Date(date);
+                            switch (vo2maxTimeframe) {
+                              case 'daily':
+                                return d.getDate().toString();
+                              case 'weekly':
+                                return d.toLocaleString('default', { month: 'short', day: 'numeric' });
+                              case 'monthly':
+                                return d.toLocaleString('default', { month: 'short' });
+                              case 'yearly':
+                                return d.getFullYear().toString();
+                            }
+                          }}
+                          stroke="#9CA3AF"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                          dy={12}
+                        />
+                        <YAxis 
+                          stroke="#9CA3AF"
+                          fontSize={12}
+                          tickCount={8}
+                          domain={['dataMin - 2', 'dataMax + 2']}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip
+                          contentStyle={{ 
+                            backgroundColor: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            fontSize: '12px',
+                            padding: '8px'
+                          }}
+                          labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
+                          labelFormatter={(value) => {
+                            const d = new Date(value);
+                            switch (vo2maxTimeframe) {
+                              case 'daily':
+                                return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
+                              case 'weekly':
+                                const weekEnd = new Date(d);
+                                weekEnd.setDate(d.getDate() + 6);
+                                return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+                              case 'monthly':
+                                return d.toLocaleString('default', { month: 'long', year: 'numeric' });
+                              case 'yearly':
+                                return d.getFullYear().toString();
+                            }
+                          }}
+                          formatter={(value: number) => [`${value} mL/kg·min`]}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          stroke="#8B5CF6"
+                          strokeWidth={1.5}
+                          dot={{ r: 2, fill: '#8B5CF6' }}
+                          activeDot={{ r: 3 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </div>
+
+              {/* Weight Chart */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold text-gray-800">Weight</h2>
+                  <div className="flex items-center">
+                    <select
+                      value={weightTimeframe}
+                      onChange={(e) => setWeightTimeframe(e.target.value as TimeFrame)}
+                      className="mr-6 h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                        backgroundPosition: 'right 0.5rem center',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundSize: '1.5em 1.5em',
+                      }}
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+                    <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
+                      <button
+                        onClick={() => handleTimeframeNavigation('prev', weightDate, setWeightDate, weightTimeframe)}
+                        disabled={isNavigationDisabled('prev', weightDate, weightTimeframe)}
+                        className={`h-full px-2 rounded-l-lg hover:bg-white hover:shadow-sm transition-all ${
+                          isNavigationDisabled('prev', weightDate, weightTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      <span className="text-sm font-medium text-gray-700 mx-4 min-w-[100px] text-center">
+                        {getTimeframeLabel(weightDate, weightTimeframe)}
+                      </span>
+                      <button
+                        onClick={() => handleTimeframeNavigation('next', weightDate, setWeightDate, weightTimeframe)}
+                        disabled={isNavigationDisabled('next', weightDate, weightTimeframe)}
+                        className={`h-full px-2 rounded-r-lg hover:bg-white hover:shadow-sm transition-all ${
+                          isNavigationDisabled('next', weightDate, weightTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="h-[300px]">
+                  {data.loading && (
+                    <div className="h-full flex items-center justify-center text-gray-500">
+                      Loading data...
+                    </div>
+                  )}
+                  {!hasWeightData && !data.loading && (
+                    <div className="h-full flex items-center justify-center text-gray-500">
+                      No weight data available for this {weightTimeframe === 'yearly' ? '5 years' : weightTimeframe === 'monthly' ? 'year' : weightTimeframe === 'weekly' ? '12 weeks' : 'month'}
+                    </div>
+                  )}
+                  {hasWeightData && !data.loading && (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart 
+                        data={currentWeightData}
+                        margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
+                      >
+                        <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
+                        <XAxis 
+                          dataKey="date" 
+                          tickFormatter={(date) => {
+                            const d = new Date(date);
+                            switch (weightTimeframe) {
+                              case 'daily':
+                                return d.getDate().toString();
+                              case 'weekly':
+                                return d.toLocaleString('default', { month: 'short', day: 'numeric' });
+                              case 'monthly':
+                                return d.toLocaleString('default', { month: 'short' });
+                              case 'yearly':
+                                return d.getFullYear().toString();
+                            }
+                          }}
+                          stroke="#9CA3AF"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                          dy={12}
+                        />
+                        <YAxis 
+                          stroke="#9CA3AF"
+                          fontSize={12}
+                          tickCount={8}
+                          domain={['dataMin - 2', 'dataMax + 2']}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip
+                          contentStyle={{ 
+                            backgroundColor: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            fontSize: '12px',
+                            padding: '8px'
+                          }}
+                          labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
+                          labelFormatter={(value) => {
+                            const d = new Date(value);
+                            switch (weightTimeframe) {
+                              case 'daily':
+                                return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
+                              case 'weekly':
+                                const weekEnd = new Date(d);
+                                weekEnd.setDate(d.getDate() + 6);
+                                return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+                              case 'monthly':
+                                return d.toLocaleString('default', { month: 'long', year: 'numeric' });
+                              case 'yearly':
+                                return d.getFullYear().toString();
+                            }
+                          }}
+                          formatter={(value: number) => [`${value} lb`]}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          stroke="#10B981"
+                          strokeWidth={1.5}
+                          dot={{ r: 2, fill: '#10B981' }}
+                          activeDot={{ r: 3 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </div>
+
+              {/* Body Fat Chart */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold text-gray-800">Body Fat</h2>
+                  <div className="flex items-center">
+                    <select
+                      value={bodyFatTimeframe}
+                      onChange={(e) => setBodyFatTimeframe(e.target.value as TimeFrame)}
+                      className="mr-6 h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                        backgroundPosition: 'right 0.5rem center',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundSize: '1.5em 1.5em',
+                      }}
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+                    <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
+                      <button
+                        onClick={() => handleTimeframeNavigation('prev', bodyFatDate, setBodyFatDate, bodyFatTimeframe)}
+                        disabled={isNavigationDisabled('prev', bodyFatDate, bodyFatTimeframe)}
+                        className={`h-full px-2 rounded-l-lg hover:bg-white hover:shadow-sm transition-all ${
+                          isNavigationDisabled('prev', bodyFatDate, bodyFatTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      <span className="text-sm font-medium text-gray-700 mx-4 min-w-[100px] text-center">
+                        {getTimeframeLabel(bodyFatDate, bodyFatTimeframe)}
+                      </span>
+                      <button
+                        onClick={() => handleTimeframeNavigation('next', bodyFatDate, setBodyFatDate, bodyFatTimeframe)}
+                        disabled={isNavigationDisabled('next', bodyFatDate, bodyFatTimeframe)}
+                        className={`h-full px-2 rounded-r-lg hover:bg-white hover:shadow-sm transition-all ${
+                          isNavigationDisabled('next', bodyFatDate, bodyFatTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="h-[300px]">
+                  {data.loading && (
+                    <div className="h-full flex items-center justify-center text-gray-500">
+                      Loading data...
+                    </div>
+                  )}
+                  {!hasBodyFatData && !data.loading && (
+                    <div className="h-full flex items-center justify-center text-gray-500">
+                      No body fat data available for this {bodyFatTimeframe === 'yearly' ? '5 years' : bodyFatTimeframe === 'monthly' ? 'year' : bodyFatTimeframe === 'weekly' ? '12 weeks' : 'month'}
+                    </div>
+                  )}
+                  {hasBodyFatData && !data.loading && (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart 
+                        data={currentBodyFatData}
+                        margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
+                      >
+                        <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
+                        <XAxis 
+                          dataKey="date" 
+                          tickFormatter={(date) => {
+                            const d = new Date(date);
+                            switch (bodyFatTimeframe) {
+                              case 'daily':
+                                return d.getDate().toString();
+                              case 'weekly':
+                                return d.toLocaleString('default', { month: 'short', day: 'numeric' });
+                              case 'monthly':
+                                return d.toLocaleString('default', { month: 'short' });
+                              case 'yearly':
+                                return d.getFullYear().toString();
+                            }
+                          }}
+                          stroke="#9CA3AF"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                          dy={12}
+                        />
+                        <YAxis 
+                          stroke="#9CA3AF"
+                          fontSize={12}
+                          tickCount={8}
+                          domain={['dataMin - 2', 'dataMax + 2']}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip
+                          contentStyle={{ 
+                            backgroundColor: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            fontSize: '12px',
+                            padding: '8px'
+                          }}
+                          labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
+                          labelFormatter={(value) => {
+                            const d = new Date(value);
+                            switch (bodyFatTimeframe) {
+                              case 'daily':
+                                return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
+                              case 'weekly':
+                                const weekEnd = new Date(d);
+                                weekEnd.setDate(d.getDate() + 6);
+                                return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+                              case 'monthly':
+                                return d.toLocaleString('default', { month: 'long', year: 'numeric' });
+                              case 'yearly':
+                                return d.getFullYear().toString();
+                            }
+                          }}
+                          formatter={(value: number) => [`${value}%`]}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          stroke="#F59E0B"
+                          strokeWidth={1.5}
+                          dot={{ r: 2, fill: '#F59E0B' }}
+                          activeDot={{ r: 3 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
             <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-gray-800">Heart Rate Variability</h2>
-                <div className="flex items-center">
-                  <select
-                    value={hrvTimeframe}
-                    onChange={(e) => setHrvTimeframe(e.target.value as TimeFrame)}
-                    className="mr-6 h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                      backgroundPosition: 'right 0.5rem center',
-                      backgroundRepeat: 'no-repeat',
-                      backgroundSize: '1.5em 1.5em',
-                    }}
-                  >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-                  </select>
-                  <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
-                    <button
-                      onClick={() => handleTimeframeNavigation('prev', hrvDate, setHrvDate, hrvTimeframe)}
-                      disabled={isNavigationDisabled('prev', hrvDate, hrvTimeframe)}
-                      className={`h-full px-2 rounded-l-lg hover:bg-white hover:shadow-sm transition-all ${
-                        isNavigationDisabled('prev', hrvDate, hrvTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <span className="text-sm font-medium text-gray-700 mx-4 min-w-[100px] text-center">
-                      {getTimeframeLabel(hrvDate, hrvTimeframe)}
-                    </span>
-                    <button
-                      onClick={() => handleTimeframeNavigation('next', hrvDate, setHrvDate, hrvTimeframe)}
-                      disabled={isNavigationDisabled('next', hrvDate, hrvTimeframe)}
-                      className={`h-full px-2 rounded-r-lg hover:bg-white hover:shadow-sm transition-all ${
-                        isNavigationDisabled('next', hrvDate, hrvTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-2xl font-semibold text-gray-800">Blood Markers & Longevity</h2>
               </div>
-              <div className="h-[300px]">
-                {data.loading && (
-                  <div className="h-full flex items-center justify-center text-gray-500">
-                    Loading data...
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Lipid Panel */}
+                <div className="border border-gray-100 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-6">Lipid Panel</h3>
+                  <div className="space-y-6">
+                    <MarkerRow label="Total Cholesterol" data={data.bloodMarkers.totalCholesterol} />
+                    <MarkerRow label="LDL-C" data={data.bloodMarkers.ldl} />
+                    <MarkerRow label="HDL-C" data={data.bloodMarkers.hdl} />
+                    <MarkerRow label="Triglycerides" data={data.bloodMarkers.triglycerides} />
+                    <MarkerRow label="ApoB" data={data.bloodMarkers.apoB} />
+                    <MarkerRow label="Lp(a)" data={data.bloodMarkers.lpA} />
                   </div>
-                )}
-                {!hasHRVData && !data.loading && (
-                  <div className="h-full flex items-center justify-center text-gray-500">
-                    No HRV data available for this {hrvTimeframe === 'yearly' ? '5 years' : hrvTimeframe === 'monthly' ? 'year' : hrvTimeframe === 'weekly' ? '12 weeks' : 'month'}
+                  <LastTestedDate data={data.bloodMarkers.totalCholesterol} />
+                </div>
+
+                {/* Complete Blood Count */}
+                <div className="border border-gray-100 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-6">Complete Blood Count</h3>
+                  <div className="space-y-6">
+                    <MarkerRow label="White Blood Cells" data={data.bloodMarkers.whiteBloodCells} />
+                    <MarkerRow label="Red Blood Cells" data={data.bloodMarkers.redBloodCells} />
+                    <MarkerRow label="Hematocrit" data={data.bloodMarkers.hematocrit} />
+                    <MarkerRow label="Hemoglobin" data={data.bloodMarkers.hemoglobin} />
+                    <MarkerRow label="Platelets" data={data.bloodMarkers.platelets} />
                   </div>
-                )}
-                {hasHRVData && !data.loading && (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart 
-                      data={currentHRVData}
-                      margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
-                    >
-                      <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
-                      <XAxis 
-                        dataKey="date" 
-                        tickFormatter={(date) => {
-                          const d = new Date(date);
-                          switch (hrvTimeframe) {
-                            case 'daily':
-                              return d.getDate().toString();
-                            case 'weekly':
-                              return d.toLocaleString('default', { month: 'short', day: 'numeric' });
-                            case 'monthly':
-                              return d.toLocaleString('default', { month: 'short' });
-                            case 'yearly':
-                              return d.getFullYear().toString();
-                          }
-                        }}
-                        stroke="#9CA3AF"
-                        fontSize={12}
-                        tickLine={false}
-                        axisLine={false}
-                        dy={12}
-                      />
-                      <YAxis 
-                        stroke="#9CA3AF"
-                        fontSize={12}
-                        tickCount={8}
-                        domain={['dataMin - 2', 'dataMax + 2']}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <Tooltip
-                        contentStyle={{ 
-                          backgroundColor: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                          fontSize: '12px',
-                          padding: '8px'
-                        }}
-                        labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
-                        labelFormatter={(value) => {
-                          const d = new Date(value);
-                          switch (hrvTimeframe) {
-                            case 'daily':
-                              return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
-                            case 'weekly':
-                              const weekEnd = new Date(d);
-                              weekEnd.setDate(d.getDate() + 6);
-                              return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
-                            case 'monthly':
-                              return d.toLocaleString('default', { month: 'long', year: 'numeric' });
-                            case 'yearly':
-                              return d.getFullYear().toString();
-                          }
-                        }}
-                        formatter={(value: number) => [`${value} ms`]}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="value"
-                        stroke="#6366F1"
-                        strokeWidth={1.5}
-                        dot={{ r: 2, fill: '#6366F1' }}
-                        activeDot={{ r: 3 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
+                  <LastTestedDate data={data.bloodMarkers.whiteBloodCells} />
+                </div>
+
+                {/* Glucose Markers */}
+                <div className="border border-gray-100 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-6">Glucose Markers</h3>
+                  <div className="space-y-6">
+                    <MarkerRow label="HbA1c" data={data.bloodMarkers.hba1c} />
+                    <MarkerRow label="Fasting Insulin" data={data.bloodMarkers.fastingInsulin} />
+                    <MarkerRow label="Glucose" data={data.bloodMarkers.glucose} />
+                  </div>
+                  <LastTestedDate data={data.bloodMarkers.glucose} />
+                </div>
+
+                {/* Liver Markers */}
+                <div className="border border-gray-100 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-6">Liver Markers</h3>
+                  <div className="space-y-6">
+                    <MarkerRow label="ALT" data={data.bloodMarkers.alt} />
+                    <MarkerRow label="AST" data={data.bloodMarkers.ast} />
+                    <MarkerRow label="GGT" data={data.bloodMarkers.ggt} />
+                  </div>
+                  <LastTestedDate data={data.bloodMarkers.alt} />
+                </div>
+
+                {/* Kidney Markers */}
+                <div className="border border-gray-100 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-6">Kidney Markers</h3>
+                  <div className="space-y-6">
+                    <MarkerRow label="eGFR" data={data.bloodMarkers.egfr} />
+                    <MarkerRow label="Cystatin C" data={data.bloodMarkers.cystatinC} />
+                    <MarkerRow label="BUN" data={data.bloodMarkers.bun} />
+                    <MarkerRow label="Creatinine" data={data.bloodMarkers.creatinine} />
+                    <MarkerRow label="Albumin" data={data.bloodMarkers.albumin} />
+                  </div>
+                  <LastTestedDate data={data.bloodMarkers.egfr} />
+                </div>
+
+                {/* Sex Hormones */}
+                <div className="border border-gray-100 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-6">Sex Hormones</h3>
+                  <div className="space-y-6">
+                    <MarkerRow label="Testosterone" data={data.bloodMarkers.testosterone} />
+                    <MarkerRow label="Free Testosterone" data={data.bloodMarkers.freeTesto} />
+                    <MarkerRow label="Estradiol" data={data.bloodMarkers.estradiol} />
+                    <MarkerRow label="SHBG" data={data.bloodMarkers.shbg} />
+                  </div>
+                  <LastTestedDate data={data.bloodMarkers.testosterone} />
+                </div>
+
+                {/* Thyroid Markers */}
+                <div className="border border-gray-100 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-6">Thyroid Markers</h3>
+                  <div className="space-y-6">
+                    <MarkerRow label="T3" data={data.bloodMarkers.t3} />
+                    <MarkerRow label="T4" data={data.bloodMarkers.t4} />
+                    <MarkerRow label="TSH" data={data.bloodMarkers.tsh} />
+                  </div>
+                  <LastTestedDate data={data.bloodMarkers.t3} />
+                </div>
+
+                {/* Vitamins & Inflammation */}
+                <div className="border border-gray-100 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-6">Vitamins & Inflammation</h3>
+                  <div className="space-y-6">
+                    <MarkerRow label="Vitamin D3" data={data.bloodMarkers.vitaminD} />
+                    <MarkerRow label="hs-CRP" data={data.bloodMarkers.crp} />
+                    <MarkerRow label="Homocysteine" data={data.bloodMarkers.homocysteine} />
+                    <MarkerRow label="IGF-1" data={data.bloodMarkers.igf1} />
+                  </div>
+                  <LastTestedDate data={data.bloodMarkers.vitaminD} />
+                </div>
+
+                {/* Iron Panel */}
+                <div className="border border-gray-100 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-6">Iron Panel</h3>
+                  <div className="space-y-6">
+                    <MarkerRow label="Ferritin" data={data.bloodMarkers.ferritin} />
+                    <MarkerRow label="Serum Iron" data={data.bloodMarkers.serumIron} />
+                    <MarkerRow label="TIBC" data={data.bloodMarkers.tibc} />
+                    <MarkerRow label="Transferrin Saturation" data={data.bloodMarkers.transferrinSaturation} />
+                  </div>
+                  <LastTestedDate data={data.bloodMarkers.ferritin} />
+                </div>
+
+                {/* Electrolytes */}
+                <div className="border border-gray-100 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-6">Electrolytes</h3>
+                  <div className="space-y-6">
+                    <MarkerRow label="Sodium" data={data.bloodMarkers.sodium} />
+                    <MarkerRow label="Potassium" data={data.bloodMarkers.potassium} />
+                    <MarkerRow label="Calcium" data={data.bloodMarkers.calcium} />
+                    <MarkerRow label="Phosphorus" data={data.bloodMarkers.phosphorus} />
+                    <MarkerRow label="Magnesium" data={data.bloodMarkers.magnesium} />
+                    <MarkerRow label="Bicarbonate" data={data.bloodMarkers.bicarbonate} />
+                    <MarkerRow label="Chloride" data={data.bloodMarkers.chloride} />
+                  </div>
+                  <LastTestedDate data={data.bloodMarkers.sodium} />
+                </div>
               </div>
             </div>
-
-            {/* VO2 Max Chart */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-gray-800">VO2 Max</h2>
-                <div className="flex items-center">
-                  <select
-                    value={vo2maxTimeframe}
-                    onChange={(e) => setVo2maxTimeframe(e.target.value as TimeFrame)}
-                    className="mr-6 h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                      backgroundPosition: 'right 0.5rem center',
-                      backgroundRepeat: 'no-repeat',
-                      backgroundSize: '1.5em 1.5em',
-                    }}
-                  >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-                  </select>
-                  <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
-                    <button
-                      onClick={() => handleTimeframeNavigation('prev', vo2maxDate, setVo2maxDate, vo2maxTimeframe)}
-                      disabled={isNavigationDisabled('prev', vo2maxDate, vo2maxTimeframe)}
-                      className={`h-full px-2 rounded-l-lg hover:bg-white hover:shadow-sm transition-all ${
-                        isNavigationDisabled('prev', vo2maxDate, vo2maxTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <span className="text-sm font-medium text-gray-700 mx-4 min-w-[100px] text-center">
-                      {getTimeframeLabel(vo2maxDate, vo2maxTimeframe)}
-                    </span>
-                    <button
-                      onClick={() => handleTimeframeNavigation('next', vo2maxDate, setVo2maxDate, vo2maxTimeframe)}
-                      disabled={isNavigationDisabled('next', vo2maxDate, vo2maxTimeframe)}
-                      className={`h-full px-2 rounded-r-lg hover:bg-white hover:shadow-sm transition-all ${
-                        isNavigationDisabled('next', vo2maxDate, vo2maxTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="h-[300px]">
-                {data.loading && (
-                  <div className="h-full flex items-center justify-center text-gray-500">
-                    Loading data...
-                  </div>
-                )}
-                {!hasVO2MaxData && !data.loading && (
-                  <div className="h-full flex items-center justify-center text-gray-500">
-                    No VO2 max data available for this {vo2maxTimeframe === 'yearly' ? '5 years' : vo2maxTimeframe === 'monthly' ? 'year' : vo2maxTimeframe === 'weekly' ? '12 weeks' : 'month'}
-                  </div>
-                )}
-                {hasVO2MaxData && !data.loading && (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart 
-                      data={currentVO2MaxData}
-                      margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
-                    >
-                      <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
-                      <XAxis 
-                        dataKey="date" 
-                        tickFormatter={(date) => {
-                          const d = new Date(date);
-                          switch (vo2maxTimeframe) {
-                            case 'daily':
-                              return d.getDate().toString();
-                            case 'weekly':
-                              return d.toLocaleString('default', { month: 'short', day: 'numeric' });
-                            case 'monthly':
-                              return d.toLocaleString('default', { month: 'short' });
-                            case 'yearly':
-                              return d.getFullYear().toString();
-                          }
-                        }}
-                        stroke="#9CA3AF"
-                        fontSize={12}
-                        tickLine={false}
-                        axisLine={false}
-                        dy={12}
-                      />
-                      <YAxis 
-                        stroke="#9CA3AF"
-                        fontSize={12}
-                        tickCount={8}
-                        domain={['dataMin - 2', 'dataMax + 2']}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <Tooltip
-                        contentStyle={{ 
-                          backgroundColor: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                          fontSize: '12px',
-                          padding: '8px'
-                        }}
-                        labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
-                        labelFormatter={(value) => {
-                          const d = new Date(value);
-                          switch (vo2maxTimeframe) {
-                            case 'daily':
-                              return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
-                            case 'weekly':
-                              const weekEnd = new Date(d);
-                              weekEnd.setDate(d.getDate() + 6);
-                              return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
-                            case 'monthly':
-                              return d.toLocaleString('default', { month: 'long', year: 'numeric' });
-                            case 'yearly':
-                              return d.getFullYear().toString();
-                          }
-                        }}
-                        formatter={(value: number) => [`${value} mL/kg·min`]}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="value"
-                        stroke="#8B5CF6"
-                        strokeWidth={1.5}
-                        dot={{ r: 2, fill: '#8B5CF6' }}
-                        activeDot={{ r: 3 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </div>
-
-            {/* Weight Chart */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-gray-800">Weight</h2>
-                <div className="flex items-center">
-                  <select
-                    value={weightTimeframe}
-                    onChange={(e) => setWeightTimeframe(e.target.value as TimeFrame)}
-                    className="mr-6 h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                      backgroundPosition: 'right 0.5rem center',
-                      backgroundRepeat: 'no-repeat',
-                      backgroundSize: '1.5em 1.5em',
-                    }}
-                  >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-                  </select>
-                  <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
-                    <button
-                      onClick={() => handleTimeframeNavigation('prev', weightDate, setWeightDate, weightTimeframe)}
-                      disabled={isNavigationDisabled('prev', weightDate, weightTimeframe)}
-                      className={`h-full px-2 rounded-l-lg hover:bg-white hover:shadow-sm transition-all ${
-                        isNavigationDisabled('prev', weightDate, weightTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <span className="text-sm font-medium text-gray-700 mx-4 min-w-[100px] text-center">
-                      {getTimeframeLabel(weightDate, weightTimeframe)}
-                    </span>
-                    <button
-                      onClick={() => handleTimeframeNavigation('next', weightDate, setWeightDate, weightTimeframe)}
-                      disabled={isNavigationDisabled('next', weightDate, weightTimeframe)}
-                      className={`h-full px-2 rounded-r-lg hover:bg-white hover:shadow-sm transition-all ${
-                        isNavigationDisabled('next', weightDate, weightTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="h-[300px]">
-                {data.loading && (
-                  <div className="h-full flex items-center justify-center text-gray-500">
-                    Loading data...
-                  </div>
-                )}
-                {!hasWeightData && !data.loading && (
-                  <div className="h-full flex items-center justify-center text-gray-500">
-                    No weight data available for this {weightTimeframe === 'yearly' ? '5 years' : weightTimeframe === 'monthly' ? 'year' : weightTimeframe === 'weekly' ? '12 weeks' : 'month'}
-                  </div>
-                )}
-                {hasWeightData && !data.loading && (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart 
-                      data={currentWeightData}
-                      margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
-                    >
-                      <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
-                      <XAxis 
-                        dataKey="date" 
-                        tickFormatter={(date) => {
-                          const d = new Date(date);
-                          switch (weightTimeframe) {
-                            case 'daily':
-                              return d.getDate().toString();
-                            case 'weekly':
-                              return d.toLocaleString('default', { month: 'short', day: 'numeric' });
-                            case 'monthly':
-                              return d.toLocaleString('default', { month: 'short' });
-                            case 'yearly':
-                              return d.getFullYear().toString();
-                          }
-                        }}
-                        stroke="#9CA3AF"
-                        fontSize={12}
-                        tickLine={false}
-                        axisLine={false}
-                        dy={12}
-                      />
-                      <YAxis 
-                        stroke="#9CA3AF"
-                        fontSize={12}
-                        tickCount={8}
-                        domain={['dataMin - 2', 'dataMax + 2']}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <Tooltip
-                        contentStyle={{ 
-                          backgroundColor: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                          fontSize: '12px',
-                          padding: '8px'
-                        }}
-                        labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
-                        labelFormatter={(value) => {
-                          const d = new Date(value);
-                          switch (weightTimeframe) {
-                            case 'daily':
-                              return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
-                            case 'weekly':
-                              const weekEnd = new Date(d);
-                              weekEnd.setDate(d.getDate() + 6);
-                              return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
-                            case 'monthly':
-                              return d.toLocaleString('default', { month: 'long', year: 'numeric' });
-                            case 'yearly':
-                              return d.getFullYear().toString();
-                          }
-                        }}
-                        formatter={(value: number) => [`${value} lb`]}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="value"
-                        stroke="#10B981"
-                        strokeWidth={1.5}
-                        dot={{ r: 2, fill: '#10B981' }}
-                        activeDot={{ r: 3 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </div>
-
-            {/* Body Fat Chart */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-gray-800">Body Fat</h2>
-                <div className="flex items-center">
-                  <select
-                    value={bodyFatTimeframe}
-                    onChange={(e) => setBodyFatTimeframe(e.target.value as TimeFrame)}
-                    className="mr-6 h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                      backgroundPosition: 'right 0.5rem center',
-                      backgroundRepeat: 'no-repeat',
-                      backgroundSize: '1.5em 1.5em',
-                    }}
-                  >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-                  </select>
-                  <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
-                    <button
-                      onClick={() => handleTimeframeNavigation('prev', bodyFatDate, setBodyFatDate, bodyFatTimeframe)}
-                      disabled={isNavigationDisabled('prev', bodyFatDate, bodyFatTimeframe)}
-                      className={`h-full px-2 rounded-l-lg hover:bg-white hover:shadow-sm transition-all ${
-                        isNavigationDisabled('prev', bodyFatDate, bodyFatTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <span className="text-sm font-medium text-gray-700 mx-4 min-w-[100px] text-center">
-                      {getTimeframeLabel(bodyFatDate, bodyFatTimeframe)}
-                    </span>
-                    <button
-                      onClick={() => handleTimeframeNavigation('next', bodyFatDate, setBodyFatDate, bodyFatTimeframe)}
-                      disabled={isNavigationDisabled('next', bodyFatDate, bodyFatTimeframe)}
-                      className={`h-full px-2 rounded-r-lg hover:bg-white hover:shadow-sm transition-all ${
-                        isNavigationDisabled('next', bodyFatDate, bodyFatTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="h-[300px]">
-                {data.loading && (
-                  <div className="h-full flex items-center justify-center text-gray-500">
-                    Loading data...
-                  </div>
-                )}
-                {!hasBodyFatData && !data.loading && (
-                  <div className="h-full flex items-center justify-center text-gray-500">
-                    No body fat data available for this {bodyFatTimeframe === 'yearly' ? '5 years' : bodyFatTimeframe === 'monthly' ? 'year' : bodyFatTimeframe === 'weekly' ? '12 weeks' : 'month'}
-                  </div>
-                )}
-                {hasBodyFatData && !data.loading && (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart 
-                      data={currentBodyFatData}
-                      margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
-                    >
-                      <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
-                      <XAxis 
-                        dataKey="date" 
-                        tickFormatter={(date) => {
-                          const d = new Date(date);
-                          switch (bodyFatTimeframe) {
-                            case 'daily':
-                              return d.getDate().toString();
-                            case 'weekly':
-                              return d.toLocaleString('default', { month: 'short', day: 'numeric' });
-                            case 'monthly':
-                              return d.toLocaleString('default', { month: 'short' });
-                            case 'yearly':
-                              return d.getFullYear().toString();
-                          }
-                        }}
-                        stroke="#9CA3AF"
-                        fontSize={12}
-                        tickLine={false}
-                        axisLine={false}
-                        dy={12}
-                      />
-                      <YAxis 
-                        stroke="#9CA3AF"
-                        fontSize={12}
-                        tickCount={8}
-                        domain={['dataMin - 2', 'dataMax + 2']}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <Tooltip
-                        contentStyle={{ 
-                          backgroundColor: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                          fontSize: '12px',
-                          padding: '8px'
-                        }}
-                        labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
-                        labelFormatter={(value) => {
-                          const d = new Date(value);
-                          switch (bodyFatTimeframe) {
-                            case 'daily':
-                              return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
-                            case 'weekly':
-                              const weekEnd = new Date(d);
-                              weekEnd.setDate(d.getDate() + 6);
-                              return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
-                            case 'monthly':
-                              return d.toLocaleString('default', { month: 'long', year: 'numeric' });
-                            case 'yearly':
-                              return d.getFullYear().toString();
-                          }
-                        }}
-                        formatter={(value: number) => [`${value}%`]}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="value"
-                        stroke="#F59E0B"
-                        strokeWidth={1.5}
-                        dot={{ r: 2, fill: '#F59E0B' }}
-                        activeDot={{ r: 3 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-semibold text-gray-800">Blood Markers & Longevity</h2>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Lipid Panel */}
-              <div className="border border-gray-100 rounded-xl p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-6">Lipid Panel</h3>
-                <div className="space-y-6">
-                  <MarkerRow label="Total Cholesterol" data={data.bloodMarkers.totalCholesterol} />
-                  <MarkerRow label="LDL-C" data={data.bloodMarkers.ldl} />
-                  <MarkerRow label="HDL-C" data={data.bloodMarkers.hdl} />
-                  <MarkerRow label="Triglycerides" data={data.bloodMarkers.triglycerides} />
-                  <MarkerRow label="ApoB" data={data.bloodMarkers.apoB} />
-                  <MarkerRow label="Lp(a)" data={data.bloodMarkers.lpA} />
-                </div>
-                <LastTestedDate data={data.bloodMarkers.totalCholesterol} />
-              </div>
-
-              {/* Complete Blood Count */}
-              <div className="border border-gray-100 rounded-xl p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-6">Complete Blood Count</h3>
-                <div className="space-y-6">
-                  <MarkerRow label="White Blood Cells" data={data.bloodMarkers.whiteBloodCells} />
-                  <MarkerRow label="Red Blood Cells" data={data.bloodMarkers.redBloodCells} />
-                  <MarkerRow label="Hematocrit" data={data.bloodMarkers.hematocrit} />
-                  <MarkerRow label="Hemoglobin" data={data.bloodMarkers.hemoglobin} />
-                  <MarkerRow label="Platelets" data={data.bloodMarkers.platelets} />
-                </div>
-                <LastTestedDate data={data.bloodMarkers.whiteBloodCells} />
-              </div>
-
-              {/* Glucose Markers */}
-              <div className="border border-gray-100 rounded-xl p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-6">Glucose Markers</h3>
-                <div className="space-y-6">
-                  <MarkerRow label="HbA1c" data={data.bloodMarkers.hba1c} />
-                  <MarkerRow label="Fasting Insulin" data={data.bloodMarkers.fastingInsulin} />
-                  <MarkerRow label="Glucose" data={data.bloodMarkers.glucose} />
-                </div>
-                <LastTestedDate data={data.bloodMarkers.glucose} />
-              </div>
-
-              {/* Liver Markers */}
-              <div className="border border-gray-100 rounded-xl p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-6">Liver Markers</h3>
-                <div className="space-y-6">
-                  <MarkerRow label="ALT" data={data.bloodMarkers.alt} />
-                  <MarkerRow label="AST" data={data.bloodMarkers.ast} />
-                  <MarkerRow label="GGT" data={data.bloodMarkers.ggt} />
-                </div>
-                <LastTestedDate data={data.bloodMarkers.alt} />
-              </div>
-
-              {/* Kidney Markers */}
-              <div className="border border-gray-100 rounded-xl p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-6">Kidney Markers</h3>
-                <div className="space-y-6">
-                  <MarkerRow label="eGFR" data={data.bloodMarkers.egfr} />
-                  <MarkerRow label="Cystatin C" data={data.bloodMarkers.cystatinC} />
-                  <MarkerRow label="BUN" data={data.bloodMarkers.bun} />
-                  <MarkerRow label="Creatinine" data={data.bloodMarkers.creatinine} />
-                  <MarkerRow label="Albumin" data={data.bloodMarkers.albumin} />
-                </div>
-                <LastTestedDate data={data.bloodMarkers.egfr} />
-              </div>
-
-              {/* Sex Hormones */}
-              <div className="border border-gray-100 rounded-xl p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-6">Sex Hormones</h3>
-                <div className="space-y-6">
-                  <MarkerRow label="Testosterone" data={data.bloodMarkers.testosterone} />
-                  <MarkerRow label="Free Testosterone" data={data.bloodMarkers.freeTesto} />
-                  <MarkerRow label="Estradiol" data={data.bloodMarkers.estradiol} />
-                  <MarkerRow label="SHBG" data={data.bloodMarkers.shbg} />
-                </div>
-                <LastTestedDate data={data.bloodMarkers.testosterone} />
-              </div>
-
-              {/* Thyroid Markers */}
-              <div className="border border-gray-100 rounded-xl p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-6">Thyroid Markers</h3>
-                <div className="space-y-6">
-                  <MarkerRow label="T3" data={data.bloodMarkers.t3} />
-                  <MarkerRow label="T4" data={data.bloodMarkers.t4} />
-                  <MarkerRow label="TSH" data={data.bloodMarkers.tsh} />
-                </div>
-                <LastTestedDate data={data.bloodMarkers.t3} />
-              </div>
-
-              {/* Vitamins & Inflammation */}
-              <div className="border border-gray-100 rounded-xl p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-6">Vitamins & Inflammation</h3>
-                <div className="space-y-6">
-                  <MarkerRow label="Vitamin D3" data={data.bloodMarkers.vitaminD} />
-                  <MarkerRow label="hs-CRP" data={data.bloodMarkers.crp} />
-                  <MarkerRow label="Homocysteine" data={data.bloodMarkers.homocysteine} />
-                  <MarkerRow label="IGF-1" data={data.bloodMarkers.igf1} />
-                </div>
-                <LastTestedDate data={data.bloodMarkers.vitaminD} />
-              </div>
-
-              {/* Iron Panel */}
-              <div className="border border-gray-100 rounded-xl p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-6">Iron Panel</h3>
-                <div className="space-y-6">
-                  <MarkerRow label="Ferritin" data={data.bloodMarkers.ferritin} />
-                  <MarkerRow label="Serum Iron" data={data.bloodMarkers.serumIron} />
-                  <MarkerRow label="TIBC" data={data.bloodMarkers.tibc} />
-                  <MarkerRow label="Transferrin Saturation" data={data.bloodMarkers.transferrinSaturation} />
-                </div>
-                <LastTestedDate data={data.bloodMarkers.ferritin} />
-              </div>
-
-              {/* Electrolytes */}
-              <div className="border border-gray-100 rounded-xl p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-6">Electrolytes</h3>
-                <div className="space-y-6">
-                  <MarkerRow label="Sodium" data={data.bloodMarkers.sodium} />
-                  <MarkerRow label="Potassium" data={data.bloodMarkers.potassium} />
-                  <MarkerRow label="Calcium" data={data.bloodMarkers.calcium} />
-                  <MarkerRow label="Phosphorus" data={data.bloodMarkers.phosphorus} />
-                  <MarkerRow label="Magnesium" data={data.bloodMarkers.magnesium} />
-                  <MarkerRow label="Bicarbonate" data={data.bloodMarkers.bicarbonate} />
-                  <MarkerRow label="Chloride" data={data.bloodMarkers.chloride} />
-                </div>
-                <LastTestedDate data={data.bloodMarkers.sodium} />
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-      <div className="fixed bottom-4 left-4 bg-indigo-500/10 hover:bg-indigo-500/20 backdrop-blur px-3 py-2 rounded-full shadow-lg text-sm font-medium tracking-wide text-indigo-600 border border-indigo-500/20 hover:shadow-md transition-all duration-300 flex items-center gap-0 hover:gap-2 hover:px-4 group">
-        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-        <span className="w-0 overflow-hidden group-hover:w-auto transition-all duration-300 ease-in-out whitespace-nowrap">
-          Powered by OpenHealth
-        </span>
-      </div>
-    </main>
+          )}
+        </div>
+        <div className="fixed bottom-4 left-4 bg-indigo-500/10 hover:bg-indigo-500/20 backdrop-blur px-3 py-2 rounded-full shadow-lg text-sm font-medium tracking-wide text-indigo-600 border border-indigo-500/20 hover:shadow-md transition-all duration-300 flex items-center gap-0 hover:gap-2 hover:px-4 group">
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span className="w-0 overflow-hidden group-hover:w-auto transition-all duration-300 ease-in-out whitespace-nowrap">
+            Powered by OpenHealth
+          </span>
+        </div>
+      </main>
+    </>
   );
 }
 
