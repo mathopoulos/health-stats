@@ -20,22 +20,48 @@ interface ProcessingResult {
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function triggerProcessing(): Promise<ProcessingResult> {
-  try {
-    const response = await fetch('/api/process', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to process data');
+  let retryCount = 0;
+  
+  while (retryCount < MAX_RETRIES) {
+    try {
+      const response = await fetch('/api/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      if (response.status === 504) {
+        // Handle timeout specifically
+        console.log(`Processing timeout, attempt ${retryCount + 1} of ${MAX_RETRIES}`);
+        retryCount++;
+        await sleep(RETRY_DELAY);
+        continue;
+      }
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        let error;
+        try {
+          error = JSON.parse(errorText);
+        } catch {
+          error = { error: errorText || 'Failed to process data' };
+        }
+        throw new Error(error.error || 'Failed to process data');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      if (retryCount < MAX_RETRIES - 1) {
+        console.log(`Processing failed, attempt ${retryCount + 1} of ${MAX_RETRIES}`);
+        retryCount++;
+        await sleep(RETRY_DELAY);
+        continue;
+      }
+      console.error('Error triggering processing:', error);
+      throw error;
     }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Error triggering processing:', error);
-    throw error;
   }
+  
+  throw new Error('Processing failed after multiple retries');
 }
 
 export default function UploadPage() {
@@ -166,7 +192,11 @@ export default function UploadPage() {
         setProcessingStatus(`Error: ${result.error}`);
       }
     } catch (error) {
-      setProcessingStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      let errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('after multiple retries')) {
+        errorMessage = 'Processing is taking longer than expected. Please check your dashboard in a few minutes to see your processed data.';
+      }
+      setProcessingStatus(`Error: ${errorMessage}`);
     } finally {
       setIsProcessing(false);
     }
