@@ -20,48 +20,71 @@ interface ProcessingResult {
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function triggerProcessing(): Promise<ProcessingResult> {
-  let retryCount = 0;
-  
-  while (retryCount < MAX_RETRIES) {
-    try {
-      const response = await fetch('/api/process', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      
-      if (response.status === 504) {
-        // Handle timeout specifically
-        console.log(`Processing timeout, attempt ${retryCount + 1} of ${MAX_RETRIES}`);
-        retryCount++;
-        await sleep(RETRY_DELAY);
-        continue;
+  try {
+    // Start the processing
+    const startResponse = await fetch('/api/process', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    
+    if (!startResponse.ok) {
+      const errorText = await startResponse.text();
+      let error;
+      try {
+        error = JSON.parse(errorText);
+      } catch {
+        error = { error: errorText || 'Failed to start processing' };
       }
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        let error;
-        try {
-          error = JSON.parse(errorText);
-        } catch {
-          error = { error: errorText || 'Failed to process data' };
-        }
-        throw new Error(error.error || 'Failed to process data');
-      }
-      
-      return await response.json();
-    } catch (error) {
-      if (retryCount < MAX_RETRIES - 1) {
-        console.log(`Processing failed, attempt ${retryCount + 1} of ${MAX_RETRIES}`);
-        retryCount++;
-        await sleep(RETRY_DELAY);
-        continue;
-      }
-      console.error('Error triggering processing:', error);
-      throw error;
+      throw new Error(error.error || 'Failed to start processing');
     }
+
+    // Get the processing ID from the response
+    const { processingId } = await startResponse.json();
+    
+    // Poll for status every 2 seconds
+    let attempts = 0;
+    const maxAttempts = 30; // 1 minute total polling time
+    
+    while (attempts < maxAttempts) {
+      await sleep(2000); // Wait 2 seconds between checks
+      
+      try {
+        const statusResponse = await fetch(`/api/process/status?id=${processingId}`);
+        if (!statusResponse.ok) {
+          throw new Error('Failed to check processing status');
+        }
+        
+        const status = await statusResponse.json();
+        
+        if (status.completed) {
+          return {
+            success: true,
+            message: status.message || 'Processing completed successfully',
+            results: status.results || []
+          };
+        } else if (status.error) {
+          throw new Error(status.error);
+        }
+        
+        // If still processing, continue polling
+        attempts++;
+      } catch (error) {
+        console.error('Error checking status:', error);
+        throw error;
+      }
+    }
+    
+    // If we reach here, processing is taking too long but might still be running
+    return {
+      success: true,
+      message: 'Processing started successfully. Please check your dashboard in a few minutes to see your processed data.',
+      results: []
+    };
+    
+  } catch (error) {
+    console.error('Processing error:', error);
+    throw error;
   }
-  
-  throw new Error('Processing failed after multiple retries');
 }
 
 export default function UploadPage() {
@@ -186,16 +209,13 @@ export default function UploadPage() {
       const result = await triggerProcessing();
       if (result.success) {
         setProcessingStatus(
-          `Processing complete: ${result.message}. ${result.results.map(r => r.message).join(', ')}`
+          result.message + (result.results.length > 0 ? ` ${result.results.map(r => r.message).join(', ')}` : '')
         );
       } else {
         setProcessingStatus(`Error: ${result.error}`);
       }
     } catch (error) {
-      let errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      if (errorMessage.includes('after multiple retries')) {
-        errorMessage = 'Processing is taking longer than expected. Please check your dashboard in a few minutes to see your processed data.';
-      }
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setProcessingStatus(`Error: ${errorMessage}`);
     } finally {
       setIsProcessing(false);
