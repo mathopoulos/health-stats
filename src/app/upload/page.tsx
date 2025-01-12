@@ -44,36 +44,15 @@ async function triggerProcessing(): Promise<ProcessingResult> {
     // Poll for status every 2 seconds
     let attempts = 0;
     const maxAttempts = 30; // 1 minute total polling time
-    let consecutiveErrors = 0;
-    const maxConsecutiveErrors = 3;
     
     while (attempts < maxAttempts) {
       await sleep(2000); // Wait 2 seconds between checks
       
       try {
         const statusResponse = await fetch(`/api/process/status?id=${processingId}`);
-        
-        // Handle non-200 responses
         if (!statusResponse.ok) {
-          consecutiveErrors++;
-          console.warn(`Status check failed (attempt ${consecutiveErrors}/${maxConsecutiveErrors}):`, statusResponse.status);
-          
-          if (consecutiveErrors >= maxConsecutiveErrors) {
-            // After 3 consecutive errors, return a more optimistic message
-            return {
-              success: true,
-              message: 'Processing has been started. Please check your dashboard in a few minutes to see your processed data.',
-              results: []
-            };
-          }
-          
-          // Continue polling if we haven't hit max consecutive errors
-          attempts++;
-          continue;
+          throw new Error('Failed to check processing status');
         }
-        
-        // Reset consecutive errors on successful response
-        consecutiveErrors = 0;
         
         const status = await statusResponse.json();
         
@@ -84,32 +63,14 @@ async function triggerProcessing(): Promise<ProcessingResult> {
             results: status.results || []
           };
         } else if (status.error) {
-          // If we get an explicit error from the status endpoint
-          console.error('Processing status error:', status.error);
-          return {
-            success: false,
-            message: 'Processing encountered an error but may continue in the background',
-            error: status.error,
-            results: []
-          };
+          throw new Error(status.error);
         }
         
         // If still processing, continue polling
         attempts++;
       } catch (error) {
-        consecutiveErrors++;
-        console.warn(`Status check error (attempt ${consecutiveErrors}/${maxConsecutiveErrors}):`, error);
-        
-        if (consecutiveErrors >= maxConsecutiveErrors) {
-          // After 3 consecutive errors, return a more optimistic message
-          return {
-            success: true,
-            message: 'Processing has been started. Please check your dashboard in a few minutes to see your processed data.',
-            results: []
-          };
-        }
-        
-        attempts++;
+        console.error('Error checking status:', error);
+        throw error;
       }
     }
     
@@ -122,13 +83,7 @@ async function triggerProcessing(): Promise<ProcessingResult> {
     
   } catch (error) {
     console.error('Processing error:', error);
-    // Return a more user-friendly error response
-    return {
-      success: false,
-      message: 'Processing has been initiated but we encountered some issues. Please check your dashboard in a few minutes.',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      results: []
-    };
+    throw error;
   }
 }
 
@@ -252,12 +207,16 @@ export default function UploadPage() {
     setProcessingStatus('Starting processing...');
     try {
       const result = await triggerProcessing();
-      setProcessingStatus(
-        result.message + (result.results.length > 0 ? ` ${result.results.map(r => r.message).join(', ')}` : '')
-      );
+      if (result.success) {
+        setProcessingStatus(
+          result.message + (result.results.length > 0 ? ` ${result.results.map(r => r.message).join(', ')}` : '')
+        );
+      } else {
+        setProcessingStatus(`Error: ${result.error}`);
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      setProcessingStatus('Processing started but we encountered some issues. Please check your dashboard in a few minutes.');
+      setProcessingStatus(`Error: ${errorMessage}`);
     } finally {
       setIsProcessing(false);
     }
@@ -726,9 +685,10 @@ export default function UploadPage() {
               <button
                 type="button"
                 onClick={handleProcess}
-                disabled={isProcessing || uploading}
+                disabled={isProcessing || uploading || !uploadSuccess}
                 className={`px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors flex items-center gap-2
                   ${isProcessing || uploading ? 'bg-gray-400' : 
+                    !uploadSuccess ? 'bg-gray-300 cursor-not-allowed' :
                     'bg-green-600 hover:bg-green-700'}`}
               >
                 {isProcessing ? (
