@@ -685,10 +685,9 @@ export default function UploadPage() {
               <button
                 type="button"
                 onClick={handleProcess}
-                disabled={isProcessing || uploading || !uploadSuccess}
+                disabled={isProcessing || uploading}
                 className={`px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors flex items-center gap-2
                   ${isProcessing || uploading ? 'bg-gray-400' : 
-                    !uploadSuccess ? 'bg-gray-300 cursor-not-allowed' :
                     'bg-green-600 hover:bg-green-700'}`}
               >
                 {isProcessing ? (
