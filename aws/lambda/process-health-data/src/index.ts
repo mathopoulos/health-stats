@@ -113,7 +113,9 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
 // Similar functions for bodyFat, HRV, and VO2Max would go here...
 
 export const handler: Handler<LambdaEvent, any> = async (event: LambdaEvent, context: Context) => {
+  console.log('🚀 Starting Lambda function execution...');
   const { jobId, userId, xmlKey } = event;
+  let startTime = Date.now();
   
   try {
     const status: ProcessingStatus = {
@@ -126,28 +128,36 @@ export const handler: Handler<LambdaEvent, any> = async (event: LambdaEvent, con
     const recordTypes: string[] = [];
 
     // Process weight
+    console.log('📊 Starting weight data processing...');
     status.status = 'processing weight';
     await updateJobProgress(jobId, 0, 4, 'Processing weight data...');
     await processWeight(xmlKey, status);
     recordTypes.push('weight');
+    console.log('✅ Weight data processing complete');
 
     // Process body fat
+    console.log('📊 Starting body fat data processing...');
     status.status = 'processing bodyFat';
     await updateJobProgress(jobId, 1, 4, 'Processing body fat data...');
     // await processBodyFat(xmlKey, status);
     // recordTypes.push('bodyFat');
+    console.log('✅ Body fat data processing complete');
 
     // Process HRV
+    console.log('📊 Starting HRV data processing...');
     status.status = 'processing hrv';
     await updateJobProgress(jobId, 2, 4, 'Processing HRV data...');
     // await processHRV(xmlKey, status);
     // recordTypes.push('hrv');
+    console.log('✅ HRV data processing complete');
 
     // Process VO2 max
+    console.log('📊 Starting VO2 max data processing...');
     status.status = 'processing vo2max';
     await updateJobProgress(jobId, 3, 4, 'Processing VO2 max data...');
     // await processVO2Max(xmlKey, status);
     // recordTypes.push('vo2max');
+    console.log('✅ VO2 max data processing complete');
 
     // Update final status
     await updateJobStatus(jobId, 'completed', {
@@ -157,29 +167,41 @@ export const handler: Handler<LambdaEvent, any> = async (event: LambdaEvent, con
       }
     });
 
-    return {
+    const executionTime = (Date.now() - startTime) / 1000;
+    console.log(`🏁 Lambda function execution completed successfully!`);
+    console.log(`📈 Total records processed: ${status.recordsProcessed}`);
+    console.log(`⏱️ Total execution time: ${executionTime.toFixed(2)} seconds`);
+    console.log(`🔄 Record types processed: ${recordTypes.join(', ')}`);
+
+    // Explicitly cleanup and exit
+    await cleanup();
+    context.done(undefined, {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
         recordsProcessed: status.recordsProcessed,
-        recordTypes
+        recordTypes,
+        executionTime: executionTime.toFixed(2)
       })
-    };
+    });
+    return;
+
   } catch (error) {
-    console.error('Processing error:', error);
+    console.error('❌ Processing error:', error);
     
     await updateJobStatus(jobId, 'failed', {
       error: error instanceof Error ? error.message : 'Unknown error'
     });
 
-    return {
+    // Cleanup and exit on error
+    await cleanup();
+    context.done(error instanceof Error ? error : new Error('Unknown error'), {
       statusCode: 500,
       body: JSON.stringify({
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       })
-    };
-  } finally {
-    await cleanup();
+    });
+    return;
   }
 }; 
