@@ -1,28 +1,9 @@
 import { NextResponse } from 'next/server';
-import { processHealthData } from '@/lib/processHealthData';
 import { listDataFiles } from '@/lib/s3';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { kv } from '@vercel/kv';
-
-// In-memory store for local development
-const localProcessingStore = new Map<string, any>();
-
-async function setProcessingStatus(key: string, value: any) {
-  if (process.env.VERCEL_ENV) {
-    await kv.set(key, value);
-  } else {
-    localProcessingStore.set(key, value);
-  }
-}
-
-async function getProcessingStatus(key: string) {
-  if (process.env.VERCEL_ENV) {
-    return await kv.get(key);
-  } else {
-    return localProcessingStore.get(key);
-  }
-}
+import { createProcessingJob } from '@/lib/processingJobs';
+import { invokeLambda } from '@/lib/lambda';
 
 export async function POST(request: Request) {
   try {
@@ -63,44 +44,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate a unique processing ID
-    const processingId = `process_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-    const statusKey = `processing:${processingId}`;
-    
-    // Store initial processing status
-    await setProcessingStatus(statusKey, {
-      status: 'processing',
-      file: latestXmlFile,
+    // Create a processing job in MongoDB
+    const job = await createProcessingJob({
       userId: session.user.id,
-      startedAt: new Date().toISOString(),
+      status: 'pending',
+      type: 'health-data',
+      fileKey: latestXmlFile,
+      startedAt: new Date()
     });
 
-    // Start processing in the background
-    processHealthData(latestXmlFile, session.user.id)
-      .then(async (status) => {
-        // Update status on completion
-        await setProcessingStatus(statusKey, {
-          status: 'completed',
-          file: latestXmlFile,
-          userId: session.user.id,
-          completedAt: new Date().toISOString(),
-          results: status
-        });
-      })
-      .catch(async (error) => {
-        // Update status on error
-        await setProcessingStatus(statusKey, {
-          status: 'error',
-          file: latestXmlFile,
-          userId: session.user.id,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          completedAt: new Date().toISOString()
-        });
-      });
+    // Invoke Lambda function to process the data
+    await invokeLambda(job._id!, session.user.id, latestXmlFile);
 
     return NextResponse.json({ 
       success: true, 
-      processingId,
+      processingId: job._id,
       message: 'Processing started successfully'
     });
   } catch (error) {

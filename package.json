@@ -18,6 +18,7 @@
     "test-apis": "ts-node scripts/test-apis.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-lambda": "^3.726.1",
     "@aws-sdk/client-s3": "^3.722.0",
     "@aws-sdk/s3-request-presigner": "^3.722.0",
     "@headlessui/react": "^2.2.0",

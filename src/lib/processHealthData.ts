@@ -1,5 +1,6 @@
 import { XMLParser } from 'fast-xml-parser/src/fxp';
 import { processS3XmlFile, generatePresignedUploadUrl, fetchAllHealthData, type HealthDataType } from './s3';
+import { updateProcessingJobProgress, updateProcessingJobStatus } from './processingJobs';
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -846,7 +847,7 @@ async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<
   `);
 }
 
-export async function processHealthData(xmlKey: string, userId: string): Promise<ProcessingStatus> {
+export async function processHealthData(xmlKey: string, userId: string, jobId: string): Promise<{ recordsProcessed: number; recordTypes: string[] }> {
   console.log('\nStarting health data processing...');
   console.log('XML file to process:', xmlKey);
   
@@ -857,13 +858,17 @@ export async function processHealthData(xmlKey: string, userId: string): Promise
     userId
   };
 
+  const recordTypes: string[] = [];
+
   try {
     // Process weight first
     console.log('\n=== Starting Weight Processing ===');
     status.status = 'processing weight';
+    await updateProcessingJobProgress(jobId, 0, 5, 'Processing weight data...');
     try {
       await processWeight(xmlKey, status);
       console.log('Weight processing completed successfully');
+      recordTypes.push('weight');
     } catch (error) {
       console.error('Error during weight processing:', error);
       throw error;
@@ -872,10 +877,12 @@ export async function processHealthData(xmlKey: string, userId: string): Promise
     // Then body fat
     console.log('\n=== Starting Body Fat Processing ===');
     status.status = 'processing bodyFat';
+    await updateProcessingJobProgress(jobId, 1, 5, 'Processing body fat data...');
     try {
       await processBodyFat(xmlKey, status);
       console.log('Body fat processing completed successfully');
       console.log('Preparing to start HRV processing...');
+      recordTypes.push('bodyFat');
     } catch (error) {
       console.error('Error during body fat processing:', error);
       throw error;
@@ -884,9 +891,11 @@ export async function processHealthData(xmlKey: string, userId: string): Promise
     // Then HRV
     console.log('\n=== Starting HRV Processing ===');
     status.status = 'processing hrv';
+    await updateProcessingJobProgress(jobId, 2, 5, 'Processing HRV data...');
     try {
       await processHRV(xmlKey, status);
       console.log('HRV processing completed successfully');
+      recordTypes.push('hrv');
     } catch (error) {
       console.error('Error during HRV processing:', error);
       throw error;
@@ -895,9 +904,11 @@ export async function processHealthData(xmlKey: string, userId: string): Promise
     // Then VO2 max
     console.log('\n=== Starting VO2 Max Processing ===');
     status.status = 'processing vo2max';
+    await updateProcessingJobProgress(jobId, 3, 5, 'Processing VO2 max data...');
     try {
       await processVO2Max(xmlKey, status);
       console.log('VO2 max processing completed successfully');
+      recordTypes.push('vo2max');
     } catch (error) {
       console.error('Error during VO2 max processing:', error);
       throw error;
@@ -905,13 +916,17 @@ export async function processHealthData(xmlKey: string, userId: string): Promise
 
     // Temporarily skip heart rate processing
     console.log('\n=== Skipping Heart Rate Processing ===');
+    await updateProcessingJobProgress(jobId, 4, 5, 'Processing heart rate data...');
 
-    status.status = 'completed';
     console.log('\n=== Processing Complete ===');
     console.log('Total records processed:', status.recordsProcessed);
     console.log('Total batches saved:', status.batchesSaved);
     console.log('Status:', status.status);
-    return status;
+    
+    return {
+      recordsProcessed: status.recordsProcessed,
+      recordTypes
+    };
   } catch (error) {
     console.error('\n=== Processing Error ===');
     console.error('Error details:', error);

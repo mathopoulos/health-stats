@@ -1,32 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { kv } from '@vercel/kv';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { getProcessingJob } from '@/lib/processingJobs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-// In-memory store for local development
-const localProcessingStore = new Map<string, any>();
-
-interface ProcessingStatus {
-  status: 'processing' | 'completed' | 'error';
-  file: string;
-  userId: string;
-  startedAt: string;
-  completedAt?: string;
-  results?: any;
-  error?: string;
-}
-
-async function getProcessingStatus(key: string): Promise<ProcessingStatus | null> {
-  if (process.env.VERCEL_ENV) {
-    const status = await kv.get(key);
-    return status as ProcessingStatus;
-  } else {
-    return localProcessingStore.get(key) || null;
-  }
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -46,8 +24,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const status = await getProcessingStatus(`processing:${processingId}`);
-    if (!status) {
+    const job = await getProcessingJob(processingId);
+    if (!job) {
       return NextResponse.json(
         { success: false, error: 'Processing status not found' },
         { status: 404 }
@@ -55,18 +33,24 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify the user owns this processing task
-    if (status.userId !== session.user.id) {
+    if (job.userId !== session.user.id) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
+    // Convert the MongoDB job status to the format expected by the frontend
     return NextResponse.json({
       success: true,
-      ...status,
-      completed: status.status === 'completed',
-      error: status.status === 'error' ? status.error : undefined
+      status: job.status,
+      completed: job.status === 'completed',
+      error: job.status === 'failed' ? job.error : undefined,
+      progress: job.progress,
+      results: job.result,
+      startedAt: job.startedAt,
+      completedAt: job.completedAt,
+      message: job.progress?.message || getStatusMessage(job.status)
     });
   } catch (error) {
     console.error('Error checking processing status:', error);
@@ -74,5 +58,20 @@ export async function GET(request: NextRequest) {
       { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
+  }
+}
+
+function getStatusMessage(status: string): string {
+  switch (status) {
+    case 'pending':
+      return 'Processing queued...';
+    case 'processing':
+      return 'Processing in progress...';
+    case 'completed':
+      return 'Processing completed successfully';
+    case 'failed':
+      return 'Processing failed';
+    default:
+      return 'Unknown status';
   }
 } 

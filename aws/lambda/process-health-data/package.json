@@ -1,0 +1,26 @@
+{
+  "name": "process-health-data",
+  "version": "1.0.0",
+  "description": "AWS Lambda function for processing health data",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "package": "npm run clean && npm run build && cp package.json dist/ && cd dist && npm install --production && zip -r ../function.zip .",
+    "test": "ts-node src/test.ts",
+    "setup": "ts-node src/setup-test.ts",
+    "test:watch": "nodemon --watch src --ext ts --exec 'npm test'"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0",
+    "fast-xml-parser": "^4.0.0",
+    "mongodb": "^6.0.0",
+    "nodemon": "^3.0.0",
+    "ts-node": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
