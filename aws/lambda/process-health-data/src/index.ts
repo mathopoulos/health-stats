@@ -27,6 +27,8 @@ const parser = new XMLParser({
 });
 
 async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<void> {
+  console.log('⚡️ processWeight: Starting execution');
+  
   const userId = status.userId;
   if (!userId) throw new Error('User ID is required');
   
@@ -37,30 +39,24 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
   let lastProgressTime = Date.now();
   let startTime = Date.now();
   
-  console.log('🏃 Starting weight data processing...');
-  
-  // Create a map of existing dates for quick lookup
-  console.log('📚 Fetching existing weight records...');
+  console.log('🔍 processWeight: Fetching existing records...');
   const existingRecords = await fetchAllHealthData('weight', userId);
   const existingDates = new Set(existingRecords.map(record => record.date));
-  console.log(`📊 Found ${existingRecords.length} existing weight records`);
+  console.log(`📊 processWeight: Found ${existingRecords.length} existing records`);
   
   try {
+    console.log('📑 processWeight: Starting S3 file processing...');
     await processS3XmlFile(xmlKey, async (recordXml) => {
       try {
         recordsProcessed++;
         
-        // Log progress periodically
-        if (recordsProcessed % 10000 === 0) {
-          const now = Date.now();
-          console.log(`⏳ Progress update:
+        if (recordsProcessed % 1000 === 0) {
+          console.log(`⏳ processWeight progress:
             Records processed: ${recordsProcessed}
             Valid records: ${validRecords}
             Skipped records: ${skippedRecords}
-            Processing rate: ${Math.round(10000 / ((now - lastProgressTime) / 1000))} records/second
-            Total time: ${Math.round((now - startTime) / 1000)}s
+            Memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
           `);
-          lastProgressTime = now;
         }
         
         // Quick check for weight records before parsing
@@ -69,13 +65,10 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
           return;
         }
         
-        console.log('Processing XML record:', recordXml);
-        
         const data = parser.parse(recordXml);
-        console.log('Parsed data:', JSON.stringify(data, null, 2));
         
         if (!data?.HealthData?.Record) {
-          console.log('No Record found in data');
+          console.log('⚠️ processWeight: No Record found in data');
           return;
         }
         
@@ -84,32 +77,29 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
           : [data.HealthData.Record];
 
         for (const record of records) {
-          console.log('Processing record:', JSON.stringify(record, null, 2));
-          
           if (!record?.type || record.type !== 'HKQuantityTypeIdentifierBodyMass') {
-            console.log('Skipping record - not a weight record or missing type');
+            console.log('⏭️ processWeight: Skipping non-weight record');
             continue;
           }
 
           const value = parseFloat(record.value);
           if (isNaN(value)) {
-            console.log('Skipping record - invalid value');
+            console.log('⚠️ processWeight: Invalid value');
             continue;
           }
 
           const date = new Date(record.startDate || record.creationDate || record.endDate);
           if (!date || isNaN(date.getTime())) {
-            console.log('Skipping record - invalid date');
+            console.log('⚠️ processWeight: Invalid date');
             continue;
           }
 
           const isoDate = date.toISOString();
           if (existingDates.has(isoDate)) {
-            console.log('Skipping record - date already exists');
+            console.log('⏭️ processWeight: Skipping duplicate date');
             continue;
           }
 
-          console.log('Adding valid record:', { date: isoDate, value });
           pendingRecords.push({
             date: isoDate,
             value: Math.round(value * 100) / 100
@@ -119,20 +109,22 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
           status.recordsProcessed++;
           
           if (pendingRecords.length >= 50) {
+            console.log(`💾 processWeight: Saving batch of ${pendingRecords.length} records...`);
             await saveData('weight', pendingRecords, userId);
             status.batchesSaved++;
             pendingRecords = [];
           }
         }
       } catch (error) {
-        console.error('❌ Error processing weight record:', error);
+        console.error('❌ processWeight: Error processing record:', error);
         throw error;
       }
     });
 
-    // Save any remaining records
+    console.log('🔄 processWeight: Finished processing S3 file');
+
     if (pendingRecords.length > 0) {
-      console.log(`💾 Saving final batch of ${pendingRecords.length} weight records...`);
+      console.log(`💾 processWeight: Saving final batch of ${pendingRecords.length} records...`);
       await saveData('weight', pendingRecords, userId);
       status.batchesSaved++;
     }
@@ -141,7 +133,7 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
     const totalTime = Math.round((endTime - startTime) / 1000);
     
     console.log(`
-🏁 Weight processing completed:
+🏁 processWeight completed:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📊 Total records processed: ${recordsProcessed}
 ✅ Valid weight records: ${validRecords}
@@ -149,11 +141,13 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
 💾 Batches saved: ${status.batchesSaved}
 ⏱️  Total time: ${totalTime} seconds
 📈 Average processing rate: ${Math.round(recordsProcessed / totalTime)} records/second
+💾 Memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 `);
 
+    console.log('✅ processWeight: Function completed successfully');
   } catch (error) {
-    console.error(`❌ Fatal error during weight processing:`, error);
+    console.error(`❌ processWeight: Fatal error:`, error);
     throw error;
   }
 }
@@ -161,11 +155,19 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
 // Similar functions for bodyFat, HRV, and VO2Max would go here...
 
 export const handler: Handler<LambdaEvent, any> = async (event: LambdaEvent, context: Context) => {
-  console.log('🚀 Starting Lambda function execution...');
+  console.log('🚀 Starting Lambda function execution with event:', JSON.stringify(event));
+  console.log('⏰ Remaining time (ms):', context.getRemainingTimeInMillis());
+  
   const { jobId, userId, xmlKey } = event;
   let startTime = Date.now();
   
+  // Register cleanup handler
+  context.callbackWaitsForEmptyEventLoop = false;
+  
   try {
+    console.log('👤 Processing for user:', userId);
+    console.log('📁 Processing file:', xmlKey);
+    
     const status: ProcessingStatus = {
       recordsProcessed: 0,
       batchesSaved: 0,
@@ -179,35 +181,16 @@ export const handler: Handler<LambdaEvent, any> = async (event: LambdaEvent, con
     console.log('📊 Starting weight data processing...');
     status.status = 'processing weight';
     await updateJobProgress(jobId, 0, 4, 'Processing weight data...');
+    
+    console.log('⏳ Before processWeight call');
     await processWeight(xmlKey, status);
+    console.log('✅ After processWeight call');
+    
     recordTypes.push('weight');
     console.log('✅ Weight data processing complete');
 
-    // Process body fat
-    console.log('📊 Starting body fat data processing...');
-    status.status = 'processing bodyFat';
-    await updateJobProgress(jobId, 1, 4, 'Processing body fat data...');
-    // await processBodyFat(xmlKey, status);
-    // recordTypes.push('bodyFat');
-    console.log('✅ Body fat data processing complete');
-
-    // Process HRV
-    console.log('📊 Starting HRV data processing...');
-    status.status = 'processing hrv';
-    await updateJobProgress(jobId, 2, 4, 'Processing HRV data...');
-    // await processHRV(xmlKey, status);
-    // recordTypes.push('hrv');
-    console.log('✅ HRV data processing complete');
-
-    // Process VO2 max
-    console.log('📊 Starting VO2 max data processing...');
-    status.status = 'processing vo2max';
-    await updateJobProgress(jobId, 3, 4, 'Processing VO2 max data...');
-    // await processVO2Max(xmlKey, status);
-    // recordTypes.push('vo2max');
-    console.log('✅ VO2 max data processing complete');
-
     // Update final status
+    console.log('📝 Updating final job status...');
     await updateJobStatus(jobId, 'completed', {
       result: {
         recordsProcessed: status.recordsProcessed,
@@ -216,14 +199,22 @@ export const handler: Handler<LambdaEvent, any> = async (event: LambdaEvent, con
     });
 
     const executionTime = (Date.now() - startTime) / 1000;
-    console.log(`🏁 Lambda function execution completed successfully!`);
-    console.log(`📈 Total records processed: ${status.recordsProcessed}`);
-    console.log(`⏱️ Total execution time: ${executionTime.toFixed(2)} seconds`);
-    console.log(`🔄 Record types processed: ${recordTypes.join(', ')}`);
+    console.log(`
+🏁 Lambda function execution completed:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📈 Total records processed: ${status.recordsProcessed}
+⏱️  Total execution time: ${executionTime.toFixed(2)} seconds
+🔄 Record types processed: ${recordTypes.join(', ')}
+🧹 Starting cleanup...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    `);
 
     // Explicitly cleanup and exit
+    console.log('🧹 Running cleanup...');
     await cleanup();
-    context.done(undefined, {
+    console.log('✨ Cleanup complete');
+    
+    const response = {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
@@ -231,25 +222,43 @@ export const handler: Handler<LambdaEvent, any> = async (event: LambdaEvent, con
         recordTypes,
         executionTime: executionTime.toFixed(2)
       })
-    });
-    return;
+    };
+    
+    console.log('📤 Returning response:', JSON.stringify(response));
+    return response;
 
   } catch (error) {
     console.error('❌ Processing error:', error);
+    console.log('⏰ Time remaining at error (ms):', context.getRemainingTimeInMillis());
     
-    await updateJobStatus(jobId, 'failed', {
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    try {
+      console.log('📝 Updating job status to failed...');
+      await updateJobStatus(jobId, 'failed', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      console.log('✅ Job status updated to failed');
+    } catch (statusError) {
+      console.error('❌ Failed to update job status:', statusError);
+    }
 
     // Cleanup and exit on error
-    await cleanup();
-    context.done(error instanceof Error ? error : new Error('Unknown error'), {
+    try {
+      console.log('🧹 Running cleanup after error...');
+      await cleanup();
+      console.log('✨ Cleanup after error complete');
+    } catch (cleanupError) {
+      console.error('❌ Cleanup failed:', cleanupError);
+    }
+
+    const errorResponse = {
       statusCode: 500,
       body: JSON.stringify({
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       })
-    });
-    return;
+    };
+    
+    console.log('📤 Returning error response:', JSON.stringify(errorResponse));
+    return errorResponse;
   }
 }; 
