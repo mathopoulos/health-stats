@@ -17,6 +17,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     console.log('Processing health data from blob:', blobUrl);
     const jobId = `job_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    console.log('Created job ID:', jobId);
     const status = await processHealthData(blobUrl, session.user.id, jobId);
 
     return NextResponse.json({ success: true, status });
