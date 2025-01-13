@@ -32,105 +32,130 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
   
   let recordsProcessed = 0;
   let validRecords = 0;
+  let skippedRecords = 0;
   let pendingRecords: any[] = [];
   let lastProgressTime = Date.now();
+  let startTime = Date.now();
+  
+  console.log('🏃 Starting weight data processing...');
   
   // Create a map of existing dates for quick lookup
+  console.log('📚 Fetching existing weight records...');
   const existingRecords = await fetchAllHealthData('weight', userId);
   const existingDates = new Set(existingRecords.map(record => record.date));
+  console.log(`📊 Found ${existingRecords.length} existing weight records`);
   
-  await processS3XmlFile(xmlKey, async (recordXml) => {
-    try {
-      recordsProcessed++;
-      
-      // Log progress and cleanup every 10000 records
-      if (recordsProcessed % 10000 === 0) {
-        const now = Date.now();
-        console.log(`Progress update:
-          - Records processed: ${recordsProcessed}
-          - Valid weight records found: ${validRecords}
-          - Time since last update: ${Math.round((now - lastProgressTime) / 1000)}s
-        `);
-        lastProgressTime = now;
+  try {
+    await processS3XmlFile(xmlKey, async (recordXml) => {
+      try {
+        recordsProcessed++;
         
-        // Force garbage collection if available
-        if (global.gc) {
-          global.gc();
+        // Log progress periodically
+        if (recordsProcessed % 10000 === 0) {
+          const now = Date.now();
+          console.log(`⏳ Progress update:
+            Records processed: ${recordsProcessed}
+            Valid records: ${validRecords}
+            Skipped records: ${skippedRecords}
+            Processing rate: ${Math.round(10000 / ((now - lastProgressTime) / 1000))} records/second
+            Total time: ${Math.round((now - startTime) / 1000)}s
+          `);
+          lastProgressTime = now;
         }
-      }
-      
-      // Quick check for weight records before parsing
-      if (!recordXml.includes('HKQuantityTypeIdentifierBodyMass')) {
-        return;
-      }
-      
-      console.log('Processing XML record:', recordXml);
-      
-      const data = parser.parse(recordXml);
-      console.log('Parsed data:', JSON.stringify(data, null, 2));
-      
-      if (!data?.HealthData?.Record) {
-        console.log('No Record found in data');
-        return;
-      }
-      
-      const records = Array.isArray(data.HealthData.Record) 
-        ? data.HealthData.Record 
-        : [data.HealthData.Record];
-
-      for (const record of records) {
-        console.log('Processing record:', JSON.stringify(record, null, 2));
         
-        if (!record?.type || record.type !== 'HKQuantityTypeIdentifierBodyMass') {
-          console.log('Skipping record - not a weight record or missing type');
-          continue;
+        // Quick check for weight records before parsing
+        if (!recordXml.includes('HKQuantityTypeIdentifierBodyMass')) {
+          skippedRecords++;
+          return;
         }
-
-        const value = parseFloat(record.value);
-        if (isNaN(value)) {
-          console.log('Skipping record - invalid value');
-          continue;
-        }
-
-        const date = new Date(record.startDate || record.creationDate || record.endDate);
-        if (!date || isNaN(date.getTime())) {
-          console.log('Skipping record - invalid date');
-          continue;
-        }
-
-        const isoDate = date.toISOString();
-        if (existingDates.has(isoDate)) {
-          console.log('Skipping record - date already exists');
-          continue;
-        }
-
-        console.log('Adding valid record:', { date: isoDate, value });
-        pendingRecords.push({
-          date: isoDate,
-          value: Math.round(value * 100) / 100
-        });
-        existingDates.add(isoDate);
-        validRecords++;
-        status.recordsProcessed++;
         
-        if (pendingRecords.length >= 50) {
-          await saveData('weight', pendingRecords, userId);
-          status.batchesSaved++;
-          pendingRecords = [];
+        console.log('Processing XML record:', recordXml);
+        
+        const data = parser.parse(recordXml);
+        console.log('Parsed data:', JSON.stringify(data, null, 2));
+        
+        if (!data?.HealthData?.Record) {
+          console.log('No Record found in data');
+          return;
         }
+        
+        const records = Array.isArray(data.HealthData.Record) 
+          ? data.HealthData.Record 
+          : [data.HealthData.Record];
+
+        for (const record of records) {
+          console.log('Processing record:', JSON.stringify(record, null, 2));
+          
+          if (!record?.type || record.type !== 'HKQuantityTypeIdentifierBodyMass') {
+            console.log('Skipping record - not a weight record or missing type');
+            continue;
+          }
+
+          const value = parseFloat(record.value);
+          if (isNaN(value)) {
+            console.log('Skipping record - invalid value');
+            continue;
+          }
+
+          const date = new Date(record.startDate || record.creationDate || record.endDate);
+          if (!date || isNaN(date.getTime())) {
+            console.log('Skipping record - invalid date');
+            continue;
+          }
+
+          const isoDate = date.toISOString();
+          if (existingDates.has(isoDate)) {
+            console.log('Skipping record - date already exists');
+            continue;
+          }
+
+          console.log('Adding valid record:', { date: isoDate, value });
+          pendingRecords.push({
+            date: isoDate,
+            value: Math.round(value * 100) / 100
+          });
+          existingDates.add(isoDate);
+          validRecords++;
+          status.recordsProcessed++;
+          
+          if (pendingRecords.length >= 50) {
+            await saveData('weight', pendingRecords, userId);
+            status.batchesSaved++;
+            pendingRecords = [];
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error processing weight record:', error);
+        throw error;
       }
-    } catch (error) {
-      console.error('Error processing weight record:', error);
-      throw error; // Re-throw to ensure we catch parsing errors
+    });
+
+    // Save any remaining records
+    if (pendingRecords.length > 0) {
+      console.log(`💾 Saving final batch of ${pendingRecords.length} weight records...`);
+      await saveData('weight', pendingRecords, userId);
+      status.batchesSaved++;
     }
-  });
 
-  if (pendingRecords.length > 0) {
-    await saveData('weight', pendingRecords, userId);
-    status.batchesSaved++;
+    const endTime = Date.now();
+    const totalTime = Math.round((endTime - startTime) / 1000);
+    
+    console.log(`
+🏁 Weight processing completed:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 Total records processed: ${recordsProcessed}
+✅ Valid weight records: ${validRecords}
+⏭️  Skipped records: ${skippedRecords}
+💾 Batches saved: ${status.batchesSaved}
+⏱️  Total time: ${totalTime} seconds
+📈 Average processing rate: ${Math.round(recordsProcessed / totalTime)} records/second
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`);
+
+  } catch (error) {
+    console.error(`❌ Fatal error during weight processing:`, error);
+    throw error;
   }
-  
-  console.log(`Weight processing completed: ${validRecords} valid records out of ${recordsProcessed} processed`);
 }
 
 // Similar functions for bodyFat, HRV, and VO2Max would go here...
