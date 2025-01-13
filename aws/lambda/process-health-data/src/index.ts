@@ -33,6 +33,7 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
   let recordsProcessed = 0;
   let validRecords = 0;
   let pendingRecords: any[] = [];
+  let lastProgressTime = Date.now();
   
   // Create a map of existing dates for quick lookup
   const existingRecords = await fetchAllHealthData('weight', userId);
@@ -41,6 +42,28 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
   await processS3XmlFile(xmlKey, async (recordXml) => {
     try {
       recordsProcessed++;
+      
+      // Log progress and cleanup every 10000 records
+      if (recordsProcessed % 10000 === 0) {
+        const now = Date.now();
+        console.log(`Progress update:
+          - Records processed: ${recordsProcessed}
+          - Valid weight records found: ${validRecords}
+          - Time since last update: ${Math.round((now - lastProgressTime) / 1000)}s
+        `);
+        lastProgressTime = now;
+        
+        // Force garbage collection if available
+        if (global.gc) {
+          global.gc();
+        }
+      }
+      
+      // Quick check for weight records before parsing
+      if (!recordXml.includes('HKQuantityTypeIdentifierBodyMass')) {
+        return;
+      }
+      
       console.log('Processing XML record:', recordXml);
       
       const data = parser.parse(recordXml);
