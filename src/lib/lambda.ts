@@ -6,7 +6,7 @@ const lambdaClient = new LambdaClient({
 
 export async function invokeLambda(jobId: string, userId: string, xmlKey: string): Promise<void> {
   const command = new InvokeCommand({
-    FunctionName: process.env.AWS_LAMBDA_FUNCTION_NAME || 'process-health-data',
+    FunctionName: 'process-health-data',
     InvocationType: 'Event', // Asynchronous invocation
     Payload: Buffer.from(JSON.stringify({ jobId, userId, xmlKey }))
   });
