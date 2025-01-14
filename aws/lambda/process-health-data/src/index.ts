@@ -404,7 +404,7 @@ async function processBodyFat(xmlKey: string, status: ProcessingStatus): Promise
           // Create body fat record with source information
           const bodyFatRecord: HealthRecord = {
             date: isoDate,
-            value: Math.round(value * 100) / 100, // Round to 2 decimal places
+            value: value * 100, // Convert decimal to percentage
             source: record.sourceName || 'unknown',
             unit: record.unit || '%'
           };
