@@ -1,4 +1,12 @@
-export type HealthDataType = 'heartRate' | 'weight' | 'bodyFat' | 'hrv' | 'vo2max';
+export type HealthDataType = 'weight' | 'bodyFat' | 'heartRate' | 'hrv' | 'vo2Max';
+
+export interface HealthRecord {
+  date: string;
+  value: number;
+  source?: string;
+  unit?: string;
+  metadata?: Record<string, string>;
+}
 
 export interface ProcessingStatus {
   recordsProcessed: number;
@@ -6,11 +14,6 @@ export interface ProcessingStatus {
   status: 'pending' | 'processing' | `processing ${HealthDataType}` | 'completed' | 'error';
   error?: string;
   userId?: string;
-}
-
-export interface HealthRecord {
-  date: string;
-  value: number;
 }
 
 export interface LambdaEvent {

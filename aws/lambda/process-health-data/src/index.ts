@@ -2,7 +2,7 @@ import { Handler, Context } from 'aws-lambda';
 import { XMLParser } from 'fast-xml-parser';
 import { processS3XmlFile, saveData, fetchAllHealthData } from './s3';
 import { updateJobProgress, updateJobStatus, cleanup } from './mongodb';
-import { LambdaEvent, ProcessingStatus, HealthDataType } from './types';
+import { LambdaEvent, ProcessingStatus, HealthDataType, HealthRecord } from './types';
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -41,6 +41,10 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
   let lastMemoryUsage = 0;
   let noNewRecordsCount = 0;
   let lastValidRecordCount = 0;
+  let withingsRecords = 0;
+  let eufyRecords = 0;
+  let otherSourceRecords = 0;
+  let firstRecordLogged = false;
   
   console.log('🔍 processWeight: Fetching existing records...');
   const existingRecords = await fetchAllHealthData('weight', userId);
@@ -72,6 +76,9 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
             Records processed: ${recordsProcessed}
             Valid records: ${validRecords}
             Skipped records: ${skippedRecords}
+            Withings records: ${withingsRecords}
+            Eufy records: ${eufyRecords}
+            Other source records: ${otherSourceRecords}
             Memory usage: ${currentMemory}MB (${memoryDelta > 0 ? '+' : ''}${memoryDelta}MB)
             Processing rate: ${Math.round(recordsProcessed / ((Date.now() - startTime) / 1000))} records/sec
           `);
@@ -79,8 +86,8 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
           // Check if we're finding new records
           if (validRecords === lastValidRecordCount) {
             noNewRecordsCount++;
-            if (noNewRecordsCount >= 10) {
-              console.log('⚠️ No new weight records found in last 10,000 records, stopping processing');
+            if (noNewRecordsCount >= 20) { // Increased threshold to account for sparse records
+              console.log('⚠️ No new weight records found in last 20,000 records, stopping processing');
               await saveBatch(); // Save any remaining records
               return false; // Stop processing
             }
@@ -122,6 +129,12 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
             continue;
           }
 
+          // Log the first record of each type we encounter
+          if (!firstRecordLogged) {
+            console.log('First weight record encountered:', JSON.stringify(record, null, 2));
+            firstRecordLogged = true;
+          }
+
           const value = parseFloat(record.value);
           if (isNaN(value)) {
             console.log('⚠️ processWeight: Invalid value');
@@ -140,10 +153,45 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
             continue;
           }
 
-          pendingRecords.push({
+          // Track record sources
+          if (record.sourceName) {
+            switch (record.sourceName.toLowerCase()) {
+              case 'withings':
+                withingsRecords++;
+                break;
+              case 'eufy life':
+                eufyRecords++;
+                break;
+              default:
+                otherSourceRecords++;
+                break;
+            }
+          }
+
+          // Create weight record with source information
+          const weightRecord: HealthRecord = {
             date: isoDate,
-            value: Math.round(value * 100) / 100
-          });
+            value: Math.round(value * 100) / 100,
+            source: record.sourceName || 'unknown',
+            unit: record.unit || 'lb'
+          };
+
+          // Add metadata if present
+          if (record.MetadataEntry) {
+            const metadata: Record<string, string> = {};
+            const entries = Array.isArray(record.MetadataEntry) 
+              ? record.MetadataEntry 
+              : [record.MetadataEntry];
+            
+            for (const entry of entries) {
+              if (entry.key && entry.value !== undefined) {
+                metadata[entry.key] = entry.value;
+              }
+            }
+            weightRecord.metadata = metadata;
+          }
+
+          pendingRecords.push(weightRecord);
           existingDates.add(isoDate);
           validRecords++;
           status.recordsProcessed++;
@@ -168,6 +216,9 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
       Total records processed: ${recordsProcessed}
       Valid records: ${validRecords}
       Skipped records: ${skippedRecords}
+      Withings records: ${withingsRecords}
+      Eufy records: ${eufyRecords}
+      Other source records: ${otherSourceRecords}
       Total time: ${Math.round((Date.now() - startTime) / 1000)}s
       Final memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
     `);
