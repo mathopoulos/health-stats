@@ -1,4 +1,4 @@
-export type HealthDataType = 'weight' | 'bodyFat' | 'heartRate' | 'hrv' | 'vo2Max';
+export type HealthDataType = 'weight' | 'bodyFat' | 'heartRate' | 'hrv' | 'vo2max';
 
 export interface HealthRecord {
   date: string;

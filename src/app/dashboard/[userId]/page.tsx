@@ -41,7 +41,7 @@ export default function UserDashboard() {
         setError(null);
 
         // Fetch all health data types
-        const types = ['heartRate', 'weight', 'bodyFat', 'hrv', 'vo2Max'];
+        const types = ['heartRate', 'weight', 'bodyFat', 'hrv', 'vo2max'];
         const responses = await Promise.all(
           types.map(type =>
             fetch(`/api/health-data?type=${type}&userId=${userId}`).then(res => res.json())
@@ -64,7 +64,7 @@ export default function UserDashboard() {
               case 'hrv':
                 setHrvData(response.data);
                 break;
-              case 'vo2Max':
+              case 'vo2max':
                 setVo2maxData(response.data);
                 break;
             }

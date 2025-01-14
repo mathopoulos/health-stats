@@ -275,7 +275,7 @@ export default function Home() {
         fetch(`/api/health-data?type=weight&userId=${userId}`),
         fetch(`/api/health-data?type=bodyFat&userId=${userId}`),
         fetch(`/api/health-data?type=hrv&userId=${userId}`),
-        fetch(`/api/health-data?type=vo2Max&userId=${userId}`),
+        fetch(`/api/health-data?type=vo2max&userId=${userId}`),
         fetch(`/api/blood-markers?userId=${userId}`)
       ]);
 

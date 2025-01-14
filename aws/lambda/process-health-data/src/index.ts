@@ -704,14 +704,14 @@ async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<
   let firstRecordLogged = false;
   
   console.log('🔍 processVO2Max: Fetching existing records...');
-  const existingRecords = await fetchAllHealthData('vo2Max', userId);
+  const existingRecords = await fetchAllHealthData('vo2max', userId);
   const existingDates = new Set(existingRecords.map(record => record.date));
   console.log(`📊 processVO2Max: Found ${existingRecords.length} existing records`);
   
   const saveBatch = async () => {
     if (pendingRecords.length > 0) {
       console.log(`💾 processVO2Max: Saving batch of ${pendingRecords.length} records...`);
-      await saveData('vo2Max', pendingRecords, userId);
+      await saveData('vo2max', pendingRecords, userId);
       status.batchesSaved++;
       pendingRecords = [];
     }
@@ -931,10 +931,10 @@ export const handler: Handler<LambdaEvent, any> = async (event: LambdaEvent, con
 
     // Process VO2 max data
     console.log('📊 Starting VO2 max data processing...');
-    status.status = 'processing vo2Max';
+    status.status = 'processing vo2max';
     await updateJobProgress(jobId, 3, 4, 'Processing VO2 max data...');
     await processVO2Max(xmlKey, status);
-    recordTypes.push('vo2Max');
+    recordTypes.push('vo2max');
     console.log('✅ VO2 max data processing complete');
 
     // Update final status
