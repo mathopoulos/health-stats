@@ -718,14 +718,14 @@ async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<
   let recordsWithVO2Max = 0;
   
   console.log('🔍 processVO2Max: Fetching existing records...');
-  const existingRecords = await fetchAllHealthData('vo2max', userId);
+  const existingRecords = await fetchAllHealthData('vo2Max', userId);
   const existingDates = new Set(existingRecords.map(record => record.date));
   console.log(`📊 processVO2Max: Found ${existingRecords.length} existing records`);
   
   const saveBatch = async () => {
     if (pendingRecords.length > 0) {
       console.log(`💾 processVO2Max: Saving batch of ${pendingRecords.length} records...`);
-      await saveData('vo2max', pendingRecords, userId);
+      await saveData('vo2Max', pendingRecords, userId);
       status.batchesSaved++;
       pendingRecords = [];
     }
@@ -766,25 +766,17 @@ async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<
             noNewRecordsCount = 0;
             lastValidRecordCount = validRecords;
           }
-          
-          // Force garbage collection if available
-          if (global.gc) {
-            try {
-              global.gc();
-            } catch (e) {
-              // Ignore GC errors
-            }
-          }
         }
 
-        // Debug log the XML content if it might contain VO2 max data
-        if (recordXml.includes('VO2Max')) {
+        // Log any record that might be a VO2 max record for debugging
+        if (recordXml.toLowerCase().includes('vo2max')) {
           console.log('🔍 Found potential VO2 max record:', recordXml);
           recordsWithVO2Max++;
         }
 
-        // Quick check for VO2 max records before parsing - exact match
-        if (!recordXml.includes('HKQuantityTypeIdentifierVO2Max')) {
+        // More flexible check for VO2 max records before parsing
+        const recordRegex = /<Record[^>]*type="[^"]*VO2[^"]*Max[^"]*"[^>]*>/i;
+        if (!recordRegex.test(recordXml)) {
           skippedRecords++;
           return;
         }
@@ -810,8 +802,8 @@ async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<
             console.log('Processing record of type:', record.type);
           }
 
-          // Exact type check
-          if (!record?.type || record.type !== 'HKQuantityTypeIdentifierVO2Max') {
+          // More flexible type check using regex
+          if (!record?.type || !/VO2[^"]*Max/i.test(record.type)) {
             skippedRecords++;
             continue;
           }

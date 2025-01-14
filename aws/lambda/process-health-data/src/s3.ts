@@ -125,8 +125,8 @@ export async function saveData(type: HealthDataType, newData: HealthRecord[], us
       index === self.findIndex((t) => t.date === item.date)
     );
 
-    // Save to S3
-    const key = `data/${userId}/${type}.json`;
+    // Save to S3 - Convert type to lowercase for file path
+    const key = `data/${userId}/${type.toLowerCase()}.json`;
     const command = new PutObjectCommand({
       Bucket: env.AWS_BUCKET_NAME,
       Key: key,
@@ -145,7 +145,8 @@ export async function fetchAllHealthData(type: HealthDataType, userId: string): 
   if (!env.AWS_BUCKET_NAME) throw new Error('AWS_BUCKET_NAME environment variable is not set');
 
   try {
-    const key = `data/${userId}/${type}.json`;
+    // Convert type to lowercase for file path
+    const key = `data/${userId}/${type.toLowerCase()}.json`;
     const command = new GetObjectCommand({
       Bucket: env.AWS_BUCKET_NAME,
       Key: key
