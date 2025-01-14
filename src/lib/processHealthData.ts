@@ -715,6 +715,7 @@ async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<
   let appleWatchRecords = 0;
   let otherSourceRecords = 0;
   let firstRecordLogged = false;
+  let recordsWithVO2Max = 0;
   
   console.log('🔍 processVO2Max: Fetching existing records...');
   const existingRecords = await fetchAllHealthData('vo2max', userId);
@@ -744,6 +745,7 @@ async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<
           
           console.log(`⏳ processVO2Max progress:
             Records processed: ${recordsProcessed}
+            Records containing VO2Max: ${recordsWithVO2Max}
             Valid records: ${validRecords}
             Skipped records: ${skippedRecords}
             Apple Watch records: ${appleWatchRecords}
@@ -775,16 +777,24 @@ async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<
           }
         }
 
+        // Debug log the XML content if it might contain VO2 max data
+        if (recordXml.includes('VO2Max')) {
+          console.log('🔍 Found potential VO2 max record:', recordXml);
+          recordsWithVO2Max++;
+        }
+
         // Quick check for VO2 max records before parsing - exact match
         if (!recordXml.includes('HKQuantityTypeIdentifierVO2Max')) {
           skippedRecords++;
           return;
         }
         
+        console.log('📝 Parsing VO2 max record...');
         const data = parser.parse(recordXml);
         
         if (!data?.HealthData?.Record) {
           console.log('⚠️ processVO2Max: No Record found in data');
+          console.log('Raw data:', JSON.stringify(data, null, 2));
           return;
         }
         
@@ -792,7 +802,14 @@ async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<
           ? data.HealthData.Record 
           : [data.HealthData.Record];
 
+        console.log(`Found ${records.length} records to process`);
+
         for (const record of records) {
+          // Log record type for debugging
+          if (record?.type) {
+            console.log('Processing record of type:', record.type);
+          }
+
           // Exact type check
           if (!record?.type || record.type !== 'HKQuantityTypeIdentifierVO2Max') {
             skippedRecords++;
@@ -856,6 +873,7 @@ async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<
             vo2MaxRecord.metadata = metadata;
           }
 
+          console.log('✅ Successfully created VO2 max record:', JSON.stringify(vo2MaxRecord, null, 2));
           pendingRecords.push(vo2MaxRecord);
           existingDates.add(isoDate);
           validRecords++;
@@ -879,6 +897,7 @@ async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<
     
     console.log(`✅ processVO2Max: Completed processing
       Total records processed: ${recordsProcessed}
+      Records containing VO2Max: ${recordsWithVO2Max}
       Valid records: ${validRecords}
       Skipped records: ${skippedRecords}
       Apple Watch records: ${appleWatchRecords}
