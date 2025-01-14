@@ -2,6 +2,14 @@ import { XMLParser } from 'fast-xml-parser/src/fxp';
 import { processS3XmlFile, generatePresignedUploadUrl, fetchAllHealthData, type HealthDataType } from './s3';
 import { updateProcessingJobProgress, updateProcessingJobStatus } from './processingJobs';
 
+interface HealthRecord {
+  date: string;
+  value: number;
+  source?: string;
+  unit?: string;
+  metadata?: Record<string, string>;
+}
+
 const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: "",
@@ -690,161 +698,199 @@ async function processHRV(xmlKey: string, status: ProcessingStatus): Promise<voi
 }
 
 async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<void> {
+  console.log('⚡️ processVO2Max: Starting execution');
+  
   const userId = status.userId;
   if (!userId) throw new Error('User ID is required');
-
-  console.log('Starting VO2 max data processing...');
+  
   let recordsProcessed = 0;
   let validRecords = 0;
+  let skippedRecords = 0;
   let pendingRecords: any[] = [];
   let lastProgressTime = Date.now();
+  let startTime = Date.now();
+  let lastMemoryUsage = 0;
+  let noNewRecordsCount = 0;
   let lastValidRecordCount = 0;
-  let unchangedIterations = 0;
-  let skippedRecords = 0;
-  let invalidTypeRecords = 0;
-  let invalidValueRecords = 0;
-  let invalidDateRecords = 0;
-  let duplicateRecords = 0;
-  let seenTypes = new Set<string>();
-  let foundFirstRecord = false;
-  let noRecordsThreshold = 2000000; // 2 million records
-  const PROGRESS_LOG_INTERVAL = 50000;
-  const BATCH_SAVE_SIZE = 50;
-
-  // Create a map of existing dates for quick lookup
-  console.log('Fetching existing VO2 max records...');
+  let appleWatchRecords = 0;
+  let otherSourceRecords = 0;
+  let firstRecordLogged = false;
+  
+  console.log('🔍 processVO2Max: Fetching existing records...');
   const existingRecords = await fetchAllHealthData('vo2max', userId);
   const existingDates = new Set(existingRecords.map(record => record.date));
-  console.log(`Found ${existingRecords.length} existing VO2 max records`);
+  console.log(`📊 processVO2Max: Found ${existingRecords.length} existing records`);
   
-  await processS3XmlFile(xmlKey, async (recordXml) => {
-    try {
-      recordsProcessed++;
-      
-      // Quick check for VO2 max records before parsing
-      if (!recordXml.includes('HKQuantityTypeIdentifierVO2Max')) {
-        invalidTypeRecords++;
-        return;
-      }
-
-      // Log progress less frequently
-      const now = Date.now();
-      if (recordsProcessed % PROGRESS_LOG_INTERVAL === 0 || now - lastProgressTime > 60000) { // 60 seconds
-        console.log(`Progress update:
-          - Records processed: ${recordsProcessed}
-          - Valid VO2 max records found: ${validRecords}
-          - Invalid type records: ${invalidTypeRecords}
-          - Invalid value records: ${invalidValueRecords}
-          - Invalid date records: ${invalidDateRecords}
-          - Duplicate records: ${duplicateRecords}
-          - Pending records: ${pendingRecords.length}
-          - Time since last update: ${Math.round((now - lastProgressTime) / 1000)}s
-          - Processing speed: ${Math.round(PROGRESS_LOG_INTERVAL / ((now - lastProgressTime) / 1000))} records/second
-          - Unique record types seen: ${Array.from(seenTypes).join(', ')}
-        `);
-        
-        // Check if we've processed too many records without finding any valid ones
-        if (!foundFirstRecord && recordsProcessed >= noRecordsThreshold) {
-          console.log(`No VO2 max records found after processing ${noRecordsThreshold} records, stopping processing`);
-          return false;
-        }
-        
-        lastProgressTime = now;
-      }
-
-      const data = parser.parse(recordXml);
-      if (!data?.HealthData?.Record) {
-        skippedRecords++;
-        return;
-      }
-      
-      const records = Array.isArray(data.HealthData.Record) 
-        ? data.HealthData.Record 
-        : [data.HealthData.Record];
-
-      for (const record of records) {
-        if (record?.type) {
-          seenTypes.add(record.type);
-        }
-
-        if (!record?.type || record.type !== 'HKQuantityTypeIdentifierVO2Max') {
-          continue;
-        }
-
-        // Found a valid VO2 max record
-        if (!foundFirstRecord) {
-          console.log('\nFound first VO2 max record:', JSON.stringify(record, null, 2), '\n');
-          foundFirstRecord = true;
-        }
-
-        const value = parseFloat(record.value);
-        if (isNaN(value)) {
-          invalidValueRecords++;
-          continue;
-        }
-
-        const date = new Date(record.startDate || record.creationDate || record.endDate);
-        if (!date || isNaN(date.getTime())) {
-          invalidDateRecords++;
-          continue;
-        }
-
-        const isoDate = date.toISOString();
-        
-        // Skip if we already have this date
-        if (existingDates.has(isoDate)) {
-          duplicateRecords++;
-          continue;
-        }
-
-        // Create a single record with the exact timestamp
-        const vo2maxRecord = {
-          date: isoDate,
-          value: Math.round(value * 100) / 100  // Round to 2 decimal places
-        };
-
-        pendingRecords.push(vo2maxRecord);
-        existingDates.add(isoDate);
-        validRecords++;
-        status.recordsProcessed++;
-        
-        // Save progress in larger batches
-        if (pendingRecords.length >= BATCH_SAVE_SIZE) {
-          console.log(`Saving batch of ${pendingRecords.length} VO2 max records...`);
-          await saveData('vo2max', pendingRecords, userId);
-          status.batchesSaved++;
-          pendingRecords = [];
-        }
-      }
-    } catch (error) {
-      console.error('Error processing VO2 max record:', error);
-      // Continue processing despite errors
+  const saveBatch = async () => {
+    if (pendingRecords.length > 0) {
+      console.log(`💾 processVO2Max: Saving batch of ${pendingRecords.length} records...`);
+      await saveData('vo2max', pendingRecords, userId);
+      status.batchesSaved++;
+      pendingRecords = [];
     }
-  });
+  };
+  
+  try {
+    console.log('📑 processVO2Max: Starting S3 file processing...');
+    await processS3XmlFile(xmlKey, async (recordXml) => {
+      try {
+        recordsProcessed++;
+        
+        // Log progress and check memory usage every 1000 records
+        if (recordsProcessed % 1000 === 0) {
+          const currentMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+          const memoryDelta = currentMemory - lastMemoryUsage;
+          lastMemoryUsage = currentMemory;
+          
+          console.log(`⏳ processVO2Max progress:
+            Records processed: ${recordsProcessed}
+            Valid records: ${validRecords}
+            Skipped records: ${skippedRecords}
+            Apple Watch records: ${appleWatchRecords}
+            Other source records: ${otherSourceRecords}
+            Memory usage: ${currentMemory}MB (${memoryDelta > 0 ? '+' : ''}${memoryDelta}MB)
+            Processing rate: ${Math.round(recordsProcessed / ((Date.now() - startTime) / 1000))} records/sec
+          `);
+          
+          // Check if we're finding new records
+          if (validRecords === lastValidRecordCount) {
+            noNewRecordsCount++;
+            if (noNewRecordsCount >= 20) {
+              console.log('⚠️ No new VO2 max records found in last 20,000 records, stopping processing');
+              await saveBatch(); // Save any remaining records
+              return false; // Stop processing
+            }
+          } else {
+            noNewRecordsCount = 0;
+            lastValidRecordCount = validRecords;
+          }
+          
+          // Force garbage collection if available
+          if (global.gc) {
+            try {
+              global.gc();
+            } catch (e) {
+              // Ignore GC errors
+            }
+          }
+        }
 
-  // Save any remaining records
-  if (pendingRecords.length > 0) {
-    console.log(`Saving final batch of ${pendingRecords.length} VO2 max records...`);
-    await saveData('vo2max', pendingRecords, userId);
-    status.batchesSaved++;
+        // Quick check for VO2 max records before parsing - exact match
+        if (!recordXml.includes('HKQuantityTypeIdentifierVO2Max')) {
+          skippedRecords++;
+          return;
+        }
+        
+        const data = parser.parse(recordXml);
+        
+        if (!data?.HealthData?.Record) {
+          console.log('⚠️ processVO2Max: No Record found in data');
+          return;
+        }
+        
+        const records = Array.isArray(data.HealthData.Record) 
+          ? data.HealthData.Record 
+          : [data.HealthData.Record];
+
+        for (const record of records) {
+          // Exact type check
+          if (!record?.type || record.type !== 'HKQuantityTypeIdentifierVO2Max') {
+            skippedRecords++;
+            continue;
+          }
+
+          // Log the first record of each type we encounter
+          if (!firstRecordLogged) {
+            console.log('First VO2 max record encountered:', JSON.stringify(record, null, 2));
+            firstRecordLogged = true;
+          }
+
+          const value = parseFloat(record.value);
+          if (isNaN(value)) {
+            console.log('⚠️ processVO2Max: Invalid value:', value);
+            continue;
+          }
+
+          const date = new Date(record.startDate || record.creationDate || record.endDate);
+          if (!date || isNaN(date.getTime())) {
+            console.log('⚠️ processVO2Max: Invalid date');
+            continue;
+          }
+
+          const isoDate = date.toISOString();
+          if (existingDates.has(isoDate)) {
+            skippedRecords++;
+            continue;
+          }
+
+          // Track record sources
+          if (record.sourceName) {
+            if (record.sourceName.toLowerCase().includes('apple watch')) {
+              appleWatchRecords++;
+            } else {
+              otherSourceRecords++;
+            }
+          }
+
+          // Create VO2 max record with source information
+          const vo2MaxRecord: HealthRecord = {
+            date: isoDate,
+            value: Math.round(value * 10) / 10, // Round to 1 decimal place
+            source: record.sourceName || 'unknown',
+            unit: record.unit || 'mL/min·kg' // Use exact unit from Apple Health
+          };
+
+          // Add metadata if present
+          if (record.MetadataEntry) {
+            const metadata: Record<string, string> = {};
+            const entries = Array.isArray(record.MetadataEntry) 
+              ? record.MetadataEntry 
+              : [record.MetadataEntry];
+            
+            for (const entry of entries) {
+              if (entry.key && entry.value !== undefined) {
+                metadata[entry.key] = entry.value;
+              }
+            }
+            
+            vo2MaxRecord.metadata = metadata;
+          }
+
+          pendingRecords.push(vo2MaxRecord);
+          existingDates.add(isoDate);
+          validRecords++;
+          status.recordsProcessed++;
+          
+          // Save batch when it reaches the threshold
+          if (pendingRecords.length >= 50) {
+            await saveBatch();
+          }
+        }
+      } catch (error) {
+        console.error('❌ processVO2Max: Error processing record:', error);
+        // Log the problematic record for debugging
+        console.error('Problematic record:', recordXml);
+        // Continue processing despite errors
+      }
+    });
+    
+    // Save any remaining records
+    await saveBatch();
+    
+    console.log(`✅ processVO2Max: Completed processing
+      Total records processed: ${recordsProcessed}
+      Valid records: ${validRecords}
+      Skipped records: ${skippedRecords}
+      Apple Watch records: ${appleWatchRecords}
+      Other source records: ${otherSourceRecords}
+      Total time: ${Math.round((Date.now() - startTime) / 1000)}s
+      Final memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
+    `);
+    
+  } catch (error) {
+    console.error('❌ processVO2Max: Fatal error:', error);
+    throw error;
   }
-
-  if (!foundFirstRecord) {
-    console.log('Warning: No VO2 max records were found in the entire file');
-  }
-
-  console.log(`VO2 max processing complete:
-    - Total records processed: ${recordsProcessed}
-    - Valid VO2 max records found: ${validRecords}
-    - Invalid type records: ${invalidTypeRecords}
-    - Invalid value records: ${invalidValueRecords}
-    - Invalid date records: ${invalidDateRecords}
-    - Duplicate records: ${duplicateRecords}
-    - Skipped records: ${skippedRecords}
-    - Total batches saved: ${status.batchesSaved}
-    - Records unchanged after: ${unchangedIterations * 10000} records
-    - All record types seen: ${Array.from(seenTypes).join(', ')}
-  `);
 }
 
 export async function processHealthData(xmlKey: string, userId: string, jobId: string): Promise<{ recordsProcessed: number; recordTypes: string[] }> {
