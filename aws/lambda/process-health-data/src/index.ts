@@ -229,6 +229,635 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
   }
 }
 
+async function processBodyFat(xmlKey: string, status: ProcessingStatus): Promise<void> {
+  console.log('⚡️ processBodyFat: Starting execution');
+  
+  const userId = status.userId;
+  if (!userId) throw new Error('User ID is required');
+  
+  let recordsProcessed = 0;
+  let validRecords = 0;
+  let skippedRecords = 0;
+  let pendingRecords: any[] = [];
+  let lastProgressTime = Date.now();
+  let startTime = Date.now();
+  let lastMemoryUsage = 0;
+  let noNewRecordsCount = 0;
+  let lastValidRecordCount = 0;
+  let withingsRecords = 0;
+  let otherSourceRecords = 0;
+  let firstRecordLogged = false;
+  
+  console.log('🔍 processBodyFat: Fetching existing records...');
+  const existingRecords = await fetchAllHealthData('bodyFat', userId);
+  const existingDates = new Set(existingRecords.map(record => record.date));
+  console.log(`📊 processBodyFat: Found ${existingRecords.length} existing records`);
+  
+  const saveBatch = async () => {
+    if (pendingRecords.length > 0) {
+      console.log(`💾 processBodyFat: Saving batch of ${pendingRecords.length} records...`);
+      await saveData('bodyFat', pendingRecords, userId);
+      status.batchesSaved++;
+      pendingRecords = [];
+    }
+  };
+  
+  try {
+    console.log('📑 processBodyFat: Starting S3 file processing...');
+    await processS3XmlFile(xmlKey, async (recordXml) => {
+      try {
+        recordsProcessed++;
+        
+        // Log progress and check memory usage every 1000 records
+        if (recordsProcessed % 1000 === 0) {
+          const currentMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+          const memoryDelta = currentMemory - lastMemoryUsage;
+          lastMemoryUsage = currentMemory;
+          
+          console.log(`⏳ processBodyFat progress:
+            Records processed: ${recordsProcessed}
+            Valid records: ${validRecords}
+            Skipped records: ${skippedRecords}
+            Withings records: ${withingsRecords}
+            Other source records: ${otherSourceRecords}
+            Memory usage: ${currentMemory}MB (${memoryDelta > 0 ? '+' : ''}${memoryDelta}MB)
+            Processing rate: ${Math.round(recordsProcessed / ((Date.now() - startTime) / 1000))} records/sec
+          `);
+          
+          // Check if we're finding new records
+          if (validRecords === lastValidRecordCount) {
+            noNewRecordsCount++;
+            if (noNewRecordsCount >= 20) { // Increased threshold to account for sparse records
+              console.log('⚠️ No new body fat records found in last 20,000 records, stopping processing');
+              await saveBatch(); // Save any remaining records
+              return false; // Stop processing
+            }
+          } else {
+            noNewRecordsCount = 0;
+            lastValidRecordCount = validRecords;
+          }
+          
+          // Force garbage collection if available
+          if (global.gc) {
+            try {
+              global.gc();
+            } catch (e) {
+              // Ignore GC errors
+            }
+          }
+        }
+        
+        // Quick check for body fat records before parsing
+        if (!recordXml.includes('HKQuantityTypeIdentifierBodyFatPercentage')) {
+          skippedRecords++;
+          return;
+        }
+        
+        const data = parser.parse(recordXml);
+        
+        if (!data?.HealthData?.Record) {
+          console.log('⚠️ processBodyFat: No Record found in data');
+          return;
+        }
+        
+        const records = Array.isArray(data.HealthData.Record) 
+          ? data.HealthData.Record 
+          : [data.HealthData.Record];
+
+        for (const record of records) {
+          if (!record?.type || record.type !== 'HKQuantityTypeIdentifierBodyFatPercentage') {
+            skippedRecords++;
+            continue;
+          }
+
+          // Log the first record of each type we encounter
+          if (!firstRecordLogged) {
+            console.log('First body fat record encountered:', JSON.stringify(record, null, 2));
+            firstRecordLogged = true;
+          }
+
+          const value = parseFloat(record.value);
+          if (isNaN(value)) {
+            console.log('⚠️ processBodyFat: Invalid value');
+            continue;
+          }
+
+          const date = new Date(record.startDate || record.creationDate || record.endDate);
+          if (!date || isNaN(date.getTime())) {
+            console.log('⚠️ processBodyFat: Invalid date');
+            continue;
+          }
+
+          const isoDate = date.toISOString();
+          if (existingDates.has(isoDate)) {
+            skippedRecords++;
+            continue;
+          }
+
+          // Track record sources
+          if (record.sourceName) {
+            switch (record.sourceName.toLowerCase()) {
+              case 'withings':
+                withingsRecords++;
+                break;
+              default:
+                otherSourceRecords++;
+                break;
+            }
+          }
+
+          // Create body fat record with source information
+          const bodyFatRecord: HealthRecord = {
+            date: isoDate,
+            value: Math.round(value * 100) / 100, // Round to 2 decimal places
+            source: record.sourceName || 'unknown',
+            unit: record.unit || '%'
+          };
+
+          // Add metadata if present
+          if (record.MetadataEntry) {
+            const metadata: Record<string, string> = {};
+            const entries = Array.isArray(record.MetadataEntry) 
+              ? record.MetadataEntry 
+              : [record.MetadataEntry];
+            
+            for (const entry of entries) {
+              if (entry.key && entry.value !== undefined) {
+                metadata[entry.key] = entry.value;
+              }
+            }
+            bodyFatRecord.metadata = metadata;
+          }
+
+          pendingRecords.push(bodyFatRecord);
+          existingDates.add(isoDate);
+          validRecords++;
+          status.recordsProcessed++;
+          
+          // Save batch when it reaches the threshold
+          if (pendingRecords.length >= 50) {
+            await saveBatch();
+          }
+        }
+      } catch (error) {
+        console.error('❌ processBodyFat: Error processing record:', error);
+        // Log the problematic record for debugging
+        console.error('Problematic record:', recordXml);
+        // Continue processing despite errors
+      }
+    });
+    
+    // Save any remaining records
+    await saveBatch();
+    
+    console.log(`✅ processBodyFat: Completed processing
+      Total records processed: ${recordsProcessed}
+      Valid records: ${validRecords}
+      Skipped records: ${skippedRecords}
+      Withings records: ${withingsRecords}
+      Other source records: ${otherSourceRecords}
+      Total time: ${Math.round((Date.now() - startTime) / 1000)}s
+      Final memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
+    `);
+    
+  } catch (error) {
+    console.error('❌ processBodyFat: Fatal error:', error);
+    throw error;
+  }
+}
+
+async function processHeartRate(xmlKey: string, status: ProcessingStatus): Promise<void> {
+  console.log('⚡️ processHeartRate: Starting execution');
+  
+  const userId = status.userId;
+  if (!userId) throw new Error('User ID is required');
+  
+  let recordsProcessed = 0;
+  let validRecords = 0;
+  let skippedRecords = 0;
+  let pendingRecords: any[] = [];
+  let lastProgressTime = Date.now();
+  let startTime = Date.now();
+  let lastMemoryUsage = 0;
+  let noNewRecordsCount = 0;
+  let lastValidRecordCount = 0;
+  let appleWatchRecords = 0;
+  let withingsRecords = 0;
+  let otherSourceRecords = 0;
+  let firstRecordLogged = false;
+  
+  console.log('🔍 processHeartRate: Fetching existing records...');
+  const existingRecords = await fetchAllHealthData('heartRate', userId);
+  const existingDates = new Set(existingRecords.map(record => record.date));
+  console.log(`📊 processHeartRate: Found ${existingRecords.length} existing records`);
+  
+  const saveBatch = async () => {
+    if (pendingRecords.length > 0) {
+      console.log(`💾 processHeartRate: Saving batch of ${pendingRecords.length} records...`);
+      await saveData('heartRate', pendingRecords, userId);
+      status.batchesSaved++;
+      pendingRecords = [];
+    }
+  };
+  
+  try {
+    console.log('📑 processHeartRate: Starting S3 file processing...');
+    await processS3XmlFile(xmlKey, async (recordXml) => {
+      try {
+        recordsProcessed++;
+        
+        // Log progress and check memory usage every 5000 records (increased due to higher frequency)
+        if (recordsProcessed % 5000 === 0) {
+          const currentMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+          const memoryDelta = currentMemory - lastMemoryUsage;
+          lastMemoryUsage = currentMemory;
+          
+          console.log(`⏳ processHeartRate progress:
+            Records processed: ${recordsProcessed}
+            Valid records: ${validRecords}
+            Skipped records: ${skippedRecords}
+            Apple Watch records: ${appleWatchRecords}
+            Withings records: ${withingsRecords}
+            Other source records: ${otherSourceRecords}
+            Memory usage: ${currentMemory}MB (${memoryDelta > 0 ? '+' : ''}${memoryDelta}MB)
+            Processing rate: ${Math.round(recordsProcessed / ((Date.now() - startTime) / 1000))} records/sec
+          `);
+          
+          // Check if we're finding new records
+          if (validRecords === lastValidRecordCount) {
+            noNewRecordsCount++;
+            if (noNewRecordsCount >= 40) { // Increased threshold due to higher record frequency
+              console.log('⚠️ No new heart rate records found in last 200,000 records, stopping processing');
+              await saveBatch(); // Save any remaining records
+              return false; // Stop processing
+            }
+          } else {
+            noNewRecordsCount = 0;
+            lastValidRecordCount = validRecords;
+          }
+          
+          // Force garbage collection if available
+          if (global.gc) {
+            try {
+              global.gc();
+            } catch (e) {
+              // Ignore GC errors
+            }
+          }
+        }
+        
+        // Quick check for heart rate records before parsing
+        if (!recordXml.includes('HKQuantityTypeIdentifierHeartRate')) {
+          skippedRecords++;
+          return;
+        }
+        
+        const data = parser.parse(recordXml);
+        
+        if (!data?.HealthData?.Record) {
+          console.log('⚠️ processHeartRate: No Record found in data');
+          return;
+        }
+        
+        const records = Array.isArray(data.HealthData.Record) 
+          ? data.HealthData.Record 
+          : [data.HealthData.Record];
+
+        for (const record of records) {
+          if (!record?.type || record.type !== 'HKQuantityTypeIdentifierHeartRate') {
+            skippedRecords++;
+            continue;
+          }
+
+          // Log the first record of each type we encounter
+          if (!firstRecordLogged) {
+            console.log('First heart rate record encountered:', JSON.stringify(record, null, 2));
+            firstRecordLogged = true;
+          }
+
+          const value = parseFloat(record.value);
+          if (isNaN(value) || value < 30 || value > 220) { // Basic heart rate range validation
+            console.log('⚠️ processHeartRate: Invalid value or out of normal range:', value);
+            continue;
+          }
+
+          const date = new Date(record.startDate || record.creationDate || record.endDate);
+          if (!date || isNaN(date.getTime())) {
+            console.log('⚠️ processHeartRate: Invalid date');
+            continue;
+          }
+
+          const isoDate = date.toISOString();
+          if (existingDates.has(isoDate)) {
+            skippedRecords++;
+            continue;
+          }
+
+          // Track record sources
+          if (record.sourceName) {
+            switch (record.sourceName.toLowerCase()) {
+              case 'apple watch':
+                appleWatchRecords++;
+                break;
+              case 'withings':
+                withingsRecords++;
+                break;
+              default:
+                otherSourceRecords++;
+                break;
+            }
+          }
+
+          // Create heart rate record with source information
+          const heartRateRecord: HealthRecord = {
+            date: isoDate,
+            value: Math.round(value), // Round to nearest BPM
+            source: record.sourceName || 'unknown',
+            unit: record.unit || 'count/min'
+          };
+
+          // Add metadata if present
+          if (record.MetadataEntry) {
+            const metadata: Record<string, string> = {};
+            const entries = Array.isArray(record.MetadataEntry) 
+              ? record.MetadataEntry 
+              : [record.MetadataEntry];
+            
+            for (const entry of entries) {
+              if (entry.key && entry.value !== undefined) {
+                metadata[entry.key] = entry.value;
+              }
+            }
+            
+            // Add workout context if available
+            if (metadata['HKWasUserEntered'] === '0' && metadata['HKContextType']) {
+              metadata['context'] = metadata['HKContextType'];
+            }
+            
+            heartRateRecord.metadata = metadata;
+          }
+
+          pendingRecords.push(heartRateRecord);
+          existingDates.add(isoDate);
+          validRecords++;
+          status.recordsProcessed++;
+          
+          // Save batch when it reaches the threshold (increased for heart rate)
+          if (pendingRecords.length >= 100) {
+            await saveBatch();
+          }
+        }
+      } catch (error) {
+        console.error('❌ processHeartRate: Error processing record:', error);
+        // Log the problematic record for debugging
+        console.error('Problematic record:', recordXml);
+        // Continue processing despite errors
+      }
+    });
+    
+    // Save any remaining records
+    await saveBatch();
+    
+    console.log(`✅ processHeartRate: Completed processing
+      Total records processed: ${recordsProcessed}
+      Valid records: ${validRecords}
+      Skipped records: ${skippedRecords}
+      Apple Watch records: ${appleWatchRecords}
+      Withings records: ${withingsRecords}
+      Other source records: ${otherSourceRecords}
+      Total time: ${Math.round((Date.now() - startTime) / 1000)}s
+      Final memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
+    `);
+    
+  } catch (error) {
+    console.error('❌ processHeartRate: Fatal error:', error);
+    throw error;
+  }
+}
+
+async function processHRV(xmlKey: string, status: ProcessingStatus): Promise<void> {
+  console.log('⚡️ processHRV: Starting execution');
+  
+  const userId = status.userId;
+  if (!userId) throw new Error('User ID is required');
+  
+  let recordsProcessed = 0;
+  let validRecords = 0;
+  let skippedRecords = 0;
+  let pendingRecords: any[] = [];
+  let lastProgressTime = Date.now();
+  let startTime = Date.now();
+  let lastMemoryUsage = 0;
+  let noNewRecordsCount = 0;
+  let lastValidRecordCount = 0;
+  let appleWatchRecords = 0;
+  let otherSourceRecords = 0;
+  let firstRecordLogged = false;
+  let sleepRecords = 0;
+  let wakeRecords = 0;
+  let workoutRecords = 0;
+  
+  console.log('🔍 processHRV: Fetching existing records...');
+  const existingRecords = await fetchAllHealthData('hrv', userId);
+  const existingDates = new Set(existingRecords.map(record => record.date));
+  console.log(`📊 processHRV: Found ${existingRecords.length} existing records`);
+  
+  const saveBatch = async () => {
+    if (pendingRecords.length > 0) {
+      console.log(`💾 processHRV: Saving batch of ${pendingRecords.length} records...`);
+      await saveData('hrv', pendingRecords, userId);
+      status.batchesSaved++;
+      pendingRecords = [];
+    }
+  };
+  
+  try {
+    console.log('📑 processHRV: Starting S3 file processing...');
+    await processS3XmlFile(xmlKey, async (recordXml) => {
+      try {
+        recordsProcessed++;
+        
+        // Log progress and check memory usage every 2000 records
+        if (recordsProcessed % 2000 === 0) {
+          const currentMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+          const memoryDelta = currentMemory - lastMemoryUsage;
+          lastMemoryUsage = currentMemory;
+          
+          console.log(`⏳ processHRV progress:
+            Records processed: ${recordsProcessed}
+            Valid records: ${validRecords}
+            Skipped records: ${skippedRecords}
+            Apple Watch records: ${appleWatchRecords}
+            Other source records: ${otherSourceRecords}
+            Sleep context: ${sleepRecords}
+            Wake context: ${wakeRecords}
+            Workout context: ${workoutRecords}
+            Memory usage: ${currentMemory}MB (${memoryDelta > 0 ? '+' : ''}${memoryDelta}MB)
+            Processing rate: ${Math.round(recordsProcessed / ((Date.now() - startTime) / 1000))} records/sec
+          `);
+          
+          // Check if we're finding new records
+          if (validRecords === lastValidRecordCount) {
+            noNewRecordsCount++;
+            if (noNewRecordsCount >= 30) { // Adjusted threshold for HRV data
+              console.log('⚠️ No new HRV records found in last 60,000 records, stopping processing');
+              await saveBatch(); // Save any remaining records
+              return false; // Stop processing
+            }
+          } else {
+            noNewRecordsCount = 0;
+            lastValidRecordCount = validRecords;
+          }
+          
+          // Force garbage collection if available
+          if (global.gc) {
+            try {
+              global.gc();
+            } catch (e) {
+              // Ignore GC errors
+            }
+          }
+        }
+        
+        // Quick check for HRV records before parsing
+        if (!recordXml.includes('HKQuantityTypeIdentifierHeartRateVariabilitySDNN')) {
+          skippedRecords++;
+          return;
+        }
+        
+        const data = parser.parse(recordXml);
+        
+        if (!data?.HealthData?.Record) {
+          console.log('⚠️ processHRV: No Record found in data');
+          return;
+        }
+        
+        const records = Array.isArray(data.HealthData.Record) 
+          ? data.HealthData.Record 
+          : [data.HealthData.Record];
+
+        for (const record of records) {
+          if (!record?.type || record.type !== 'HKQuantityTypeIdentifierHeartRateVariabilitySDNN') {
+            skippedRecords++;
+            continue;
+          }
+
+          // Log the first record of each type we encounter
+          if (!firstRecordLogged) {
+            console.log('First HRV record encountered:', JSON.stringify(record, null, 2));
+            firstRecordLogged = true;
+          }
+
+          const value = parseFloat(record.value);
+          if (isNaN(value) || value < 0 || value > 500) { // Basic HRV range validation
+            console.log('⚠️ processHRV: Invalid value or out of normal range:', value);
+            continue;
+          }
+
+          const date = new Date(record.startDate || record.creationDate || record.endDate);
+          if (!date || isNaN(date.getTime())) {
+            console.log('⚠️ processHRV: Invalid date');
+            continue;
+          }
+
+          const isoDate = date.toISOString();
+          if (existingDates.has(isoDate)) {
+            skippedRecords++;
+            continue;
+          }
+
+          // Track record sources
+          if (record.sourceName) {
+            switch (record.sourceName.toLowerCase()) {
+              case 'apple watch':
+                appleWatchRecords++;
+                break;
+              default:
+                otherSourceRecords++;
+                break;
+            }
+          }
+
+          // Create HRV record with source information
+          const hrvRecord: HealthRecord = {
+            date: isoDate,
+            value: Math.round(value * 100) / 100, // Round to 2 decimal places
+            source: record.sourceName || 'unknown',
+            unit: record.unit || 'ms'
+          };
+
+          // Add metadata if present
+          if (record.MetadataEntry) {
+            const metadata: Record<string, string> = {};
+            const entries = Array.isArray(record.MetadataEntry) 
+              ? record.MetadataEntry 
+              : [record.MetadataEntry];
+            
+            for (const entry of entries) {
+              if (entry.key && entry.value !== undefined) {
+                metadata[entry.key] = entry.value;
+              }
+            }
+            
+            // Track context-specific records
+            if (metadata['HKContextType']) {
+              switch (metadata['HKContextType']) {
+                case 'HKContextTypeSleep':
+                  sleepRecords++;
+                  break;
+                case 'HKContextTypeWake':
+                  wakeRecords++;
+                  break;
+                case 'HKContextTypeWorkout':
+                  workoutRecords++;
+                  break;
+              }
+              metadata['context'] = metadata['HKContextType'];
+            }
+            
+            hrvRecord.metadata = metadata;
+          }
+
+          pendingRecords.push(hrvRecord);
+          existingDates.add(isoDate);
+          validRecords++;
+          status.recordsProcessed++;
+          
+          // Save batch when it reaches the threshold
+          if (pendingRecords.length >= 50) {
+            await saveBatch();
+          }
+        }
+      } catch (error) {
+        console.error('❌ processHRV: Error processing record:', error);
+        // Log the problematic record for debugging
+        console.error('Problematic record:', recordXml);
+        // Continue processing despite errors
+      }
+    });
+    
+    // Save any remaining records
+    await saveBatch();
+    
+    console.log(`✅ processHRV: Completed processing
+      Total records processed: ${recordsProcessed}
+      Valid records: ${validRecords}
+      Skipped records: ${skippedRecords}
+      Apple Watch records: ${appleWatchRecords}
+      Other source records: ${otherSourceRecords}
+      Sleep context: ${sleepRecords}
+      Wake context: ${wakeRecords}
+      Workout context: ${workoutRecords}
+      Total time: ${Math.round((Date.now() - startTime) / 1000)}s
+      Final memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
+    `);
+    
+  } catch (error) {
+    console.error('❌ processHRV: Fatal error:', error);
+    throw error;
+  }
+}
+
 // Similar functions for bodyFat, HRV, and VO2Max would go here...
 
 export const handler: Handler<LambdaEvent, any> = async (event: LambdaEvent, context: Context) => {
@@ -254,17 +883,37 @@ export const handler: Handler<LambdaEvent, any> = async (event: LambdaEvent, con
 
     const recordTypes: string[] = [];
 
-    // Process weight
+    // Process weight data
     console.log('📊 Starting weight data processing...');
     status.status = 'processing weight';
     await updateJobProgress(jobId, 0, 4, 'Processing weight data...');
-    
-    console.log('⏳ Before processWeight call');
     await processWeight(xmlKey, status);
-    console.log('✅ After processWeight call');
-    
     recordTypes.push('weight');
     console.log('✅ Weight data processing complete');
+
+    // Process body fat data
+    console.log('📊 Starting body fat data processing...');
+    status.status = 'processing bodyFat';
+    await updateJobProgress(jobId, 1, 4, 'Processing body fat data...');
+    await processBodyFat(xmlKey, status);
+    recordTypes.push('bodyFat');
+    console.log('✅ Body fat data processing complete');
+
+    // Process heart rate data
+    console.log('📊 Starting heart rate data processing...');
+    status.status = 'processing heartRate';
+    await updateJobProgress(jobId, 2, 4, 'Processing heart rate data...');
+    await processHeartRate(xmlKey, status);
+    recordTypes.push('heartRate');
+    console.log('✅ Heart rate data processing complete');
+
+    // Process HRV data
+    console.log('📊 Starting HRV data processing...');
+    status.status = 'processing hrv';
+    await updateJobProgress(jobId, 3, 4, 'Processing HRV data...');
+    await processHRV(xmlKey, status);
+    recordTypes.push('hrv');
+    console.log('✅ HRV data processing complete');
 
     // Update final status
     console.log('📝 Updating final job status...');
@@ -280,6 +929,7 @@ export const handler: Handler<LambdaEvent, any> = async (event: LambdaEvent, con
 🏁 Lambda function execution completed:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📈 Total records processed: ${status.recordsProcessed}
+💾 Total batches saved: ${status.batchesSaved}
 ⏱️  Total execution time: ${executionTime.toFixed(2)} seconds
 🔄 Record types processed: ${recordTypes.join(', ')}
 🧹 Starting cleanup...
@@ -296,6 +946,7 @@ export const handler: Handler<LambdaEvent, any> = async (event: LambdaEvent, con
       body: JSON.stringify({
         success: true,
         recordsProcessed: status.recordsProcessed,
+        batchesSaved: status.batchesSaved,
         recordTypes,
         executionTime: executionTime.toFixed(2)
       })
