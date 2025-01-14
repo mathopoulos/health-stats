@@ -1,77 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { getProcessingJob } from '@/lib/processingJobs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+    const searchParams = request.nextUrl.searchParams;
+    const jobId = searchParams.get('id');
+    
+    if (!jobId) {
+      return NextResponse.json({ error: 'No job ID provided' }, { status: 400 });
     }
 
-    const processingId = request.nextUrl.searchParams.get('id');
-    if (!processingId) {
-      return NextResponse.json(
-        { success: false, error: 'Processing ID is required' },
-        { status: 400 }
-      );
-    }
-
-    const job = await getProcessingJob(processingId);
+    const job = await getProcessingJob(jobId);
+    
     if (!job) {
-      return NextResponse.json(
-        { success: false, error: 'Processing status not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
-    // Verify the user owns this processing task
-    if (job.userId !== session.user.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+    // Check if job is completed or errored
+    if (job.status === 'completed') {
+      return NextResponse.json({
+        completed: true,
+        message: 'Processing completed successfully',
+        results: job.result || []
+      });
     }
 
-    // Convert the MongoDB job status to the format expected by the frontend
+    if (job.status === 'failed') {
+      return NextResponse.json({
+        completed: false,
+        error: job.error || 'An unknown error occurred'
+      });
+    }
+
+    // Job is still processing
+    let progress = '';
+    if (job.progress) {
+      const { current, total, message } = job.progress;
+      progress = `${message || 'Processing'} (${current}/${total})`;
+    }
+
     return NextResponse.json({
-      success: true,
-      status: job.status,
-      completed: job.status === 'completed',
-      error: job.status === 'failed' ? job.error : undefined,
-      progress: job.progress,
-      results: job.result,
-      startedAt: job.startedAt,
-      completedAt: job.completedAt,
-      message: job.progress?.message || getStatusMessage(job.status)
+      completed: false,
+      progress,
+      status: job.status
     });
   } catch (error) {
-    console.error('Error checking processing status:', error);
+    console.error('Error checking job status:', error);
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
+      { error: error instanceof Error ? error.message : 'Failed to check job status' },
       { status: 500 }
     );
-  }
-}
-
-function getStatusMessage(status: string): string {
-  switch (status) {
-    case 'pending':
-      return 'Processing queued...';
-    case 'processing':
-      return 'Processing in progress...';
-    case 'completed':
-      return 'Processing completed successfully';
-    case 'failed':
-      return 'Processing failed';
-    default:
-      return 'Unknown status';
   }
 } 

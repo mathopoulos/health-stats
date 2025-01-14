@@ -19,7 +19,7 @@ interface ProcessingResult {
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function triggerProcessing(): Promise<ProcessingResult> {
+async function triggerProcessing(updateStatus: (status: string) => void): Promise<ProcessingResult> {
   try {
     // Start the processing
     const startResponse = await fetch('/api/process', {
@@ -41,12 +41,14 @@ async function triggerProcessing(): Promise<ProcessingResult> {
     // Get the processing ID from the response
     const { processingId } = await startResponse.json();
     
-    // Poll for status every 2 seconds
+    // Poll for status with exponential backoff
     let attempts = 0;
-    const maxAttempts = 30; // 1 minute total polling time
+    const maxAttempts = 60; // 15 minutes total polling time with exponential backoff
+    let backoffMs = 2000; // Start with 2 seconds
+    const maxBackoffMs = 30000; // Max 30 seconds between polls
     
     while (attempts < maxAttempts) {
-      await sleep(2000); // Wait 2 seconds between checks
+      await sleep(backoffMs); // Wait with exponential backoff
       
       try {
         const statusResponse = await fetch(`/api/process/status?id=${processingId}`);
@@ -66,8 +68,14 @@ async function triggerProcessing(): Promise<ProcessingResult> {
           throw new Error(status.error);
         }
         
-        // If still processing, continue polling
+        // If still processing, continue polling with exponential backoff
         attempts++;
+        backoffMs = Math.min(backoffMs * 1.5, maxBackoffMs); // Increase backoff time, but cap at maxBackoffMs
+        
+        // Update processing status with progress if available
+        if (status.progress) {
+          updateStatus(`Processing... ${status.progress}`);
+        }
       } catch (error) {
         console.error('Error checking status:', error);
         throw error;
@@ -77,7 +85,7 @@ async function triggerProcessing(): Promise<ProcessingResult> {
     // If we reach here, processing is taking too long but might still be running
     return {
       success: true,
-      message: 'Processing started successfully. Please check your dashboard in a few minutes to see your processed data.',
+      message: 'Processing is taking longer than expected. Please check your dashboard in a few minutes to see your processed data.',
       results: []
     };
     
@@ -206,7 +214,7 @@ export default function UploadPage() {
     setIsProcessing(true);
     setProcessingStatus('Starting processing...');
     try {
-      const result = await triggerProcessing();
+      const result = await triggerProcessing(setProcessingStatus);
       if (result.success) {
         setProcessingStatus(
           result.message + (result.results.length > 0 ? ` ${result.results.map(r => r.message).join(', ')}` : '')

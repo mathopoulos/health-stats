@@ -45,18 +45,39 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
   let eufyRecords = 0;
   let otherSourceRecords = 0;
   let firstRecordLogged = false;
+  let duplicateRecords = 0;
+  let invalidDateRecords = 0;
+  let invalidValueRecords = 0;
+  let datesByMonth: Record<string, number> = {};
   
   console.log('🔍 processWeight: Fetching existing records...');
   const existingRecords = await fetchAllHealthData('weight', userId);
   const existingDates = new Set(existingRecords.map(record => record.date));
   console.log(`📊 processWeight: Found ${existingRecords.length} existing records`);
   
+  // Log distribution of existing records by month
+  existingRecords.forEach(record => {
+    const month = record.date.substring(0, 7); // YYYY-MM format
+    datesByMonth[month] = (datesByMonth[month] || 0) + 1;
+  });
+  console.log('📅 Existing records by month:', datesByMonth);
+  
   const saveBatch = async () => {
     if (pendingRecords.length > 0) {
       console.log(`💾 processWeight: Saving batch of ${pendingRecords.length} records...`);
-      await saveData('weight', pendingRecords, userId);
-      status.batchesSaved++;
-      pendingRecords = [];
+      try {
+        await saveData('weight', pendingRecords, userId);
+        status.batchesSaved++;
+        
+        // Log the date range of saved records
+        const dates = pendingRecords.map(r => r.date).sort();
+        console.log(`📅 Saved records from ${dates[0]} to ${dates[dates.length - 1]}`);
+        
+        pendingRecords = [];
+      } catch (error) {
+        console.error('❌ Error saving batch:', error);
+        throw error;
+      }
     }
   };
   
@@ -76,6 +97,9 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
             Records processed: ${recordsProcessed}
             Valid records: ${validRecords}
             Skipped records: ${skippedRecords}
+            Duplicate records: ${duplicateRecords}
+            Invalid date records: ${invalidDateRecords}
+            Invalid value records: ${invalidValueRecords}
             Withings records: ${withingsRecords}
             Eufy records: ${eufyRecords}
             Other source records: ${otherSourceRecords}
@@ -86,8 +110,8 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
           // Check if we're finding new records
           if (validRecords === lastValidRecordCount) {
             noNewRecordsCount++;
-            if (noNewRecordsCount >= 20) { // Increased threshold to account for sparse records
-              console.log('⚠️ No new weight records found in last 20,000 records, stopping processing');
+            if (noNewRecordsCount >= 50) { // Increased threshold significantly
+              console.log('⚠️ No new weight records found in last 50,000 records, stopping processing');
               await saveBatch(); // Save any remaining records
               return false; // Stop processing
             }
@@ -137,19 +161,23 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
 
           const value = parseFloat(record.value);
           if (isNaN(value)) {
-            console.log('⚠️ processWeight: Invalid value');
+            console.log('⚠️ processWeight: Invalid value:', record.value);
+            invalidValueRecords++;
             continue;
           }
 
           const date = new Date(record.startDate || record.creationDate || record.endDate);
           if (!date || isNaN(date.getTime())) {
-            console.log('⚠️ processWeight: Invalid date');
+            console.log('⚠️ processWeight: Invalid date:', record.startDate || record.creationDate || record.endDate);
+            invalidDateRecords++;
             continue;
           }
 
           const isoDate = date.toISOString();
+          const month = isoDate.substring(0, 7); // YYYY-MM format
+          
           if (existingDates.has(isoDate)) {
-            skippedRecords++;
+            duplicateRecords++;
             continue;
           }
 
@@ -193,6 +221,7 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
 
           pendingRecords.push(weightRecord);
           existingDates.add(isoDate);
+          datesByMonth[month] = (datesByMonth[month] || 0) + 1;
           validRecords++;
           status.recordsProcessed++;
           
@@ -212,10 +241,16 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
     // Save any remaining records
     await saveBatch();
     
+    // Log final distribution of records by month
+    console.log('📅 Final records by month:', datesByMonth);
+    
     console.log(`✅ processWeight: Completed processing
       Total records processed: ${recordsProcessed}
       Valid records: ${validRecords}
       Skipped records: ${skippedRecords}
+      Duplicate records: ${duplicateRecords}
+      Invalid date records: ${invalidDateRecords}
+      Invalid value records: ${invalidValueRecords}
       Withings records: ${withingsRecords}
       Eufy records: ${eufyRecords}
       Other source records: ${otherSourceRecords}
