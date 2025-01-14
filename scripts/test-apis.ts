@@ -39,7 +39,7 @@ const BASE_URL = 'http://localhost:3000/api';
 
 async function testHealthDataAPI() {
   console.log('\nTesting Health Data API...');
-  const dataTypes = ['heartRate', 'weight', 'bodyFat', 'hrv', 'vo2max'];
+  const dataTypes = ['heartRate', 'weight', 'bodyFat', 'hrv', 'vo2Max'];
 
   for (const type of dataTypes) {
     console.log(`\nFetching ${type} data...`);
