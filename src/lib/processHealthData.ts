@@ -718,14 +718,14 @@ async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<
   let recordsWithVO2Max = 0;
   
   console.log('🔍 processVO2Max: Fetching existing records...');
-  const existingRecords = await fetchAllHealthData('vo2Max', userId);
+  const existingRecords = await fetchAllHealthData('vo2max', userId);
   const existingDates = new Set(existingRecords.map(record => record.date));
   console.log(`📊 processVO2Max: Found ${existingRecords.length} existing records`);
   
   const saveBatch = async () => {
     if (pendingRecords.length > 0) {
       console.log(`💾 processVO2Max: Saving batch of ${pendingRecords.length} records...`);
-      await saveData('vo2Max', pendingRecords, userId);
+      await saveData('vo2max', pendingRecords, userId);
       status.batchesSaved++;
       pendingRecords = [];
     }
