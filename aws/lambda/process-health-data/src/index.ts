@@ -38,11 +38,23 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
   let pendingRecords: any[] = [];
   let lastProgressTime = Date.now();
   let startTime = Date.now();
+  let lastMemoryUsage = 0;
+  let noNewRecordsCount = 0;
+  let lastValidRecordCount = 0;
   
   console.log('🔍 processWeight: Fetching existing records...');
   const existingRecords = await fetchAllHealthData('weight', userId);
   const existingDates = new Set(existingRecords.map(record => record.date));
   console.log(`📊 processWeight: Found ${existingRecords.length} existing records`);
+  
+  const saveBatch = async () => {
+    if (pendingRecords.length > 0) {
+      console.log(`💾 processWeight: Saving batch of ${pendingRecords.length} records...`);
+      await saveData('weight', pendingRecords, userId);
+      status.batchesSaved++;
+      pendingRecords = [];
+    }
+  };
   
   try {
     console.log('📑 processWeight: Starting S3 file processing...');
@@ -50,13 +62,41 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
       try {
         recordsProcessed++;
         
+        // Log progress and check memory usage every 1000 records
         if (recordsProcessed % 1000 === 0) {
+          const currentMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+          const memoryDelta = currentMemory - lastMemoryUsage;
+          lastMemoryUsage = currentMemory;
+          
           console.log(`⏳ processWeight progress:
             Records processed: ${recordsProcessed}
             Valid records: ${validRecords}
             Skipped records: ${skippedRecords}
-            Memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
+            Memory usage: ${currentMemory}MB (${memoryDelta > 0 ? '+' : ''}${memoryDelta}MB)
+            Processing rate: ${Math.round(recordsProcessed / ((Date.now() - startTime) / 1000))} records/sec
           `);
+          
+          // Check if we're finding new records
+          if (validRecords === lastValidRecordCount) {
+            noNewRecordsCount++;
+            if (noNewRecordsCount >= 10) {
+              console.log('⚠️ No new weight records found in last 10,000 records, stopping processing');
+              await saveBatch(); // Save any remaining records
+              return false; // Stop processing
+            }
+          } else {
+            noNewRecordsCount = 0;
+            lastValidRecordCount = validRecords;
+          }
+          
+          // Force garbage collection if available
+          if (global.gc) {
+            try {
+              global.gc();
+            } catch (e) {
+              // Ignore GC errors
+            }
+          }
         }
         
         // Quick check for weight records before parsing
@@ -78,7 +118,7 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
 
         for (const record of records) {
           if (!record?.type || record.type !== 'HKQuantityTypeIdentifierBodyMass') {
-            console.log('⏭️ processWeight: Skipping non-weight record');
+            skippedRecords++;
             continue;
           }
 
@@ -96,7 +136,7 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
 
           const isoDate = date.toISOString();
           if (existingDates.has(isoDate)) {
-            console.log('⏭️ processWeight: Skipping duplicate date');
+            skippedRecords++;
             continue;
           }
 
@@ -108,46 +148,32 @@ async function processWeight(xmlKey: string, status: ProcessingStatus): Promise<
           validRecords++;
           status.recordsProcessed++;
           
+          // Save batch when it reaches the threshold
           if (pendingRecords.length >= 50) {
-            console.log(`💾 processWeight: Saving batch of ${pendingRecords.length} records...`);
-            await saveData('weight', pendingRecords, userId);
-            status.batchesSaved++;
-            pendingRecords = [];
+            await saveBatch();
           }
         }
       } catch (error) {
         console.error('❌ processWeight: Error processing record:', error);
-        throw error;
+        // Log the problematic record for debugging
+        console.error('Problematic record:', recordXml);
+        // Continue processing despite errors
       }
     });
-
-    console.log('🔄 processWeight: Finished processing S3 file');
-
-    if (pendingRecords.length > 0) {
-      console.log(`💾 processWeight: Saving final batch of ${pendingRecords.length} records...`);
-      await saveData('weight', pendingRecords, userId);
-      status.batchesSaved++;
-    }
-
-    const endTime = Date.now();
-    const totalTime = Math.round((endTime - startTime) / 1000);
     
-    console.log(`
-🏁 processWeight completed:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 Total records processed: ${recordsProcessed}
-✅ Valid weight records: ${validRecords}
-⏭️  Skipped records: ${skippedRecords}
-💾 Batches saved: ${status.batchesSaved}
-⏱️  Total time: ${totalTime} seconds
-📈 Average processing rate: ${Math.round(recordsProcessed / totalTime)} records/second
-💾 Memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-`);
-
-    console.log('✅ processWeight: Function completed successfully');
+    // Save any remaining records
+    await saveBatch();
+    
+    console.log(`✅ processWeight: Completed processing
+      Total records processed: ${recordsProcessed}
+      Valid records: ${validRecords}
+      Skipped records: ${skippedRecords}
+      Total time: ${Math.round((Date.now() - startTime) / 1000)}s
+      Final memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
+    `);
+    
   } catch (error) {
-    console.error(`❌ processWeight: Fatal error:`, error);
+    console.error('❌ processWeight: Fatal error:', error);
     throw error;
   }
 }

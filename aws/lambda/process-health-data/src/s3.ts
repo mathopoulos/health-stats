@@ -21,7 +21,50 @@ export async function processS3XmlFile(key: string, processor: (chunk: string) =
   return new Promise((resolve, reject) => {
     let buffer = '';
     let totalBytes = 0;
-    const CHUNK_SIZE = 64 * 1024; // 64KB chunks
+    let recordCount = 0;
+    const CHUNK_SIZE = 32 * 1024; // Reduced to 32KB chunks for better memory management
+    const MAX_BUFFER_SIZE = 1024 * 1024; // 1MB max buffer size
+    let processingPromise = Promise.resolve();
+
+    const processBuffer = async () => {
+      try {
+        while (buffer.length > 0) {
+          const recordStart = buffer.indexOf('<Record');
+          const recordEnd = buffer.indexOf('</Record>');
+          
+          if (recordStart === -1 || recordEnd === -1) {
+            // No complete record found
+            if (buffer.length > MAX_BUFFER_SIZE) {
+              // Buffer too large, likely corrupted data
+              console.warn(`Buffer exceeded ${MAX_BUFFER_SIZE} bytes with no complete record, clearing buffer`);
+              buffer = '';
+            }
+            break;
+          }
+
+          // Extract and process the record
+          const record = buffer.slice(recordStart, recordEnd + 9); // Include </Record>
+          const wrappedRecord = `<?xml version="1.0" encoding="UTF-8"?><HealthData>${record}</HealthData>`;
+          
+          try {
+            await processor(wrappedRecord);
+            recordCount++;
+            if (recordCount % 1000 === 0) {
+              console.log(`Processed ${recordCount} records, memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
+            }
+          } catch (error) {
+            console.error('Error processing record:', error);
+            // Continue processing despite errors
+          }
+
+          // Remove the processed record from buffer
+          buffer = buffer.slice(recordEnd + 9);
+        }
+      } catch (error) {
+        console.error('Error in processBuffer:', error);
+        throw error;
+      }
+    };
 
     stream.on('data', async (chunk: Buffer) => {
       try {
@@ -32,20 +75,14 @@ export async function processS3XmlFile(key: string, processor: (chunk: string) =
 
         buffer += chunk.toString('utf-8');
         
-        // Process complete records when we have enough data
+        // Process buffer when it gets large enough
         if (buffer.length > CHUNK_SIZE) {
-          const endIndex = buffer.lastIndexOf('</Record>');
-          if (endIndex !== -1) {
-            const recordsToProcess = buffer.substring(0, endIndex + 9); // Include the closing tag
-            buffer = buffer.substring(endIndex + 9);
-            
-            // Wrap in HealthData tags if not present
-            const wrappedRecords = recordsToProcess.includes('<HealthData>') 
-              ? recordsToProcess 
-              : `<HealthData>${recordsToProcess}</HealthData>`;
-              
-            await processor(wrappedRecords);
-          }
+          processingPromise = processingPromise
+            .then(processBuffer)
+            .catch(error => {
+              console.error('Error processing chunk:', error);
+              reject(error);
+            });
         }
       } catch (error) {
         reject(error);
@@ -56,16 +93,13 @@ export async function processS3XmlFile(key: string, processor: (chunk: string) =
       console.error('Error reading S3 file:', error);
       reject(error);
     });
-    
+
     stream.on('end', async () => {
       try {
         // Process any remaining data
-        if (buffer.length > 0) {
-          const wrappedRecords = buffer.includes('<HealthData>') 
-            ? buffer 
-            : `<HealthData>${buffer}</HealthData>`;
-          await processor(wrappedRecords);
-        }
+        await processingPromise;
+        await processBuffer();
+        console.log(`Finished processing ${recordCount} records`);
         resolve();
       } catch (error) {
         reject(error);
