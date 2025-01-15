@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Image from 'next/image';
-import AddResultsModal from './components/AddResultsModal';
+import AddResultsModal from '@/app/components/AddResultsModal';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { useParams, useSearchParams } from 'next/navigation';
