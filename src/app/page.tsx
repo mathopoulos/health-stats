@@ -78,6 +78,26 @@ const CustomTooltip = ({ active, payload, label, valueLabel }: TooltipProps) => 
 export default function Home() {
     return (
     <main className="min-h-screen bg-[#0A0B1E] text-white overflow-hidden">
+      {/* Navigation */}
+      <nav className="absolute top-0 left-0 right-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex justify-end space-x-4">
+            <a
+              href="/upload"
+              className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors"
+            >
+              Log in
+            </a>
+            <a
+              href="/upload"
+              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all hover:scale-105"
+            >
+              Sign up
+            </a>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <div className="relative">
         {/* Enhanced Background Gradient */}
