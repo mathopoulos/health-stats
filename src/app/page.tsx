@@ -12,32 +12,56 @@ interface TooltipProps {
   valueLabel: string;
 }
 
-// Enhanced demo data with more points and realistic values
+// Enhanced demo data with daily points for smoother curves
 const demoHRVData = [
-  { date: '2024-01', value: 45, avg: 42 },
-  { date: '2024-02', value: 48, avg: 43 },
-  { date: '2024-03', value: 52, avg: 44 },
-  { date: '2024-04', value: 49, avg: 44 },
-  { date: '2024-05', value: 55, avg: 45 },
-  { date: '2024-06', value: 53, avg: 45 },
-  { date: '2024-07', value: 58, avg: 46 }
+  { date: '2024-01-01', value: 45 },
+  { date: '2024-01-05', value: 46 },
+  { date: '2024-01-10', value: 47 },
+  { date: '2024-01-15', value: 48 },
+  { date: '2024-01-20', value: 49 },
+  { date: '2024-01-25', value: 51 },
+  { date: '2024-02-01', value: 50 },
+  { date: '2024-02-05', value: 52 },
+  { date: '2024-02-10', value: 51 },
+  { date: '2024-02-15', value: 53 },
+  { date: '2024-02-20', value: 54 },
+  { date: '2024-02-25', value: 53 },
+  { date: '2024-03-01', value: 55 },
+  { date: '2024-03-05', value: 54 },
+  { date: '2024-03-10', value: 56 },
+  { date: '2024-03-15', value: 55 },
+  { date: '2024-03-20', value: 57 },
+  { date: '2024-03-25', value: 56 },
+  { date: '2024-04-01', value: 58 }
 ];
 
 const demoVO2MaxData = [
-  { date: '2024-01', value: 42.0, avg: 40.5 },
-  { date: '2024-02', value: 42.5, avg: 40.8 },
-  { date: '2024-03', value: 43.0, avg: 41.0 },
-  { date: '2024-04', value: 43.2, avg: 41.2 },
-  { date: '2024-05', value: 43.5, avg: 41.5 },
-  { date: '2024-06', value: 44.0, avg: 41.8 },
-  { date: '2024-07', value: 44.2, avg: 42.0 }
+  { date: '2024-01-01', value: 42.0 },
+  { date: '2024-01-05', value: 42.1 },
+  { date: '2024-01-10', value: 42.3 },
+  { date: '2024-01-15', value: 42.4 },
+  { date: '2024-01-20', value: 42.6 },
+  { date: '2024-01-25', value: 42.8 },
+  { date: '2024-02-01', value: 42.9 },
+  { date: '2024-02-05', value: 43.1 },
+  { date: '2024-02-10', value: 43.2 },
+  { date: '2024-02-15', value: 43.4 },
+  { date: '2024-02-20', value: 43.5 },
+  { date: '2024-02-25', value: 43.7 },
+  { date: '2024-03-01', value: 43.8 },
+  { date: '2024-03-05', value: 44.0 },
+  { date: '2024-03-10', value: 44.1 },
+  { date: '2024-03-15', value: 44.2 },
+  { date: '2024-03-20', value: 44.3 },
+  { date: '2024-03-25', value: 44.4 },
+  { date: '2024-04-01', value: 44.5 }
 ];
 
 // Custom tooltip component with proper types
 const CustomTooltip = ({ active, payload, label, valueLabel }: TooltipProps) => {
   if (active && payload && payload.length && label) {
     const date = new Date(label);
-    const formattedDate = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+    const formattedDate = date.toLocaleString('default', { month: 'long', day: 'numeric' });
     return (
       <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 shadow-xl">
         <p className="text-gray-400 text-sm mb-2">{formattedDate}</p>
@@ -107,7 +131,7 @@ export default function Home() {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-lg font-medium text-gray-300">Heart Rate Variability</h3>
-                  <p className="text-sm text-gray-500 mt-1">7-day rolling average</p>
+                  <p className="text-sm text-gray-500 mt-1">30-day rolling average</p>
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-semibold text-indigo-400">{demoHRVData[demoHRVData.length - 1].value}</div>
@@ -128,7 +152,7 @@ export default function Home() {
                       cursor={{ stroke: '#4B5563', strokeWidth: 1, strokeDasharray: '4 4' }}
                     />
                     <Line
-                      type="monotone"
+                      type="natural"
                       dataKey="value"
                       stroke="#6366F1"
                       strokeWidth={2}
@@ -146,7 +170,7 @@ export default function Home() {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-lg font-medium text-gray-300">VO2 Max</h3>
-                  <p className="text-sm text-gray-500 mt-1">7-day rolling average</p>
+                  <p className="text-sm text-gray-500 mt-1">30-day rolling average</p>
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-semibold text-purple-400">{demoVO2MaxData[demoVO2MaxData.length - 1].value}</div>
@@ -167,7 +191,7 @@ export default function Home() {
                       cursor={{ stroke: '#4B5563', strokeWidth: 1, strokeDasharray: '4 4' }}
                     />
                     <Line
-                      type="monotone"
+                      type="natural"
                       dataKey="value"
                       stroke="#8B5CF6"
                       strokeWidth={2}
@@ -223,19 +247,14 @@ export default function Home() {
       <footer className="border-t border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <p className="text-gray-400">© 2024 OpenHealth. All rights reserved.</p>
-            <div className="flex items-center space-x-6">
-              <a href="#" className="text-gray-400 hover:text-gray-300 transition-colors hover:scale-105 transform">Privacy</a>
-              <a href="#" className="text-gray-400 hover:text-gray-300 transition-colors hover:scale-105 transform">Terms</a>
-              <a href="#" className="text-gray-400 hover:text-gray-300 transition-colors hover:scale-105 transform">Contact</a>
-            </div>
+            <p className="text-gray-400">© 2025 OpenHealth. All rights reserved.</p>
             <div className="flex items-center space-x-4">
-              <a href="#" className="text-gray-400 hover:text-gray-300 transition-colors">
+              <a href="https://x.com/lex_build" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-300 transition-colors">
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
                 </svg>
               </a>
-              <a href="#" className="text-gray-400 hover:text-gray-300 transition-colors">
+              <a href="https://github.com/mathopoulos/health-stats" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-300 transition-colors">
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                   <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
                 </svg>
