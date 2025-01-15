@@ -17,9 +17,9 @@ interface HealthData {
 
 interface BloodMarker {
   date: string;
-  value: number;
-  unit: string;
-  referenceRange?: {
+    value: number;
+    unit: string;
+    referenceRange?: {
     min: number;
     max: number;
   };
@@ -242,7 +242,7 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      setError(null);
+        setError(null);
       if (!session?.user) {
         console.error('No user session available');
         setError('Please sign in to view your health data');
@@ -720,7 +720,7 @@ export default function Home() {
         endDate = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
         groupingFunction = (date: Date) => date.toISOString().split('T')[0];
         displayDate = (key: string) => `${key}T12:00:00.000Z`;
-        break;
+                break;
         
       case 'weekly':
         // Show 12 weeks of weekly data
@@ -733,7 +733,7 @@ export default function Home() {
           return week.toISOString().split('T')[0];
         };
         displayDate = (key: string) => `${key}T12:00:00.000Z`;
-        break;
+                break;
         
       case 'monthly':
         // Show one year of monthly data
@@ -745,7 +745,7 @@ export default function Home() {
           const [year, month] = key.split('-');
           return `${year}-${month}-15T12:00:00.000Z`;
         };
-        break;
+                break;
 
       case 'yearly':
         // Show 5 years of yearly data
@@ -753,8 +753,8 @@ export default function Home() {
         endDate = new Date(date.getFullYear(), 11, 31, 23, 59, 59, 999);
         groupingFunction = (date: Date) => date.getFullYear().toString();
         displayDate = (key: string) => `${key}-06-15T12:00:00.000Z`; // Middle of the year
-        break;
-    }
+                break;
+            }
     
     const filteredData = data.filter(item => {
       const itemDate = new Date(item.date);
@@ -885,7 +885,7 @@ export default function Home() {
             />
           </LineChart>
         </ResponsiveContainer>
-      </div>
+            </div>
     );
   };
 
@@ -955,7 +955,7 @@ export default function Home() {
                         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
-                      </div>
+            </div>
                     )}
                   </div>
                   <div>
@@ -971,8 +971,8 @@ export default function Home() {
                     {userData?.name ? `${userData.name}'s` : ''} Health Dashboard
                   </h1>
                   <p className="text-gray-600">Viewing user data</p>
-                </div>
-              )}
+          </div>
+        )}
             </div>
           </div>
 
@@ -1008,7 +1008,7 @@ export default function Home() {
             <>
               {/* Summary Stats */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-gray-500">Avg Heart Rate Variability</span>
                     <div className="mt-2 flex items-baseline space-x-2">
@@ -1227,7 +1227,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                <div className="h-[300px]">
+            <div className="h-[300px]">
                   {data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500">
                       Loading data...
@@ -1239,14 +1239,14 @@ export default function Home() {
                     </div>
                   )}
                   {hasHRVData && !data.loading && (
-                    <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%">
                       <LineChart 
                         data={currentHRVData}
                         margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
                       >
                         <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
-                        <XAxis 
-                          dataKey="date" 
+                  <XAxis 
+                    dataKey="date" 
                           tickFormatter={(date) => {
                             const d = new Date(date);
                             switch (hrvTimeframe) {
@@ -1274,7 +1274,7 @@ export default function Home() {
                           tickLine={false}
                           axisLine={false}
                         />
-                        <Tooltip
+                  <Tooltip 
                           contentStyle={{ 
                             backgroundColor: 'white',
                             border: 'none',
@@ -1309,14 +1309,14 @@ export default function Home() {
                           dot={{ r: 2, fill: '#6366F1' }}
                           activeDot={{ r: 3 }}
                         />
-                      </LineChart>
-                    </ResponsiveContainer>
+                </LineChart>
+              </ResponsiveContainer>
                   )}
-                </div>
-              </div>
+            </div>
+          </div>
 
               {/* VO2 Max Chart */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-semibold text-gray-800">VO2 Max</h2>
                   <div className="flex items-center">
@@ -1365,7 +1365,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                <div className="h-[300px]">
+            <div className="h-[300px]">
                   {data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500">
                       Loading data...
@@ -1377,14 +1377,14 @@ export default function Home() {
                     </div>
                   )}
                   {hasVO2MaxData && !data.loading && (
-                    <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%">
                       <LineChart 
                         data={currentVO2MaxData}
                         margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
                       >
                         <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
-                        <XAxis 
-                          dataKey="date" 
+                  <XAxis 
+                    dataKey="date" 
                           tickFormatter={(date) => {
                             const d = new Date(date);
                             switch (vo2maxTimeframe) {
@@ -1412,7 +1412,7 @@ export default function Home() {
                           tickLine={false}
                           axisLine={false}
                         />
-                        <Tooltip
+                  <Tooltip 
                           contentStyle={{ 
                             backgroundColor: 'white',
                             border: 'none',
@@ -1447,14 +1447,14 @@ export default function Home() {
                           dot={{ r: 2, fill: '#8B5CF6' }}
                           activeDot={{ r: 3 }}
                         />
-                      </LineChart>
-                    </ResponsiveContainer>
+                </LineChart>
+              </ResponsiveContainer>
                   )}
-                </div>
-              </div>
+            </div>
+          </div>
 
               {/* Weight Chart */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-semibold text-gray-800">Weight</h2>
                   <div className="flex items-center">
@@ -1503,7 +1503,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                <div className="h-[300px]">
+            <div className="h-[300px]">
                   {data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500">
                       Loading data...
@@ -1515,14 +1515,14 @@ export default function Home() {
                     </div>
                   )}
                   {hasWeightData && !data.loading && (
-                    <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%">
                       <LineChart 
                         data={currentWeightData}
                         margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
                       >
                         <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
-                        <XAxis 
-                          dataKey="date" 
+                  <XAxis 
+                    dataKey="date" 
                           tickFormatter={(date) => {
                             const d = new Date(date);
                             switch (weightTimeframe) {
@@ -1550,7 +1550,7 @@ export default function Home() {
                           tickLine={false}
                           axisLine={false}
                         />
-                        <Tooltip
+                  <Tooltip 
                           contentStyle={{ 
                             backgroundColor: 'white',
                             border: 'none',
@@ -1585,14 +1585,14 @@ export default function Home() {
                           dot={{ r: 2, fill: '#10B981' }}
                           activeDot={{ r: 3 }}
                         />
-                      </LineChart>
-                    </ResponsiveContainer>
+                </LineChart>
+              </ResponsiveContainer>
                   )}
-                </div>
-              </div>
+            </div>
+          </div>
 
               {/* Body Fat Chart */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-semibold text-gray-800">Body Fat</h2>
                   <div className="flex items-center">
@@ -1641,7 +1641,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                <div className="h-[300px]">
+            <div className="h-[300px]">
                   {data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500">
                       Loading data...
@@ -1653,14 +1653,14 @@ export default function Home() {
                     </div>
                   )}
                   {hasBodyFatData && !data.loading && (
-                    <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%">
                       <LineChart 
                         data={currentBodyFatData}
                         margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
                       >
                         <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
-                        <XAxis 
-                          dataKey="date" 
+                  <XAxis 
+                    dataKey="date" 
                           tickFormatter={(date) => {
                             const d = new Date(date);
                             switch (bodyFatTimeframe) {
@@ -1688,7 +1688,7 @@ export default function Home() {
                           tickLine={false}
                           axisLine={false}
                         />
-                        <Tooltip
+                  <Tooltip 
                           contentStyle={{ 
                             backgroundColor: 'white',
                             border: 'none',
@@ -1723,17 +1723,17 @@ export default function Home() {
                           dot={{ r: 2, fill: '#F59E0B' }}
                           activeDot={{ r: 3 }}
                         />
-                      </LineChart>
-                    </ResponsiveContainer>
+                </LineChart>
+              </ResponsiveContainer>
                   )}
-                </div>
-              </div>
+            </div>
+          </div>
             </>
           ) : (
-            <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-2xl font-semibold text-gray-800">Blood Markers & Longevity</h2>
-              </div>
+            </div>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Lipid Panel */}
@@ -1746,7 +1746,7 @@ export default function Home() {
                     <MarkerRow label="Triglycerides" data={data.bloodMarkers.triglycerides} />
                     <MarkerRow label="ApoB" data={data.bloodMarkers.apoB} />
                     <MarkerRow label="Lp(a)" data={data.bloodMarkers.lpA} />
-                  </div>
+          </div>
                   <LastTestedDate data={data.bloodMarkers.totalCholesterol} />
                 </div>
 
@@ -1859,10 +1859,10 @@ export default function Home() {
                   </div>
                   <LastTestedDate data={data.bloodMarkers.sodium} />
                 </div>
-              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
         <div className="fixed bottom-4 left-4 bg-indigo-500/10 hover:bg-indigo-500/20 backdrop-blur px-3 py-2 rounded-full shadow-lg text-sm font-medium tracking-wide text-indigo-600 border border-indigo-500/20 hover:shadow-md transition-all duration-300 flex items-center gap-0 hover:gap-2 hover:px-4 group">
           <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1871,7 +1871,7 @@ export default function Home() {
             Powered by OpenHealth
           </span>
         </div>
-      </main>
+    </main>
     </>
   );
 }
