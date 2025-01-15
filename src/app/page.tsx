@@ -5,7 +5,7 @@ import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianG
 interface TooltipProps {
   active?: boolean;
   payload?: Array<{
-    value: number;
+  value: number;
     unit?: string;
   }>;
   label?: string;
@@ -94,10 +94,10 @@ export default function Home() {
           {/* Enhanced Main Title with Animation */}
           <h1 className="text-center animate-fade-in">
             <span className="block text-5xl md:text-6xl font-bold mb-4 hover:scale-105 transition-transform">
-              Share Your Health
+              Share Your Health Journey
             </span>
             <span className="block text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 text-transparent bg-clip-text bg-animate hover:scale-105 transition-transform">
-              Like a Main Character
+              Track • Share • Inspire
             </span>
           </h1>
 
@@ -120,9 +120,9 @@ export default function Home() {
               Explore
               <svg className="ml-2 w-4 h-4 transform group-hover:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-          </div>
+                        </svg>
+                      </button>
+                    </div>
 
           {/* Enhanced Demo Charts */}
           <div className="mt-24 grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in-up delay-300">
@@ -132,14 +132,14 @@ export default function Home() {
                 <div>
                   <h3 className="text-lg font-medium text-gray-300">Heart Rate Variability</h3>
                   <p className="text-sm text-gray-500 mt-1">30-day rolling average</p>
-                </div>
+                  </div>
                 <div className="text-right">
                   <div className="text-2xl font-semibold text-indigo-400">{demoHRVData[demoHRVData.length - 1].value}</div>
                   <div className="text-sm text-gray-500">ms</div>
                 </div>
-              </div>
+                    </div>
               <div className="h-[200px]">
-                <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={demoHRVData} margin={{ top: 20, right: 10, left: 10, bottom: 20 }}>
                     <defs>
                       <linearGradient id="hrvGradient" x1="0" y1="0" x2="0" y2="1">
@@ -147,23 +147,23 @@ export default function Home() {
                         <stop offset="100%" stopColor="#6366F1" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <Tooltip 
+                        <Tooltip
                       content={<CustomTooltip valueLabel="HRV" />}
                       cursor={{ stroke: '#4B5563', strokeWidth: 1, strokeDasharray: '4 4' }}
-                    />
-                    <Line
+                        />
+                        <Line
                       type="natural"
-                      dataKey="value"
-                      stroke="#6366F1"
+                          dataKey="value"
+                          stroke="#6366F1"
                       strokeWidth={2}
                       dot={false}
                       activeDot={{ r: 4, fill: '#6366F1', strokeWidth: 2, stroke: '#312E81' }}
                       fill="url(#hrvGradient)"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                </div>
               </div>
-            </div>
 
             {/* Simplified VO2 Max Chart */}
             <div className="group bg-gray-900/50 backdrop-blur rounded-2xl p-6 border border-gray-800 hover:border-purple-500/50 transition-colors hover:shadow-lg hover:shadow-purple-500/10">
@@ -171,14 +171,14 @@ export default function Home() {
                 <div>
                   <h3 className="text-lg font-medium text-gray-300">VO2 Max</h3>
                   <p className="text-sm text-gray-500 mt-1">30-day rolling average</p>
-                </div>
+                    </div>
                 <div className="text-right">
                   <div className="text-2xl font-semibold text-purple-400">{demoVO2MaxData[demoVO2MaxData.length - 1].value}</div>
                   <div className="text-sm text-gray-500">mL/kg·min</div>
+                  </div>
                 </div>
-              </div>
               <div className="h-[200px]">
-                <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={demoVO2MaxData} margin={{ top: 20, right: 10, left: 10, bottom: 20 }}>
                     <defs>
                       <linearGradient id="vo2Gradient" x1="0" y1="0" x2="0" y2="1">
@@ -186,24 +186,24 @@ export default function Home() {
                         <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <Tooltip 
+                        <Tooltip
                       content={<CustomTooltip valueLabel="VO2 Max" />}
                       cursor={{ stroke: '#4B5563', strokeWidth: 1, strokeDasharray: '4 4' }}
-                    />
-                    <Line
+                        />
+                        <Line
                       type="natural"
-                      dataKey="value"
-                      stroke="#8B5CF6"
+                          dataKey="value"
+                          stroke="#8B5CF6"
                       strokeWidth={2}
                       dot={false}
                       activeDot={{ r: 4, fill: '#8B5CF6', strokeWidth: 2, stroke: '#4C1D95' }}
                       fill="url(#vo2Gradient)"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
               </div>
-            </div>
-          </div>
+                </div>
+              </div>
 
           {/* Enhanced Features Grid */}
           <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8 animate-fade-in-up delay-400">
@@ -212,22 +212,22 @@ export default function Home() {
               <div className="w-12 h-12 bg-indigo-500/20 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
+                        </svg>
+                    </div>
               <h3 className="text-lg font-semibold mb-2 group-hover:text-indigo-400 transition-colors">Track Everything</h3>
               <p className="text-gray-400 group-hover:text-gray-300 transition-colors">Monitor your health metrics from HRV to blood markers, all in one place.</p>
-            </div>
+              </div>
 
             {/* Enhanced Feature 2 */}
             <div className="group bg-gray-900/30 backdrop-blur rounded-xl p-6 border border-gray-800/50 hover:border-purple-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10">
               <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              </div>
+                        </svg>
+                    </div>
               <h3 className="text-lg font-semibold mb-2 group-hover:text-purple-400 transition-colors">Share Progress</h3>
               <p className="text-gray-400 group-hover:text-gray-300 transition-colors">Build in public and inspire others with your health journey.</p>
-            </div>
+              </div>
               
             {/* Enhanced Feature 3 */}
             <div className="group bg-gray-900/30 backdrop-blur rounded-xl p-6 border border-gray-800/50 hover:border-pink-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-pink-500/10">
@@ -235,13 +235,13 @@ export default function Home() {
                 <svg className="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-              </div>
+                  </div>
               <h3 className="text-lg font-semibold mb-2 group-hover:text-pink-400 transition-colors">Optimize Health</h3>
               <p className="text-gray-400 group-hover:text-gray-300 transition-colors">Get insights and optimize your health with data-driven decisions.</p>
-            </div>
-          </div>
-        </div>
-      </div>
+                </div>
+                  </div>
+                </div>
+                </div>
 
       {/* Enhanced Footer */}
       <footer className="border-t border-gray-800">
@@ -252,16 +252,16 @@ export default function Home() {
               <a href="https://x.com/lex_build" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-300 transition-colors">
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
-                </svg>
+          </svg>
               </a>
               <a href="https://github.com/mathopoulos/health-stats" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-300 transition-colors">
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                   <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
-                </svg>
+          </svg>
               </a>
-            </div>
-          </div>
-        </div>
+                    </div>
+                      </div>
+                      </div>
       </footer>
     </main>
   );

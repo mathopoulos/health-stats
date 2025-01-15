@@ -1870,7 +1870,7 @@ export default function Home() {
           <span className="w-0 overflow-hidden group-hover:w-auto transition-all duration-300 ease-in-out whitespace-nowrap">
             Powered by OpenHealth
           </span>
-        </div>
+      </div>
     </main>
     </>
   );
