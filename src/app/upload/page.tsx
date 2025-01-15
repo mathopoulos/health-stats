@@ -4,6 +4,7 @@ import { useState, useRef, DragEvent, useEffect } from 'react';
 import { useSession, signOut } from "next-auth/react";
 import AddResultsModal from '../components/AddResultsModal';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
@@ -459,12 +460,12 @@ export default function UploadPage() {
                 Add Blood Test Results
               </button>
               {session?.user?.id && (
-                <a
-                  href={`/?userId=${session.user.id}`}
+                <Link
+                  href={`/dashboard/userId=${session.user.id}`}
                   className="px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-600 rounded-lg text-sm font-medium transition-colors"
                 >
                   View Dashboard
-                </a>
+                </Link>
               )}
               <button
                 onClick={() => signOut({ callbackUrl: '/' })}
@@ -736,12 +737,12 @@ export default function UploadPage() {
                 {processingStatus}
                 {processingStatus.includes('complete') && session?.user?.id && (
                   <div className="mt-2">
-                    <a 
-                      href={`/dashboard/${session.user.id}`}
+                    <Link
+                      href={`/dashboard/userId=${session.user.id}`}
                       className="text-green-700 hover:text-green-800 font-medium underline"
                     >
                       View your dashboard →
-                    </a>
+                    </Link>
                   </div>
                 )}
               </div>
