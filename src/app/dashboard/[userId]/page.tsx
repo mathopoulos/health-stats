@@ -10,6 +10,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import Head from 'next/head';
 import toast, { Toaster } from 'react-hot-toast';
+import ThemeToggle from '@/app/components/ThemeToggle';
 
 interface HealthData {
   date: string;
@@ -937,13 +938,20 @@ export default function Home() {
         <title>{userData?.name ? `${userData.name}'s Health Stats` : 'Health Stats'}</title>
       </Head>
       <Toaster position="bottom-right" />
-      <main className="min-h-screen p-8 bg-gray-50">
+      <main className="min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
+        {/* Fixed position theme toggle */}
+        <div className="fixed bottom-16 right-4 z-[100]">
+          <div className="bg-white/10 dark:bg-gray-900/30 backdrop-blur-lg rounded-full p-3 shadow-lg hover:shadow-xl transition-all scale-110 hover:scale-125">
+            <ThemeToggle />
+          </div>
+        </div>
+        
         <div className="max-w-6xl mx-auto space-y-6">
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
             <div className="flex items-center gap-4">
               {userId === session?.user?.id ? (
                 <>
-                  <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100">
+                  <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700">
                     {userData?.profileImage ? (
                       <Image
                         src={userData.profileImage}
@@ -953,19 +961,19 @@ export default function Home() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
                         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
-            </div>
+                      </div>
                     )}
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900">
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                       {userData?.name || 'Your'}
                     </h1>
                     <div className="flex items-center gap-2">
-                      <p className="text-gray-600">Health Dashboard</p>
+                      <p className="text-gray-600 dark:text-gray-400">Health Dashboard</p>
                       <button
                         onClick={() => {
                           const url = window.location.href;
@@ -987,7 +995,7 @@ export default function Home() {
                             });
                           });
                         }}
-                        className="inline-flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                        className="inline-flex items-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -999,11 +1007,11 @@ export default function Home() {
               ) : (
                 <div className="flex items-center justify-between w-full">
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900">
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                       {userData?.name ? `${userData.name}'s` : ''} Health Dashboard
                     </h1>
                     <div className="flex items-center gap-2">
-                      <p className="text-gray-600">Viewing user data</p>
+                      <p className="text-gray-600 dark:text-gray-400">Viewing user data</p>
                       <button
                         onClick={() => {
                           const url = window.location.href;
@@ -1025,7 +1033,7 @@ export default function Home() {
                             });
                           });
                         }}
-                        className="inline-flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                        className="inline-flex items-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -1034,20 +1042,20 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-          )}
+              )}
             </div>
           </div>
 
           {/* Tab Navigation */}
-          <div className="bg-white rounded-2xl shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm">
             <div>
               <nav className="flex space-x-8 px-6" aria-label="Tabs">
                 <button
                   onClick={() => setActiveTab('metrics')}
                   className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm ${
                     activeTab === 'metrics'
-                      ? 'border-indigo-500 text-indigo-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
                   }`}
                 >
                   Fitness Metrics
@@ -1056,8 +1064,8 @@ export default function Home() {
                   onClick={() => setActiveTab('blood')}
                   className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm ${
                     activeTab === 'blood'
-                      ? 'border-indigo-500 text-indigo-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
                   }`}
                 >
                   Blood Markers
@@ -1070,9 +1078,9 @@ export default function Home() {
             <>
               {/* Summary Stats */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium text-gray-500">Avg Heart Rate Variability</span>
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Heart Rate Variability</span>
                     <div className="mt-2 flex items-baseline space-x-2">
                       <span className="text-2xl font-bold text-gray-900">
                         {data.loading ? (
@@ -1108,13 +1116,13 @@ export default function Home() {
                         </div>
                       )}
                     </div>
-                    <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
+                    <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">Last 30 days</span>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium text-gray-500">Avg VO2 Max</span>
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg VO2 Max</span>
                     <div className="mt-2 flex items-baseline space-x-2">
                       <span className="text-2xl font-bold text-gray-900">
                         {data.loading ? (
@@ -1150,13 +1158,13 @@ export default function Home() {
                         </div>
                       )}
                     </div>
-                    <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
+                    <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">Last 30 days</span>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium text-gray-500">Avg Weight</span>
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Weight</span>
                     <div className="mt-2 flex items-baseline space-x-2">
                       <span className="text-2xl font-bold text-gray-900">
                         {data.loading ? (
@@ -1192,13 +1200,13 @@ export default function Home() {
                         </div>
                       )}
                     </div>
-                    <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
+                    <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">Last 30 days</span>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium text-gray-500">Avg Body Fat</span>
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Body Fat</span>
                     <div className="mt-2 flex items-baseline space-x-2">
                       <span className="text-2xl font-bold text-gray-900">
                         {data.loading ? (
@@ -1234,20 +1242,20 @@ export default function Home() {
                         </div>
                       )}
                     </div>
-                    <span className="mt-1 text-xs text-gray-500">Last 30 days</span>
+                    <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">Last 30 days</span>
                   </div>
                 </div>
               </div>
 
               {/* HRV Chart */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold text-gray-800">Heart Rate Variability</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Heart Rate Variability</h2>
                   <div className="flex items-center">
                     <select
                       value={hrvTimeframe}
                       onChange={(e) => setHrvTimeframe(e.target.value as TimeFrame)}
-                      className="mr-6 h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
+                      className="mr-6 h-9 pl-3 pr-8 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-600 focus:border-indigo-400 dark:focus:border-indigo-500 appearance-none cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                       style={{
                         backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
                         backgroundPosition: 'right 0.5rem center',
@@ -1260,29 +1268,29 @@ export default function Home() {
                       <option value="monthly">Monthly</option>
                       <option value="yearly">Yearly</option>
                     </select>
-                    <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="flex items-center h-9 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
                       <button
                         onClick={() => handleTimeframeNavigation('prev', hrvDate, setHrvDate, hrvTimeframe)}
                         disabled={isNavigationDisabled('prev', hrvDate, hrvTimeframe)}
-                        className={`h-full px-2 rounded-l-lg hover:bg-white hover:shadow-sm transition-all ${
+                        className={`h-full px-2 rounded-l-lg hover:bg-white dark:hover:bg-gray-600 hover:shadow-sm transition-all ${
                           isNavigationDisabled('prev', hrvDate, hrvTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
                         }`}
                       >
-                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                         </svg>
                       </button>
-                      <span className="text-sm font-medium text-gray-700 mx-4 min-w-[100px] text-center">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mx-4 min-w-[100px] text-center">
                         {getTimeframeLabel(hrvDate, hrvTimeframe)}
                       </span>
                       <button
                         onClick={() => handleTimeframeNavigation('next', hrvDate, setHrvDate, hrvTimeframe)}
                         disabled={isNavigationDisabled('next', hrvDate, hrvTimeframe)}
-                        className={`h-full px-2 rounded-r-lg hover:bg-white hover:shadow-sm transition-all ${
+                        className={`h-full px-2 rounded-r-lg hover:bg-white dark:hover:bg-gray-600 hover:shadow-sm transition-all ${
                           isNavigationDisabled('next', hrvDate, hrvTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
                         }`}
                       >
-                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       </button>
@@ -1291,12 +1299,12 @@ export default function Home() {
                 </div>
             <div className="h-[300px]">
                   {data.loading && (
-                    <div className="h-full flex items-center justify-center text-gray-500">
+                    <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
                       Loading data...
                     </div>
                   )}
                   {!hasHRVData && !data.loading && (
-                    <div className="h-full flex items-center justify-center text-gray-500">
+                    <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
                       No HRV data available for this {hrvTimeframe === 'yearly' ? '5 years' : hrvTimeframe === 'monthly' ? 'year' : hrvTimeframe === 'weekly' ? '12 weeks' : 'month'}
                     </div>
                   )}
@@ -1338,14 +1346,15 @@ export default function Home() {
                         />
                   <Tooltip 
                           contentStyle={{ 
-                            backgroundColor: 'white',
+                            backgroundColor: 'var(--tooltip-bg)',
                             border: 'none',
                             borderRadius: '4px',
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                             fontSize: '12px',
-                            padding: '8px'
+                            padding: '8px',
+                            color: 'var(--tooltip-text)'
                           }}
-                          labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
+                          labelStyle={{ color: 'var(--tooltip-label)', marginBottom: '4px' }}
                           labelFormatter={(value) => {
                             const d = new Date(value);
                             switch (hrvTimeframe) {
@@ -1378,14 +1387,14 @@ export default function Home() {
           </div>
 
               {/* VO2 Max Chart */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold text-gray-800">VO2 Max</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">VO2 Max</h2>
                   <div className="flex items-center">
                     <select
                       value={vo2maxTimeframe}
                       onChange={(e) => setVo2maxTimeframe(e.target.value as TimeFrame)}
-                      className="mr-6 h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
+                      className="mr-6 h-9 pl-3 pr-8 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-600 focus:border-indigo-400 dark:focus:border-indigo-500 appearance-none cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                       style={{
                         backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
                         backgroundPosition: 'right 0.5rem center',
@@ -1398,29 +1407,29 @@ export default function Home() {
                       <option value="monthly">Monthly</option>
                       <option value="yearly">Yearly</option>
                     </select>
-                    <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="flex items-center h-9 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
                       <button
                         onClick={() => handleTimeframeNavigation('prev', vo2maxDate, setVo2maxDate, vo2maxTimeframe)}
                         disabled={isNavigationDisabled('prev', vo2maxDate, vo2maxTimeframe)}
-                        className={`h-full px-2 rounded-l-lg hover:bg-white hover:shadow-sm transition-all ${
+                        className={`h-full px-2 rounded-l-lg hover:bg-white dark:hover:bg-gray-600 hover:shadow-sm transition-all ${
                           isNavigationDisabled('prev', vo2maxDate, vo2maxTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
                         }`}
                       >
-                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                         </svg>
                       </button>
-                      <span className="text-sm font-medium text-gray-700 mx-4 min-w-[100px] text-center">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mx-4 min-w-[100px] text-center">
                         {getTimeframeLabel(vo2maxDate, vo2maxTimeframe)}
                       </span>
                       <button
                         onClick={() => handleTimeframeNavigation('next', vo2maxDate, setVo2maxDate, vo2maxTimeframe)}
                         disabled={isNavigationDisabled('next', vo2maxDate, vo2maxTimeframe)}
-                        className={`h-full px-2 rounded-r-lg hover:bg-white hover:shadow-sm transition-all ${
+                        className={`h-full px-2 rounded-r-lg hover:bg-white dark:hover:bg-gray-600 hover:shadow-sm transition-all ${
                           isNavigationDisabled('next', vo2maxDate, vo2maxTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
                         }`}
                       >
-                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       </button>
@@ -1516,14 +1525,14 @@ export default function Home() {
           </div>
 
               {/* Weight Chart */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold text-gray-800">Weight</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Weight</h2>
                   <div className="flex items-center">
                     <select
                       value={weightTimeframe}
                       onChange={(e) => setWeightTimeframe(e.target.value as TimeFrame)}
-                      className="mr-6 h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
+                      className="mr-6 h-9 pl-3 pr-8 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-600 focus:border-indigo-400 dark:focus:border-indigo-500 appearance-none cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                       style={{
                         backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
                         backgroundPosition: 'right 0.5rem center',
@@ -1536,29 +1545,29 @@ export default function Home() {
                       <option value="monthly">Monthly</option>
                       <option value="yearly">Yearly</option>
                     </select>
-                    <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="flex items-center h-9 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
                       <button
                         onClick={() => handleTimeframeNavigation('prev', weightDate, setWeightDate, weightTimeframe)}
                         disabled={isNavigationDisabled('prev', weightDate, weightTimeframe)}
-                        className={`h-full px-2 rounded-l-lg hover:bg-white hover:shadow-sm transition-all ${
+                        className={`h-full px-2 rounded-l-lg hover:bg-white dark:hover:bg-gray-600 hover:shadow-sm transition-all ${
                           isNavigationDisabled('prev', weightDate, weightTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
                         }`}
                       >
-                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                         </svg>
                       </button>
-                      <span className="text-sm font-medium text-gray-700 mx-4 min-w-[100px] text-center">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mx-4 min-w-[100px] text-center">
                         {getTimeframeLabel(weightDate, weightTimeframe)}
                       </span>
                       <button
                         onClick={() => handleTimeframeNavigation('next', weightDate, setWeightDate, weightTimeframe)}
                         disabled={isNavigationDisabled('next', weightDate, weightTimeframe)}
-                        className={`h-full px-2 rounded-r-lg hover:bg-white hover:shadow-sm transition-all ${
+                        className={`h-full px-2 rounded-r-lg hover:bg-white dark:hover:bg-gray-600 hover:shadow-sm transition-all ${
                           isNavigationDisabled('next', weightDate, weightTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
                         }`}
                       >
-                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       </button>
@@ -1654,14 +1663,14 @@ export default function Home() {
           </div>
 
               {/* Body Fat Chart */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold text-gray-800">Body Fat</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Body Fat</h2>
                   <div className="flex items-center">
                     <select
                       value={bodyFatTimeframe}
                       onChange={(e) => setBodyFatTimeframe(e.target.value as TimeFrame)}
-                      className="mr-6 h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
+                      className="mr-6 h-9 pl-3 pr-8 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-600 focus:border-indigo-400 dark:focus:border-indigo-500 appearance-none cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                       style={{
                         backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
                         backgroundPosition: 'right 0.5rem center',
@@ -1674,29 +1683,29 @@ export default function Home() {
                       <option value="monthly">Monthly</option>
                       <option value="yearly">Yearly</option>
                     </select>
-                    <div className="flex items-center h-9 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="flex items-center h-9 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
                       <button
                         onClick={() => handleTimeframeNavigation('prev', bodyFatDate, setBodyFatDate, bodyFatTimeframe)}
                         disabled={isNavigationDisabled('prev', bodyFatDate, bodyFatTimeframe)}
-                        className={`h-full px-2 rounded-l-lg hover:bg-white hover:shadow-sm transition-all ${
+                        className={`h-full px-2 rounded-l-lg hover:bg-white dark:hover:bg-gray-600 hover:shadow-sm transition-all ${
                           isNavigationDisabled('prev', bodyFatDate, bodyFatTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
                         }`}
                       >
-                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                         </svg>
                       </button>
-                      <span className="text-sm font-medium text-gray-700 mx-4 min-w-[100px] text-center">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mx-4 min-w-[100px] text-center">
                         {getTimeframeLabel(bodyFatDate, bodyFatTimeframe)}
                       </span>
                       <button
                         onClick={() => handleTimeframeNavigation('next', bodyFatDate, setBodyFatDate, bodyFatTimeframe)}
                         disabled={isNavigationDisabled('next', bodyFatDate, bodyFatTimeframe)}
-                        className={`h-full px-2 rounded-r-lg hover:bg-white hover:shadow-sm transition-all ${
+                        className={`h-full px-2 rounded-r-lg hover:bg-white dark:hover:bg-gray-600 hover:shadow-sm transition-all ${
                           isNavigationDisabled('next', bodyFatDate, bodyFatTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
                         }`}
                       >
-                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       </button>
@@ -1792,15 +1801,15 @@ export default function Home() {
           </div>
             </>
           ) : (
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
               <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-semibold text-gray-800">Blood Markers & Longevity</h2>
+                <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">Blood Markers & Longevity</h2>
             </div>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Lipid Panel */}
-                <div className="border border-gray-100 rounded-xl p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-6">Lipid Panel</h3>
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Lipid Panel</h3>
                   <div className="space-y-6">
                     <MarkerRow label="Total Cholesterol" data={data.bloodMarkers.totalCholesterol} />
                     <MarkerRow label="LDL-C" data={data.bloodMarkers.ldl} />
@@ -1813,8 +1822,8 @@ export default function Home() {
                 </div>
 
                 {/* Complete Blood Count */}
-                <div className="border border-gray-100 rounded-xl p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-6">Complete Blood Count</h3>
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Complete Blood Count</h3>
                   <div className="space-y-6">
                     <MarkerRow label="White Blood Cells" data={data.bloodMarkers.whiteBloodCells} />
                     <MarkerRow label="Red Blood Cells" data={data.bloodMarkers.redBloodCells} />
@@ -1826,8 +1835,8 @@ export default function Home() {
                 </div>
 
                 {/* Glucose Markers */}
-                <div className="border border-gray-100 rounded-xl p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-6">Glucose Markers</h3>
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Glucose Markers</h3>
                   <div className="space-y-6">
                     <MarkerRow label="HbA1c" data={data.bloodMarkers.hba1c} />
                     <MarkerRow label="Fasting Insulin" data={data.bloodMarkers.fastingInsulin} />
@@ -1837,8 +1846,8 @@ export default function Home() {
                 </div>
 
                 {/* Liver Markers */}
-                <div className="border border-gray-100 rounded-xl p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-6">Liver Markers</h3>
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Liver Markers</h3>
                   <div className="space-y-6">
                     <MarkerRow label="ALT" data={data.bloodMarkers.alt} />
                     <MarkerRow label="AST" data={data.bloodMarkers.ast} />
@@ -1848,8 +1857,8 @@ export default function Home() {
                 </div>
 
                 {/* Kidney Markers */}
-                <div className="border border-gray-100 rounded-xl p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-6">Kidney Markers</h3>
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Kidney Markers</h3>
                   <div className="space-y-6">
                     <MarkerRow label="eGFR" data={data.bloodMarkers.egfr} />
                     <MarkerRow label="Cystatin C" data={data.bloodMarkers.cystatinC} />
@@ -1861,8 +1870,8 @@ export default function Home() {
                 </div>
 
                 {/* Sex Hormones */}
-                <div className="border border-gray-100 rounded-xl p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-6">Sex Hormones</h3>
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Sex Hormones</h3>
                   <div className="space-y-6">
                     <MarkerRow label="Testosterone" data={data.bloodMarkers.testosterone} />
                     <MarkerRow label="Free Testosterone" data={data.bloodMarkers.freeTesto} />
@@ -1873,8 +1882,8 @@ export default function Home() {
                 </div>
 
                 {/* Thyroid Markers */}
-                <div className="border border-gray-100 rounded-xl p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-6">Thyroid Markers</h3>
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Thyroid Markers</h3>
                   <div className="space-y-6">
                     <MarkerRow label="T3" data={data.bloodMarkers.t3} />
                     <MarkerRow label="T4" data={data.bloodMarkers.t4} />
@@ -1884,8 +1893,8 @@ export default function Home() {
                 </div>
 
                 {/* Vitamins & Inflammation */}
-                <div className="border border-gray-100 rounded-xl p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-6">Vitamins & Inflammation</h3>
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Vitamins & Inflammation</h3>
                   <div className="space-y-6">
                     <MarkerRow label="Vitamin D3" data={data.bloodMarkers.vitaminD} />
                     <MarkerRow label="hs-CRP" data={data.bloodMarkers.crp} />
@@ -1896,8 +1905,8 @@ export default function Home() {
                 </div>
 
                 {/* Iron Panel */}
-                <div className="border border-gray-100 rounded-xl p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-6">Iron Panel</h3>
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Iron Panel</h3>
                   <div className="space-y-6">
                     <MarkerRow label="Ferritin" data={data.bloodMarkers.ferritin} />
                     <MarkerRow label="Serum Iron" data={data.bloodMarkers.serumIron} />
@@ -1908,8 +1917,8 @@ export default function Home() {
                 </div>
 
                 {/* Electrolytes */}
-                <div className="border border-gray-100 rounded-xl p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-6">Electrolytes</h3>
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Electrolytes</h3>
                   <div className="space-y-6">
                     <MarkerRow label="Sodium" data={data.bloodMarkers.sodium} />
                     <MarkerRow label="Potassium" data={data.bloodMarkers.potassium} />
@@ -2083,8 +2092,8 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
   const optimalMax = config.max - (range * 0.25);
 
   return (
-    <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-      <span className="text-sm font-medium text-gray-600">{label}</span>
+    <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-700 pb-4">
+      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{label}</span>
       <div className="flex items-center gap-3">
         {data.length > 0 && (
           <>
@@ -2095,7 +2104,7 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
                 }`}
               />
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
-                <div className="bg-white rounded-lg py-3 px-4 shadow-sm border border-gray-100 min-w-[200px]">
+                <div className="bg-white dark:bg-gray-800 rounded-lg py-3 px-4 shadow-sm border border-gray-100 dark:border-gray-700 min-w-[200px]">
                   <div className="flex flex-col gap-3">
                     <div className={`text-sm font-medium ${getStatusColor(getStatusInfo(data[0].value))}`}>
                       {getStatusInfo(data[0].value)}
@@ -2103,20 +2112,20 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
                     <div className="space-y-2 text-xs">
                       <div className="flex items-center justify-between">
                         <span className="text-red-500 font-medium">Abnormal</span>
-                        <span className="text-gray-600">&lt;{config.min} or &gt;{config.max}</span>
+                        <span className="text-gray-600 dark:text-gray-400">&lt;{config.min} or &gt;{config.max}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-yellow-500 font-medium">Normal</span>
-                        <span className="text-gray-600">{config.min}-{config.max}</span>
+                        <span className="text-gray-600 dark:text-gray-400">{config.min}-{config.max}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-green-500 font-medium">Optimal</span>
-                        <span className="text-gray-600">{optimalMin.toFixed(1)}-{optimalMax.toFixed(1)}</span>
+                        <span className="text-gray-600 dark:text-gray-400">{optimalMin.toFixed(1)}-{optimalMax.toFixed(1)}</span>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="w-2 h-2 bg-white border-r border-b border-gray-100 absolute -bottom-1 left-1/2 -translate-x-1/2 transform rotate-45"></div>
+                <div className="w-2 h-2 bg-white dark:bg-gray-800 border-r border-b border-gray-100 dark:border-gray-700 absolute -bottom-1 left-1/2 -translate-x-1/2 transform rotate-45"></div>
               </div>
             </div>
             {data.length > 1 && (
@@ -2130,7 +2139,7 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
             )}
           </>
         )}
-        <span className="text-lg font-semibold text-gray-900">
+        <span className="text-lg font-semibold text-gray-900 dark:text-white">
           {data.length > 0 ?
            `${data[0].value} ${data[0].unit}` :
            "No data"}
@@ -2142,7 +2151,7 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
 
 const LastTestedDate = ({ data }: { data: BloodMarker[] }) => (
   data.length > 0 && (
-    <p className="text-sm text-gray-500 mt-6">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mt-6">
       Last tested: {new Date(data[0].date).toLocaleDateString()}
     </p>
   )
