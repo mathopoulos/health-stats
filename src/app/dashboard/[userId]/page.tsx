@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import Head from 'next/head';
+import toast, { Toaster } from 'react-hot-toast';
 
 interface HealthData {
   date: string;
@@ -935,6 +936,7 @@ export default function Home() {
       <Head>
         <title>{userData?.name ? `${userData.name}'s Health Stats` : 'Health Stats'}</title>
       </Head>
+      <Toaster position="bottom-right" />
       <main className="min-h-screen p-8 bg-gray-50">
         <div className="max-w-6xl mx-auto space-y-6">
           <div className="bg-white rounded-2xl p-6 shadow-sm">
@@ -962,17 +964,77 @@ export default function Home() {
                     <h1 className="text-2xl font-bold text-gray-900">
                       {userData?.name || 'Your'}
                     </h1>
-                    <p className="text-gray-600">Health Dashboard</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-gray-600">Health Dashboard</p>
+                      <button
+                        onClick={() => {
+                          const url = window.location.href;
+                          navigator.clipboard.writeText(url).then(() => {
+                            toast.success('Dashboard link copied to clipboard!', {
+                              duration: 2000,
+                              style: {
+                                background: '#333',
+                                color: '#fff',
+                              },
+                            });
+                          }).catch(() => {
+                            toast.error('Failed to copy link', {
+                              duration: 2000,
+                              style: {
+                                background: '#333',
+                                color: '#fff',
+                              },
+                            });
+                          });
+                        }}
+                        className="inline-flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </>
               ) : (
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {userData?.name ? `${userData.name}'s` : ''} Health Dashboard
-                  </h1>
-                  <p className="text-gray-600">Viewing user data</p>
-          </div>
-        )}
+                <div className="flex items-center justify-between w-full">
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                      {userData?.name ? `${userData.name}'s` : ''} Health Dashboard
+                    </h1>
+                    <div className="flex items-center gap-2">
+                      <p className="text-gray-600">Viewing user data</p>
+                      <button
+                        onClick={() => {
+                          const url = window.location.href;
+                          navigator.clipboard.writeText(url).then(() => {
+                            toast.success('Dashboard link copied to clipboard!', {
+                              duration: 2000,
+                              style: {
+                                background: '#333',
+                                color: '#fff',
+                              },
+                            });
+                          }).catch(() => {
+                            toast.error('Failed to copy link', {
+                              duration: 2000,
+                              style: {
+                                background: '#333',
+                                color: '#fff',
+                              },
+                            });
+                          });
+                        }}
+                        className="inline-flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+          )}
             </div>
           </div>
 

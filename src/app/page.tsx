@@ -95,16 +95,16 @@ export default function Home() {
             >
               Sign up
             </a>
-          </div>
         </div>
+      </div>
       </nav>
 
       {/* Floating Theme Toggle */}
       <div className="fixed bottom-16 right-4 z-[100]">
         <div className="bg-white/10 dark:bg-gray-900/30 backdrop-blur-lg rounded-full p-3 shadow-lg hover:shadow-xl transition-all scale-110 hover:scale-125">
           <ThemeToggle />
-        </div>
-      </div>
+            </div>
+          </div>
 
       {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/10 via-purple-500/5 to-transparent dark:from-indigo-500/20 dark:via-purple-500/10 pointer-events-none" />
@@ -116,16 +116,16 @@ export default function Home() {
           {/* Animated Rocket Icon */}
           <div className="flex justify-center mb-8">
             <div className="text-4xl animate-bounce hover:scale-110 transition-transform cursor-pointer">🚀</div>
-          </div>
+                </div>
 
           {/* Enhanced Main Title with Animation */}
           <h1 className="text-center animate-fade-in">
             <span className="block text-5xl md:text-6xl font-bold mb-4 hover:scale-105 transition-transform">
               Share Your Health Journey
-            </span>
+                      </span>
             <span className="block text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 text-transparent bg-clip-text bg-animate hover:scale-105 transition-transform">
               Track • Share • Inspire
-            </span>
+                      </span>
           </h1>
 
           {/* Enhanced Subtitle */}
@@ -143,15 +143,15 @@ export default function Home() {
               <span>Start Your Story</span>
               <span className="ml-2 transform translate-x-0 group-hover:translate-x-1 transition-transform">→</span>
             </a>
-            <button 
+                      <button
               onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })}
               className="group inline-flex items-center justify-center px-8 py-3 border border-gray-300 dark:border-gray-700 text-base font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-600 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-gray-800/25">
               Explore
               <svg className="ml-2 w-4 h-4 transform group-hover:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-          </div>
+                        </svg>
+                      </button>
+                    </div>
 
           {/* Enhanced Demo Charts */}
           <div className="mt-24 grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in-up delay-300">
