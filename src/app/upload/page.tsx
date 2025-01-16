@@ -454,7 +454,6 @@ export default function UploadPage() {
               )}
             </div>
             <div className="flex items-center gap-4">
-              <ThemeToggle />
               <button 
                 className="px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-lg text-sm font-medium transition-colors"
                 onClick={() => setIsAddResultsModalOpen(true)}
@@ -791,6 +790,13 @@ export default function UploadPage() {
           setTimeout(() => setStatus(''), 3000);
         }}
       />
+
+      {/* Floating Theme Toggle */}
+      <div className="fixed bottom-16 right-4 z-[100]">
+        <div className="bg-white/10 dark:bg-gray-900/30 backdrop-blur-lg rounded-full p-3 shadow-lg hover:shadow-xl transition-all scale-110 hover:scale-125">
+          <ThemeToggle />
+        </div>
+      </div>
     </main>
   );
 } 

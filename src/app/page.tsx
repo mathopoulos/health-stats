@@ -83,7 +83,6 @@ export default function Home() {
       <nav className="absolute top-0 left-0 right-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-end items-center space-x-4">
-            <ThemeToggle />
             <a
               href="/upload"
               className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
@@ -99,6 +98,13 @@ export default function Home() {
           </div>
         </div>
       </nav>
+
+      {/* Floating Theme Toggle */}
+      <div className="fixed bottom-16 right-4 z-[100]">
+        <div className="bg-white/10 dark:bg-gray-900/30 backdrop-blur-lg rounded-full p-3 shadow-lg hover:shadow-xl transition-all scale-110 hover:scale-125">
+          <ThemeToggle />
+        </div>
+      </div>
 
       {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/10 via-purple-500/5 to-transparent dark:from-indigo-500/20 dark:via-purple-500/10 pointer-events-none" />

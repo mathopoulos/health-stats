@@ -5,24 +5,29 @@ import ThemeToggle from "@/app/components/ThemeToggle";
 
 export default function SignIn() {
   return (
-    <main className="min-h-screen bg-primary dark:bg-primary-dark-dark text-gray-900 dark:text-white overflow-hidden">
+    <main className="min-h-screen bg-primary dark:bg-primary-dark-dark flex items-center justify-center relative">
+      {/* Floating Theme Toggle */}
+      <div className="fixed bottom-16 right-4 z-[100]">
+        <div className="bg-white/10 dark:bg-gray-900/30 backdrop-blur-lg rounded-full p-3 shadow-lg hover:shadow-xl transition-all scale-110 hover:scale-125">
+          <ThemeToggle />
+        </div>
+      </div>
+
       {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/10 via-purple-500/5 to-transparent dark:from-indigo-500/20 dark:via-purple-500/10 pointer-events-none" />
       <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
 
-      <ThemeToggle />
-
-      <div className="relative min-h-screen flex flex-col items-center justify-center px-4">
+      <div className="relative z-10 w-full max-w-md p-8">
         {/* Logo/Icon */}
-        <div className="mb-8 animate-bounce hover:scale-110 transition-transform cursor-pointer">
-          <div className="text-4xl">🚀</div>
+        <div className="flex justify-center mb-8">
+          <div className="text-4xl animate-bounce hover:scale-110 transition-transform cursor-pointer">🚀</div>
         </div>
 
         {/* Sign In Container */}
         <div className="w-full max-w-md space-y-8">
           {/* Title Section */}
           <div className="text-center">
-            <h1 className="text-4xl font-bold mb-3 animate-fade-in">
+            <h1 className="text-4xl font-bold mb-3 animate-fade-in text-gray-900 dark:text-white">
               Welcome Back
             </h1>
             <p className="text-gray-600 dark:text-gray-400 text-lg animate-fade-in-up">
