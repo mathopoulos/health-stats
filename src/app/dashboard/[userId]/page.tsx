@@ -1082,7 +1082,7 @@ export default function Home() {
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Heart Rate Variability</span>
                     <div className="mt-2 flex items-baseline space-x-2">
-                      <span className="text-2xl font-bold text-gray-900">
+                      <span className="text-2xl font-bold text-gray-900 dark:text-white">
                         {data.loading ? (
                           "..."
                         ) : data.hrv.length > 0 ? (
@@ -1124,7 +1124,7 @@ export default function Home() {
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg VO2 Max</span>
                     <div className="mt-2 flex items-baseline space-x-2">
-                      <span className="text-2xl font-bold text-gray-900">
+                      <span className="text-2xl font-bold text-gray-900 dark:text-white">
                         {data.loading ? (
                           "..."
                         ) : data.vo2max.length > 0 ? (
@@ -1166,7 +1166,7 @@ export default function Home() {
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Weight</span>
                     <div className="mt-2 flex items-baseline space-x-2">
-                      <span className="text-2xl font-bold text-gray-900">
+                      <span className="text-2xl font-bold text-gray-900 dark:text-white">
                         {data.loading ? (
                           "..."
                         ) : data.weight.length > 0 ? (
@@ -1208,7 +1208,7 @@ export default function Home() {
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Body Fat</span>
                     <div className="mt-2 flex items-baseline space-x-2">
-                      <span className="text-2xl font-bold text-gray-900">
+                      <span className="text-2xl font-bold text-gray-900 dark:text-white">
                         {data.loading ? (
                           "..."
                         ) : data.bodyFat.length > 0 ? (
