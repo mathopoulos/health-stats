@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { Providers } from './providers';
+import { ThemeProvider } from './context/ThemeContext';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { SessionProvider } from './components/SessionProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -17,14 +17,16 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession();
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <Providers session={session}>
-          {children}
-        </Providers>
+        <SessionProvider session={session}>
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   );

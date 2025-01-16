@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import AddResultsModal from '../components/AddResultsModal';
 import Image from 'next/image';
 import Link from 'next/link';
+import ThemeToggle from '../components/ThemeToggle';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
@@ -436,25 +437,26 @@ export default function UploadPage() {
   }
 
   return (
-    <main className="min-h-screen p-8 bg-gray-50">
+    <main className="min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
       <div className="max-w-5xl mx-auto">
-        <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm mb-6">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold text-gray-900">Add Health Data</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Add Health Data</h1>
               {session?.user?.email ? (
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   ({session.user.email})
                 </span>
               ) : (
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   (Not signed in)
                 </span>
               )}
             </div>
             <div className="flex items-center gap-4">
+              <ThemeToggle />
               <button 
-                className="px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-lg text-sm font-medium transition-colors"
                 onClick={() => setIsAddResultsModalOpen(true)}
               >
                 Add Blood Test Results
@@ -462,14 +464,14 @@ export default function UploadPage() {
               {session?.user?.id && (
                 <Link
                   href={`/dashboard/userId=${session.user.id}`}
-                  className="px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-600 rounded-lg text-sm font-medium transition-colors"
+                  className="px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 rounded-lg text-sm font-medium transition-colors"
                 >
                   View Dashboard
                 </Link>
               )}
               <button
                 onClick={() => signOut({ callbackUrl: '/' })}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors"
               >
                 Sign Out
               </button>
@@ -478,13 +480,13 @@ export default function UploadPage() {
         </div>
 
         {/* Add Name Section */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Your Profile</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm mb-6">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Your Profile</h2>
           <div className="flex gap-8">
             {/* Profile Image Section */}
             <div className="flex flex-col items-center">
               <div className="relative group">
-                <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 mb-2">
+                <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 mb-2">
                   {profileImage ? (
                     <div className="w-full h-full">
                       <div onError={(e) => {
@@ -510,7 +512,7 @@ export default function UploadPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
                       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
@@ -548,18 +550,18 @@ export default function UploadPage() {
               <button
                 onClick={() => profileImageRef.current?.click()}
                 disabled={isUploadingImage}
-                className="text-sm text-indigo-600 hover:text-indigo-700"
+                className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
               >
                 Change Photo
               </button>
               {imageError && (
-                <p className="mt-1 text-sm text-red-500">{imageError}</p>
+                <p className="mt-1 text-sm text-red-500 dark:text-red-400">{imageError}</p>
               )}
             </div>
 
             {/* Name Input Section */}
             <div className="flex-1">
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Display Name
               </label>
               <div className="flex items-end gap-4">
@@ -570,10 +572,10 @@ export default function UploadPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter your name"
-                    className="w-full px-4 py-2 bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+                    className="w-full px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-600 focus:border-indigo-400 dark:focus:border-indigo-500"
                   />
                   {nameError && (
-                    <p className="mt-1 text-sm text-red-500">{nameError}</p>
+                    <p className="mt-1 text-sm text-red-500 dark:text-red-400">{nameError}</p>
                   )}
                 </div>
                 <button
@@ -596,10 +598,10 @@ export default function UploadPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-medium text-gray-900">Apple Health Fitness Data</h2>
-            <div className="flex items-center text-xs text-gray-500">
+            <h2 className="text-lg font-medium text-gray-900 dark:text-white">Apple Health Fitness Data</h2>
+            <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -609,10 +611,10 @@ export default function UploadPage() {
           <form onSubmit={handleSubmit}>
             <div 
               className={`mb-4 relative ${
-                isDragging ? 'border-indigo-500 bg-indigo-50 scale-[1.02]' : 
-                uploadSuccess ? 'border-green-500 bg-green-50' :
-                'border-dashed border-gray-300 bg-gray-50'
-              } border-2 rounded-xl p-8 transition-all duration-200 ease-in-out hover:border-indigo-400 hover:bg-indigo-50/50`}
+                isDragging ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 scale-[1.02]' : 
+                uploadSuccess ? 'border-green-500 bg-green-50 dark:bg-green-900/20' :
+                'border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50'
+              } border-2 rounded-xl p-8 transition-all duration-200 ease-in-out hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/30`}
               onDragEnter={handleDragEnter}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -632,18 +634,18 @@ export default function UploadPage() {
               />
               <div className="flex flex-col items-center justify-center gap-3">
                 <div className={`p-3 rounded-full ${
-                  isDragging ? 'bg-indigo-100' : 
-                  uploadSuccess ? 'bg-green-100' :
-                  'bg-gray-100'
+                  isDragging ? 'bg-indigo-100 dark:bg-indigo-900/50' : 
+                  uploadSuccess ? 'bg-green-100 dark:bg-green-900/50' :
+                  'bg-gray-100 dark:bg-gray-800'
                 } transition-colors duration-200`}>
                   {uploadSuccess ? (
-                    <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   ) : (
                     <svg 
                       className={`w-6 h-6 ${
-                        isDragging ? 'text-indigo-500' : 'text-gray-500'
+                        isDragging ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400'
                       }`} 
                       fill="none" 
                       stroke="currentColor" 
@@ -659,16 +661,16 @@ export default function UploadPage() {
                   )}
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-gray-700">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     {isDragging ? 'Drop your file here' : 
                      uploadSuccess ? 'File uploaded successfully!' :
                      'Drag and drop your file here, or click to browse'}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     Only XML files are supported
                   </p>
                   {inputFileRef.current?.files?.[0] && (
-                    <p className="text-sm font-medium text-indigo-600 mt-2">
+                    <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 mt-2">
                       Selected: {inputFileRef.current.files[0].name}
                     </p>
                   )}
@@ -696,8 +698,8 @@ export default function UploadPage() {
                 onClick={handleProcess}
                 disabled={isProcessing || uploading}
                 className={`px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors flex items-center gap-2
-                  ${isProcessing || uploading ? 'bg-gray-400' : 
-                    'bg-green-600 hover:bg-green-700'}`}
+                  ${isProcessing || uploading ? 'bg-gray-400 dark:bg-gray-600' : 
+                    'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600'}`}
               >
                 {isProcessing ? (
                   <>
@@ -715,14 +717,14 @@ export default function UploadPage() {
           {/* Status Messages */}
           <div className="mt-6 space-y-4">
             {uploading && (
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="w-full bg-gray-100 rounded-full h-2">
+              <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2">
                   <div 
-                    className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                    className="bg-indigo-600 dark:bg-indigo-500 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   ></div>
                 </div>
-                <p className="text-sm text-gray-600 mt-2">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                   {status || `Uploading... ${Math.round(progress)}%`}
                 </p>
               </div>
@@ -730,16 +732,16 @@ export default function UploadPage() {
 
             {processingStatus && (
               <div className={`rounded-lg p-4 text-sm ${
-                processingStatus.includes('Error') ? 'bg-red-50 text-red-600' : 
-                processingStatus.includes('complete') ? 'bg-green-50 text-green-600' :
-                'bg-blue-50 text-blue-600'
+                processingStatus.includes('Error') ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' : 
+                processingStatus.includes('complete') ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' :
+                'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
               }`}>
                 {processingStatus}
                 {processingStatus.includes('complete') && session?.user?.id && (
                   <div className="mt-2">
-                    <Link
+                    <Link 
                       href={`/dashboard/userId=${session.user.id}`}
-                      className="text-green-700 hover:text-green-800 font-medium underline"
+                      className="text-green-700 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 font-medium underline"
                     >
                       View your dashboard →
                     </Link>
@@ -749,30 +751,30 @@ export default function UploadPage() {
             )}
 
             {error && (
-              <div className="bg-red-50 text-red-600 rounded-lg p-4 text-sm">
+              <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm">
                 {error}
               </div>
             )}
           </div>
 
           {/* Help Section */}
-          <div className="mt-8 border-t border-gray-100 pt-6">
-            <h3 className="text-sm font-medium text-gray-900 mb-4">How to export your Apple Health data</h3>
+          <div className="mt-8 border-t border-gray-100 dark:border-gray-800 pt-6">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">How to export your Apple Health data</h3>
             <ol className="space-y-3">
-              <li className="flex gap-3 text-sm text-gray-600">
-                <span className="flex-none w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-900">1</span>
+              <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
+                <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">1</span>
                 <span>Open the Health app on your iPhone</span>
               </li>
-              <li className="flex gap-3 text-sm text-gray-600">
-                <span className="flex-none w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-900">2</span>
+              <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
+                <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">2</span>
                 <span>Tap your profile picture in the top right</span>
               </li>
-              <li className="flex gap-3 text-sm text-gray-600">
-                <span className="flex-none w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-900">3</span>
+              <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
+                <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">3</span>
                 <span>Scroll down and tap "Export All Health Data"</span>
               </li>
-              <li className="flex gap-3 text-sm text-gray-600">
-                <span className="flex-none w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-900">4</span>
+              <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
+                <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">4</span>
                 <span>Upload the exported ZIP file here</span>
               </li>
             </ol>
