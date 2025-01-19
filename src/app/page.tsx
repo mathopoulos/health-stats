@@ -93,12 +93,14 @@ export default function Home() {
               >
                 Log in
               </a>
+              {/* Temporarily hidden
               <a
                 href="/upload"
                 className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all hover:scale-105"
               >
                 Sign up
               </a>
+              */}
             </div>
           </div>
         </div>
