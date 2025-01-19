@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { XMLParser } from 'fast-xml-parser/src/fxp';
 
@@ -289,5 +289,36 @@ export async function fetchAllHealthData(type: HealthDataType, userId: string): 
   } catch (error) {
     console.error(`Error fetching ${type} data:`, error);
     return [];
+  }
+}
+
+export async function deleteOldXmlFiles(userId: string): Promise<void> {
+  try {
+    // List all XML files for the user
+    const command = new ListObjectsV2Command({
+      Bucket: BUCKET_NAME,
+      Prefix: `uploads/${userId}/`,
+    });
+
+    const response = await s3Client.send(command);
+    const xmlFiles = response.Contents?.filter(obj => obj.Key?.endsWith('.xml')) || [];
+
+    // Delete each XML file
+    for (const file of xmlFiles) {
+      if (!file.Key) continue;
+
+      const deleteCommand = new DeleteObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: file.Key,
+      });
+
+      await s3Client.send(deleteCommand);
+      console.log(`Deleted old XML file: ${file.Key}`);
+    }
+
+    console.log(`Deleted ${xmlFiles.length} old XML files for user ${userId}`);
+  } catch (error) {
+    console.error('Error deleting old XML files:', error);
+    throw error;
   }
 } 

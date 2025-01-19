@@ -3,6 +3,9 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import { deleteOldXmlFiles } from '@/lib/s3';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -70,6 +73,14 @@ async function processDataFiles(cwd: string) {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const cwd = process.cwd();
     console.log('Current working directory:', cwd);
 
@@ -87,6 +98,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Process all data files
     await processDataFiles(cwd);
+
+    // Delete old XML files for this user
+    await deleteOldXmlFiles(session.user.id);
 
     return NextResponse.json({ 
       success: true, 

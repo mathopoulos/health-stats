@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generatePresignedUploadUrl } from '@/lib/s3';
+import { generatePresignedUploadUrl, deleteOldXmlFiles } from '@/lib/s3';
 import { randomUUID } from 'crypto';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
@@ -19,6 +19,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (!filename) {
       return NextResponse.json({ error: 'Filename is required' }, { status: 400 });
     }
+
+    // Delete any existing XML files for this user before generating new upload URL
+    await deleteOldXmlFiles(session.user.id);
 
     // Generate a unique key for the file
     const fileExtension = filename.split('.').pop() || 'xml';
