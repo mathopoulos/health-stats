@@ -695,9 +695,33 @@ export default function UploadPage() {
           {activeTab === 'fitness' && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Fitness Metrics</h2>
+
+              {/* iOS App Sync Section - Simplified */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-4">
+                  <svg className="w-6 h-6 text-indigo-600 dark:text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      Get automatic syncing with our iOS app —
+                      <a
+                        href="https://apps.apple.com/app/your-app-id"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 font-medium ml-1"
+                      >
+                        Download on the App Store
+                      </a>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Manual Upload Section */}
               <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Apple Health Fitness Data</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Upload Apple Health Data</h3>
                   <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
