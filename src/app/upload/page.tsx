@@ -117,6 +117,8 @@ export default function UploadPage() {
   const [imageError, setImageError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('profile');
   const profileImageRef = useRef<HTMLInputElement>(null);
+  const [isFileLoading, setIsFileLoading] = useState(false);
+  const [fileKey, setFileKey] = useState(0);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -697,33 +699,86 @@ export default function UploadPage() {
                   }`}
                 >
                   <input
+                    key={fileKey}
                     type="file"
                     ref={inputFileRef}
                     onChange={(e) => {
+                      setIsFileLoading(true);
                       if (e.target.files?.[0]) {
-                        handleSubmit(new Event('submit') as any);
+                        setError(null);
+                        setUploadSuccess(false);
                       }
+                      setTimeout(() => {
+                        setIsFileLoading(false);
+                      }, 500);
                     }}
                     className="hidden"
                     accept=".xml,.fit"
                   />
                   <div className="space-y-4">
-                    <div className="flex justify-center">
-                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                    </div>
-                    <div>
-                      <button
-                        onClick={() => inputFileRef.current?.click()}
-                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 font-medium"
-                      >
-                        Upload a file
-                      </button>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                        or drag and drop your fitness data files here
-                      </p>
-                    </div>
+                    {isFileLoading ? (
+                      // Loading state
+                      <div className="flex flex-col items-center space-y-3">
+                        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800">
+                          <svg className="animate-spin h-6 w-6 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                        </div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Adding file...
+                        </p>
+                      </div>
+                    ) : inputFileRef.current?.files?.[0] ? (
+                      // Show selected file info
+                      <div className="flex flex-col items-center space-y-3">
+                        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/20">
+                          <svg className="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {inputFileRef.current.files[0].name}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Ready to upload
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (inputFileRef.current) {
+                              inputFileRef.current.value = '';
+                              setIsFileLoading(false);
+                              setFileKey(prev => prev + 1);
+                            }
+                          }}
+                          className="text-sm text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300"
+                        >
+                          Remove file
+                        </button>
+                      </div>
+                    ) : (
+                      // Default upload state
+                      <>
+                        <div className="flex justify-center">
+                          <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                        </div>
+                        <div>
+                          <button
+                            onClick={() => inputFileRef.current?.click()}
+                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 font-medium"
+                          >
+                            Upload a file
+                          </button>
+                          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                            or drag and drop your fitness data files here
+                          </p>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
                 {error && <p className="mt-2 text-red-500 text-sm">{error}</p>}
@@ -760,8 +815,8 @@ export default function UploadPage() {
                   <button
                     type="submit"
                     onClick={(e) => handleSubmit(e as any)}
-                    disabled={uploading}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors"
+                    disabled={uploading || !inputFileRef.current?.files?.[0]}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {uploading ? (
                       <>
@@ -780,7 +835,7 @@ export default function UploadPage() {
                       isProcessing || uploading 
                         ? 'bg-gray-400 dark:bg-gray-600' 
                         : 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600'
-                    }`}
+                    } disabled:cursor-not-allowed`}
                   >
                     {isProcessing ? (
                       <>
