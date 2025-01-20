@@ -903,7 +903,7 @@ export default function UploadPage() {
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Blood Markers</h2>
               <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
                 <p className="text-gray-600 dark:text-gray-400">
-                  Upload and track your blood test results here.
+                  Manually add and track your blood test results here.
                 </p>
                 <button
                   onClick={() => setIsAddResultsModalOpen(true)}
