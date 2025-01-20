@@ -119,6 +119,7 @@ export default function UploadPage() {
   const profileImageRef = useRef<HTMLInputElement>(null);
   const [isFileLoading, setIsFileLoading] = useState(false);
   const [fileKey, setFileKey] = useState(0);
+  const [hasExistingUploads, setHasExistingUploads] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -235,6 +236,24 @@ export default function UploadPage() {
     }
   };
 
+  const checkExistingUploads = async () => {
+    try {
+      const response = await fetch('/api/check-uploads');
+      if (response.ok) {
+        const { hasUploads } = await response.json();
+        setHasExistingUploads(hasUploads);
+      }
+    } catch (error) {
+      console.error('Error checking existing uploads:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      checkExistingUploads();
+    }
+  }, [session?.user?.id]);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setUploadSuccess(false);
@@ -314,6 +333,7 @@ export default function UploadPage() {
 
       setStatus('Upload complete! You can now process the data.');
       setUploadSuccess(true);
+      await checkExistingUploads();
       console.log('Upload complete');
       
     } catch (error) {
@@ -828,25 +848,27 @@ export default function UploadPage() {
                       </>
                     ) : 'Upload'}
                   </button>
-                  <button
-                    onClick={handleProcess}
-                    disabled={isProcessing || uploading}
-                    className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white transition-colors ${
-                      isProcessing || uploading 
-                        ? 'bg-gray-400 dark:bg-gray-600' 
-                        : 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600'
-                    } disabled:cursor-not-allowed`}
-                  >
-                    {isProcessing ? (
-                      <>
-                        <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        Processing...
-                      </>
-                    ) : 'Process Latest Upload'}
-                  </button>
+                  {(uploadSuccess || hasExistingUploads) && (
+                    <button
+                      onClick={handleProcess}
+                      disabled={isProcessing || uploading}
+                      className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white transition-colors ${
+                        isProcessing || uploading
+                          ? 'bg-gray-400 dark:bg-gray-600' 
+                          : 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600'
+                      } disabled:cursor-not-allowed`}
+                    >
+                      {isProcessing ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          Processing...
+                        </>
+                      ) : 'Process Latest Upload'}
+                    </button>
+                  )}
                 </div>
 
                 {/* Help Section */}
