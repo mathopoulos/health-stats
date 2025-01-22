@@ -34,6 +34,15 @@
   }
 }
 
+@keyframes progress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
 .animate-fade-in {
   animation: fade-in 1s ease-out;
 }
@@ -62,6 +71,10 @@
 .bg-animate {
   background-size: 200% 200%;
   animation: bg-animate 8s ease infinite;
+}
+
+.animate-progress {
+  animation: progress 2s ease-in-out infinite;
 }
 
 :root {
