@@ -322,35 +322,35 @@ export default function Home() {
       // Map marker names from API to chart data keys
       const markerNameToKey: Record<string, keyof ChartData['bloodMarkers']> = {
         'Total Cholesterol': 'totalCholesterol',
-        'LDL-C': 'ldl',
-        'HDL-C': 'hdl',
+        'LDL Cholesterol': 'ldl',
+        'HDL Cholesterol': 'hdl',
         'Triglycerides': 'triglycerides',
         'ApoB': 'apoB',
         'Lp(a)': 'lpA',
-        'White Blood Cells': 'whiteBloodCells',
-        'Red Blood Cells': 'redBloodCells',
+        'White Blood Cell Count': 'whiteBloodCells',
+        'Red Blood Cell Count': 'redBloodCells',
         'Hematocrit': 'hematocrit',
         'Hemoglobin': 'hemoglobin',
-        'Platelets': 'platelets',
+        'Platelet Count': 'platelets',
         'HbA1c': 'hba1c',
         'Fasting Insulin': 'fastingInsulin',
         'Glucose': 'glucose',
-        'ALT': 'alt',
-        'AST': 'ast',
+        'ALT (SGPT)': 'alt',
+        'AST (SGOT)': 'ast',
         'GGT': 'ggt',
         'eGFR': 'egfr',
         'Cystatin C': 'cystatinC',
-        'BUN': 'bun',
+        'Blood Urea Nitrogen': 'bun',
         'Creatinine': 'creatinine',
         'Albumin': 'albumin',
         'Testosterone': 'testosterone',
         'Free Testosterone': 'freeTesto',
         'Estradiol': 'estradiol',
         'SHBG': 'shbg',
-        'T3': 't3',
-        'T4': 't4',
-        'TSH': 'tsh',
-        'Vitamin D3': 'vitaminD',
+        'Free T3': 't3',
+        'Free T4': 't4',
+        'Thyroid Stimulating Hormone (TSH)': 'tsh',
+        'Vitamin D, 25-Hydroxy': 'vitaminD',
         'hs-CRP': 'crp',
         'Homocysteine': 'homocysteine',
         'IGF-1': 'igf1',
@@ -363,7 +363,7 @@ export default function Home() {
         'Calcium': 'calcium',
         'Phosphorus': 'phosphorus',
         'Magnesium': 'magnesium',
-        'Bicarbonate': 'bicarbonate',
+        'Carbon Dioxide': 'bicarbonate',
         'Chloride': 'chloride'
       };
 
@@ -1812,8 +1812,8 @@ export default function Home() {
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Lipid Panel</h3>
                   <div className="space-y-6">
                     <MarkerRow label="Total Cholesterol" data={data.bloodMarkers.totalCholesterol} />
-                    <MarkerRow label="LDL-C" data={data.bloodMarkers.ldl} />
-                    <MarkerRow label="HDL-C" data={data.bloodMarkers.hdl} />
+                    <MarkerRow label="LDL Cholesterol" data={data.bloodMarkers.ldl} />
+                    <MarkerRow label="HDL Cholesterol" data={data.bloodMarkers.hdl} />
                     <MarkerRow label="Triglycerides" data={data.bloodMarkers.triglycerides} />
                     <MarkerRow label="ApoB" data={data.bloodMarkers.apoB} />
                     <MarkerRow label="Lp(a)" data={data.bloodMarkers.lpA} />

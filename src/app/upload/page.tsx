@@ -6,6 +6,7 @@ import AddResultsModal from '../components/AddResultsModal';
 import Image from 'next/image';
 import Link from 'next/link';
 import ThemeToggle from '../components/ThemeToggle';
+import BloodTestUpload from '../components/BloodTestUpload';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
@@ -120,43 +121,25 @@ export default function UploadPage() {
   const [isFileLoading, setIsFileLoading] = useState(false);
   const [fileKey, setFileKey] = useState(0);
   const [hasExistingUploads, setHasExistingUploads] = useState(false);
+  const [prefilledResults, setPrefilledResults] = useState<Array<{
+    name: string;
+    value: number;
+    unit: string;
+    category: string;
+  }> | null>(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (sessionStatus === 'loading') {
-        console.log('Session is loading...');
-        return;
-      }
-
-      if (!session?.user?.id) {
-        console.log('No user session, skipping fetch');
-        return;
-      }
+      if (sessionStatus === 'loading' || !session?.user?.id) return;
       
-      console.log('Fetching user data for:', session.user.id);
       try {
         const response = await fetch(`/api/users/${session.user.id}`);
-        console.log('User data response:', {
-          status: response.status,
-          ok: response.ok
-        });
-        
         if (response.ok) {
           const data = await response.json();
-          console.log('User data received:', {
-            success: data.success,
-            hasUser: !!data.user,
-            hasName: !!data.user?.name,
-            hasProfileImage: !!data.user?.profileImage
-          });
-          
           if (data.success && data.user) {
             setName(data.user.name || '');
             setProfileImage(data.user.profileImage || null);
           }
-        } else {
-          const errorData = await response.json();
-          console.error('Error response:', errorData);
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -165,24 +148,6 @@ export default function UploadPage() {
 
     fetchUserData();
   }, [session?.user?.id, sessionStatus]);
-
-  useEffect(() => {
-    // Refresh user data (including presigned URL) every 45 minutes
-    const interval = setInterval(() => {
-      if (session?.user?.id) {
-        fetch(`/api/users/${session.user.id}`)
-          .then(response => response.json())
-          .then(data => {
-            if (data.success && data.user) {
-              setProfileImage(data.user.profileImage || null);
-            }
-          })
-          .catch(console.error);
-      }
-    }, 45 * 60 * 1000); // 45 minutes
-
-    return () => clearInterval(interval);
-  }, [session?.user?.id]);
 
   const handleUpdateName = async () => {
     if (!name.trim()) {
@@ -443,6 +408,11 @@ export default function UploadPage() {
       timestamp: new Date().toISOString(),
     });
   }, [session, sessionStatus]);
+
+  const handleUploadComplete = () => {
+    // Refresh the dashboard data
+    window.location.href = '/dashboard';
+  };
 
   if (sessionStatus === 'loading') {
     return (
@@ -925,30 +895,34 @@ export default function UploadPage() {
           {activeTab === 'blood' && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Blood Markers</h2>
+              
+              {/* PDF Upload Section */}
               <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Upload Blood Test PDF</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  Upload your blood test PDF and we'll automatically extract the results.
+                </p>
+                <BloodTestUpload onUploadComplete={() => window.location.href = '/dashboard'} />
+              </div>
+
+              {/* Manual Entry Section */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Manual Entry</h3>
                 <p className="text-gray-600 dark:text-gray-400">
                   Manually add and track your blood test results here.
                 </p>
-                <button
-                  onClick={() => setIsAddResultsModalOpen(true)}
-                  className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Add Blood Test Results
-                </button>
+                <Link href="/add-blood-test">
+                  <button
+                    className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    Add Blood Test Results
+                  </button>
+                </Link>
               </div>
             </div>
           )}
         </div>
       </div>
-
-      {/* Modals */}
-      {isAddResultsModalOpen && (
-        <AddResultsModal
-          isOpen={isAddResultsModalOpen}
-          onClose={() => setIsAddResultsModalOpen(false)}
-          prefilledResults={null}
-        />
-      )}
     </div>
   );
 } 
