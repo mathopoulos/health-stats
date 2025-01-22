@@ -3,9 +3,13 @@ import { getServerSession } from "next-auth";
 import OpenAI from "openai";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import * as pdfjsLib from 'pdfjs-dist';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
+
+// Ensure the worker is available
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -64,6 +68,31 @@ const supportedMarkers = [
   { name: "chloride", category: "Metabolic Panel", unit: "mEq/L", aliases: ["Cl"] }
 ];
 
+async function extractTextFromPDF(pdfBuffer: ArrayBuffer): Promise<string> {
+  try {
+    console.log('Loading PDF document...');
+    const loadingTask = pdfjsLib.getDocument({ data: pdfBuffer });
+    const pdf = await loadingTask.promise;
+    console.log('PDF loaded, pages:', pdf.numPages);
+
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items
+        .map((item: any) => item.str)
+        .join(' ');
+      fullText += pageText + '\n';
+    }
+
+    console.log('Extracted text length:', fullText.length);
+    return fullText;
+  } catch (error) {
+    console.error('Error extracting text from PDF:', error);
+    throw new Error('Failed to extract text from PDF');
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     console.log('Starting blood test processing...');
@@ -111,6 +140,10 @@ export async function POST(request: NextRequest) {
     const pdfBuffer = await response.arrayBuffer();
     console.log('PDF downloaded, size:', pdfBuffer.byteLength, 'bytes');
 
+    // Extract text from PDF
+    const pdfText = await extractTextFromPDF(pdfBuffer);
+    console.log('Extracted text from PDF');
+
     // Call OpenAI API
     console.log('Calling OpenAI API...');
     const completion = await openai.chat.completions.create({
@@ -148,7 +181,7 @@ Example of CORRECT format:
 ]
 
 Blood test text to analyze:
-${pdfBuffer.toString()}`
+${pdfText}`
         }
       ],
       max_tokens: 4096,
