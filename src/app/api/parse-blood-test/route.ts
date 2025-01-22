@@ -4,16 +4,9 @@ import { authOptions } from "@/lib/auth";
 import OpenAI from "openai";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { promises as fs } from "fs";
-import os from "os";
-import path from "path";
-import { promisify } from "util";
-import { exec } from "child_process";
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
-
-const execAsync = promisify(exec);
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
