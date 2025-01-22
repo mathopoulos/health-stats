@@ -3,8 +3,6 @@ import OpenAI from "openai";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import * as pdfjsLib from 'pdfjs-dist';
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
@@ -98,10 +96,12 @@ export async function POST(request: NextRequest) {
   try {
     console.log('Starting blood test processing...');
 
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      console.log('Unauthorized: No valid session');
+    // Check authentication from session cookie
+    const sessionToken = request.cookies.get('next-auth.session-token')?.value || 
+                        request.cookies.get('__Secure-next-auth.session-token')?.value;
+                        
+    if (!sessionToken) {
+      console.log('Unauthorized: No session token');
       return new NextResponse(
         JSON.stringify({ error: "Unauthorized" }), 
         { 
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
         }
       );
     }
-    console.log('User authenticated:', session.user.email);
+    console.log('Session token found');
 
     let body;
     try {
