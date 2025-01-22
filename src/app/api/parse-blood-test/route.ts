@@ -13,6 +13,20 @@ import { exec } from "child_process";
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
+const execAsync = promisify(exec);
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION!,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
+
 export async function POST(request: NextRequest) {
   try {
     return NextResponse.json({ 
