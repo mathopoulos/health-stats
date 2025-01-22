@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import OpenAI from "openai";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import * as pdfjsLib from 'pdfjs-dist';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
@@ -97,9 +98,20 @@ export async function POST(request: NextRequest) {
   try {
     console.log('Starting blood test processing...');
 
-    // Skip authentication for now as we're in Edge Runtime
-    // We'll need to implement a different auth strategy for Edge
-    
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      console.log('Unauthorized: No valid session');
+      return new NextResponse(
+        JSON.stringify({ error: "Unauthorized" }), 
+        { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    console.log('User authenticated:', session.user.email);
+
     let body;
     try {
       body = await request.json();
@@ -269,6 +281,18 @@ ${pdfText}`
 
   } catch (error) {
     console.error("Error processing blood test:", error);
+    if (error instanceof Error && error.message.includes('Unauthorized')) {
+      return new NextResponse(
+        JSON.stringify({ 
+          error: "Unauthorized",
+          details: "Please sign in to access this API"
+        }), 
+        { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
     return new NextResponse(
       JSON.stringify({ 
         error: "Failed to process blood test",
