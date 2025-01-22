@@ -67,14 +67,55 @@ const supportedMarkers = [
 
 export async function POST(request: NextRequest) {
   try {
-    return NextResponse.json({ 
-      success: true,
-      message: "API endpoint initialized"
-    });
+    console.log('Starting blood test processing...');
+
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      console.log('Unauthorized: No valid session');
+      return new NextResponse(
+        JSON.stringify({ error: "Unauthorized" }), 
+        { status: 401 }
+      );
+    }
+    console.log('User authenticated:', session.user.email);
+
+    let body;
+    try {
+      body = await request.json();
+      console.log('Request body:', body);
+    } catch (error) {
+      console.error('Failed to parse request body:', error);
+      return new NextResponse(
+        JSON.stringify({ error: "Invalid request body" }), 
+        { status: 400 }
+      );
+    }
+
+    const { key } = body;
+    if (!key) {
+      console.log('No file key provided in request');
+      return new NextResponse(
+        JSON.stringify({ error: "No file key provided" }), 
+        { status: 400 }
+      );
+    }
+    console.log('Processing file with key:', key);
+
+    return new NextResponse(
+      JSON.stringify({ 
+        success: true,
+        message: "Request validated successfully"
+      }), 
+      { status: 200 }
+    );
+
   } catch (error) {
-    console.error("Error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
+    console.error("Error processing blood test:", error);
+    return new NextResponse(
+      JSON.stringify({ 
+        error: "Failed to process blood test",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }), 
       { status: 500 }
     );
   }
