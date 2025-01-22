@@ -946,6 +946,7 @@ export default function UploadPage() {
         <AddResultsModal
           isOpen={isAddResultsModalOpen}
           onClose={() => setIsAddResultsModalOpen(false)}
+          prefilledResults={null}
         />
       )}
     </div>
