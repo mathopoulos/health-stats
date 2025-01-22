@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generatePresignedUploadUrl, deleteOldXmlFiles } from '@/lib/s3';
-import { randomUUID } from 'crypto';
-import { getServerSession } from 'next-auth/next';
+import { generatePresignedUploadUrl } from '@/lib/s3';
+import { nanoid } from 'nanoid';
+import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
 export const runtime = 'nodejs';
@@ -16,27 +16,33 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const { filename, contentType } = await request.json();
 
-    if (!filename) {
-      return NextResponse.json({ error: 'Filename is required' }, { status: 400 });
+    if (!filename || !contentType) {
+      return NextResponse.json(
+        { error: "Missing filename or contentType" }, 
+        { status: 400 }
+      );
     }
 
-    // Delete any existing XML files for this user before generating new upload URL
-    await deleteOldXmlFiles(session.user.id);
-
     // Generate a unique key for the file
-    const fileExtension = filename.split('.').pop() || 'xml';
-    const uniqueFilename = `${randomUUID()}.${fileExtension}`;
-    const key = `uploads/${session.user.id}/${uniqueFilename}`;
+    const fileExtension = filename.split('.').pop();
+    const key = `uploads/${session.user.id}/${nanoid()}.${fileExtension}`;
 
     // Generate the presigned URL
     console.log('Generating presigned URL for:', key, 'contentType:', contentType);
-    const url = await generatePresignedUploadUrl(key, contentType || 'application/xml', session.user.id);
+    const url = await generatePresignedUploadUrl(key, contentType, session.user.id);
 
-    return NextResponse.json({ url, key });
+    return NextResponse.json({ 
+      success: true,
+      url, 
+      key 
+    });
   } catch (error) {
     console.error('Error generating upload URL:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to generate upload URL' },
+      { 
+        error: "Failed to generate upload URL",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }, 
       { status: 500 }
     );
   }
