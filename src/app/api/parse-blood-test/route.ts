@@ -93,10 +93,29 @@ export async function POST(request: NextRequest) {
     }
     console.log('Processing file with key:', key);
 
+    // Get the signed URL for the uploaded PDF
+    const command = new GetObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME!,
+      Key: key,
+    });
+    const signedUrl = await getSignedUrl(s3Client, command);
+    console.log('Generated signed URL for S3 file');
+
+    // Download the PDF file
+    console.log('Downloading PDF from S3...');
+    const response = await fetch(signedUrl);
+    if (!response.ok) {
+      console.error('Failed to download PDF:', response.status, response.statusText);
+      throw new Error(`Failed to download PDF: ${response.statusText}`);
+    }
+    const pdfBuffer = await response.arrayBuffer();
+    console.log('PDF downloaded, size:', pdfBuffer.byteLength, 'bytes');
+
     return new NextResponse(
       JSON.stringify({ 
         success: true,
-        message: "Request validated successfully"
+        message: "PDF file retrieved successfully",
+        size: pdfBuffer.byteLength
       }), 
       { status: 200 }
     );
