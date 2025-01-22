@@ -111,13 +111,127 @@ export async function POST(request: NextRequest) {
     const pdfBuffer = await response.arrayBuffer();
     console.log('PDF downloaded, size:', pdfBuffer.byteLength, 'bytes');
 
+    // Call OpenAI API
+    console.log('Calling OpenAI API...');
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4-turbo-preview",
+      messages: [
+        {
+          role: "user",
+          content: `Extract blood test values from the text below. You MUST:
+
+1. Return ONLY a JSON array containing ONLY the markers from our supported list
+2. Use EXACTLY these marker names - no variations or aliases allowed:
+${supportedMarkers.map(m => `- "${m.name}" (${m.unit})`).join('\n')}
+
+3. Each marker object MUST have these exact properties:
+{
+  "name": "one of the exact names above",
+  "value": number only (no strings, no ranges),
+  "unit": "exactly matching the unit shown above",
+  "category": "exactly matching one of: Complete Blood Count, White Blood Cell Differential, Metabolic Panel, Liver Function, Lipid Panel, Thyroid Function, Vitamins"
+}
+
+4. If you see variations like "HDL-C", map it to the exact name "hdlc"
+5. Do not include any markers that don't exactly match our supported list
+6. Do not include any explanatory text or markdown
+7. Values must be numbers only, not strings or ranges
+
+Example of CORRECT format:
+[
+  {
+    "name": "hdlc",
+    "value": 45,
+    "unit": "mg/dL",
+    "category": "Lipid Panel"
+  }
+]
+
+Blood test text to analyze:
+${pdfBuffer.toString()}`
+        }
+      ],
+      max_tokens: 4096,
+      temperature: 0
+    });
+    console.log('Received response from OpenAI');
+
+    const response_text = completion.choices[0].message.content;
+    if (!response_text) {
+      console.error('No content in OpenAI response');
+      throw new Error("No response from OpenAI");
+    }
+
+    console.log('OpenAI Raw Response:', response_text);
+
+    // Clean and parse the response
+    const cleanedResponse = response_text
+      .replace(/```json\n?|\n?```/g, '')  // Remove code blocks
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')  // Remove zero-width spaces
+      .trim();
+    
+    console.log('Cleaned Response:', cleanedResponse);
+
+    let parsed;
+    try {
+      parsed = JSON.parse(cleanedResponse);
+      console.log('Successfully parsed JSON:', parsed);
+    } catch (error) {
+      console.error('JSON Parse Error:', error);
+      console.error('Failed to parse response:', cleanedResponse);
+      throw new Error(`Invalid JSON response: ${cleanedResponse}`);
+    }
+
+    if (!Array.isArray(parsed)) {
+      console.error('Parsed response is not an array:', parsed);
+      throw new Error("Response is not an array");
+    }
+
+    // Validate each marker
+    console.log('Validating markers...');
+    const validatedMarkers = parsed.filter(marker => {
+      const supportedMarker = supportedMarkers.find(m => 
+        m.name === marker.name || 
+        m.aliases.includes(marker.name)
+      );
+      
+      if (supportedMarker) {
+        // Normalize the marker name to the main name
+        marker.name = supportedMarker.name;
+      }
+      
+      const isValid = supportedMarker &&
+        typeof marker.value === 'number' &&
+        !isNaN(marker.value) &&
+        marker.unit === supportedMarker.unit &&
+        marker.category === supportedMarker.category;
+      
+      if (!isValid) {
+        console.log('Invalid marker:', marker, 'Reason:', !supportedMarker ? 'unsupported marker' :
+          typeof marker.value !== 'number' ? 'invalid value type' :
+          isNaN(marker.value) ? 'NaN value' :
+          marker.unit !== supportedMarker.unit ? 'unit mismatch' :
+          'category mismatch');
+      }
+      return isValid;
+    });
+
+    console.log('Validated markers:', validatedMarkers);
+
+    if (validatedMarkers.length === 0) {
+      console.error('No valid markers found after validation');
+      throw new Error("No valid markers found in the blood test");
+    }
+
     return new NextResponse(
       JSON.stringify({ 
         success: true,
-        message: "PDF file retrieved successfully",
-        size: pdfBuffer.byteLength
+        data: validatedMarkers 
       }), 
-      { status: 200 }
+      { 
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      }
     );
 
   } catch (error) {
