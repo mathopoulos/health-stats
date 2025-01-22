@@ -48,6 +48,7 @@
     "react-chartjs-2": "^5.2.0",
     "react-datepicker": "^7.6.0",
     "react-dom": "^18.2.0",
+    "react-dropzone": "^14.3.5",
     "react-hot-toast": "^2.5.1",
     "recharts": "^2.15.0",
     "tailwind-merge": "^2.6.0",
