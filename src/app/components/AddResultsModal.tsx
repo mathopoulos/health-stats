@@ -1,16 +1,21 @@
 'use client';
 
-import React, { useState, FormEvent, ChangeEvent } from 'react';
+import React, { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { Dialog } from '@headlessui/react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import "./datepicker.css";
+import { toast } from 'react-hot-toast';
 
 interface AddResultsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit?: (results: any) => void;
-  onSuccess?: () => void;
+  prefilledResults: Array<{
+    name: string;
+    value: number;
+    unit: string;
+    category: string;
+  }> | null;
 }
 
 // Flatten all markers into a single array with their categories
@@ -61,14 +66,35 @@ const allMarkers = [
   { name: 'Chloride', category: 'Electrolytes', unit: 'mEq/L' }
 ];
 
-export default function AddResultsModal({ isOpen, onClose, onSuccess }: AddResultsModalProps) {
+export default function AddResultsModal({ isOpen, onClose, prefilledResults }: AddResultsModalProps) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedMarkers, setSelectedMarkers] = useState<typeof allMarkers[0][]>([]);
+  const [selectedMarkers, setSelectedMarkers] = useState<Array<{
+    name: string;
+    value: string;
+    unit: string;
+    category: string;
+  }>>([]);
   const [results, setResults] = useState<Record<string, number>>({});
   const [step, setStep] = useState<'select' | 'input'>('select');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Initialize with prefilled results when they change
+  useEffect(() => {
+    if (prefilledResults) {
+      // Convert prefilled results to the format expected by the component
+      const markers = prefilledResults.map(marker => ({
+        name: marker.name,
+        value: marker.value.toString(),
+        unit: marker.unit,
+        category: marker.category
+      }));
+      
+      setSelectedMarkers(markers);
+      setStep('input'); // Skip the selection step
+    }
+  }, [prefilledResults]);
 
   const filteredMarkers = allMarkers.filter(marker => 
     marker.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -81,22 +107,25 @@ export default function AddResultsModal({ isOpen, onClose, onSuccess }: AddResul
       if (isSelected) {
         return prev.filter(m => m.name !== marker.name);
       } else {
-        return [...prev, marker];
+        return [...prev, { ...marker, value: '' }];
       }
     });
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (step === 'select') {
-      setStep('input');
-      return;
-    }
-
-    setError(null);
     setIsSubmitting(true);
-    
+    setError(null);
+
     try {
+      // Convert values to numbers
+      const markers = selectedMarkers.map(marker => ({
+        name: marker.name,
+        value: parseFloat(marker.value),
+        unit: marker.unit,
+        category: marker.category
+      }));
+
       const response = await fetch('/api/blood-markers', {
         method: 'POST',
         headers: {
@@ -104,36 +133,20 @@ export default function AddResultsModal({ isOpen, onClose, onSuccess }: AddResul
         },
         body: JSON.stringify({
           date: selectedDate,
-          markers: Object.entries(results).map(([name, value]) => {
-            const marker = allMarkers.find(m => m.name === name);
-            return {
-              name,
-              value,
-              unit: marker?.unit || '',
-              category: marker?.category || ''
-            };
-          })
-        })
+          markers
+        }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save results');
+        throw new Error('Failed to save blood markers');
       }
 
-      // Reset form
-      setSelectedDate(new Date());
-      setSearchTerm('');
-      setSelectedMarkers([]);
-      setResults({});
-      setStep('select');
-      
-      // Notify parent of success
-      onSuccess?.();
+      toast.success('Blood markers saved successfully');
       onClose();
     } catch (error) {
-      console.error('Error saving results:', error);
-      setError(error instanceof Error ? error.message : 'Failed to save results');
+      console.error('Error saving blood markers:', error);
+      setError('Failed to save blood markers');
+      toast.error('Failed to save blood markers');
     } finally {
       setIsSubmitting(false);
     }
