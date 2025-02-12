@@ -14,9 +14,6 @@ const nextConfig = {
   images: {
     domains: ['healthdatalex.s3.us-east-1.amazonaws.com'],
   },
-  experimental: {
-    serverActions: true,
-  },
   async headers() {
     return [
       {

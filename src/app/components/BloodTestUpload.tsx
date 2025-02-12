@@ -1,10 +1,14 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
+import { signIn, useSession } from 'next-auth/react';
 
 export default function BloodTestUpload() {
+  const router = useRouter();
+  const { data: session } = useSession();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
   const [fileKey, setFileKey] = useState(0);
@@ -18,6 +22,13 @@ export default function BloodTestUpload() {
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (!file) return;
+
+    // Check if user is authenticated
+    if (!session) {
+      toast.error('Please sign in to upload files');
+      signIn();
+      return;
+    }
 
     console.log('=== Starting file upload process ===');
     console.log('File details:', {
@@ -42,15 +53,67 @@ export default function BloodTestUpload() {
     setUploadProgress('Processing blood test...');
 
     try {
-      // TODO: Add API call here in next phase
-      toast.success('File uploaded successfully. Processing will begin shortly.');
+      // Get the file data as ArrayBuffer
+      const fileData = await file.arrayBuffer();
+
+      console.log('Sending request to API...');
+      // Send to API
+      const response = await fetch('/api/pdf_test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/pdf',
+        },
+        body: fileData,
+      });
+
+      console.log('API Response status:', response.status);
+      
+      // Handle authentication errors
+      if (response.status === 401) {
+        toast.error('Session expired. Please sign in again.');
+        signIn();
+        return;
+      }
+
+      // Try to get the response text first
+      const responseText = await response.text();
+      console.log('Raw API Response:', responseText);
+
+      // Parse the response as JSON if possible
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse response as JSON:', e);
+        throw new Error(`Invalid response from server: ${responseText.substring(0, 100)}...`);
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || `Upload failed with status ${response.status}`);
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to process blood test');
+      }
+
+      console.log('Response data:', data);
+      toast.success(
+        data.message || 
+        `PDF processed successfully${
+          data.pages ? `: ${data.pages} pages` : ''
+        }${
+          data.text ? `, ${data.text.length} characters extracted` : ''
+        }`
+      );
       resetUpload();
     } catch (error) {
       console.error('Error processing blood test:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to process blood test');
       resetUpload();
+    } finally {
+      setIsUploading(false);
     }
-  }, [resetUpload]);
+  }, [resetUpload, session]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

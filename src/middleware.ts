@@ -11,6 +11,8 @@ const PUBLIC_API_ROUTES = [
 // List of protected API routes that require authentication
 const PROTECTED_API_ROUTES = [
   '/api/upload-url',
+  '/api/parse-blood-test',
+  '/api/pdf_test',
 ];
 
 export async function middleware(request: NextRequest) {
@@ -44,33 +46,36 @@ export async function middleware(request: NextRequest) {
     isUploadPage
   });
 
-  // Allow public access to the dashboard, auth routes, and public API routes
-  if (request.nextUrl.pathname === "/" || 
-      request.nextUrl.pathname.startsWith("/dashboard") || 
-      isApiAuthRoute || 
-      isPublicApiRoute) {
-    console.log('Allowing public access');
+  // Handle API routes first
+  if (request.nextUrl.pathname.startsWith("/api")) {
+    // Allow auth routes
+    if (isApiAuthRoute) {
+      return NextResponse.next();
+    }
+
+    // Allow public routes
+    if (isPublicApiRoute) {
+      return NextResponse.next();
+    }
+
+    // Check authentication for protected routes
+    if (!token) {
+      console.log('API authentication failed');
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     return NextResponse.next();
   }
 
-  // Protect upload page and protected API routes
-  if ((isUploadPage || isProtectedApiRoute) && !token) {
-    console.log('Blocking unauthorized access');
-    if (request.nextUrl.pathname.startsWith("/api")) {
-      console.log('Returning 401 for API route');
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    console.log('Redirecting to signin');
-    return NextResponse.redirect(new URL("/auth/signin", request.url));
-  }
-
-  // Redirect to home if logged in user tries to access auth pages
+  // Handle non-API routes
   if (isAuthPage && token) {
-    console.log('Redirecting authenticated user from auth page');
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  console.log('=== Middleware End: Allowing access ===');
+  if (isUploadPage && !token) {
+    return NextResponse.redirect(new URL("/auth/signin", request.url));
+  }
+
   return NextResponse.next();
 }
 
