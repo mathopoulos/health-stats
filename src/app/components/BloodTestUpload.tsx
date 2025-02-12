@@ -36,6 +36,9 @@ export default function BloodTestUpload() {
 
   const handleSaveMarkers = async (markers: BloodMarker[], testDate: Date) => {
     try {
+      // Filter out markers with null values
+      const validMarkers = markers.filter(marker => marker.value !== null);
+      
       const response = await fetch('/api/blood-markers', {
         method: 'POST',
         headers: {
@@ -43,17 +46,25 @@ export default function BloodTestUpload() {
         },
         body: JSON.stringify({
           date: testDate,
-          markers
+          markers: validMarkers.map(marker => ({
+            name: marker.name,
+            value: marker.value,
+            unit: marker.unit,
+            category: marker.category
+          }))
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save blood markers');
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to save blood markers');
       }
 
-      router.refresh();
+      toast.success('Blood markers saved successfully');
+      router.refresh(); // Refresh the page data
     } catch (error) {
       console.error('Error saving blood markers:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to save blood markers');
       throw error;
     }
   };
