@@ -5,13 +5,10 @@ import { promisify } from 'util';
 import path from 'path';
 import os from 'os';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
 const execAsync = promisify(exec);
 
 export async function GET() {
-  return NextResponse.json({ message: 'PDF test API is working' });
+  return NextResponse.json({ message: 'PDF API is working' });
 }
 
 export async function POST(request) {

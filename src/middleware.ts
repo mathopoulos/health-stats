@@ -13,6 +13,7 @@ const PROTECTED_API_ROUTES = [
   '/api/upload-url',
   '/api/parse-blood-test',
   '/api/pdf_test',
+  '/api/pdf',
 ];
 
 export async function middleware(request: NextRequest) {

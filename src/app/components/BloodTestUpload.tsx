@@ -58,7 +58,7 @@ export default function BloodTestUpload() {
 
       console.log('Sending request to API...');
       // Send to API
-      const response = await fetch('/api/pdf_test', {
+      const response = await fetch('/api/pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/pdf',
