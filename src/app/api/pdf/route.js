@@ -111,18 +111,11 @@ async function waitForRateLimit() {
 async function extractBloodMarkersWithLLM(text) {
   console.log('Processing text (first 500 chars):', text.slice(0, 500));
   
-  const prompt = `Extract blood test results from the following text. Only extract markers that match EXACTLY with the following supported markers, their units, and categories:
-
-${SUPPORTED_MARKERS.map(m => `- ${m.name} (${m.unit}) [Category: ${m.category}]`).join('\n')}
-
-For each marker found:
-1. Use the EXACT name as listed above
-2. Use the EXACT category as listed above
-3. Convert the value to match the unit specified above if needed
-4. Include a "flag" field that is either "High", "Low", or null based on the reference ranges in the text
+  const prompt = `Extract blood test results and test date from the following text. For the date, look for terms like "Received on", "Collection Date", "Test Date", etc.
 
 Return the results in this exact JSON format:
 {
+  "testDate": "YYYY-MM-DD", // The test/collection date in ISO format. If not found, return null
   "markers": [{
     "name": "exact marker name",
     "value": number,
@@ -132,21 +125,12 @@ Return the results in this exact JSON format:
   }]
 }
 
-Only include markers that are explicitly present in the text with clear values. Do not infer or calculate values.
-If a marker from the supported list is not found in the text, return an empty markers array.
+Only include markers that match EXACTLY with the following supported markers, their units, and categories:
 
-Example response for clarity:
-{
-  "markers": [
-    {
-      "name": "Glucose",
-      "value": 95,
-      "unit": "mg/dL",
-      "flag": null,
-      "category": "Glucose Markers"
-    }
-  ]
-}
+${SUPPORTED_MARKERS.map(m => `- ${m.name} (${m.unit}) [Category: ${m.category}]`).join('\n')}
+
+Only include markers that are explicitly present in the text with clear values. Do not infer or calculate values.
+If a marker from the supported list is not found in the text, do not include it in the markers array.
 
 Text to process:
 ${text}`;
@@ -201,7 +185,10 @@ ${text}`;
       }).filter(Boolean);
       
       console.log('Successfully extracted and validated markers:', validatedMarkers);
-      return validatedMarkers;
+      return {
+        testDate: result.testDate,
+        markers: validatedMarkers
+      };
 
     } catch (error) {
       lastError = error;
@@ -223,12 +210,12 @@ ${text}`;
       
       if (attempt === MAX_RETRIES - 1) {
         console.error('All retries failed');
-        return [];
+        return { testDate: null, markers: [] };
       }
     }
   }
 
-  return [];
+  return { testDate: null, markers: [] };
 }
 
 export async function GET() {
@@ -275,14 +262,15 @@ export async function POST(request) {
       const { stdout: text } = await execAsync(`cat "${txtPath}"`);
 
       // Extract blood markers using LLM
-      const bloodMarkers = await extractBloodMarkersWithLLM(text);
-      console.log('Extracted markers:', bloodMarkers);
+      const { testDate, markers: bloodMarkers } = await extractBloodMarkersWithLLM(text);
+      console.log('Extracted data:', { testDate, markers: bloodMarkers });
 
       return NextResponse.json({ 
         success: true,
         text: text.trim(),
         pages: parseInt(pageCount.trim(), 10),
         markers: bloodMarkers,
+        testDate,
         message: 'PDF processed successfully'
       });
 

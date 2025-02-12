@@ -1,7 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import { toast } from 'react-hot-toast';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 
 interface BloodMarker {
   name: string;
@@ -15,10 +18,19 @@ interface BloodMarkerPreviewProps {
   isOpen: boolean;
   onClose: () => void;
   markers: BloodMarker[];
-  onSave: (markers: BloodMarker[]) => void;
+  onSave: (markers: BloodMarker[], date: Date) => void;
+  initialDate?: string | null;
 }
 
-export default function BloodMarkerPreview({ isOpen, onClose, markers, onSave }: BloodMarkerPreviewProps) {
+export default function BloodMarkerPreview({ isOpen, onClose, markers, onSave, initialDate }: BloodMarkerPreviewProps) {
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    if (initialDate) {
+      const date = new Date(initialDate);
+      return isNaN(date.getTime()) ? new Date() : date;
+    }
+    return new Date();
+  });
+
   // Group markers by category
   const groupedMarkers = markers.reduce((acc, marker) => {
     if (!marker.value) return acc; // Skip markers with null values
@@ -31,7 +43,7 @@ export default function BloodMarkerPreview({ isOpen, onClose, markers, onSave }:
 
   const handleSave = async () => {
     try {
-      await onSave(markers);
+      await onSave(markers, selectedDate);
       toast.success('Blood markers saved successfully');
       onClose();
     } catch (error) {
@@ -49,6 +61,21 @@ export default function BloodMarkerPreview({ isOpen, onClose, markers, onSave }:
           <Dialog.Title className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">
             Review Extracted Blood Markers
           </Dialog.Title>
+
+          {/* Date Picker */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Test Date
+            </label>
+            <DatePicker
+              selected={selectedDate}
+              onChange={(date: Date | null) => date && setSelectedDate(date)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400"
+              placeholderText="Select test date"
+              dateFormat="MM/dd/yyyy"
+              maxDate={new Date()}
+            />
+          </div>
 
           <div className="space-y-6 max-h-[60vh] overflow-y-auto">
             {Object.entries(groupedMarkers).map(([category, categoryMarkers]) => (

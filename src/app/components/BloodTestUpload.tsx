@@ -23,6 +23,7 @@ export default function BloodTestUpload() {
   const [fileKey, setFileKey] = useState(0);
   const [extractedMarkers, setExtractedMarkers] = useState<BloodMarker[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [extractedDate, setExtractedDate] = useState<string | null>(null);
 
   const resetUpload = useCallback(() => {
     setIsUploading(false);
@@ -30,9 +31,10 @@ export default function BloodTestUpload() {
     setFileKey(prev => prev + 1);
     setExtractedMarkers([]);
     setShowPreview(false);
+    setExtractedDate(null);
   }, []);
 
-  const handleSaveMarkers = async (markers: BloodMarker[]) => {
+  const handleSaveMarkers = async (markers: BloodMarker[], testDate: Date) => {
     try {
       const response = await fetch('/api/blood-markers', {
         method: 'POST',
@@ -40,7 +42,7 @@ export default function BloodTestUpload() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          date: new Date(),
+          date: testDate,
           markers
         }),
       });
@@ -138,6 +140,7 @@ export default function BloodTestUpload() {
       // Check if we have extracted markers
       if (data.markers && data.markers.length > 0) {
         setExtractedMarkers(data.markers);
+        setExtractedDate(data.testDate);
         setShowPreview(true);
         toast.success('Blood markers extracted successfully');
       } else {
@@ -224,6 +227,7 @@ export default function BloodTestUpload() {
         }}
         markers={extractedMarkers}
         onSave={handleSaveMarkers}
+        initialDate={extractedDate}
       />
     </>
   );
