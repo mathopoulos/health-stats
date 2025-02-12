@@ -29,26 +29,71 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Define supported blood markers and their units for the LLM to extract
 const SUPPORTED_MARKERS = [
-  { name: 'Glucose', unit: 'mg/dL', category: 'Metabolic' },
-  { name: 'BUN', unit: 'mg/dL', category: 'Metabolic' },
-  { name: 'Creatinine', unit: 'mg/dL', category: 'Metabolic' },
-  { name: 'eGFR', unit: 'mL/min/1.73', category: 'Metabolic' },
-  { name: 'Sodium', unit: 'mmol/L', category: 'Electrolytes' },
-  { name: 'Potassium', unit: 'mmol/L', category: 'Electrolytes' },
-  { name: 'Chloride', unit: 'mmol/L', category: 'Electrolytes' },
-  { name: 'Carbon Dioxide, Total', unit: 'mmol/L', category: 'Electrolytes' },
-  { name: 'Calcium', unit: 'mg/dL', category: 'Minerals' },
-  { name: 'Protein, Total', unit: 'g/dL', category: 'Proteins' },
-  { name: 'Albumin', unit: 'g/dL', category: 'Proteins' },
-  { name: 'Bilirubin, Total', unit: 'mg/dL', category: 'Liver' },
-  { name: 'Alkaline Phosphatase', unit: 'IU/L', category: 'Liver' },
-  { name: 'AST (SGOT)', unit: 'IU/L', category: 'Liver' },
-  { name: 'ALT (SGPT)', unit: 'IU/L', category: 'Liver' },
-  { name: 'Cholesterol, Total', unit: 'mg/dL', category: 'Lipids' },
-  { name: 'Triglycerides', unit: 'mg/dL', category: 'Lipids' },
-  { name: 'HDL Cholesterol', unit: 'mg/dL', category: 'Lipids' },
-  { name: 'LDL Chol Calc (NIH)', unit: 'mg/dL', category: 'Lipids' },
-  { name: 'Lipoprotein (a)', unit: 'nmol/L', category: 'Lipids' }
+  // Lipid Panel
+  { name: 'Total Cholesterol', unit: 'mg/dL', category: 'Lipid Panel' },
+  { name: 'LDL-C', unit: 'mg/dL', category: 'Lipid Panel' },
+  { name: 'HDL-C', unit: 'mg/dL', category: 'Lipid Panel' },
+  { name: 'Triglycerides', unit: 'mg/dL', category: 'Lipid Panel' },
+  { name: 'ApoB', unit: 'mg/dL', category: 'Lipid Panel' },
+  { name: 'Lp(a)', unit: 'nmol/L', category: 'Lipid Panel' },
+  
+  // Complete Blood Count
+  { name: 'White Blood Cells', unit: 'K/µL', category: 'Complete Blood Count' },
+  { name: 'Red Blood Cells', unit: 'M/µL', category: 'Complete Blood Count' },
+  { name: 'Hematocrit', unit: '%', category: 'Complete Blood Count' },
+  { name: 'Hemoglobin', unit: 'g/dL', category: 'Complete Blood Count' },
+  { name: 'Platelets', unit: 'K/µL', category: 'Complete Blood Count' },
+  
+  // Glucose Markers
+  { name: 'HbA1c', unit: '%', category: 'Glucose Markers' },
+  { name: 'Fasting Insulin', unit: 'µIU/mL', category: 'Glucose Markers' },
+  { name: 'Glucose', unit: 'mg/dL', category: 'Glucose Markers' },
+  
+  // Liver Markers
+  { name: 'ALT', unit: 'U/L', category: 'Liver Markers' },
+  { name: 'AST', unit: 'U/L', category: 'Liver Markers' },
+  { name: 'GGT', unit: 'U/L', category: 'Liver Markers' },
+  
+  // Kidney Markers
+  { name: 'eGFR', unit: 'mL/min/1.73m²', category: 'Kidney Markers' },
+  { name: 'Cystatin C', unit: 'mg/L', category: 'Kidney Markers' },
+  { name: 'BUN', unit: 'mg/dL', category: 'Kidney Markers' },
+  { name: 'Creatinine', unit: 'mg/dL', category: 'Kidney Markers' },
+  { name: 'Albumin', unit: 'g/dL', category: 'Kidney Markers' },
+  
+  // Sex Hormones
+  { name: 'Testosterone', unit: 'ng/dL', category: 'Sex Hormones' },
+  { name: 'Free Testosterone', unit: 'pg/mL', category: 'Sex Hormones' },
+  { name: 'Estradiol', unit: 'pg/mL', category: 'Sex Hormones' },
+  { name: 'SHBG', unit: 'nmol/L', category: 'Sex Hormones' },
+  
+  // Thyroid Markers
+  { name: 'T3', unit: 'pg/mL', category: 'Thyroid Markers' },
+  { name: 'T4', unit: 'ng/dL', category: 'Thyroid Markers' },
+  { name: 'TSH', unit: 'mIU/L', category: 'Thyroid Markers' },
+  
+  // Vitamins & Inflammation
+  { name: 'Vitamin D3', unit: 'ng/mL', category: 'Vitamins & Inflammation' },
+  { name: 'hs-CRP', unit: 'mg/L', category: 'Vitamins & Inflammation' },
+  { name: 'Homocysteine', unit: 'µmol/L', category: 'Vitamins & Inflammation' },
+  
+  // Growth Factors
+  { name: 'IGF-1', unit: 'ng/mL', category: 'Growth Factors' },
+  
+  // Iron Panel
+  { name: 'Ferritin', unit: 'ng/mL', category: 'Iron Panel' },
+  { name: 'Serum Iron', unit: 'µg/dL', category: 'Iron Panel' },
+  { name: 'TIBC', unit: 'µg/dL', category: 'Iron Panel' },
+  { name: 'Transferrin Saturation', unit: '%', category: 'Iron Panel' },
+  
+  // Electrolytes
+  { name: 'Sodium', unit: 'mEq/L', category: 'Electrolytes' },
+  { name: 'Potassium', unit: 'mEq/L', category: 'Electrolytes' },
+  { name: 'Calcium', unit: 'mg/dL', category: 'Electrolytes' },
+  { name: 'Phosphorus', unit: 'mg/dL', category: 'Electrolytes' },
+  { name: 'Magnesium', unit: 'mg/dL', category: 'Electrolytes' },
+  { name: 'Bicarbonate', unit: 'mEq/L', category: 'Electrolytes' },
+  { name: 'Chloride', unit: 'mEq/L', category: 'Electrolytes' }
 ];
 
 async function waitForRateLimit() {
@@ -64,53 +109,61 @@ async function waitForRateLimit() {
 }
 
 async function extractBloodMarkersWithLLM(text) {
-  let lastError;
+  console.log('Processing text (first 500 chars):', text.slice(0, 500));
   
-  // Log the text being processed (truncated for readability)
-  console.log('Processing text (first 500 chars):', text.substring(0, 500));
-  
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    try {
-      await waitForRateLimit();
+  const prompt = `Extract blood test results from the following text. Only extract markers that match EXACTLY with the following supported markers and their units:
 
-      const prompt = `Extract blood test results from the following lab report text. For each marker found, return its details in a structured format.
+${SUPPORTED_MARKERS.map(m => `- ${m.name} (${m.unit})`).join('\n')}
 
-Supported markers and their categories:
-${SUPPORTED_MARKERS.map(m => `- ${m.name} (${m.category}): measured in ${m.unit}`).join('\n')}
+For each marker found:
+1. Use the EXACT name as listed above
+2. Convert the value to match the unit specified above if needed
+3. Include a "flag" field that is either "High", "Low", or null based on the reference ranges in the text
+4. Include the exact category as specified above
 
-Rules:
-1. Only extract markers from the supported list above
-2. Include all fields: name, value (numeric), unit, flag (High/Low/Normal), category
-3. Match marker names exactly as listed
-4. Convert all values to numeric format
-5. If a marker is not found, do not include it
+Return the results in this exact JSON format:
+{
+  "markers": [{
+    "name": "exact marker name",
+    "value": number,
+    "unit": "exact unit",
+    "flag": "High" | "Low" | null,
+    "category": "exact category"
+  }]
+}
 
-Example response format:
+Only include markers that are explicitly present in the text with clear values. Do not infer or calculate values.
+If a marker from the supported list is not found in the text, return an empty markers array.
+
+Example response for clarity:
 {
   "markers": [
     {
       "name": "Glucose",
-      "value": 85,
+      "value": 95,
       "unit": "mg/dL",
       "flag": null,
-      "category": "Metabolic"
+      "category": "Glucose Markers"
     }
   ]
 }
 
-Text to analyze:
-${text}
+Text to process:
+${text}`;
 
-Return ONLY valid JSON with a "markers" array. No other text.`;
-
-      console.log('Sending request to OpenAI...');
+  console.log('Sending request to OpenAI...');
+  
+  let lastError;
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      await waitForRateLimit();
       
       const response = await openai.chat.completions.create({
         model: "gpt-3.5-turbo-0125",
         messages: [
           {
             role: "system",
-            content: "You are a precise medical data extraction tool. Extract blood test markers exactly as requested, maintaining exact names and units. Return only valid JSON with a markers array."
+            content: "You are a precise blood test result extractor. You only extract markers that exactly match the supported list, with exact names and units. Always return a JSON object with a markers array, even if empty."
           },
           {
             role: "user",
@@ -118,21 +171,17 @@ Return ONLY valid JSON with a "markers" array. No other text.`;
           }
         ],
         response_format: { type: "json_object" },
-        temperature: 0.1,
-        max_tokens: 1000
+        max_tokens: 1000,
+        temperature: 0
       });
 
       const result = JSON.parse(response.choices[0].message.content);
-      
-      // Validate the response
       if (!result.markers || !Array.isArray(result.markers)) {
-        console.error('Invalid response format - missing markers array:', result);
-        return [];
+        console.error('Invalid response format from OpenAI:', result);
+        throw new Error('Invalid response format');
       }
-
-      // Log the extracted markers
-      console.log('Successfully extracted markers:', result.markers);
       
+      console.log('Successfully extracted markers:', result.markers);
       return result.markers;
 
     } catch (error) {
@@ -146,18 +195,21 @@ Return ONLY valid JSON with a "markers" array. No other text.`;
         headers: error?.headers
       });
 
-      if (error?.status === 429) {
+      if (error?.status === 429 || error?.type === 'insufficient_quota') {
         const retryDelay = INITIAL_RETRY_DELAY * Math.pow(2, attempt);
         console.log(`Retrying in ${retryDelay}ms...`);
         await sleep(retryDelay);
         continue;
       }
       
-      throw error;
+      if (attempt === MAX_RETRIES - 1) {
+        console.error('All retries failed');
+        return [];
+      }
     }
   }
 
-  throw lastError;
+  return [];
 }
 
 export async function GET() {
