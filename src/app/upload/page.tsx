@@ -6,7 +6,6 @@ import AddResultsModal from '../components/AddResultsModal';
 import Image from 'next/image';
 import Link from 'next/link';
 import ThemeToggle from '../components/ThemeToggle';
-import BloodTestUpload from '../components/BloodTestUpload';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
@@ -902,7 +901,7 @@ export default function UploadPage() {
                 <p className="text-gray-600 dark:text-gray-400 mb-6">
                   Upload your blood test PDF and we'll automatically extract the results.
                 </p>
-                <BloodTestUpload onUploadComplete={() => window.location.href = '/dashboard'} />
+                {/* BloodTestUpload onUploadComplete={() => window.location.href = '/dashboard'} /> */}
               </div>
 
               {/* Manual Entry Section */}
