@@ -111,11 +111,11 @@ async function waitForRateLimit() {
 async function extractBloodMarkersWithLLM(text) {
   console.log('Processing text (first 500 chars):', text.slice(0, 500));
   
-  const prompt = `Extract blood test results and test date from the following text. For the date, look for terms like "Received on", "Collection Date", "Test Date", etc.
+  const prompt = `Extract blood test results and test date from the following text. For the date, look for terms like "Received on", "Collection Date", "Test Date", etc. The date in the text should be used EXACTLY as found - do not modify or adjust the date.
 
 Return the results in this exact JSON format:
 {
-  "testDate": "YYYY-MM-DD", // The test/collection date in ISO format. If not found, return null
+  "testDate": "YYYY-MM-DD", // The test/collection date in ISO format, using the EXACT date found in the text. If not found, return null
   "markers": [{
     "name": "exact marker name",
     "value": number,
@@ -124,6 +124,10 @@ Return the results in this exact JSON format:
     "category": "exact category name"
   }]
 }
+
+Example date conversion:
+- If text shows "Received on 08/29/2024", testDate should be "2024-08-29"
+- If text shows "Collection Date: 8/5/2024", testDate should be "2024-08-05"
 
 Only include markers that match EXACTLY with the following supported markers, their units, and categories:
 
@@ -160,6 +164,18 @@ ${text}`;
       });
 
       const result = JSON.parse(response.choices[0].message.content);
+      
+      // Validate date format
+      let validatedDate = null;
+      if (result.testDate) {
+        const dateObj = new Date(result.testDate);
+        if (!isNaN(dateObj.getTime())) {
+          validatedDate = result.testDate;
+        } else {
+          console.warn('Invalid date format received:', result.testDate);
+        }
+      }
+
       if (!result.markers || !Array.isArray(result.markers)) {
         console.error('Invalid response format from OpenAI:', result);
         throw new Error('Invalid response format');
@@ -186,7 +202,7 @@ ${text}`;
       
       console.log('Successfully extracted and validated markers:', validatedMarkers);
       return {
-        testDate: result.testDate,
+        testDate: validatedDate,
         markers: validatedMarkers
       };
 

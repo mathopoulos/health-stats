@@ -26,6 +26,8 @@ export default function BloodMarkerPreview({ isOpen, onClose, markers, onSave, i
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     if (initialDate) {
       const date = new Date(initialDate);
+      // Ensure we're using local timezone
+      date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
       return isNaN(date.getTime()) ? new Date() : date;
     }
     return new Date();
