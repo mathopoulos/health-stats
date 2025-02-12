@@ -111,15 +111,15 @@ async function waitForRateLimit() {
 async function extractBloodMarkersWithLLM(text) {
   console.log('Processing text (first 500 chars):', text.slice(0, 500));
   
-  const prompt = `Extract blood test results from the following text. Only extract markers that match EXACTLY with the following supported markers and their units:
+  const prompt = `Extract blood test results from the following text. Only extract markers that match EXACTLY with the following supported markers, their units, and categories:
 
-${SUPPORTED_MARKERS.map(m => `- ${m.name} (${m.unit})`).join('\n')}
+${SUPPORTED_MARKERS.map(m => `- ${m.name} (${m.unit}) [Category: ${m.category}]`).join('\n')}
 
 For each marker found:
 1. Use the EXACT name as listed above
-2. Convert the value to match the unit specified above if needed
-3. Include a "flag" field that is either "High", "Low", or null based on the reference ranges in the text
-4. Include the exact category as specified above
+2. Use the EXACT category as listed above
+3. Convert the value to match the unit specified above if needed
+4. Include a "flag" field that is either "High", "Low", or null based on the reference ranges in the text
 
 Return the results in this exact JSON format:
 {
@@ -128,7 +128,7 @@ Return the results in this exact JSON format:
     "value": number,
     "unit": "exact unit",
     "flag": "High" | "Low" | null,
-    "category": "exact category"
+    "category": "exact category name"
   }]
 }
 
@@ -163,7 +163,7 @@ ${text}`;
         messages: [
           {
             role: "system",
-            content: "You are a precise blood test result extractor. You only extract markers that exactly match the supported list, with exact names and units. Always return a JSON object with a markers array, even if empty."
+            content: "You are a precise blood test result extractor. You must exactly match marker names, units, and categories from the supported list. No variations or substitutions allowed."
           },
           {
             role: "user",
@@ -180,9 +180,28 @@ ${text}`;
         console.error('Invalid response format from OpenAI:', result);
         throw new Error('Invalid response format');
       }
+
+      // Validate each marker against the supported list
+      const validatedMarkers = result.markers.map(marker => {
+        const supportedMarker = SUPPORTED_MARKERS.find(m => m.name === marker.name);
+        if (!supportedMarker) {
+          console.warn(`Marker "${marker.name}" not found in supported list`);
+          return null;
+        }
+        if (supportedMarker.unit !== marker.unit) {
+          console.warn(`Invalid unit for ${marker.name}: got ${marker.unit}, expected ${supportedMarker.unit}`);
+          return null;
+        }
+        if (supportedMarker.category !== marker.category) {
+          console.warn(`Invalid category for ${marker.name}: got ${marker.category}, expected ${supportedMarker.category}`);
+          // Fix the category
+          return { ...marker, category: supportedMarker.category };
+        }
+        return marker;
+      }).filter(Boolean);
       
-      console.log('Successfully extracted markers:', result.markers);
-      return result.markers;
+      console.log('Successfully extracted and validated markers:', validatedMarkers);
+      return validatedMarkers;
 
     } catch (error) {
       lastError = error;
