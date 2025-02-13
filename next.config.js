@@ -3,6 +3,8 @@ const nextConfig = {
   reactStrictMode: true,
   // Ensure CSS modules work correctly
   webpack: (config) => {
+    config.resolve.alias.canvas = false;
+    config.resolve.alias.encoding = false;
     return config;
   },
   // Optimize CSS loading

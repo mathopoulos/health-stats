@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { signIn, useSession } from 'next-auth/react';
 import BloodMarkerPreview from './BloodMarkerPreview';
+import * as pdfjsLib from 'pdfjs-dist/build/pdf.mjs';
 
 interface BloodMarker {
   name: string;
@@ -24,6 +25,13 @@ export default function BloodTestUpload() {
   const [extractedMarkers, setExtractedMarkers] = useState<BloodMarker[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [extractedDate, setExtractedDate] = useState<string | null>(null);
+
+  // Initialize PDF.js
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+    }
+  }, []);
 
   const resetUpload = useCallback(() => {
     setIsUploading(false);
@@ -69,6 +77,28 @@ export default function BloodTestUpload() {
     }
   };
 
+  const extractTextFromPdf = async (file: File): Promise<string> => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = '';
+      
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        fullText += pageText + '\n';
+      }
+      
+      return fullText;
+    } catch (error) {
+      console.error('Error extracting text from PDF:', error);
+      throw new Error('Failed to extract text from PDF');
+    }
+  };
+
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (!file) return;
@@ -79,13 +109,6 @@ export default function BloodTestUpload() {
       signIn();
       return;
     }
-
-    console.log('=== Starting file upload process ===');
-    console.log('File details:', {
-      name: file.name,
-      type: file.type,
-      size: file.size
-    });
 
     if (file.type !== 'application/pdf') {
       toast.error('Please upload a PDF file');
@@ -103,40 +126,25 @@ export default function BloodTestUpload() {
     setUploadProgress('Processing blood test...');
 
     try {
-      // Get the file data as ArrayBuffer
-      const fileData = await file.arrayBuffer();
-
-      console.log('Sending request to API...');
-      // Send to API
+      // Extract text from PDF on the client side
+      const extractedText = await extractTextFromPdf(file);
+      
+      // Send only the extracted text to the API
       const response = await fetch('/api/pdf', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/pdf',
+          'Content-Type': 'application/json',
         },
-        body: fileData,
+        body: JSON.stringify({ text: extractedText }),
       });
 
-      console.log('API Response status:', response.status);
-      
-      // Handle authentication errors
       if (response.status === 401) {
         toast.error('Session expired. Please sign in again.');
         signIn();
         return;
       }
 
-      // Try to get the response text first
-      const responseText = await response.text();
-      console.log('Raw API Response:', responseText);
-
-      // Parse the response as JSON if possible
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (e) {
-        console.error('Failed to parse response as JSON:', e);
-        throw new Error(`Invalid response from server: ${responseText.substring(0, 100)}...`);
-      }
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || `Upload failed with status ${response.status}`);
@@ -145,8 +153,6 @@ export default function BloodTestUpload() {
       if (!data.success) {
         throw new Error(data.error || 'Failed to process blood test');
       }
-
-      console.log('Response data:', data);
       
       // Check if we have extracted markers
       if (data.markers && data.markers.length > 0) {
@@ -159,12 +165,12 @@ export default function BloodTestUpload() {
           icon: '⚠️'
         });
       }
-      
-      setIsUploading(false);
     } catch (error) {
       console.error('Error processing blood test:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to process blood test');
       resetUpload();
+    } finally {
+      setIsUploading(false);
     }
   }, [resetUpload, session, router]);
 
