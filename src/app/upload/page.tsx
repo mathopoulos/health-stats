@@ -912,13 +912,12 @@ export default function UploadPage() {
                 <p className="text-gray-600 dark:text-gray-400">
                   Manually add and track your blood test results here.
                 </p>
-                <Link href="/add-blood-test">
-                  <button
-                    className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    Add Blood Test Results
-                  </button>
-                </Link>
+                <button
+                  onClick={() => setIsAddResultsModalOpen(true)}
+                  className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Add Blood Test Results
+                </button>
               </div>
               
               {/* Blood Marker History Section - Added as requested */}
@@ -927,6 +926,15 @@ export default function UploadPage() {
                 <BloodMarkerHistory />
               </div>
             </div>
+          )}
+          
+          {/* Add the modal inside the main component structure */}
+          {isAddResultsModalOpen && (
+            <AddResultsModal
+              isOpen={isAddResultsModalOpen}
+              onClose={() => setIsAddResultsModalOpen(false)}
+              prefilledResults={null}
+            />
           )}
         </div>
       </div>
