@@ -453,13 +453,6 @@ export default function BloodMarkerHistory() {
             </div>
           )}
         </div>
-        
-        {/* Results Count */}
-        <div className="flex items-center justify-between text-xs mt-2">
-          <div className="text-gray-400 dark:text-gray-500">
-            {filteredData.length} {filteredData.length === 1 ? 'result' : 'results'} found
-          </div>
-        </div>
       </div>
       
       {/* Table View */}
