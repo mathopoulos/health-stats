@@ -135,6 +135,7 @@ export default function UploadPage() {
     uploadDate: string;
   }>>([]);
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -265,6 +266,14 @@ export default function UploadPage() {
         if (data.success) {
           toast.success('File deleted successfully');
           setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
+          // Remove from selected files if it was selected
+          setSelectedFiles(prev => {
+            const newSelection = new Set(prev);
+            if (newSelection.has(fileId)) {
+              newSelection.delete(fileId);
+            }
+            return newSelection;
+          });
         } else {
           throw new Error(data.error || 'Failed to delete file');
         }
@@ -275,6 +284,89 @@ export default function UploadPage() {
       console.error('Error deleting file:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to delete file');
     }
+  };
+
+  // Function to toggle selection of a file
+  const toggleFileSelection = (fileId: string) => {
+    setSelectedFiles(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(fileId)) {
+        newSelection.delete(fileId);
+      } else {
+        newSelection.add(fileId);
+      }
+      return newSelection;
+    });
+  };
+
+  // Function to check if a file is selected
+  const isFileSelected = (fileId: string) => {
+    return selectedFiles.has(fileId);
+  };
+
+  // Function to select or deselect all files
+  const toggleSelectAllFiles = () => {
+    if (selectedFiles.size === uploadedFiles.length) {
+      // If all are selected, deselect all
+      setSelectedFiles(new Set());
+    } else {
+      // Select all files
+      const allFileIds = uploadedFiles.map(file => file.id);
+      setSelectedFiles(new Set(allFileIds));
+    }
+  };
+
+  // Function to delete multiple files at once
+  const deleteSelectedFiles = async () => {
+    if (selectedFiles.size === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedFiles.size} selected file(s)? This action cannot be undone.`)) {
+      return;
+    }
+    
+    let successCount = 0;
+    let errorCount = 0;
+    
+    // Create a copy of the selected files to iterate over
+    const filesToDelete = Array.from(selectedFiles);
+    
+    for (const fileId of filesToDelete) {
+      try {
+        const response = await fetch(`/api/uploads/${fileId}`, {
+          method: 'DELETE',
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            successCount++;
+          } else {
+            errorCount++;
+          }
+        } else {
+          errorCount++;
+        }
+      } catch (error) {
+        console.error('Error deleting file:', error);
+        errorCount++;
+      }
+    }
+    
+    // Update the UI after all deletions
+    if (successCount > 0) {
+      toast.success(`${successCount} file(s) deleted successfully`);
+      // Remove deleted files from the list
+      setUploadedFiles(prev => prev.filter(file => !selectedFiles.has(file.id)));
+      // Clear selection
+      setSelectedFiles(new Set());
+    }
+    
+    if (errorCount > 0) {
+      toast.error(`Failed to delete ${errorCount} file(s)`);
+    }
+    
+    // Refresh the list
+    fetchUploadedFiles();
   };
 
   useEffect(() => {
@@ -964,6 +1056,21 @@ export default function UploadPage() {
                   </button>
                 </div>
                 
+                {/* Show delete selected button when files are selected */}
+                {selectedFiles.size > 0 && (
+                  <div className="flex items-center justify-between mb-4 p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-md">
+                    <span className="text-sm text-indigo-700 dark:text-indigo-300 font-medium">
+                      {selectedFiles.size} file{selectedFiles.size !== 1 ? 's' : ''} selected
+                    </span>
+                    <button
+                      onClick={deleteSelectedFiles}
+                      className="px-3 py-1 text-sm bg-red-500 hover:bg-red-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+                    >
+                      Delete Selected
+                    </button>
+                  </div>
+                )}
+                
                 {isLoadingFiles ? (
                   <div className="flex justify-center items-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
@@ -980,6 +1087,17 @@ export default function UploadPage() {
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                       <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
+                          {/* Checkbox column for select all */}
+                          <th scope="col" className="px-2 py-3">
+                            <div className="flex items-center justify-center">
+                              <input
+                                type="checkbox"
+                                className="h-3.5 w-3.5 text-indigo-500 focus:ring-indigo-400 focus:ring-opacity-50 focus:ring-offset-0 border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+                                checked={uploadedFiles.length > 0 && selectedFiles.size === uploadedFiles.length}
+                                onChange={toggleSelectAllFiles}
+                              />
+                            </div>
+                          </th>
                           <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                             Filename
                           </th>
@@ -995,8 +1113,21 @@ export default function UploadPage() {
                         {uploadedFiles.map((file, idx) => (
                           <tr 
                             key={file.id} 
-                            className={`${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/30'}`}
+                            className={`${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/30'} ${
+                              isFileSelected(file.id) ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
+                            }`}
                           >
+                            {/* Checkbox for row selection */}
+                            <td className="px-2 py-4">
+                              <div className="flex items-center justify-center">
+                                <input
+                                  type="checkbox"
+                                  className="h-3.5 w-3.5 text-indigo-500 focus:ring-indigo-400 focus:ring-opacity-50 focus:ring-offset-0 border-gray-300 dark:border-gray-600 rounded cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
+                                  checked={isFileSelected(file.id)}
+                                  onChange={() => toggleFileSelection(file.id)}
+                                />
+                              </div>
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                               {file.filename}
                             </td>
