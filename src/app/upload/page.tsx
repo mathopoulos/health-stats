@@ -8,6 +8,7 @@ import Link from 'next/link';
 import ThemeToggle from '../components/ThemeToggle';
 import BloodTestUpload from '../components/BloodTestUpload';
 import BloodMarkerHistory from '../components/BloodMarkerHistory';
+import { toast } from 'react-hot-toast';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
@@ -128,6 +129,12 @@ export default function UploadPage() {
     unit: string;
     category: string;
   }> | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{
+    id: string;
+    filename: string;
+    uploadDate: string;
+  }>>([]);
+  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -220,6 +227,62 @@ export default function UploadPage() {
     }
   }, [session?.user?.id]);
 
+  const fetchUploadedFiles = async () => {
+    if (!session?.user?.id) return;
+    
+    setIsLoadingFiles(true);
+    try {
+      const response = await fetch('/api/uploads');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setUploadedFiles(data.files || []);
+        } else {
+          console.error('Failed to fetch uploaded files:', data.error);
+        }
+      } else {
+        console.error('Failed to fetch uploaded files');
+      }
+    } catch (error) {
+      console.error('Error fetching uploaded files:', error);
+    } finally {
+      setIsLoadingFiles(false);
+    }
+  };
+
+  const handleDeleteFile = async (fileId: string) => {
+    if (!confirm('Are you sure you want to delete this file? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/uploads/${fileId}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          toast.success('File deleted successfully');
+          setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
+        } else {
+          throw new Error(data.error || 'Failed to delete file');
+        }
+      } else {
+        throw new Error('Failed to delete file');
+      }
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete file');
+    }
+  };
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetchUploadedFiles();
+    }
+  }, [session?.user?.id]);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setUploadSuccess(false);
@@ -300,6 +363,7 @@ export default function UploadPage() {
       setStatus('Upload complete! You can now process the data.');
       setUploadSuccess(true);
       await checkExistingUploads();
+      await fetchUploadedFiles();
       console.log('Upload complete');
       
     } catch (error) {
@@ -860,29 +924,85 @@ export default function UploadPage() {
                     </button>
                   )}
                 </div>
+              </div>
 
-                {/* Help Section */}
-                <div className="mt-8 border-t border-gray-100 dark:border-gray-800 pt-6">
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">How to export your Apple Health data</h3>
-                  <ol className="space-y-3">
-                    <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
-                      <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">1</span>
-                      <span>Open the Health app on your iPhone</span>
-                    </li>
-                    <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
-                      <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">2</span>
-                      <span>Tap your profile picture in the top right</span>
-                    </li>
-                    <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
-                      <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">3</span>
-                      <span>Scroll down and tap "Export All Health Data"</span>
-                    </li>
-                    <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
-                      <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">4</span>
-                      <span>Upload the exported ZIP file here</span>
-                    </li>
-                  </ol>
+              {/* Uploaded Files History Section - As a separate standalone section */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm mt-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Uploaded Files History</h3>
+                  <button
+                    onClick={fetchUploadedFiles}
+                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh
+                  </button>
                 </div>
+                
+                {isLoadingFiles ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+                    <span className="ml-2 text-gray-500 dark:text-gray-400">Loading uploaded files...</span>
+                  </div>
+                ) : uploadedFiles.length === 0 ? (
+                  <div className="py-8 text-center">
+                    <p className="text-gray-500 dark:text-gray-400">
+                      No files uploaded yet. Upload your Apple Health data to get started.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Filename
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Upload Date
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {uploadedFiles.map((file, idx) => (
+                          <tr 
+                            key={file.id} 
+                            className={`${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/30'}`}
+                          >
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                              {file.filename}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                              {new Date(file.uploadDate).toLocaleDateString(undefined, { 
+                                year: 'numeric', 
+                                month: 'short', 
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              <button 
+                                onClick={() => handleDeleteFile(file.id)}
+                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                                aria-label={`Delete ${file.filename}`}
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -931,6 +1051,29 @@ export default function UploadPage() {
               prefilledResults={null}
             />
           )}
+
+          {/* Help Section */}
+          <div className="mt-8 border-t border-gray-100 dark:border-gray-800 pt-6">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">How to export your Apple Health data</h3>
+            <ol className="space-y-3">
+              <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
+                <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">1</span>
+                <span>Open the Health app on your iPhone</span>
+              </li>
+              <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
+                <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">2</span>
+                <span>Tap your profile picture in the top right</span>
+              </li>
+              <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
+                <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">3</span>
+                <span>Scroll down and tap "Export All Health Data"</span>
+              </li>
+              <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
+                <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">4</span>
+                <span>Upload the exported ZIP file here</span>
+              </li>
+            </ol>
+          </div>
         </div>
       </div>
     </div>
