@@ -44,8 +44,8 @@ export default function BloodTestUpload() {
 
   const handleSaveMarkers = async (markers: BloodMarker[], testDate: Date) => {
     try {
-      // Filter out markers with null values
-      const validMarkers = markers.filter(marker => marker.value !== null);
+      // Filter out markers with null or undefined values
+      const validMarkers = markers.filter(marker => marker.value !== null && marker.value !== undefined);
       
       const response = await fetch('/api/blood-markers', {
         method: 'POST',

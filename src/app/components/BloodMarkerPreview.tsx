@@ -35,7 +35,7 @@ export default function BloodMarkerPreview({ isOpen, onClose, markers, onSave, i
 
   // Group markers by category
   const groupedMarkers = markers.reduce((acc, marker) => {
-    if (!marker.value) return acc; // Skip markers with null values
+    if (marker.value === null || marker.value === undefined) return acc; // Skip markers with null/undefined values
     if (!acc[marker.category]) {
       acc[marker.category] = [];
     }
