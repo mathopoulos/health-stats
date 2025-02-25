@@ -21,7 +21,7 @@ export default function RootLayout({
             {children}
           </ThemeProvider>
         </SessionProvider>
-        <Toaster position="top-right" />
+        <Toaster position="bottom-left" />
       </body>
     </html>
   );

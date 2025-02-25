@@ -192,7 +192,7 @@ export default function Home() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const userId = searchParams.get('userId') || session?.user?.id;
+  const userId = searchParams?.get('userId') || session?.user?.id;
   const [data, setData] = useState<ChartData>({
     heartRate: [],
     weight: [],
@@ -937,7 +937,7 @@ export default function Home() {
       <Head>
         <title>{userData?.name ? `${userData.name}'s Health Stats` : 'Health Stats'}</title>
       </Head>
-      <Toaster position="bottom-right" />
+      <Toaster position="bottom-left" />
       <main className="min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
         {/* Fixed position theme toggle */}
         <div className="fixed bottom-16 right-4 z-[100]">
