@@ -31,7 +31,6 @@ export default function BloodMarkerHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingEntry, setEditingEntry] = useState<BloodMarkerEntry | null>(null);
-  const [expandedEntry, setExpandedEntry] = useState<string | null>(null);
   const [editDate, setEditDate] = useState<Date | null>(null);
   const [editMarkers, setEditMarkers] = useState<BloodMarker[]>([]);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -119,6 +118,67 @@ export default function BloodMarkerHistory() {
     }
   };
 
+  // New function to delete a single biomarker from an entry
+  const handleDeleteSingleMarker = async (entryId: string, markerName: string) => {
+    if (!confirm(`Are you sure you want to delete the ${markerName} marker? This action cannot be undone.`)) {
+      return;
+    }
+    
+    try {
+      // Find the entry containing this marker
+      const entry = entries.find(e => e._id === entryId);
+      if (!entry) {
+        throw new Error('Entry not found');
+      }
+      
+      // Filter out the marker to delete
+      const updatedMarkers = entry.markers.filter(marker => marker.name !== markerName);
+      
+      // If no markers left, delete the entire entry
+      if (updatedMarkers.length === 0) {
+        return handleDeleteEntry(entryId);
+      }
+      
+      // Otherwise, update the entry with the remaining markers
+      const response = await fetch(`/api/blood-markers/${entryId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          date: entry.date,
+          markers: updatedMarkers,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update entry');
+      }
+      
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`${markerName} marker deleted successfully`);
+        
+        // Update the entry in state
+        setEntries(prev => 
+          prev.map(e => 
+            e._id === entryId ? { ...e, markers: updatedMarkers } : e
+          )
+        );
+        
+        // Notify other components about the change
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('bloodMarkerAdded'));
+        }
+      } else {
+        throw new Error(data.error || 'Failed to update entry');
+      }
+    } catch (error) {
+      console.error('Error deleting marker:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete marker');
+    }
+  };
+
   const handleEditEntry = (entry: BloodMarkerEntry) => {
     setEditingEntry(entry);
     setEditDate(new Date(entry.date));
@@ -180,8 +240,61 @@ export default function BloodMarkerHistory() {
     });
   };
 
-  const toggleExpandEntry = (entryId: string) => {
-    setExpandedEntry(prevId => prevId === entryId ? null : entryId);
+  // Transform data for flat table view (one row per biomarker per date)
+  const getFlatTableData = useCallback(() => {
+    // Create an array to hold all biomarker readings
+    const flatData: Array<{
+      name: string;
+      category: string;
+      unit: string;
+      date: string;
+      value: number;
+      entryId: string;
+    }> = [];
+
+    // Process each entry
+    entries.forEach(entry => {
+      entry.markers.forEach(marker => {
+        flatData.push({
+          name: marker.name,
+          category: marker.category,
+          unit: marker.unit,
+          date: entry.date,
+          value: marker.value,
+          entryId: entry._id
+        });
+      });
+    });
+
+    // Sort by biomarker name and then by date (newest first)
+    return flatData.sort((a, b) => {
+      // First sort by category
+      if (a.category !== b.category) {
+        return a.category.localeCompare(b.category);
+      }
+      // Then by name
+      if (a.name !== b.name) {
+        return a.name.localeCompare(b.name);
+      }
+      // Then by date (newest first)
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+  }, [entries]);
+
+  // New function to format dates for display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString(undefined, { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  // Function to get the entry ID for a specific date (for editing)
+  const getEntryIdForDate = (date: string) => {
+    const entry = entries.find(e => e.date === date);
+    return entry?._id;
   };
 
   if (loading) {
@@ -219,104 +332,86 @@ export default function BloodMarkerHistory() {
     );
   }
 
+  // Prepare data for flat table view
+  const flatTableData = getFlatTableData();
+
   return (
     <div className="mt-8">
-      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-        Blood Marker History
-      </h3>
-      
-      <div className="space-y-4">
-        {entries.map(entry => (
-          <div key={entry._id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
-            <div 
-              className="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50"
-              onClick={() => toggleExpandEntry(entry._id)}
-            >
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-white">
-                  {new Date(entry.date).toLocaleDateString(undefined, { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
-                </h4>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {entry.markers.length} markers
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditEntry(entry);
-                  }}
-                  className="p-2 text-gray-400 hover:text-indigo-500 dark:text-gray-500 dark:hover:text-indigo-400 transition-colors"
+      {/* Table View Only */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th scope="col" className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-700 px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Biomarker
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Category
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Unit
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Date
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Value
+                </th>
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {flatTableData.map((item, idx) => (
+                <tr 
+                  key={`${item.name}-${item.date}-${idx}`} 
+                  className={idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/30'}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                </button>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteEntry(entry._id);
-                  }}
-                  className="p-2 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-                <svg 
-                  className={`w-5 h-5 text-gray-400 transition-transform ${expandedEntry === entry._id ? 'transform rotate-180' : ''}`} 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
-            
-            {expandedEntry === entry._id && (
-              <div className="border-t border-gray-100 dark:border-gray-700">
-                <div className="p-4">
-                  <h5 className="font-medium text-gray-700 dark:text-gray-300 mb-2">Categories</h5>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {Array.from(new Set(entry.markers.map(marker => marker.category))).map(category => (
-                      <span 
-                        key={category} 
-                        className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 text-xs rounded-full"
+                  <td className="sticky left-0 z-10 px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white bg-white dark:bg-gray-800">
+                    {item.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {item.category}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {item.unit}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                    {formatDate(item.date)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    {item.value}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                    <div className="flex justify-end space-x-2">
+                      <button 
+                        onClick={() => {
+                          const entry = entries.find(e => e._id === item.entryId);
+                          if (entry) handleEditEntry(entry);
+                        }}
+                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
                       >
-                        {category}
-                      </span>
-                    ))}
-                  </div>
-                  
-                  <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
-                    <h5 className="font-medium text-gray-700 dark:text-gray-300 mb-2">Markers</h5>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {entry.markers.map((marker, idx) => (
-                        <div 
-                          key={idx}
-                          className="p-2 bg-gray-50 dark:bg-gray-700/30 rounded-lg"
-                        >
-                          <h6 className="font-medium text-gray-900 dark:text-white">{marker.name}</h6>
-                          <div className="flex justify-between items-center mt-1">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">{marker.category}</span>
-                            <span className="font-semibold text-gray-800 dark:text-gray-200">
-                              {marker.value} {marker.unit}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteSingleMarker(item.entryId, item.name)}
+                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
                     </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
       
       {/* Edit Modal */}
