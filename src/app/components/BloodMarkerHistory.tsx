@@ -38,6 +38,7 @@ export default function BloodMarkerHistory() {
   const [nameFilter, setNameFilter] = useState<string>('');
   const [categoryFilter, setcategoryFilter] = useState<string>('');
   const [dateFilter, setDateFilter] = useState<Date | null>(null);
+  const [selectedBiomarkers, setSelectedBiomarkers] = useState<Set<string>>(new Set());
 
   // Memoize the fetchBloodMarkers function to avoid recreating it on every render
   const fetchBloodMarkers = useCallback(async () => {
@@ -363,6 +364,130 @@ export default function BloodMarkerHistory() {
     setDateFilter(null);
   };
 
+  // Function to toggle selection of a biomarker
+  const toggleSelection = (item: { name: string; entryId: string }) => {
+    const key = `${item.entryId}-${item.name}`;
+    setSelectedBiomarkers(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(key)) {
+        newSelection.delete(key);
+      } else {
+        newSelection.add(key);
+      }
+      return newSelection;
+    });
+  };
+
+  // Function to check if a biomarker is selected
+  const isSelected = (item: { name: string; entryId: string }) => {
+    const key = `${item.entryId}-${item.name}`;
+    return selectedBiomarkers.has(key);
+  };
+
+  // Function to select or deselect all visible biomarkers
+  const toggleSelectAll = () => {
+    const filteredItems = getFilteredData();
+    if (selectedBiomarkers.size === filteredItems.length) {
+      // If all are selected, deselect all
+      setSelectedBiomarkers(new Set());
+    } else {
+      // Select all visible items
+      const allKeys = filteredItems.map(item => `${item.entryId}-${item.name}`);
+      setSelectedBiomarkers(new Set(allKeys));
+    }
+  };
+
+  // Function to delete multiple biomarkers at once
+  const deleteSelectedBiomarkers = async () => {
+    if (selectedBiomarkers.size === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedBiomarkers.size} selected biomarker(s)? This action cannot be undone.`)) {
+      return;
+    }
+    
+    // Group selected biomarkers by entry ID for efficient deletion
+    const entriesMap = new Map<string, string[]>();
+    
+    selectedBiomarkers.forEach(key => {
+      const [entryId, name] = key.split('-');
+      if (!entriesMap.has(entryId)) {
+        entriesMap.set(entryId, []);
+      }
+      entriesMap.get(entryId)?.push(name);
+    });
+    
+    let success = true;
+    let deleted = 0;
+    
+    // Process each entry
+    for (const [entryId, markerNames] of entriesMap.entries()) {
+      try {
+        // Find the entry
+        const entry = entries.find(e => e._id === entryId);
+        if (!entry) continue;
+        
+        // Keep markers that are not selected for deletion
+        const updatedMarkers = entry.markers.filter(marker => !markerNames.includes(marker.name));
+        
+        // If all markers in the entry are to be deleted, delete the entire entry
+        if (updatedMarkers.length === 0) {
+          await handleDeleteEntry(entryId);
+          deleted += markerNames.length;
+          continue;
+        }
+        
+        // Otherwise, update the entry with the remaining markers
+        const response = await fetch(`/api/blood-markers/${entryId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            date: entry.date,
+            markers: updatedMarkers,
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to update entry ${entryId}`);
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+          // Update the entry in state
+          setEntries(prev => 
+            prev.map(e => 
+              e._id === entryId ? { ...e, markers: updatedMarkers } : e
+            )
+          );
+          deleted += markerNames.length;
+        }
+      } catch (error) {
+        console.error(`Error processing entry ${entryId}:`, error);
+        success = false;
+      }
+    }
+    
+    // Clear selection
+    setSelectedBiomarkers(new Set());
+    
+    // Show success/error message
+    if (success) {
+      toast.success(`${deleted} biomarker(s) deleted successfully`);
+      // Notify other components about the change
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('bloodMarkerAdded'));
+      }
+    } else {
+      toast.error('Some biomarkers could not be deleted. Please try again.');
+    }
+  };
+
+  // Add a useEffect to clear selections when filters change
+  useEffect(() => {
+    setSelectedBiomarkers(new Set());
+  }, [nameFilter, categoryFilter, dateFilter]);
+
   if (loading) {
     return (
       <div className="mt-8 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -469,12 +594,38 @@ export default function BloodMarkerHistory() {
         </div>
       </div>
       
+      {/* Bulk Actions Bar - Only shown when items are selected */}
+      {selectedBiomarkers.size > 0 && (
+        <div className="flex items-center justify-between mb-3 p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+          <span className="text-sm text-indigo-700 dark:text-indigo-300 font-medium">
+            {selectedBiomarkers.size} biomarker{selectedBiomarkers.size !== 1 ? 's' : ''} selected
+          </span>
+          <button
+            onClick={deleteSelectedBiomarkers}
+            className="px-3 py-1 text-sm bg-red-500 hover:bg-red-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+          >
+            Delete Selected
+          </button>
+        </div>
+      )}
+      
       {/* Table View */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
+                {/* Checkbox column for select all */}
+                <th scope="col" className="px-2 py-3">
+                  <div className="flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      className="h-3.5 w-3.5 text-indigo-500 focus:ring-indigo-400 focus:ring-opacity-50 focus:ring-offset-0 border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+                      checked={filteredData.length > 0 && selectedBiomarkers.size === filteredData.length}
+                      onChange={toggleSelectAll}
+                    />
+                  </div>
+                </th>
                 <th scope="col" className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-700 px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Biomarker
                 </th>
@@ -500,8 +651,21 @@ export default function BloodMarkerHistory() {
                 filteredData.map((item, idx) => (
                   <tr 
                     key={`${item.name}-${item.date}-${idx}`} 
-                    className={idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/30'}
+                    className={`${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/30'} ${
+                      isSelected(item) ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
+                    }`}
                   >
+                    {/* Checkbox for row selection */}
+                    <td className="px-2 py-4">
+                      <div className="flex items-center justify-center">
+                        <input
+                          type="checkbox"
+                          className="h-3.5 w-3.5 text-indigo-500 focus:ring-indigo-400 focus:ring-opacity-50 focus:ring-offset-0 border-gray-300 dark:border-gray-600 rounded cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
+                          checked={isSelected(item)}
+                          onChange={() => toggleSelection(item)}
+                        />
+                      </div>
+                    </td>
                     <td className="sticky left-0 z-10 px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white bg-white dark:bg-gray-800">
                       {item.name}
                     </td>
@@ -544,7 +708,7 @@ export default function BloodMarkerHistory() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                     No blood markers match your filter criteria.
                     <button 
                       onClick={clearFilters}
