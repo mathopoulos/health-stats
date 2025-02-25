@@ -69,6 +69,12 @@ export default function BloodTestUpload() {
       }
 
       toast.success('Blood markers saved successfully');
+      
+      // Dispatch a custom event to notify the BloodMarkerHistory component that new data has been added
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('bloodMarkerAdded'));
+      }
+      
       router.refresh(); // Refresh the page data
     } catch (error) {
       console.error('Error saving blood markers:', error);

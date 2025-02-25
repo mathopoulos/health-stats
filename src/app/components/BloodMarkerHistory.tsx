@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -35,12 +35,10 @@ export default function BloodMarkerHistory() {
   const [editDate, setEditDate] = useState<Date | null>(null);
   const [editMarkers, setEditMarkers] = useState<BloodMarker[]>([]);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
 
-  useEffect(() => {
-    fetchBloodMarkers();
-  }, [session]);
-
-  const fetchBloodMarkers = async () => {
+  // Memoize the fetchBloodMarkers function to avoid recreating it on every render
+  const fetchBloodMarkers = useCallback(async () => {
     if (!session?.user?.id) return;
     
     setLoading(true);
@@ -64,7 +62,29 @@ export default function BloodMarkerHistory() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.user?.id]);
+
+  // Fetch data when component mounts or session changes
+  useEffect(() => {
+    fetchBloodMarkers();
+  }, [fetchBloodMarkers, lastRefresh]);
+
+  // Listen for blood marker added event
+  useEffect(() => {
+    // Function to handle the custom event
+    const handleBloodMarkerAdded = () => {
+      console.log('Blood marker added event detected, refreshing history');
+      setLastRefresh(Date.now()); // Update lastRefresh to trigger a re-fetch
+    };
+
+    // Add event listener for custom event
+    window.addEventListener('bloodMarkerAdded', handleBloodMarkerAdded);
+    
+    // Clean up event listener on component unmount
+    return () => {
+      window.removeEventListener('bloodMarkerAdded', handleBloodMarkerAdded);
+    };
+  }, []);
 
   const handleDeleteEntry = async (entryId: string) => {
     if (!confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
@@ -85,6 +105,11 @@ export default function BloodMarkerHistory() {
         toast.success('Entry deleted successfully');
         // Remove the deleted entry from state
         setEntries(prev => prev.filter(entry => entry._id !== entryId));
+        
+        // Notify other components about the change
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('bloodMarkerAdded'));
+        }
       } else {
         throw new Error(data.error || 'Failed to delete entry');
       }
@@ -130,6 +155,11 @@ export default function BloodMarkerHistory() {
           )
         );
         setShowEditModal(false);
+        
+        // Notify other components about the change
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('bloodMarkerAdded'));
+        }
       } else {
         throw new Error(data.error || 'Failed to update entry');
       }
