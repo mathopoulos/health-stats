@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -35,6 +35,9 @@ export default function BloodMarkerHistory() {
   const [editMarkers, setEditMarkers] = useState<BloodMarker[]>([]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
+  const [nameFilter, setNameFilter] = useState<string>('');
+  const [categoryFilter, setcategoryFilter] = useState<string>('');
+  const [dateFilter, setDateFilter] = useState<Date | null>(null);
 
   // Memoize the fetchBloodMarkers function to avoid recreating it on every render
   const fetchBloodMarkers = useCallback(async () => {
@@ -297,6 +300,58 @@ export default function BloodMarkerHistory() {
     return entry?._id;
   };
 
+  // Get unique categories for filter dropdown
+  const uniqueCategories = useMemo(() => {
+    const categories = new Set<string>();
+    entries.forEach(entry => {
+      entry.markers.forEach(marker => {
+        if (marker.category) categories.add(marker.category);
+      });
+    });
+    return Array.from(categories).sort();
+  }, [entries]);
+
+  // Apply filters to the flat table data
+  const getFilteredData = useCallback(() => {
+    const flatData = getFlatTableData();
+    
+    return flatData.filter(item => {
+      // Filter by name (case insensitive)
+      if (nameFilter && !item.name.toLowerCase().includes(nameFilter.toLowerCase())) {
+        return false;
+      }
+      
+      // Filter by category
+      if (categoryFilter && item.category !== categoryFilter) {
+        return false;
+      }
+      
+      // Filter by date
+      if (dateFilter) {
+        const itemDate = new Date(item.date);
+        const filterDate = new Date(dateFilter);
+        
+        // Compare year, month, and day
+        if (
+          itemDate.getFullYear() !== filterDate.getFullYear() ||
+          itemDate.getMonth() !== filterDate.getMonth() ||
+          itemDate.getDate() !== filterDate.getDate()
+        ) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [getFlatTableData, nameFilter, categoryFilter, dateFilter]);
+
+  // Function to clear all filters
+  const clearFilters = () => {
+    setNameFilter('');
+    setcategoryFilter('');
+    setDateFilter(null);
+  };
+
   if (loading) {
     return (
       <div className="mt-8 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -332,12 +387,82 @@ export default function BloodMarkerHistory() {
     );
   }
 
-  // Prepare data for flat table view
-  const flatTableData = getFlatTableData();
+  // Prepare data for flat table view with filters applied
+  const filteredData = getFilteredData();
 
   return (
     <div className="mt-8">
-      {/* Table View Only */}
+      {/* Filters Section */}
+      <div className="mb-4">
+        <div className="flex items-center gap-3">
+          {/* Biomarker Name Filter */}
+          <div className="relative w-48">
+            <input
+              id="nameFilter"
+              type="text"
+              value={nameFilter}
+              onChange={(e) => setNameFilter(e.target.value)}
+              placeholder="Filter by name"
+              className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white bg-transparent"
+            />
+            <svg className="absolute left-2 top-1.5 w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          
+          {/* Category Filter */}
+          <div className="w-48">
+            <select
+              id="categoryFilter"
+              value={categoryFilter}
+              onChange={(e) => setcategoryFilter(e.target.value)}
+              className="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white bg-transparent"
+            >
+              <option value="">All Categories</option>
+              {uniqueCategories.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Date Filter */}
+          <div className="w-48">
+            <DatePicker
+              id="dateFilter"
+              selected={dateFilter}
+              onChange={(date: Date | null) => setDateFilter(date)}
+              className="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white bg-transparent"
+              placeholderText="Filter by date"
+              dateFormat="MMM d, yyyy"
+              isClearable
+            />
+          </div>
+          
+          {/* Clear Filters Button - Only shown when filters are applied */}
+          {(nameFilter || categoryFilter || dateFilter) && (
+            <div className="ml-auto">
+              <button 
+                onClick={clearFilters}
+                className="flex items-center gap-1.5 text-indigo-400 hover:text-indigo-300 focus:outline-none transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Clear filters
+              </button>
+            </div>
+          )}
+        </div>
+        
+        {/* Results Count */}
+        <div className="flex items-center justify-between text-xs mt-2">
+          <div className="text-gray-400 dark:text-gray-500">
+            {filteredData.length} {filteredData.length === 1 ? 'result' : 'results'} found
+          </div>
+        </div>
+      </div>
+      
+      {/* Table View */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -364,51 +489,65 @@ export default function BloodMarkerHistory() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {flatTableData.map((item, idx) => (
-                <tr 
-                  key={`${item.name}-${item.date}-${idx}`} 
-                  className={idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/30'}
-                >
-                  <td className="sticky left-0 z-10 px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white bg-white dark:bg-gray-800">
-                    {item.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {item.category}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {item.unit}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                    {formatDate(item.date)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {item.value}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                    <div className="flex justify-end space-x-2">
-                      <button 
-                        onClick={() => {
-                          const entry = entries.find(e => e._id === item.entryId);
-                          if (entry) handleEditEntry(entry);
-                        }}
-                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteSingleMarker(item.entryId, item.name)}
-                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
+              {filteredData.length > 0 ? (
+                filteredData.map((item, idx) => (
+                  <tr 
+                    key={`${item.name}-${item.date}-${idx}`} 
+                    className={idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/30'}
+                  >
+                    <td className="sticky left-0 z-10 px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white bg-white dark:bg-gray-800">
+                      {item.name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {item.category}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {item.unit}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                      {formatDate(item.date)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {item.value}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                      <div className="flex justify-end space-x-2">
+                        <button 
+                          onClick={() => {
+                            const entry = entries.find(e => e._id === item.entryId);
+                            if (entry) handleEditEntry(entry);
+                          }}
+                          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteSingleMarker(item.entryId, item.name)}
+                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                    No blood markers match your filter criteria.
+                    <button 
+                      onClick={clearFilters}
+                      className="ml-2 text-indigo-500 dark:text-indigo-400 hover:underline"
+                    >
+                      Clear filters
+                    </button>
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
