@@ -924,6 +924,29 @@ export default function UploadPage() {
                     </button>
                   )}
                 </div>
+
+                {/* Help Section - How to export Apple Health data */}
+                <div className="mt-6">
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">How to export your Apple Health data</h3>
+                  <ol className="space-y-3">
+                    <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
+                      <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">1</span>
+                      <span>Open the Health app on your iPhone</span>
+                    </li>
+                    <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
+                      <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">2</span>
+                      <span>Tap your profile picture in the top right</span>
+                    </li>
+                    <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
+                      <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">3</span>
+                      <span>Scroll down and tap "Export All Health Data"</span>
+                    </li>
+                    <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
+                      <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">4</span>
+                      <span>Upload the exported ZIP file here</span>
+                    </li>
+                  </ol>
+                </div>
               </div>
 
               {/* Uploaded Files History Section - As a separate standalone section */}
@@ -1051,29 +1074,6 @@ export default function UploadPage() {
               prefilledResults={null}
             />
           )}
-
-          {/* Help Section */}
-          <div className="mt-8 border-t border-gray-100 dark:border-gray-800 pt-6">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">How to export your Apple Health data</h3>
-            <ol className="space-y-3">
-              <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
-                <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">1</span>
-                <span>Open the Health app on your iPhone</span>
-              </li>
-              <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
-                <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">2</span>
-                <span>Tap your profile picture in the top right</span>
-              </li>
-              <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
-                <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">3</span>
-                <span>Scroll down and tap "Export All Health Data"</span>
-              </li>
-              <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
-                <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">4</span>
-                <span>Upload the exported ZIP file here</span>
-              </li>
-            </ol>
-          </div>
         </div>
       </div>
     </div>
