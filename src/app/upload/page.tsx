@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import ThemeToggle from '../components/ThemeToggle';
 import BloodTestUpload from '../components/BloodTestUpload';
+import BloodMarkerHistory from '../components/BloodMarkerHistory';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
@@ -918,6 +919,12 @@ export default function UploadPage() {
                     Add Blood Test Results
                   </button>
                 </Link>
+              </div>
+              
+              {/* Blood Marker History Section - Added as requested */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm mt-6">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Blood Marker History</h3>
+                <BloodMarkerHistory />
               </div>
             </div>
           )}

@@ -187,52 +187,60 @@ export default function BloodTestUpload() {
 
   return (
     <>
-      <div
-        {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-8 text-center ${
-          isDragActive
-            ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-            : 'border-gray-300 dark:border-gray-700'
-        } ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-      >
-        <input {...getInputProps()} key={fileKey} />
-        <div className="space-y-4">
-          {isUploading ? (
-            <>
-              <div className="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
-                <div className="h-full bg-indigo-500 animate-progress"></div>
-              </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {uploadProgress}
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="flex justify-center">
-                <svg
-                  className="w-12 h-12 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                  />
-                </svg>
-              </div>
-              <div>
-                <p className="text-base text-gray-600 dark:text-gray-400">
-                  Drop your blood test PDF here, or click to select
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-500">
-                  PDF file up to 10MB
-                </p>
-              </div>
-            </>
-          )}
+      <div className="space-y-8">
+        {/* Upload section */}
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Upload Blood Test PDF
+          </h2>
+          <div
+            {...getRootProps()}
+            className={`border-2 border-dashed rounded-lg p-8 text-center ${
+              isDragActive
+                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                : 'border-gray-300 dark:border-gray-700'
+            } ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+          >
+            <input {...getInputProps()} key={fileKey} />
+            <div className="space-y-4">
+              {isUploading ? (
+                <>
+                  <div className="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
+                    <div className="h-full bg-indigo-500 animate-progress"></div>
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {uploadProgress}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-center">
+                    <svg
+                      className="w-12 h-12 text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-base text-gray-600 dark:text-gray-400">
+                      Drop your blood test PDF here, or click to select
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-500">
+                      PDF file up to 10MB
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
