@@ -46,7 +46,6 @@ export default function BloodMarkerPreview({ isOpen, onClose, markers, onSave, i
   const handleSave = async () => {
     try {
       await onSave(markers, selectedDate);
-      toast.success('Blood markers saved successfully');
       onClose();
     } catch (error) {
       console.error('Error saving blood markers:', error);
