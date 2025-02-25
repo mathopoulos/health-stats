@@ -675,15 +675,10 @@ export default function UploadPage() {
                   </svg>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-gray-600 dark:text-gray-300">
-                      Get automatic syncing with our iOS app —
-                      <a
-                        href="https://apps.apple.com/app/your-app-id"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 font-medium ml-1"
-                      >
-                        Download on the App Store
-                      </a>
+                      Get automatic syncing with our iOS app 
+                      <span className="inline-flex items-center ml-2 px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full shadow-sm">
+                        Coming Soon
+                      </span>
                     </p>
                   </div>
                 </div>
