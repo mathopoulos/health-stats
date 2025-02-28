@@ -1,131 +1,164 @@
-import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, GetObjectCommand, PutObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { HealthDataType, HealthRecord } from './types';
 import { env } from './env';
+import { networkInterfaces } from 'os';
 
+// Log AWS environment variables
+console.log('AWS Environment:');
+console.log(`- AWS_REGION: ${env.AWS_REGION}`);
+console.log(`- AWS_BUCKET_NAME: ${env.AWS_BUCKET_NAME}`);
+console.log(`- Lambda memory: ${process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE}MB`);
+console.log(`- Lambda timeout: ${process.env.AWS_LAMBDA_FUNCTION_TIMEOUT}s`);
+console.log(`- Lambda function name: ${process.env.AWS_LAMBDA_FUNCTION_NAME}`);
+console.log(`- Lambda execution environment: ${process.env.AWS_EXECUTION_ENV}`);
+
+// Log network interfaces
+try {
+  console.log('Network interfaces:');
+  const interfaces = networkInterfaces();
+  Object.keys(interfaces).forEach(name => {
+    console.log(`Interface: ${name}`);
+    interfaces[name]?.forEach(iface => {
+      console.log(`  Address: ${iface.address}, Family: ${iface.family}, Internal: ${iface.internal}`);
+    });
+  });
+} catch (err) {
+  console.log('Error getting network interfaces:', err);
+}
+
+// Create S3 client with standard configuration
 const s3Client = new S3Client({
-  region: env.AWS_REGION
+  region: env.AWS_REGION,
+  maxAttempts: 3,  // Retry up to 3 times
+});
+
+console.log('S3 client created with configuration:', {
+  region: env.AWS_REGION,
+  maxAttempts: 3
 });
 
 export async function processS3XmlFile(key: string, processor: (chunk: string) => Promise<boolean | void>): Promise<void> {
   console.log('Starting to process S3 XML file:', key);
   
-  const command = new GetObjectCommand({
-    Bucket: env.AWS_BUCKET_NAME,
-    Key: key,
-  });
-
-  console.log(`Fetching file from S3 bucket ${env.AWS_BUCKET_NAME}...`);
-  
+  // First, get the file size
   try {
-    console.log('Sending S3 request...');
-    const response = await s3Client.send(command);
-    console.log('S3 request successful, getting stream...');
-    const stream = response.Body as any;
-    console.log('Stream obtained, setting up listeners...');
-    
-    return new Promise((resolve, reject) => {
-      let buffer = '';
-      let totalBytes = 0;
-      let recordCount = 0;
-      const CHUNK_SIZE = 32 * 1024; // Reduced to 32KB chunks for better memory management
-      const MAX_BUFFER_SIZE = 1024 * 1024; // 1MB max buffer size
-      let processingPromise = Promise.resolve();
-      let chunkCount = 0;
-
-      const processBuffer = async () => {
-        try {
-          console.log(`Processing buffer (size: ${buffer.length} bytes)...`);
-          while (buffer.length > 0) {
-            const recordStart = buffer.indexOf('<Record');
-            const recordEnd = buffer.indexOf('</Record>');
-            
-            if (recordStart === -1 || recordEnd === -1) {
-              // No complete record found
-              console.log(`No complete record found in buffer of size ${buffer.length} bytes`);
-              if (buffer.length > MAX_BUFFER_SIZE) {
-                // Buffer too large, likely corrupted data
-                console.warn(`Buffer exceeded ${MAX_BUFFER_SIZE} bytes with no complete record, clearing buffer`);
-                buffer = '';
-              }
-              break;
-            }
-
-            // Extract and process the record
-            const record = buffer.slice(recordStart, recordEnd + 9); // Include </Record>
-            const wrappedRecord = `<?xml version="1.0" encoding="UTF-8"?><HealthData>${record}</HealthData>`;
-            
-            try {
-              await processor(wrappedRecord);
-              recordCount++;
-              if (recordCount % 1000 === 0) {
-                console.log(`Processed ${recordCount} records, memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
-              }
-            } catch (error) {
-              console.error('Error processing record:', error);
-              // Continue processing despite errors
-            }
-
-            // Remove the processed record from buffer
-            buffer = buffer.slice(recordEnd + 9);
-          }
-          console.log(`Buffer processing completed, remaining buffer size: ${buffer.length} bytes`);
-        } catch (error) {
-          console.error('Error in processBuffer:', error);
-          throw error;
-        }
-      };
-
-      stream.on('data', async (chunk: Buffer) => {
-        try {
-          chunkCount++;
-          totalBytes += chunk.length;
-          console.log(`Received chunk #${chunkCount} (${chunk.length} bytes), total so far: ${totalBytes} bytes`);
-          
-          if (totalBytes % (1024 * 1024) === 0) { // Log every 1MB
-            console.log(`Reading file: ${(totalBytes / (1024 * 1024)).toFixed(2)}MB processed`);
-          }
-
-          buffer += chunk.toString('utf-8');
-          console.log(`Added chunk to buffer, new buffer size: ${buffer.length} bytes`);
-          
-          // Process buffer when it gets large enough
-          if (buffer.length > CHUNK_SIZE) {
-            console.log(`Buffer size ${buffer.length} exceeds chunk size ${CHUNK_SIZE}, processing...`);
-            processingPromise = processingPromise
-              .then(processBuffer)
-              .catch(error => {
-                console.error('Error processing chunk:', error);
-                reject(error);
-              });
-          }
-        } catch (error) {
-          console.error('Error handling data chunk:', error);
-          reject(error);
-        }
-      });
-
-      stream.on('error', (error: Error) => {
-        console.error('Error reading S3 file:', error);
-        reject(error);
-      });
-
-      stream.on('end', async () => {
-        console.log(`Stream end event received after ${chunkCount} chunks and ${totalBytes} total bytes`);
-        try {
-          // Process any remaining data
-          console.log('Processing any remaining data...');
-          await processingPromise;
-          await processBuffer();
-          console.log(`Finished processing ${recordCount} records`);
-          resolve();
-        } catch (error) {
-          console.error('Error processing remaining data:', error);
-          reject(error);
-        }
-      });
+    console.log('Getting file metadata first...');
+    const headCommand = new HeadObjectCommand({
+      Bucket: env.AWS_BUCKET_NAME,
+      Key: key,
     });
+    
+    const headResponse = await s3Client.send(headCommand);
+    const fileSize = headResponse.ContentLength || 0;
+    
+    console.log(`File size: ${fileSize} bytes (${(fileSize / (1024 * 1024)).toFixed(2)} MB)`);
+
+    // Process the file in chunks to avoid memory issues
+    const chunkSize = 10 * 1024 * 1024; // 10 MB chunks
+    let startByte = 0;
+    let recordBuffer = '';
+    let recordCount = 0;
+    
+    while (startByte < fileSize) {
+      const endByte = Math.min(startByte + chunkSize - 1, fileSize - 1);
+      console.log(`Fetching part ${startByte}-${endByte} of ${fileSize} (${((endByte - startByte + 1) / (1024 * 1024)).toFixed(2)} MB)`);
+      
+      const command = new GetObjectCommand({
+        Bucket: env.AWS_BUCKET_NAME,
+        Key: key,
+        Range: `bytes=${startByte}-${endByte}`
+      });
+      
+      try {
+        console.log(`Sending request for part ${startByte}-${endByte}...`);
+        const response = await s3Client.send(command);
+        console.log(`Received response for part ${startByte}-${endByte}`);
+        
+        if (!response.Body) {
+          throw new Error('Response body is empty');
+        }
+        
+        const stream = response.Body as any;
+        let chunkData = '';
+        
+        for await (const chunk of stream) {
+          chunkData += chunk.toString('utf-8');
+        }
+        
+        console.log(`Received ${chunkData.length} bytes of data for part ${startByte}-${endByte}`);
+        
+        // Combine with any leftover from previous chunk
+        const data = recordBuffer + chunkData;
+        recordBuffer = '';
+        
+        // Process complete records
+        let index = 0;
+        while (index < data.length) {
+          const recordStart = data.indexOf('<Record', index);
+          if (recordStart === -1) break;
+          
+          const recordEnd = data.indexOf('</Record>', recordStart);
+          if (recordEnd === -1) {
+            // Record is incomplete, save for next chunk
+            recordBuffer = data.substring(recordStart);
+            break;
+          }
+          
+          // Process complete record
+          const record = data.substring(recordStart, recordEnd + 9);
+          const wrappedRecord = `<?xml version="1.0" encoding="UTF-8"?><HealthData>${record}</HealthData>`;
+          
+          try {
+            await processor(wrappedRecord);
+            recordCount++;
+            if (recordCount % 100 === 0) {
+              console.log(`Processed ${recordCount} records, memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
+            }
+          } catch (error) {
+            console.error('Error processing record:', error);
+          }
+          
+          index = recordEnd + 9;
+        }
+        
+        startByte = endByte + 1;
+        
+        // Log memory usage after each part
+        console.log(`After processing part ${startByte-chunkSize}-${endByte}: Memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
+        
+      } catch (error) {
+        console.error(`Error processing part ${startByte}-${endByte}:`, error);
+        throw error;
+      }
+    }
+    
+    console.log(`Finished processing file. Total records processed: ${recordCount}`);
+    
+    // Process any remaining buffer data if there is any
+    if (recordBuffer.length > 0) {
+      console.log(`Processing remaining buffer (${recordBuffer.length} bytes)...`);
+      
+      const recordStart = recordBuffer.indexOf('<Record');
+      if (recordStart !== -1) {
+        const recordEnd = recordBuffer.indexOf('</Record>', recordStart);
+        if (recordEnd !== -1) {
+          const record = recordBuffer.substring(recordStart, recordEnd + 9);
+          const wrappedRecord = `<?xml version="1.0" encoding="UTF-8"?><HealthData>${record}</HealthData>`;
+          
+          try {
+            await processor(wrappedRecord);
+            recordCount++;
+            console.log(`Processed final record, total: ${recordCount}`);
+          } catch (error) {
+            console.error('Error processing final record:', error);
+          }
+        }
+      }
+    }
+    
+    return Promise.resolve();
   } catch (error) {
-    console.error('Error in S3 file retrieval:', error);
+    console.error('Error processing S3 file:', error);
     throw error;
   }
 }

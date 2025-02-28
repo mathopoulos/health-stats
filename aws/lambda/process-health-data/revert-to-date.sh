@@ -54,7 +54,7 @@ if aws lambda get-function --function-name $FUNCTION_NAME > /dev/null 2>&1; then
   # Update function configuration
   aws lambda update-function-configuration \
     --function-name $FUNCTION_NAME \
-    --timeout 300 \
+    --timeout 900 \
     --memory-size 4096
 else
   echo "❌ Lambda function '$FUNCTION_NAME' not found"

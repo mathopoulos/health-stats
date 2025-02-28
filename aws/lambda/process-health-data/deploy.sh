@@ -49,7 +49,7 @@ if aws lambda get-function --function-name $FUNCTION_NAME > /dev/null 2>&1; then
 
   aws lambda update-function-configuration \
     --function-name $FUNCTION_NAME \
-    --timeout 300 \
+    --timeout 900 \
     --memory-size 4096 \
     --environment "Variables={MONGODB_URI=${MONGODB_URI},AWS_BUCKET_NAME=${AWS_BUCKET_NAME}}"
 else
