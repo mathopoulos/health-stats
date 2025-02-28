@@ -257,12 +257,29 @@ export default function UploadPage() {
     }
     
     try {
-      const response = await fetch(`/api/uploads/${fileId}`, {
+      console.log('Attempting to delete file with ID:', fileId);
+      
+      // Properly encode the file ID to handle special characters
+      const encodedFileId = encodeURIComponent(fileId);
+      console.log('Encoded file ID for API call:', encodedFileId);
+      
+      const response = await fetch(`/api/uploads/${encodedFileId}`, {
         method: 'DELETE',
       });
       
+      const responseText = await response.text();
+      console.log('Delete response status:', response.status, 'text:', responseText);
+      
+      let data;
+      try {
+        // Try to parse the response as JSON
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Error parsing response as JSON:', parseError);
+        throw new Error('Invalid response format from server');
+      }
+      
       if (response.ok) {
-        const data = await response.json();
         if (data.success) {
           toast.success('File deleted successfully');
           setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
@@ -275,10 +292,10 @@ export default function UploadPage() {
             return newSelection;
           });
         } else {
-          throw new Error(data.error || 'Failed to delete file');
+          throw new Error(data.error || data.details || 'Failed to delete file');
         }
       } else {
-        throw new Error('Failed to delete file');
+        throw new Error(data.error || data.details || `Failed to delete file (Status: ${response.status})`);
       }
     } catch (error) {
       console.error('Error deleting file:', error);
@@ -326,29 +343,49 @@ export default function UploadPage() {
     
     let successCount = 0;
     let errorCount = 0;
+    let errorMessages: string[] = [];
     
     // Create a copy of the selected files to iterate over
     const filesToDelete = Array.from(selectedFiles);
     
     for (const fileId of filesToDelete) {
       try {
-        const response = await fetch(`/api/uploads/${fileId}`, {
+        console.log('Bulk delete - attempting to delete file with ID:', fileId);
+        
+        // Properly encode the file ID to handle special characters
+        const encodedFileId = encodeURIComponent(fileId);
+        console.log('Bulk delete - encoded file ID for API call:', encodedFileId);
+        
+        const response = await fetch(`/api/uploads/${encodedFileId}`, {
           method: 'DELETE',
         });
         
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            successCount++;
-          } else {
-            errorCount++;
-          }
+        const responseText = await response.text();
+        console.log('Bulk delete - response status:', response.status, 'text:', responseText);
+        
+        let data;
+        try {
+          // Try to parse the response as JSON
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('Bulk delete - error parsing response as JSON:', parseError);
+          errorCount++;
+          errorMessages.push(`Failed to parse response for file: ${fileId}`);
+          continue;
+        }
+        
+        if (response.ok && data.success) {
+          successCount++;
         } else {
           errorCount++;
+          const errorMessage = data.error || data.details || `Unknown error (Status: ${response.status})`;
+          errorMessages.push(errorMessage);
+          console.error('Bulk delete - failed for file:', fileId, 'Error:', errorMessage);
         }
       } catch (error) {
-        console.error('Error deleting file:', error);
+        console.error('Bulk delete - error processing file:', fileId, 'Error:', error);
         errorCount++;
+        errorMessages.push(error instanceof Error ? error.message : 'Unknown error');
       }
     }
     
@@ -363,6 +400,7 @@ export default function UploadPage() {
     
     if (errorCount > 0) {
       toast.error(`Failed to delete ${errorCount} file(s)`);
+      console.error('Bulk delete errors:', errorMessages);
     }
     
     // Refresh the list
