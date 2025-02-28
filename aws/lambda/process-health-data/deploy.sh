@@ -50,7 +50,7 @@ if aws lambda get-function --function-name $FUNCTION_NAME > /dev/null 2>&1; then
   aws lambda update-function-configuration \
     --function-name $FUNCTION_NAME \
     --timeout 300 \
-    --memory-size 1024 \
+    --memory-size 4096 \
     --environment "Variables={MONGODB_URI=${MONGODB_URI},AWS_BUCKET_NAME=${AWS_BUCKET_NAME}}"
 else
   # Create new function
@@ -60,8 +60,8 @@ else
     --runtime nodejs18.x \
     --handler index.handler \
     --role $ROLE_ARN \
-    --timeout 60 \
-    --memory-size 256 \
+    --timeout 300 \
+    --memory-size 4096 \
     --environment "Variables={MONGODB_URI=${MONGODB_URI},AWS_BUCKET_NAME=${AWS_BUCKET_NAME}}" \
     --zip-file fileb://function.zip
 fi
