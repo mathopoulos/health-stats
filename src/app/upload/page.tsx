@@ -25,15 +25,22 @@ interface ProcessingResult {
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function triggerProcessing(updateStatus: (status: string) => void): Promise<ProcessingResult> {
+  console.log('Starting triggerProcessing function');
   try {
     // Start the processing
+    console.log('Making POST request to /api/process');
+    updateStatus('Initiating processing request...');
+    
     const startResponse = await fetch('/api/process', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
     
+    console.log('Response status from /api/process:', startResponse.status);
+    
     if (!startResponse.ok) {
       const errorText = await startResponse.text();
+      console.error('Error response from /api/process:', errorText);
       let error;
       try {
         error = JSON.parse(errorText);
@@ -44,7 +51,9 @@ async function triggerProcessing(updateStatus: (status: string) => void): Promis
     }
 
     // Get the processing ID from the response
-    const { processingId } = await startResponse.json();
+    const responseData = await startResponse.json();
+    console.log('Received processing ID:', responseData.processingId);
+    const { processingId } = responseData;
     
     // Poll for status with exponential backoff
     let attempts = 0;
@@ -52,24 +61,43 @@ async function triggerProcessing(updateStatus: (status: string) => void): Promis
     let backoffMs = 2000; // Start with 2 seconds
     const maxBackoffMs = 30000; // Max 30 seconds between polls
     
+    updateStatus('Processing started. Waiting for status updates...');
+    
     while (attempts < maxAttempts) {
+      console.log(`Polling attempt ${attempts + 1}/${maxAttempts} - waiting ${backoffMs}ms`);
       await sleep(backoffMs); // Wait with exponential backoff
       
       try {
+        console.log(`Checking status for processingId: ${processingId}`);
         const statusResponse = await fetch(`/api/process/status?id=${processingId}`);
+        console.log('Status response:', statusResponse.status);
+        
         if (!statusResponse.ok) {
+          console.error('Error checking status:', statusResponse.status, statusResponse.statusText);
           throw new Error('Failed to check processing status');
         }
         
-        const status = await statusResponse.json();
+        const statusText = await statusResponse.text();
+        console.log('Raw status response:', statusText);
+        
+        let status;
+        try {
+          status = JSON.parse(statusText);
+          console.log('Parsed status response:', status);
+        } catch (parseError) {
+          console.error('Failed to parse status response as JSON:', parseError);
+          throw new Error('Invalid status response format');
+        }
         
         if (status.completed) {
+          console.log('Processing completed successfully');
           return {
             success: true,
             message: status.message || 'Processing completed successfully',
             results: status.results || []
           };
         } else if (status.error) {
+          console.error('Error in status response:', status.error);
           throw new Error(status.error);
         }
         
@@ -79,7 +107,11 @@ async function triggerProcessing(updateStatus: (status: string) => void): Promis
         
         // Update processing status with progress if available
         if (status.progress) {
+          console.log('Current progress:', status.progress);
           updateStatus(`Processing... ${status.progress}`);
+        } else {
+          console.log('No progress information in status response');
+          updateStatus(`Processing... (waiting for progress updates)`);
         }
       } catch (error) {
         console.error('Error checking status:', error);
@@ -88,6 +120,7 @@ async function triggerProcessing(updateStatus: (status: string) => void): Promis
     }
     
     // If we reach here, processing is taking too long but might still be running
+    console.warn('Processing is taking longer than expected, exceeded max polling attempts');
     return {
       success: true,
       message: 'Processing is taking longer than expected. Please check your dashboard in a few minutes to see your processed data.',
@@ -95,7 +128,7 @@ async function triggerProcessing(updateStatus: (status: string) => void): Promis
     };
     
   } catch (error) {
-    console.error('Processing error:', error);
+    console.error('Processing error in triggerProcessing:', error);
     throw error;
   }
 }
@@ -191,21 +224,29 @@ export default function UploadPage() {
   };
 
   const handleProcess = async () => {
+    console.log('Process button clicked');
     setIsProcessing(true);
     setProcessingStatus('Starting processing...');
+    
     try {
+      console.log('Calling triggerProcessing function');
       const result = await triggerProcessing(setProcessingStatus);
+      console.log('triggerProcessing result:', result);
+      
       if (result.success) {
-        setProcessingStatus(
-          result.message + (result.results.length > 0 ? ` ${result.results.map(r => r.message).join(', ')}` : '')
-        );
+        const resultMessage = result.message + (result.results.length > 0 ? ` ${result.results.map(r => r.message).join(', ')}` : '');
+        console.log('Processing successful, setting message:', resultMessage);
+        setProcessingStatus(resultMessage);
       } else {
+        console.error('Processing unsuccessful:', result.error);
         setProcessingStatus(`Error: ${result.error}`);
       }
     } catch (error) {
+      console.error('Error in handleProcess:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setProcessingStatus(`Error: ${errorMessage}`);
     } finally {
+      console.log('Processing completed or failed, setting isProcessing to false');
       setIsProcessing(false);
     }
   };
