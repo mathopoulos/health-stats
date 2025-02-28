@@ -469,7 +469,7 @@ export default function UploadPage() {
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable) {
             const percentComplete = (event.loaded / event.total) * 100;
-            setProgress(percentComplete);
+            setProgress(Math.round(percentComplete));
             setStatus(`Uploading: ${Math.round(percentComplete)}%`);
           }
         };
@@ -997,7 +997,7 @@ export default function UploadPage() {
                         </div>
                         <div className="text-right">
                           <span className="text-xs font-semibold inline-block text-indigo-600">
-                            {progress}%
+                            {Math.round(progress)}%
                           </span>
                         </div>
                       </div>
