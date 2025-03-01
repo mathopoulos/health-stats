@@ -155,12 +155,27 @@ export default function BloodMarkerHistory() {
             throw new Error('Entry not found');
           }
           
-          // Filter out the marker to delete
-          const updatedMarkers = entry.markers.filter(marker => marker.name !== markerName);
+          console.log(`Deleting marker: ${markerName} from entry: ${entryId}`);
+          console.log(`Entry before deletion:`, entry);
+          
+          // Filter out the marker to delete - ensure exact name match
+          const updatedMarkers = entry.markers.filter(marker => marker.name.trim() !== markerName.trim());
+          
+          console.log(`Markers after filtering:`, updatedMarkers);
+          console.log(`Original markers count: ${entry.markers.length}, Updated markers count: ${updatedMarkers.length}`);
           
           // If no markers left, delete the entire entry
           if (updatedMarkers.length === 0) {
-            return handleDeleteEntry(entryId);
+            console.log(`No markers left, deleting entire entry: ${entryId}`);
+            return handleDeleteEntryDirect(entryId).then(success => {
+              if (success) {
+                toast.success(`${markerName} marker deleted successfully`);
+                // Notify other components about the change
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new Event('bloodMarkerAdded'));
+                }
+              }
+            });
           }
           
           // Otherwise, update the entry with the remaining markers
@@ -180,15 +195,25 @@ export default function BloodMarkerHistory() {
           }
           
           const data = await response.json();
+          console.log(`API response:`, data);
+          
           if (data.success) {
             toast.success(`${markerName} marker deleted successfully`);
             
-            // Update the entry in state
-            setEntries(prev => 
-              prev.map(e => 
-                e._id === entryId ? { ...e, markers: updatedMarkers } : e
-              )
-            );
+            // Update the entries state with the updated markers
+            setEntries(prev => {
+              const newEntries = prev.map(e => {
+                if (e._id === entryId) {
+                  return { ...e, markers: updatedMarkers };
+                }
+                return e;
+              });
+              console.log(`Updated entries state:`, newEntries);
+              return newEntries;
+            });
+            
+            // Force a refresh of the data
+            setLastRefresh(Date.now());
             
             // Notify other components about the change
             if (typeof window !== 'undefined') {
@@ -431,6 +456,8 @@ export default function BloodMarkerHistory() {
       confirmLabel: 'Delete',
       confirmVariant: 'danger',
       onConfirm: async () => {
+        console.log(`Starting bulk deletion of ${selectedBiomarkers.size} biomarkers`);
+        
         // Group selected biomarkers by entry ID for efficient deletion
         const entriesMap = new Map<string, string[]>();
         
@@ -442,6 +469,8 @@ export default function BloodMarkerHistory() {
           entriesMap.get(entryId)?.push(name);
         });
         
+        console.log(`Grouped biomarkers by entry:`, Object.fromEntries(entriesMap));
+        
         let success = true;
         let deleted = 0;
         
@@ -450,19 +479,37 @@ export default function BloodMarkerHistory() {
           try {
             // Find the entry
             const entry = entries.find(e => e._id === entryId);
-            if (!entry) continue;
+            if (!entry) {
+              console.log(`Entry not found: ${entryId}`);
+              continue;
+            }
             
-            // Keep markers that are not selected for deletion
-            const updatedMarkers = entry.markers.filter(marker => !markerNames.includes(marker.name));
+            console.log(`Processing entry ${entryId} with ${entry.markers.length} markers`);
+            console.log(`Markers to delete: ${markerNames.join(', ')}`);
+            
+            // Keep markers that are not selected for deletion - ensure exact name match with trimming
+            const updatedMarkers = entry.markers.filter(marker => 
+              !markerNames.some(name => name.trim() === marker.name.trim())
+            );
+            
+            console.log(`Original markers count: ${entry.markers.length}, Updated markers count: ${updatedMarkers.length}`);
             
             // If all markers in the entry are to be deleted, delete the entire entry
             if (updatedMarkers.length === 0) {
-              await handleDeleteEntryDirect(entryId);
-              deleted += markerNames.length;
+              console.log(`No markers left, deleting entire entry: ${entryId}`);
+              const deleteSuccess = await handleDeleteEntryDirect(entryId);
+              if (deleteSuccess) {
+                deleted += markerNames.length;
+                console.log(`Successfully deleted entry ${entryId}`);
+              } else {
+                console.error(`Failed to delete entry ${entryId}`);
+                success = false;
+              }
               continue;
             }
             
             // Otherwise, update the entry with the remaining markers
+            console.log(`Updating entry ${entryId} with ${updatedMarkers.length} remaining markers`);
             const response = await fetch(`/api/blood-markers/${entryId}`, {
               method: 'PUT',
               headers: {
@@ -479,14 +526,20 @@ export default function BloodMarkerHistory() {
             }
             
             const data = await response.json();
+            console.log(`API response for entry ${entryId}:`, data);
+            
             if (data.success) {
               // Update the entry in state
-              setEntries(prev => 
-                prev.map(e => 
+              setEntries(prev => {
+                const newEntries = prev.map(e => 
                   e._id === entryId ? { ...e, markers: updatedMarkers } : e
-                )
-              );
+                );
+                return newEntries;
+              });
               deleted += markerNames.length;
+              console.log(`Successfully updated entry ${entryId}, deleted ${markerNames.length} markers`);
+            } else {
+              throw new Error(data.error || `Failed to update entry ${entryId}`);
             }
           } catch (error) {
             console.error(`Error processing entry ${entryId}:`, error);
@@ -496,6 +549,9 @@ export default function BloodMarkerHistory() {
         
         // Clear selection
         setSelectedBiomarkers(new Set());
+        
+        // Force a refresh of the data
+        setLastRefresh(Date.now());
         
         // Show success/error message
         if (success) {
