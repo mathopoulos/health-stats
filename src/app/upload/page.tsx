@@ -957,7 +957,8 @@ export default function UploadPage() {
                   onDragLeave={handleDragLeave}
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
-                  className={`border-2 border-dashed rounded-lg p-8 text-center ${
+                  onClick={() => inputFileRef.current?.click()}
+                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer ${
                     isDragging
                       ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
                       : 'border-gray-300 dark:border-gray-700'
@@ -1018,7 +1019,7 @@ export default function UploadPage() {
                               setFileKey(prev => prev + 1);
                             }
                           }}
-                          className="text-sm text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300"
+                          className="text-sm text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 cursor-pointer"
                         >
                           Remove file
                         </button>
@@ -1034,12 +1035,12 @@ export default function UploadPage() {
                         <div>
                           <button
                             onClick={() => inputFileRef.current?.click()}
-                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 font-medium"
+                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 font-medium cursor-pointer"
                           >
                             Upload a file
                           </button>
                           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                            or drag and drop your fitness data files here
+                            or drag and drop your Apple Health XML file here
                           </p>
                         </div>
                       </>
@@ -1081,7 +1082,7 @@ export default function UploadPage() {
                     type="submit"
                     onClick={(e) => handleSubmit(e as any)}
                     disabled={uploading || !inputFileRef.current?.files?.[0]}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     {uploading ? (
                       <>
@@ -1100,7 +1101,7 @@ export default function UploadPage() {
                       className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white transition-colors ${
                         isProcessing || uploading
                           ? 'bg-gray-400 dark:bg-gray-600' 
-                          : 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600'
+                          : 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 cursor-pointer'
                       } disabled:cursor-not-allowed`}
                     >
                       {isProcessing ? (
