@@ -85,6 +85,12 @@ export default function BloodTestUpload() {
       // Reset the upload state
       resetUpload();
       
+      // Notify other components about the change
+      if (typeof window !== 'undefined') {
+        console.log('Dispatching bloodMarkerAdded event after saving markers');
+        window.dispatchEvent(new Event('bloodMarkerAdded'));
+      }
+      
       // We stay on the current page instead of redirecting to the dashboard
       // The modal will close automatically via the onClose call in BloodMarkerPreview's handleSave function
     } catch (error) {

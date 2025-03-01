@@ -152,17 +152,23 @@ export default function BloodMarkerPreview({
   // Function to get all markers across all date groups
   const getAllMarkers = (): BloodMarker[] => {
     if (!hasMultipleDates) {
+      console.log('Single date group, returning active markers:', activeMarkers.length);
       return activeMarkers;
     }
     
+    console.log('Multiple date groups detected:', sortedDateGroups.length);
+    
     // Combine all markers from all date groups, adding date identifier
-    const allMarkersWithMetadata = sortedDateGroups.flatMap(group => 
-      group.markers.map(marker => ({
+    const allMarkersWithMetadata = sortedDateGroups.flatMap(group => {
+      console.log(`Date group ${group.testDate} has ${group.markers.length} markers`);
+      return group.markers.map(marker => ({
         ...marker,
         // Add metadata so we know which date group this marker belongs to
         _dateGroup: group.testDate
-      }))
-    );
+      }));
+    });
+    
+    console.log('Total markers before deduplication:', allMarkersWithMetadata.length);
     
     // Use a Map to deduplicate markers by name (keeping the most recent occurrence)
     const markerMap = new Map();
@@ -171,13 +177,18 @@ export default function BloodMarkerPreview({
     }
     
     // Convert back to array and remove our metadata property
-    return Array.from(markerMap.values()).map(({ _dateGroup, ...marker }) => marker);
+    const result = Array.from(markerMap.values()).map(({ _dateGroup, ...marker }) => marker);
+    console.log('Total markers after deduplication:', result.length);
+    
+    return result;
   };
 
   const handleSave = async () => {
     try {
       // Get all markers across all date groups or just the active markers if single date
       const markersToSave = getAllMarkers();
+      
+      console.log('Saving all markers from all date groups:', markersToSave.length);
       
       await onSave(markersToSave, selectedDate);
       onClose();

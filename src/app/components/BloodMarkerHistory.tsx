@@ -88,7 +88,13 @@ export default function BloodMarkerHistory() {
     // Function to handle the custom event
     const handleBloodMarkerAdded = () => {
       console.log('Blood marker added event detected, refreshing history');
-      setLastRefresh(Date.now()); // Update lastRefresh to trigger a re-fetch
+      // Force an immediate fetch instead of just setting lastRefresh
+      fetchBloodMarkers().then(() => {
+        console.log('Blood markers refreshed successfully after event');
+      }).catch(error => {
+        console.error('Error refreshing blood markers after event:', error);
+      });
+      setLastRefresh(Date.now()); // Update lastRefresh as a backup
     };
 
     // Add event listener for custom event
@@ -98,7 +104,7 @@ export default function BloodMarkerHistory() {
     return () => {
       window.removeEventListener('bloodMarkerAdded', handleBloodMarkerAdded);
     };
-  }, []);
+  }, [fetchBloodMarkers]);
 
   const handleDeleteEntry = async (entryId: string) => {
     // Show confirmation dialog instead of using native confirm
