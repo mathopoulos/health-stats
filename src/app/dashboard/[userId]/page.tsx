@@ -1363,6 +1363,7 @@ export default function Home() {
                             color: 'var(--tooltip-text)'
                           }}
                           labelStyle={{ color: 'var(--tooltip-label)', marginBottom: '4px' }}
+                          cursor={{ stroke: isDarkMode ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.3)', strokeWidth: 0.7, strokeDasharray: '3 3' }}
                           labelFormatter={(value) => {
                             const d = new Date(value);
                             switch (hrvTimeframe) {
@@ -1385,8 +1386,8 @@ export default function Home() {
                           dataKey="value"
                           stroke="#6366F1"
                           strokeWidth={1.5}
-                          dot={{ r: 2, fill: '#6366F1' }}
-                          activeDot={{ r: 3 }}
+                          dot={false}
+                          activeDot={{ r: 3, fill: '#6366F1', strokeWidth: 1, stroke: '#4F46E5' }}
                         />
                 </LineChart>
               </ResponsiveContainer>
@@ -1506,6 +1507,7 @@ export default function Home() {
                             padding: '8px'
                           }}
                           labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
+                          cursor={{ stroke: isDarkMode ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.3)', strokeWidth: 0.7, strokeDasharray: '3 3' }}
                           labelFormatter={(value) => {
                             const d = new Date(value);
                             switch (vo2maxTimeframe) {
@@ -1528,8 +1530,8 @@ export default function Home() {
                           dataKey="value"
                           stroke="#8B5CF6"
                           strokeWidth={1.5}
-                          dot={{ r: 2, fill: '#8B5CF6' }}
-                          activeDot={{ r: 3 }}
+                          dot={false}
+                          activeDot={{ r: 3, fill: '#8B5CF6', strokeWidth: 1, stroke: '#7C3AED' }}
                         />
                 </LineChart>
               </ResponsiveContainer>
@@ -1649,6 +1651,7 @@ export default function Home() {
                             padding: '8px'
                           }}
                           labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
+                          cursor={{ stroke: isDarkMode ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.3)', strokeWidth: 0.7, strokeDasharray: '3 3' }}
                           labelFormatter={(value) => {
                             const d = new Date(value);
                             switch (weightTimeframe) {
@@ -1671,8 +1674,8 @@ export default function Home() {
                           dataKey="value"
                           stroke="#10B981"
                           strokeWidth={1.5}
-                          dot={{ r: 2, fill: '#10B981' }}
-                          activeDot={{ r: 3 }}
+                          dot={false}
+                          activeDot={{ r: 3, fill: '#10B981', strokeWidth: 1, stroke: '#059669' }}
                         />
                 </LineChart>
               </ResponsiveContainer>
@@ -1814,8 +1817,8 @@ export default function Home() {
                           dataKey="value"
                           stroke="#F59E0B"
                           strokeWidth={1.5}
-                          dot={{ r: 2, fill: '#F59E0B' }}
-                          activeDot={{ r: 3 }}
+                          dot={false}
+                          activeDot={{ r: 3, fill: '#F59E0B', strokeWidth: 1, stroke: '#D97706' }}
                         />
                 </LineChart>
               </ResponsiveContainer>

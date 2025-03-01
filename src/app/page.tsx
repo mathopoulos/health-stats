@@ -191,7 +191,7 @@ export default function Home() {
                     />
                         <Tooltip
                       content={<CustomTooltip valueLabel="HRV" />}
-                      cursor={{ stroke: '#4B5563', strokeWidth: 1, strokeDasharray: '4 4' }}
+                      cursor={{ stroke: 'rgba(156, 163, 175, 0.3)', strokeWidth: 0.7, strokeDasharray: '3 3' }}
                         />
                         <Line
                       type="natural"
@@ -236,7 +236,7 @@ export default function Home() {
                     />
                         <Tooltip
                       content={<CustomTooltip valueLabel="VO2 Max" />}
-                      cursor={{ stroke: '#4B5563', strokeWidth: 1, strokeDasharray: '4 4' }}
+                      cursor={{ stroke: 'rgba(156, 163, 175, 0.3)', strokeWidth: 0.7, strokeDasharray: '3 3' }}
                         />
                         <Line
                       type="natural"
