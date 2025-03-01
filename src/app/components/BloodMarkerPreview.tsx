@@ -163,10 +163,83 @@ export default function BloodMarkerPreview({
     return acc;
   }, {} as Record<string, BloodMarker[]>);
 
-  // Function to get all markers across all date groups
+  // Function to ensure a date is in valid ISO format
+  const ensureValidISODate = (dateStr: string | null | undefined): string => {
+    if (!dateStr) {
+      // Handle null or undefined dates by using today
+      const today = new Date().toISOString().split('T')[0];
+      console.warn(`Received null or undefined date, using today's date (${today}) as fallback`);
+      return today;
+    }
+    
+    console.log(`Validating date: ${dateStr}`);
+    
+    // Check if it's already a valid ISO date (YYYY-MM-DD)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr) && !isNaN(new Date(dateStr).getTime())) {
+      console.log(`Date ${dateStr} is already a valid ISO date`);
+      return dateStr;
+    }
+    
+    // Try to parse it as a date and convert to ISO
+    try {
+      const date = new Date(dateStr);
+      if (!isNaN(date.getTime())) {
+        const isoDate = date.toISOString().split('T')[0];
+        console.log(`Converted date ${dateStr} to ISO format: ${isoDate}`);
+        return isoDate;
+      }
+    } catch (error) {
+      console.warn(`Failed to convert date ${dateStr} to ISO format:`, error);
+    }
+    
+    // If we got here, we need to try more aggressive parsing approaches
+    
+    // Try to extract YYYY-MM-DD pattern if it exists somewhere in the string
+    const isoPattern = dateStr.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (isoPattern) {
+      const extracted = isoPattern[0];
+      const date = new Date(extracted);
+      if (!isNaN(date.getTime())) {
+        console.log(`Extracted ISO date from string: ${extracted}`);
+        return extracted;
+      }
+    }
+    
+    // Try to extract MM/DD/YYYY pattern
+    const usPattern = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (usPattern) {
+      const month = parseInt(usPattern[1], 10);
+      const day = parseInt(usPattern[2], 10);
+      const year = parseInt(usPattern[3], 10);
+      
+      // Create ISO date (YYYY-MM-DD)
+      const paddedMonth = month.toString().padStart(2, '0');
+      const paddedDay = day.toString().padStart(2, '0');
+      const isoDate = `${year}-${paddedMonth}-${paddedDay}`;
+      
+      // Validate the result
+      const date = new Date(isoDate);
+      if (!isNaN(date.getTime())) {
+        console.log(`Converted US date format to ISO: ${dateStr} -> ${isoDate}`);
+        return isoDate;
+      }
+    }
+    
+    // If all attempts fail, return today's date as fallback and log a warning
+    const today = new Date().toISOString().split('T')[0];
+    console.warn(`Could not parse date ${dateStr}, using today's date (${today}) as fallback`);
+    return today;
+  };
+
   const getAllMarkers = (): { markers: BloodMarker[], dateGroups: {date: string, markers: BloodMarker[]}[] } => {
     // Always log the current state to debug
     console.log(`getAllMarkers called - hasMultipleDates: ${hasMultipleDates}, dateGroups: ${dateGroups.length}, activeTab: ${selectedTab}`);
+    
+    // Log the original date groups to analyze
+    console.log('Original date groups:');
+    dateGroups.forEach((group, index) => {
+      console.log(`Original group ${index + 1}: date=${group.testDate}, markers=${group.markers.length}, valid date=${!isNaN(new Date(group.testDate).getTime())}`);
+    });
     
     // If we have multiple date groups, always use them regardless of the hasMultipleDates flag
     if (dateGroups.length <= 1) {
@@ -179,61 +252,45 @@ export default function BloodMarkerPreview({
     
     console.log('Multiple date groups detected:', sortedDateGroups.length);
     
-    // Combine all markers from all date groups, adding date identifier
-    const allMarkersWithMetadata = sortedDateGroups.flatMap(group => {
-      console.log(`Date group ${group.testDate} has ${group.markers.length} markers`);
-      return group.markers.map(marker => ({
-        ...marker,
-        // Add metadata so we know which date group this marker belongs to
-        _dateGroup: group.testDate
-      }));
+    // DIRECT APPROACH: Instead of deduplicating, just map each original date group to the format we need
+    // This ensures we preserve all original groups
+    const dateGroupsResult = sortedDateGroups.map(group => {
+      // Ensure the date is in a valid format, but preserve the original day
+      const originalDate = group.testDate;
+      console.log(`Processing original group date: ${originalDate}`);
+      
+      // Create a standardized version of the date that preserves the original day
+      let standardizedDate = originalDate;
+      try {
+        // Try to ensure it's a valid ISO format if not already
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(originalDate)) {
+          const date = new Date(originalDate);
+          if (!isNaN(date.getTime())) {
+            standardizedDate = date.toISOString().split('T')[0];
+            console.log(`Standardized date ${originalDate} to ${standardizedDate}`);
+          }
+        }
+      } catch (error) {
+        console.warn(`Error standardizing date ${originalDate}:`, error);
+      }
+      
+      return {
+        date: standardizedDate,
+        markers: group.markers
+      };
     });
     
-    console.log('Total markers before deduplication:', allMarkersWithMetadata.length);
-    
-    // Use a Map to deduplicate markers by name (keeping the most recent occurrence)
-    const markerMap = new Map();
-    
-    // Process in order from newest to oldest date (which is how sortedDateGroups is ordered)
-    for (const marker of allMarkersWithMetadata) {
-      // Only add to the map if this marker name isn't already in the map
-      if (!markerMap.has(marker.name.trim())) {
-        markerMap.set(marker.name.trim(), marker);
-        console.log(`Added marker: ${marker.name} from date ${marker._dateGroup}`);
-      }
-    }
-    
-    // Convert back to array, but keep the _dateGroup property
-    const dedupedMarkers = Array.from(markerMap.values());
-    
-    // Now group the deduplicated markers by their original date
-    const groupedByDate: Record<string, BloodMarker[]> = {};
-    for (const marker of dedupedMarkers) {
-      const date = marker._dateGroup;
-      if (!groupedByDate[date]) {
-        groupedByDate[date] = [];
-      }
-      // Add the marker without the _dateGroup property
-      const { _dateGroup, ...cleanMarker } = marker;
-      groupedByDate[date].push(cleanMarker);
-    }
-    
-    // Convert to the format we need
-    const dateGroupsResult = Object.entries(groupedByDate).map(([date, markers]) => ({
-      date,
-      markers
-    }));
-    
-    console.log('Grouped into', dateGroupsResult.length, 'date groups after deduplication');
-    dateGroupsResult.forEach(group => {
-      console.log(`- Date ${group.date}: ${group.markers.length} markers`);
+    console.log(`Processed ${dateGroupsResult.length} date groups with exact dates`);
+    dateGroupsResult.forEach((group, index) => {
+      console.log(`- Processed group ${index + 1}: date=${group.date}, markers=${group.markers.length}, valid date=${!isNaN(new Date(group.date).getTime())}`);
     });
     
-    // Remove _dateGroup from all markers for the final markers array
-    const result = dedupedMarkers.map(({ _dateGroup, ...marker }) => marker);
+    // Combine all markers for the total markers array
+    const allMarkers = dateGroupsResult.flatMap(group => group.markers);
+    console.log('Total markers:', allMarkers.length);
     
     return {
-      markers: result,
+      markers: allMarkers,
       dateGroups: dateGroupsResult
     };
   };
@@ -249,33 +306,55 @@ export default function BloodMarkerPreview({
       console.log('Saving all markers from all date groups:', markersToSave.length);
       console.log('Grouped into', groupedMarkers.length, 'date groups for saving');
       
+      // Enhanced debugging - log all date groups before processing
+      console.log('All date groups to process:');
+      groupedMarkers.forEach((group, index) => {
+        console.log(`Group ${index + 1}: date=${group.date}, markers=${group.markers.length}, valid date=${!isNaN(new Date(group.date).getTime())}`);
+        
+        // Log some sample marker names
+        if (group.markers.length > 0) {
+          console.log(`  Sample markers: ${group.markers.slice(0, 3).map(m => m.name).join(', ')}${group.markers.length > 3 ? '...' : ''}`);
+        }
+      });
+      
       // Save each date group separately
       let totalSavedMarkers = 0;
       let savedGroups = 0;
       let failedGroups = 0;
+      let skippedGroups = 0;
       
       // Multiple groups need separate API calls
       if (groupedMarkers.length > 1) {
-        for (const group of groupedMarkers) {
-          console.log(`Saving group for date ${group.date} with ${group.markers.length} markers`);
+        for (const [index, group] of groupedMarkers.entries()) {
+          console.log(`Processing group ${index + 1}/${groupedMarkers.length} for date ${group.date} with ${group.markers.length} markers`);
           
           // Parse the date string into a Date object for the API call
           const groupDate = new Date(group.date);
           
           // Skip invalid dates
           if (isNaN(groupDate.getTime())) {
-            console.warn(`Skipping group with invalid date: ${group.date}`);
+            console.warn(`Skipping group ${index + 1} with invalid date: ${group.date}`);
+            skippedGroups++;
             continue;
           }
           
-          // Call onSave for this specific group
-          const result = await onSave(group.markers, groupDate);
-          // Check if result is explicitly false (for functions that return boolean)
-          if (result !== false) {
-            totalSavedMarkers += group.markers.length;
-            savedGroups++;
-          } else {
+          console.log(`Attempting to save group ${index + 1} (date: ${groupDate.toISOString().split('T')[0]})`);
+          
+          try {
+            // Call onSave for this specific group
+            const result = await onSave(group.markers, groupDate);
+            // Check if result is explicitly false (for functions that return boolean)
+            if (result !== false) {
+              totalSavedMarkers += group.markers.length;
+              savedGroups++;
+              console.log(`✅ Successfully saved group ${index + 1}`);
+            } else {
+              failedGroups++;
+              console.error(`❌ Failed to save group ${index + 1}`);
+            }
+          } catch (error) {
             failedGroups++;
+            console.error(`❌ Error saving group ${index + 1}:`, error);
           }
         }
         
@@ -293,6 +372,14 @@ export default function BloodMarkerPreview({
         if (failedGroups > 0) {
           toast.error(`Failed to save ${failedGroups} date groups. See console for details.`);
         }
+        
+        if (skippedGroups > 0) {
+          toast.error(`Skipped ${skippedGroups} date groups due to invalid dates.`);
+        }
+        
+        // Log final summary
+        console.log(`Save summary: ${savedGroups} groups saved, ${failedGroups} groups failed, ${skippedGroups} groups skipped`);
+        
       } else if (groupedMarkers.length === 1) {
         // Single group is handled by the onSave function itself
         const group = groupedMarkers[0];
@@ -300,7 +387,7 @@ export default function BloodMarkerPreview({
         await onSave(group.markers, groupDate);
       }
       
-      console.log(`Save complete: ${savedGroups} groups saved, ${failedGroups} groups failed`);
+      console.log(`Save complete: ${savedGroups} groups saved, ${failedGroups} groups failed, ${skippedGroups} groups skipped`);
       
       // Close the dialog
       onClose();
