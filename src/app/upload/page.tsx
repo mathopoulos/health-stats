@@ -821,11 +821,10 @@ export default function UploadPage() {
           {/* Profile Tab Content */}
           {activeTab === 'profile' && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Profile Settings</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Profile</h2>
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm divide-y divide-gray-200 dark:divide-gray-700">
                 {/* Profile Photo & Name Section */}
-                <div className="p-6">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Personal Information</h3>
+                <div className="pt-10 px-6 pb-6">
                   <div className="flex flex-col md:flex-row md:items-start gap-8">
                     {/* Profile Image Upload */}
                     <div className="flex flex-col items-center">
@@ -925,69 +924,94 @@ export default function UploadPage() {
                         </div>
                       </div>
                       
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+                        This is the information that will be used to personalize your health insights.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Health Goals Section - Now with Age and Sex */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mt-6">
+                <div className="p-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Health Information</h3>
+                  
+                  <div className="space-y-6">
+                    {/* Age and Sex Inputs Side by Side */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Age Input */}
                       <div>
-                        <label htmlFor="age" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label htmlFor="age" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Age
                         </label>
-                        <div className="flex-1">
-                          <input
-                            type="number"
-                            name="age"
-                            id="age"
-                            value={age}
-                            onChange={(e) => setAge(e.target.value === '' ? '' : Number(e.target.value))}
-                            min="0"
-                            max="120"
-                            className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-[38px] px-3"
-                            placeholder="Enter your age"
-                          />
-                          {ageError && (
-                            <p className="mt-1 text-sm text-red-500 dark:text-red-400">{ageError}</p>
-                          )}
-                        </div>
+                        <input
+                          type="number"
+                          name="age"
+                          id="age"
+                          value={age}
+                          onChange={(e) => setAge(e.target.value === '' ? '' : Number(e.target.value))}
+                          min="0"
+                          max="120"
+                          className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-[38px] px-3"
+                          placeholder="Enter your age"
+                        />
+                        {ageError && (
+                          <p className="mt-1 text-sm text-red-500 dark:text-red-400">{ageError}</p>
+                        )}
                       </div>
                       
                       {/* Sex Input */}
                       <div>
-                        <label htmlFor="sex" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label htmlFor="sex" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Sex
                         </label>
-                        <div className="flex-1">
-                          <select
-                            name="sex"
-                            id="sex"
-                            value={sex}
-                            onChange={(e) => setSex(e.target.value as 'male' | 'female' | 'other' | '')}
-                            className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-[38px] px-3"
-                          >
-                            <option value="">Select your sex</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                            <option value="other">Other</option>
-                          </select>
+                        <select
+                          name="sex"
+                          id="sex"
+                          value={sex}
+                          onChange={(e) => setSex(e.target.value as 'male' | 'female' | 'other' | '')}
+                          className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-[38px] px-3"
+                        >
+                          <option value="">Select your sex</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    {/* Privacy Notice */}
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0">
+                          <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm text-blue-700 dark:text-blue-300">
+                            Your age and sex information is used only to provide more accurate health insights and will not be shared publicly.
+                          </p>
                         </div>
                       </div>
-                      
-                      {/* Privacy Notice */}
-                      <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0">
-                            <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                          <div className="ml-3">
-                            <p className="text-sm text-blue-700 dark:text-blue-300">
-                              Your age and sex information is used only to provide more accurate health insights and will not be shared publicly.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        This is the information that will be used to personalize your health insights.
-                      </p>
+                    </div>
+                    
+                    {/* Save Button */}
+                    <div className="pt-4">
+                      <button
+                        onClick={handleUpdateProfile}
+                        disabled={isSavingProfile}
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                      >
+                        {isSavingProfile ? (
+                          <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                        ) : ''}
+                        Save Health Information
+                      </button>
                     </div>
                   </div>
                 </div>
