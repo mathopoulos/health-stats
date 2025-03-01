@@ -247,12 +247,6 @@ export default function BloodMarkerPreview({
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Test Date
                 </label>
-                {wasDateExtracted && !hasMultipleDates && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                    <CalendarIcon className="h-3 w-3 mr-1" />
-                    Extracted from PDF
-                  </span>
-                )}
               </div>
             </div>
             <DatePicker
