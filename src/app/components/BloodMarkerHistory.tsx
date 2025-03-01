@@ -441,13 +441,39 @@ export default function BloodMarkerHistory() {
   // Function to select or deselect all visible biomarkers
   const toggleSelectAll = () => {
     const filteredItems = getFilteredData();
-    if (selectedBiomarkers.size === filteredItems.length) {
-      // If all are selected, deselect all
-      setSelectedBiomarkers(new Set());
+    
+    // Log current selection state
+    console.log(`Current selection: ${selectedBiomarkers.size} of ${filteredItems.length} items selected`);
+    
+    const allSelectedKeys = new Set(filteredItems.map(item => `${item.entryId}-${item.name}`));
+    
+    // Check if all visible items are currently selected
+    let allCurrentlySelected = true;
+    for (const key of allSelectedKeys) {
+      if (!selectedBiomarkers.has(key)) {
+        allCurrentlySelected = false;
+        break;
+      }
+    }
+    
+    console.log(`All currently selected? ${allCurrentlySelected}`);
+    
+    if (allCurrentlySelected) {
+      // If all are selected, deselect only the visible items
+      const newSelection = new Set(selectedBiomarkers);
+      for (const key of allSelectedKeys) {
+        newSelection.delete(key);
+      }
+      console.log(`Deselecting all ${allSelectedKeys.size} visible items`);
+      setSelectedBiomarkers(newSelection);
     } else {
-      // Select all visible items
-      const allKeys = filteredItems.map(item => `${item.entryId}-${item.name}`);
-      setSelectedBiomarkers(new Set(allKeys));
+      // Add all visible items to the selection
+      const newSelection = new Set(selectedBiomarkers);
+      for (const key of allSelectedKeys) {
+        newSelection.add(key);
+      }
+      console.log(`Selecting all ${allSelectedKeys.size} visible items, new total: ${newSelection.size}`);
+      setSelectedBiomarkers(newSelection);
     }
   };
 
@@ -464,11 +490,25 @@ export default function BloodMarkerHistory() {
       onConfirm: async () => {
         console.log(`Starting bulk deletion of ${selectedBiomarkers.size} biomarkers`);
         
+        // Create a copy of the selected biomarkers before processing
+        const selectedBiomarkersArray = Array.from(selectedBiomarkers);
+        console.log('Selected biomarkers:', selectedBiomarkersArray);
+        
         // Group selected biomarkers by entry ID for efficient deletion
         const entriesMap = new Map<string, string[]>();
         
-        selectedBiomarkers.forEach(key => {
-          const [entryId, name] = key.split('-');
+        selectedBiomarkersArray.forEach(key => {
+          // Extracting entryId and name - need to be careful with the splitting
+          // since marker names might contain hyphens
+          const firstHyphenIndex = key.indexOf('-');
+          if (firstHyphenIndex === -1) {
+            console.warn(`Invalid key format: ${key}`);
+            return;
+          }
+          
+          const entryId = key.substring(0, firstHyphenIndex);
+          const name = key.substring(firstHyphenIndex + 1);
+          
           if (!entriesMap.has(entryId)) {
             entriesMap.set(entryId, []);
           }
@@ -479,26 +519,46 @@ export default function BloodMarkerHistory() {
         
         let success = true;
         let deleted = 0;
+        let failed = 0;
+        let notFound = 0;
+        
+        // Make a copy of entries for processing
+        const currentEntries = [...entries];
         
         // Process each entry
         for (const [entryId, markerNames] of entriesMap.entries()) {
           try {
-            // Find the entry
-            const entry = entries.find(e => e._id === entryId);
+            // Find the entry in our current state
+            const entry = currentEntries.find(e => e._id === entryId);
             if (!entry) {
-              console.log(`Entry not found: ${entryId}`);
+              console.warn(`Entry not found in current state: ${entryId}`);
+              notFound += markerNames.length;
               continue;
             }
             
             console.log(`Processing entry ${entryId} with ${entry.markers.length} markers`);
             console.log(`Markers to delete: ${markerNames.join(', ')}`);
             
-            // Keep markers that are not selected for deletion - ensure exact name match with trimming
-            const updatedMarkers = entry.markers.filter(marker => 
-              !markerNames.some(name => name.trim() === marker.name.trim())
-            );
+            // Keep markers that are not selected for deletion - using exact string comparison
+            const updatedMarkers = entry.markers.filter(marker => {
+              // Check if this marker's name exactly matches any in the delete list
+              const shouldKeep = !markerNames.includes(marker.name);
+              if (!shouldKeep) {
+                console.log(`Will delete: ${marker.name}`);
+              }
+              return shouldKeep;
+            });
             
             console.log(`Original markers count: ${entry.markers.length}, Updated markers count: ${updatedMarkers.length}`);
+            console.log(`Expected to delete: ${markerNames.length}, Will delete: ${entry.markers.length - updatedMarkers.length}`);
+            
+            // Double-check if all markers were found
+            if (entry.markers.length - updatedMarkers.length !== markerNames.length) {
+              console.warn(`Not all markers were found in entry ${entryId}`);
+              const foundMarkers = entry.markers.map(m => m.name);
+              const notFoundMarkers = markerNames.filter(name => !foundMarkers.includes(name));
+              console.warn(`Markers not found: ${notFoundMarkers.join(', ')}`);
+            }
             
             // If all markers in the entry are to be deleted, delete the entire entry
             if (updatedMarkers.length === 0) {
@@ -507,7 +567,14 @@ export default function BloodMarkerHistory() {
               if (deleteSuccess) {
                 deleted += markerNames.length;
                 console.log(`Successfully deleted entry ${entryId}`);
+                
+                // Remove this entry from our working copy
+                const index = currentEntries.findIndex(e => e._id === entryId);
+                if (index !== -1) {
+                  currentEntries.splice(index, 1);
+                }
               } else {
+                failed += markerNames.length;
                 console.error(`Failed to delete entry ${entryId}`);
                 success = false;
               }
@@ -528,27 +595,34 @@ export default function BloodMarkerHistory() {
             });
             
             if (!response.ok) {
-              throw new Error(`Failed to update entry ${entryId}`);
+              throw new Error(`Failed to update entry ${entryId} - Status: ${response.status}`);
             }
             
             const data = await response.json();
             console.log(`API response for entry ${entryId}:`, data);
             
             if (data.success) {
-              // Update the entry in state
+              // Update our working copy
+              const index = currentEntries.findIndex(e => e._id === entryId);
+              if (index !== -1) {
+                currentEntries[index] = { ...currentEntries[index], markers: updatedMarkers };
+              }
+              
+              // Update the actual state
               setEntries(prev => {
-                const newEntries = prev.map(e => 
+                return prev.map(e => 
                   e._id === entryId ? { ...e, markers: updatedMarkers } : e
                 );
-                return newEntries;
               });
-              deleted += markerNames.length;
-              console.log(`Successfully updated entry ${entryId}, deleted ${markerNames.length} markers`);
+              
+              deleted += entry.markers.length - updatedMarkers.length;
+              console.log(`Successfully updated entry ${entryId}, deleted ${entry.markers.length - updatedMarkers.length} markers`);
             } else {
               throw new Error(data.error || `Failed to update entry ${entryId}`);
             }
           } catch (error) {
             console.error(`Error processing entry ${entryId}:`, error);
+            failed += markerNames.length;
             success = false;
           }
         }
@@ -556,18 +630,31 @@ export default function BloodMarkerHistory() {
         // Clear selection
         setSelectedBiomarkers(new Set());
         
-        // Force a refresh of the data
-        setLastRefresh(Date.now());
+        // Force a refresh of the data to ensure everything is up to date
+        fetchBloodMarkers().then(() => {
+          console.log('Refreshed data after bulk deletion');
+        });
         
-        // Show success/error message
-        if (success) {
+        // Show success/error message with more details
+        if (deleted > 0) {
           toast.success(`${deleted} biomarker(s) deleted successfully`);
           // Notify other components about the change
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new Event('bloodMarkerAdded'));
           }
-        } else {
-          toast.error('Some biomarkers could not be deleted. Please try again.');
+        }
+        
+        if (failed > 0) {
+          toast.error(`Failed to delete ${failed} biomarker(s). Please try again.`);
+        }
+        
+        if (notFound > 0) {
+          toast.error(`${notFound} biomarker(s) could not be found. They may have been deleted already.`);
+        }
+        
+        // If all operations failed, show an additional error message
+        if (deleted === 0 && (failed > 0 || notFound > 0)) {
+          toast.error('No biomarkers were deleted. Please refresh the page and try again.');
         }
       },
     });
@@ -737,8 +824,14 @@ export default function BloodMarkerHistory() {
                   <input
                     type="checkbox"
                     className="h-3.5 w-3.5 text-indigo-500 focus:ring-indigo-400 focus:ring-opacity-50 focus:ring-offset-0 border-gray-300 dark:border-gray-600 rounded cursor-pointer"
-                    checked={filteredData.length > 0 && selectedBiomarkers.size === filteredData.length}
+                    checked={filteredData.length > 0 && 
+                      filteredData.every(item => 
+                        selectedBiomarkers.has(`${item.entryId}-${item.name}`)
+                      )
+                    }
                     onChange={toggleSelectAll}
+                    disabled={filteredData.length === 0}
+                    aria-label="Select all visible biomarkers"
                   />
                 </div>
               </th>
