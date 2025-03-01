@@ -733,20 +733,20 @@ export default function Home() {
   const currentVO2MaxData = getTimeRangeData(data.vo2max, vo2maxTimeRange);
   
   // Helper formatter for tick labels based on time range
-  const getTickFormatter = (timeRange: TimeRange) => (date: string) => {
-    const d = new Date(date);
+  const getTickFormatter = (timeRange: TimeRange) => (value: string) => {
+    const d = new Date(value);
     
     switch (timeRange) {
       case 'last30days':
-        return d.toLocaleString('default', { day: 'numeric' });
+        return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
       case 'last3months':
       case 'last6months':
-        return d.toLocaleString('default', { month: 'short', day: 'numeric' });
+        return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
       case 'last1year':
       case 'last3years':
-        return d.toLocaleString('default', { month: 'short', year: '2-digit' });
+        return d.toLocaleString('default', { month: 'long', year: 'numeric' });
       default:
-        return d.toLocaleString('default', { month: 'short', day: 'numeric' });
+        return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
     }
   };
   
@@ -766,6 +766,111 @@ export default function Home() {
       default:
         return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
     }
+  };
+
+  // Determine optimal Y-axis domain based on data characteristics
+  const getOptimalYAxisDomain = (data: Array<{value: number}>, metricType: 'weight' | 'hrv' | 'vo2max' | 'bodyfat' = 'weight'): [(dataMin: number) => number, (dataMax: number) => number] => {
+    if (!data || data.length === 0) {
+      return [
+        (dataMin: number) => dataMin,
+        (dataMax: number) => dataMax
+      ];
+    }
+    
+    const values = data.map(d => d.value);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min;
+    const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
+    
+    // Special handling for different metric types
+    switch (metricType) {
+      case 'weight':
+        // Weight typically has very small fluctuations relative to the absolute value
+        // Create a domain that captures small weight fluctuations effectively
+        
+        // Get the min/max rounded to nearest 0.5 for cleaner display
+        const roundedMin = Math.floor(min * 2) / 2;
+        const roundedMax = Math.ceil(max * 2) / 2;
+        
+        // For weight, let's create a domain that shows at least 5 units of range
+        // This ensures weight fluctuations are always visible
+        if (roundedMax - roundedMin < 5) {
+          const midpoint = (roundedMin + roundedMax) / 2;
+          return [
+            () => midpoint - 2.5,
+            () => midpoint + 2.5
+          ];
+        }
+        
+        // Otherwise use a modest padding
+        return [
+          () => roundedMin - 0.5,
+          () => roundedMax + 0.5
+        ];
+      case 'vo2max':
+        // VO2Max typically has small fluctuations but meaningful changes
+        // The image shows fluctuations around 36-40 range
+        // Create a domain that captures these small changes effectively
+        const vo2PaddingFactor = 0.1;  
+        const paddedMin = Math.max(min - (range * vo2PaddingFactor), min - 1);
+        const paddedMax = Math.min(max + (range * vo2PaddingFactor), max + 1);
+        
+        // Round to nearest 0.5 for cleaner ticks
+        const vo2RoundedMin = Math.floor(paddedMin * 2) / 2;
+        const vo2RoundedMax = Math.ceil(paddedMax * 2) / 2;
+        
+        return [
+          () => vo2RoundedMin,
+          () => vo2RoundedMax
+        ];
+      case 'hrv':
+        // HRV can have wide fluctuations
+        return [
+          () => Math.max(0, min * 0.8),
+          () => max * 1.2
+        ];
+      case 'bodyfat':
+        // Body fat percentage should typically start from 0
+        return [
+          () => Math.max(0, min * 0.9),
+          () => Math.min(max * 1.1, 40) // Rarely exceeds 40%
+        ];
+    }
+    
+    // Default case for other metrics or when range is significant
+    return [
+      (dataMin: number) => Math.floor(dataMin - Math.max(1, dataMin * 0.05)),
+      (dataMax: number) => Math.ceil(dataMax + Math.max(1, dataMax * 0.05))
+    ];
+  };
+
+  // Calculate optimal domain for charts based on actual data values
+  const calculateOptimalDomain = (data: Array<{value: number}>, padding = 0.1): [number, number] => {
+    if (!data || data.length === 0) return [0, 100]; // Default domain if no data
+    
+    const values = data.map(d => d.value);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min;
+    const midpoint = (min + max) / 2;
+
+    // If range is very small relative to the values (common with weight measurements)
+    // create a more meaningful scale centered around the midpoint
+    if (range < min * 0.05) { // Range is less than 5% of the minimum value
+      // Use a more aggressive scaling for small ranges to make variations visible
+      const adjustedRange = Math.max(range, min * 0.05);  // At least 5% of the minimum value
+      return [
+        midpoint - adjustedRange,
+        midpoint + adjustedRange
+      ];
+    }
+    
+    // For normal ranges, use percentage padding
+    return [
+      min - range * padding,
+      max + range * padding
+    ];
   };
 
   // Custom tooltip formatter to show aggregation info
@@ -801,7 +906,7 @@ export default function Home() {
     
     return null;
   };
-
+  
   const hasHeartRateData = currentHeartRateData.length > 0;
   const hasWeightData = currentWeightData.length > 0;
   const hasBodyFatData = currentBodyFatData.length > 0;
@@ -812,9 +917,11 @@ export default function Home() {
     if (data.length < 2) return null;
     
     return (
-      <div className="w-[120px] h-[35px] bg-gray-50 rounded-md border border-gray-100 px-2">
+      <div className="w-[120px] h-[35px] bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-100 dark:border-gray-700 px-2">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data.slice(-3)} margin={{ top: 3, right: 3, bottom: 3, left: 3 }}>
+            <CartesianGrid stroke={isDarkMode ? "rgba(75, 85, 99, 0.3)" : "rgba(156, 163, 175, 0.35)"} strokeWidth={0.75} strokeDasharray="4 4" horizontal={true} vertical={false} />
+            <YAxis hide={false} tick={false} axisLine={false} tickLine={false} width={0} tickCount={5} />
             <Line
               type="natural"
               dataKey="value"
@@ -824,7 +931,7 @@ export default function Home() {
             />
           </LineChart>
         </ResponsiveContainer>
-      </div>
+            </div>
     );
   };
 
@@ -1221,20 +1328,30 @@ export default function Home() {
                     </div>
                   )}
                   {hasHRVData && !data.loading && (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                       <LineChart 
                         data={currentHRVData}
-                        margin={{ top: 30, right: 10, left: 10, bottom: 20 }}
+                        margin={{ top: 30, right: 10, left: 40, bottom: 20 }}
+                        style={{ userSelect: 'none' }}
                       >
                         <CartesianGrid 
                           stroke={isDarkMode ? "rgba(75, 85, 99, 0.3)" : "rgba(156, 163, 175, 0.35)"}
                           strokeWidth={0.75}
-                          strokeDasharray="0" 
+                          strokeDasharray="4 4" 
                           vertical={false}
                         />
                         <YAxis 
-                          domain={[(dataMin: number) => Math.max(dataMin * 0.9, dataMin - 5), (dataMax: number) => dataMax * 1.05]} 
-                          hide={true}
+                          domain={getOptimalYAxisDomain(currentHRVData, 'hrv')}
+                          axisLine={false}
+                          tickLine={false}
+                          stroke="#9CA3AF"
+                          fontSize={12}
+                          width={40}
+                          tick={false}
+                          tickCount={10}
+                          scale="linear"
+                          allowDataOverflow={false}
+                          allowDecimals={true}
                         />
                   <XAxis 
                     dataKey="date" 
@@ -1251,14 +1368,15 @@ export default function Home() {
                   <Tooltip 
                           content={(props) => renderCustomTooltip({ ...props, timeRange: hrvTimeRange })}
                         />
-                        <Line 
+                        <Line
                           type="monotone"
-                          dataKey="value" 
-                          stroke={isDarkMode ? "#818cf8" : "#4f46e5"} 
-                          activeDot={{ r: 6, stroke: isDarkMode ? "#818cf8" : "#4f46e5", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
+                          dataKey="value"
+                          stroke={isDarkMode ? "#6366f1" : "#4f46e5"} 
+                          activeDot={{ r: 6, stroke: isDarkMode ? "#6366f1" : "#4f46e5", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
                           dot={{ r: 0 }}
                           strokeWidth={2}
                           unit="ms"
+                          connectNulls={true}
                         />
                 </LineChart>
               </ResponsiveContainer>
@@ -1303,20 +1421,30 @@ export default function Home() {
                     </div>
                   )}
                   {hasVO2MaxData && !data.loading && (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                       <LineChart 
                         data={currentVO2MaxData}
-                        margin={{ top: 30, right: 10, left: 10, bottom: 20 }}
+                        margin={{ top: 30, right: 10, left: 40, bottom: 20 }}
+                        style={{ userSelect: 'none' }}
                       >
                         <CartesianGrid 
                           stroke={isDarkMode ? "rgba(75, 85, 99, 0.3)" : "rgba(156, 163, 175, 0.35)"}
                           strokeWidth={0.75}
-                          strokeDasharray="0" 
+                          strokeDasharray="4 4" 
                           vertical={false}
                         />
                         <YAxis 
-                          domain={[(dataMin: number) => Math.max(dataMin * 0.9, dataMin - 1), (dataMax: number) => dataMax * 1.05]} 
-                          hide={true}
+                          domain={getOptimalYAxisDomain(currentVO2MaxData, 'vo2max')}
+                          axisLine={false}
+                          tickLine={false}
+                          stroke="#9CA3AF"
+                          fontSize={12}
+                          width={40}
+                          tick={false}
+                          tickCount={10}
+                          scale="linear"
+                          allowDataOverflow={false}
+                          allowDecimals={true}
                         />
                   <XAxis 
                     dataKey="date" 
@@ -1333,14 +1461,15 @@ export default function Home() {
                   <Tooltip 
                           content={(props) => renderCustomTooltip({ ...props, timeRange: vo2maxTimeRange })}
                         />
-                        <Line 
+                        <Line
                           type="monotone"
-                          dataKey="value" 
+                          dataKey="value"
                           stroke={isDarkMode ? "#f87171" : "#dc2626"} 
                           activeDot={{ r: 6, stroke: isDarkMode ? "#f87171" : "#dc2626", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
                           dot={{ r: 0 }}
                           strokeWidth={2}
                           unit="ml/kg/min"
+                          connectNulls={true}
                         />
                 </LineChart>
               </ResponsiveContainer>
@@ -1385,20 +1514,30 @@ export default function Home() {
                     </div>
                   )}
                   {hasWeightData && !data.loading && (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                       <LineChart 
                         data={currentWeightData}
-                        margin={{ top: 30, right: 10, left: 10, bottom: 20 }}
+                        margin={{ top: 30, right: 10, left: 40, bottom: 20 }}
+                        style={{ userSelect: 'none' }}
                       >
                         <CartesianGrid 
                           stroke={isDarkMode ? "rgba(75, 85, 99, 0.3)" : "rgba(156, 163, 175, 0.35)"}
                           strokeWidth={0.75}
-                          strokeDasharray="0" 
+                          strokeDasharray="4 4" 
                           vertical={false}
                         />
                         <YAxis 
-                          domain={[(dataMin: number) => Math.max(dataMin * 0.9, dataMin - 5), (dataMax: number) => dataMax * 1.05]} 
-                          hide={true}
+                          domain={getOptimalYAxisDomain(currentWeightData, 'weight')}
+                          axisLine={false}
+                          tickLine={false}
+                          stroke="#9CA3AF"
+                          fontSize={12}
+                          width={40}
+                          tick={false}
+                          tickCount={10}
+                          scale="linear"
+                          allowDataOverflow={false}
+                          allowDecimals={true}
                         />
                   <XAxis 
                     dataKey="date" 
@@ -1415,14 +1554,15 @@ export default function Home() {
                   <Tooltip 
                           content={(props) => renderCustomTooltip({ ...props, timeRange: weightTimeRange })}
                         />
-                        <Line 
+                        <Line
                           type="monotone"
-                          dataKey="value" 
+                          dataKey="value"
                           stroke={isDarkMode ? "#10b981" : "#059669"} 
                           activeDot={{ r: 6, stroke: isDarkMode ? "#10b981" : "#059669", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
                           dot={{ r: 0 }}
                           strokeWidth={2}
                           unit="kg"
+                          connectNulls={true}
                         />
                 </LineChart>
               </ResponsiveContainer>
@@ -1467,20 +1607,30 @@ export default function Home() {
                     </div>
                   )}
                   {hasBodyFatData && !data.loading && (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                       <LineChart 
                         data={currentBodyFatData}
-                        margin={{ top: 30, right: 10, left: 10, bottom: 20 }}
+                        margin={{ top: 30, right: 10, left: 40, bottom: 20 }}
+                        style={{ userSelect: 'none' }}
                       >
                         <CartesianGrid 
                           stroke={isDarkMode ? "rgba(75, 85, 99, 0.3)" : "rgba(156, 163, 175, 0.35)"}
                           strokeWidth={0.75}
-                          strokeDasharray="0" 
+                          strokeDasharray="4 4" 
                           vertical={false}
                         />
                         <YAxis 
-                          domain={[(dataMin: number) => Math.max(0, dataMin * 0.9), (dataMax: number) => dataMax * 1.05]} 
-                          hide={true}
+                          domain={getOptimalYAxisDomain(currentBodyFatData, 'bodyfat')}
+                          axisLine={false}
+                          tickLine={false}
+                          stroke="#9CA3AF"
+                          fontSize={12}
+                          width={40}
+                          tick={false}
+                          tickCount={10}
+                          scale="linear"
+                          allowDataOverflow={false}
+                          allowDecimals={true}
                         />
                   <XAxis 
                     dataKey="date" 
@@ -1497,14 +1647,15 @@ export default function Home() {
                   <Tooltip 
                           content={(props) => renderCustomTooltip({ ...props, timeRange: bodyFatTimeRange })}
                         />
-                        <Line 
+                        <Line
                           type="monotone"
-                          dataKey="value" 
+                          dataKey="value"
                           stroke={isDarkMode ? "#fbbf24" : "#d97706"} 
                           activeDot={{ r: 6, stroke: isDarkMode ? "#fbbf24" : "#d97706", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
                           dot={{ r: 0 }}
                           strokeWidth={2}
                           unit="%"
+                          connectNulls={true}
                         />
                 </LineChart>
               </ResponsiveContainer>
