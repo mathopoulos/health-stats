@@ -29,7 +29,7 @@ export async function GET(
 
     const user = await db.collection('users').findOne(
       { userId },
-      { projection: { _id: 0, name: 1, email: 1, userId: 1, profileImage: 1 } }
+      { projection: { _id: 0, name: 1, email: 1, userId: 1, profileImage: 1, age: 1, sex: 1 } }
     );
 
     if (!user) {

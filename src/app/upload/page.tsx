@@ -147,8 +147,12 @@ export default function UploadPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [name, setName] = useState('');
+  const [age, setAge] = useState<number | ''>('');
+  const [sex, setSex] = useState<'male' | 'female' | 'other' | ''>('');
   const [isSavingName, setIsSavingName] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [ageError, setAgeError] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -189,6 +193,8 @@ export default function UploadPage() {
           if (data.success && data.user) {
             setName(data.user.name || '');
             setProfileImage(data.user.profileImage || null);
+            setAge(data.user.age || '');
+            setSex(data.user.sex || '');
           }
         }
       } catch (error) {
@@ -199,14 +205,21 @@ export default function UploadPage() {
     fetchUserData();
   }, [session?.user?.id, sessionStatus]);
 
-  const handleUpdateName = async () => {
+  const handleUpdateProfile = async () => {
     if (!name.trim()) {
       setNameError('Name is required');
       return;
     }
 
-    setIsSavingName(true);
+    // Validate age if provided
+    if (age !== '' && (isNaN(Number(age)) || Number(age) < 0 || Number(age) > 120)) {
+      setAgeError('Please enter a valid age between 0 and 120');
+      return;
+    }
+
+    setIsSavingProfile(true);
     setNameError(null);
+    setAgeError(null);
 
     try {
       const response = await fetch('/api/update-user', {
@@ -214,20 +227,24 @@ export default function UploadPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name: name.trim() }),
+        body: JSON.stringify({ 
+          name: name.trim(),
+          age: age === '' ? null : Number(age),
+          sex: sex || null
+        }),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to update name');
+        throw new Error(error.error || 'Failed to update profile');
       }
 
-      setStatus('Name updated successfully');
+      setStatus('Profile updated successfully');
       setTimeout(() => setStatus(''), 3000);
     } catch (error) {
-      setNameError(error instanceof Error ? error.message : 'Failed to update name');
+      setNameError(error instanceof Error ? error.message : 'Failed to update profile');
     } finally {
-      setIsSavingName(false);
+      setIsSavingProfile(false);
     }
   };
 
@@ -894,21 +911,82 @@ export default function UploadPage() {
                             )}
                           </div>
                           <button
-                            onClick={handleUpdateName}
-                            disabled={isSavingName}
+                            onClick={handleUpdateProfile}
+                            disabled={isSavingProfile}
                             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 min-w-[100px] justify-center h-[38px]"
                           >
-                            {isSavingName ? (
+                            {isSavingProfile ? (
                               <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                               </svg>
-                            ) : 'Save Name'}
+                            ) : 'Save Profile'}
                           </button>
                         </div>
                       </div>
+                      
+                      {/* Age Input */}
+                      <div>
+                        <label htmlFor="age" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Age
+                        </label>
+                        <div className="flex-1">
+                          <input
+                            type="number"
+                            name="age"
+                            id="age"
+                            value={age}
+                            onChange={(e) => setAge(e.target.value === '' ? '' : Number(e.target.value))}
+                            min="0"
+                            max="120"
+                            className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-[38px] px-3"
+                            placeholder="Enter your age"
+                          />
+                          {ageError && (
+                            <p className="mt-1 text-sm text-red-500 dark:text-red-400">{ageError}</p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Sex Input */}
+                      <div>
+                        <label htmlFor="sex" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Sex
+                        </label>
+                        <div className="flex-1">
+                          <select
+                            name="sex"
+                            id="sex"
+                            value={sex}
+                            onChange={(e) => setSex(e.target.value as 'male' | 'female' | 'other' | '')}
+                            className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-[38px] px-3"
+                          >
+                            <option value="">Select your sex</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                          </select>
+                        </div>
+                      </div>
+                      
+                      {/* Privacy Notice */}
+                      <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <p className="text-sm text-blue-700 dark:text-blue-300">
+                              Your age and sex information is used only to provide more accurate health insights and will not be shared publicly.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        This is the name that will be displayed on your profile and dashboard.
+                        This is the information that will be used to personalize your health insights.
                       </p>
                     </div>
                   </div>
