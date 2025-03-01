@@ -9,6 +9,7 @@ import ThemeToggle from '../components/ThemeToggle';
 import BloodTestUpload from '../components/BloodTestUpload';
 import BloodMarkerHistory from '../components/BloodMarkerHistory';
 import { toast } from 'react-hot-toast';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
@@ -151,7 +152,13 @@ export default function UploadPage() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('profile');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState(() => {
+    // Initialize from URL query param if available, otherwise default to 'profile'
+    const tab = searchParams?.get('tab');
+    return tab && ['profile', 'fitness', 'blood'].includes(tab) ? tab : 'profile';
+  });
   const profileImageRef = useRef<HTMLInputElement>(null);
   const [isFileLoading, setIsFileLoading] = useState(false);
   const [fileKey, setFileKey] = useState(0);
@@ -650,6 +657,18 @@ export default function UploadPage() {
     window.location.href = '/dashboard';
   };
 
+  // Update URL when tab changes
+  const handleTabChange = (tab: string) => {
+    // Create a new URLSearchParams object from the current
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    // Set the tab parameter
+    params.set('tab', tab);
+    // Update URL without refreshing the page
+    router.push(`/upload?${params.toString()}`, { scroll: false });
+    // Update the state
+    setActiveTab(tab);
+  };
+
   if (sessionStatus === 'loading') {
     return (
       <main className="min-h-screen p-8 bg-gray-50">
@@ -678,7 +697,7 @@ export default function UploadPage() {
           
           <nav className="space-y-1">
             <button
-              onClick={() => setActiveTab('profile')}
+              onClick={() => handleTabChange('profile')}
               className={`w-full flex items-center space-x-2 px-4 py-2 text-sm rounded-lg transition-colors ${
                 activeTab === 'profile'
                   ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400'
@@ -692,7 +711,7 @@ export default function UploadPage() {
             </button>
 
             <button
-              onClick={() => setActiveTab('fitness')}
+              onClick={() => handleTabChange('fitness')}
               className={`w-full flex items-center space-x-2 px-4 py-2 text-sm rounded-lg transition-colors ${
                 activeTab === 'fitness'
                   ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400'
@@ -706,7 +725,7 @@ export default function UploadPage() {
             </button>
 
             <button
-              onClick={() => setActiveTab('blood')}
+              onClick={() => handleTabChange('blood')}
               className={`w-full flex items-center space-x-2 px-4 py-2 text-sm rounded-lg transition-colors ${
                 activeTab === 'blood'
                   ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400'
