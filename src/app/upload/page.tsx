@@ -925,7 +925,7 @@ export default function UploadPage() {
                       </div>
                       
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
-                        This is the information that will be used to personalize your health insights.
+                        Your name and profile picture will be visible publicly on your dashboard and shared reports.
                       </p>
                     </div>
                   </div>
@@ -935,7 +935,7 @@ export default function UploadPage() {
               {/* Health Goals Section - Now with Age and Sex */}
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mt-6">
                 <div className="p-6">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Health Information</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Personal Information</h3>
                   
                   <div className="space-y-6">
                     {/* Age and Sex Inputs Side by Side */}
@@ -1010,7 +1010,7 @@ export default function UploadPage() {
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                           </svg>
                         ) : ''}
-                        Save Health Information
+                        Save Personal Information
                       </button>
                     </div>
                   </div>
