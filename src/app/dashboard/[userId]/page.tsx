@@ -821,11 +821,10 @@ export default function Home() {
               stroke={color}
               strokeWidth={2}
               dot={{ r: 2.5, fill: color, strokeWidth: 0 }}
-              isAnimationActive={false}
             />
           </LineChart>
         </ResponsiveContainer>
-            </div>
+      </div>
     );
   };
 
@@ -1259,7 +1258,6 @@ export default function Home() {
                           activeDot={{ r: 6, stroke: isDarkMode ? "#818cf8" : "#4f46e5", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
                           dot={{ r: 0 }}
                           strokeWidth={2}
-                          isAnimationActive={false}
                           unit="ms"
                         />
                 </LineChart>
@@ -1342,7 +1340,6 @@ export default function Home() {
                           activeDot={{ r: 6, stroke: isDarkMode ? "#f87171" : "#dc2626", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
                           dot={{ r: 0 }}
                           strokeWidth={2}
-                          isAnimationActive={false}
                           unit="ml/kg/min"
                         />
                 </LineChart>
@@ -1425,7 +1422,6 @@ export default function Home() {
                           activeDot={{ r: 6, stroke: isDarkMode ? "#10b981" : "#059669", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
                           dot={{ r: 0 }}
                           strokeWidth={2}
-                          isAnimationActive={false}
                           unit="kg"
                         />
                 </LineChart>
@@ -1508,7 +1504,6 @@ export default function Home() {
                           activeDot={{ r: 6, stroke: isDarkMode ? "#fbbf24" : "#d97706", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
                           dot={{ r: 0 }}
                           strokeWidth={2}
-                          isAnimationActive={false}
                           unit="%"
                         />
                 </LineChart>
