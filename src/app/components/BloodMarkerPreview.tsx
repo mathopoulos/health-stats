@@ -5,7 +5,7 @@ import { Dialog } from '@headlessui/react';
 import { toast } from 'react-hot-toast';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import { ChevronDownIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon } from '@heroicons/react/24/outline';
 
 interface BloodMarker {
   name: string;
@@ -46,8 +46,8 @@ export default function BloodMarkerPreview({
   // Track the active markers based on selected date group
   const [activeMarkers, setActiveMarkers] = useState<BloodMarker[]>(initialMarkers);
   
-  // Track selected date group index if multiple date groups exist
-  const [selectedDateGroupIndex, setSelectedDateGroupIndex] = useState<number>(0);
+  // Track selected date group tab
+  const [selectedTab, setSelectedTab] = useState<number>(0);
   
   // Multiple date groups state
   const hasMultipleDates = dateGroups.length > 1;
@@ -57,9 +57,9 @@ export default function BloodMarkerPreview({
     new Date(b.testDate).getTime() - new Date(a.testDate).getTime()
   );
 
-  // Handle date group selection change
-  const handleDateGroupChange = (index: number) => {
-    setSelectedDateGroupIndex(index);
+  // Handle tab selection change
+  const handleTabChange = (index: number) => {
+    setSelectedTab(index);
     const selectedGroup = sortedDateGroups[index];
     
     if (selectedGroup) {
@@ -93,7 +93,7 @@ export default function BloodMarkerPreview({
   // Initialize dateGroups if provided
   useEffect(() => {
     if (dateGroups.length > 0) {
-      handleDateGroupChange(0); // Select the first date group by default
+      handleTabChange(0); // Select the first date group by default
     }
   }, [dateGroups]);
   
@@ -149,9 +149,37 @@ export default function BloodMarkerPreview({
     return acc;
   }, {} as Record<string, BloodMarker[]>);
 
+  // Function to get all markers across all date groups
+  const getAllMarkers = (): BloodMarker[] => {
+    if (!hasMultipleDates) {
+      return activeMarkers;
+    }
+    
+    // Combine all markers from all date groups, adding date identifier
+    const allMarkersWithMetadata = sortedDateGroups.flatMap(group => 
+      group.markers.map(marker => ({
+        ...marker,
+        // Add metadata so we know which date group this marker belongs to
+        _dateGroup: group.testDate
+      }))
+    );
+    
+    // Use a Map to deduplicate markers by name (keeping the most recent occurrence)
+    const markerMap = new Map();
+    for (const marker of allMarkersWithMetadata) {
+      markerMap.set(marker.name, marker);
+    }
+    
+    // Convert back to array and remove our metadata property
+    return Array.from(markerMap.values()).map(({ _dateGroup, ...marker }) => marker);
+  };
+
   const handleSave = async () => {
     try {
-      await onSave(activeMarkers, selectedDate);
+      // Get all markers across all date groups or just the active markers if single date
+      const markersToSave = getAllMarkers();
+      
+      await onSave(markersToSave, selectedDate);
       onClose();
     } catch (error) {
       console.error('Error saving blood markers:', error);
@@ -177,43 +205,44 @@ export default function BloodMarkerPreview({
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="mx-auto max-w-3xl w-full bg-white dark:bg-gray-800 rounded-2xl p-6">
-          <Dialog.Title className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">
+      <div className="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto">
+        <Dialog.Panel className="mx-auto max-w-3xl w-full bg-white dark:bg-gray-800 rounded-2xl p-6 max-h-[90vh] flex flex-col">
+          <Dialog.Title className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
             Review Extracted Blood Markers
           </Dialog.Title>
 
-          {/* Multiple Date Groups Selector */}
+          {/* Date Group Tabs */}
           {hasMultipleDates && (
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Select Test Date Group
-              </label>
-              <div className="relative">
-                <select
-                  className="w-full pl-3 pr-10 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  value={selectedDateGroupIndex}
-                  onChange={(e) => handleDateGroupChange(parseInt(e.target.value, 10))}
-                >
+              <div className="border-b border-gray-200 dark:border-gray-700">
+                <nav className="-mb-px flex space-x-4 overflow-x-auto scrollbar-thin" aria-label="Tabs">
                   {sortedDateGroups.map((group, index) => (
-                    <option key={index} value={index}>
-                      {formatDate(group.testDate)} • {group.markers.length} marker{group.markers.length !== 1 ? 's' : ''}
-                    </option>
+                    <button
+                      key={index}
+                      onClick={() => handleTabChange(index)}
+                      className={`whitespace-nowrap py-2 px-3 text-sm font-medium border-b-2 ${
+                        selectedTab === index
+                          ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600'
+                      }`}
+                    >
+                      {formatDate(group.testDate)}
+                      <span className="ml-2 rounded-full bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-xs">
+                        {group.markers.length}
+                      </span>
+                    </button>
                   ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-300">
-                  <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
-                </div>
+                </nav>
               </div>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                This PDF contains multiple test dates. Select a date to view its markers.
+                All markers will be saved when you click "Save All Markers".
               </p>
             </div>
           )}
 
           {/* Date Picker */}
-          <div className="mb-6">
-            <div className="mb-2">
+          <div className="mb-4">
+            <div className="mb-1">
               <div className="flex items-center gap-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Test Date
@@ -244,13 +273,13 @@ export default function BloodMarkerPreview({
             />
           </div>
 
-          <div className="space-y-6 max-h-[60vh] overflow-y-auto">
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-4 pr-1">
             {Object.entries(groupedMarkers).map(([category, categoryMarkers]) => (
-              <div key={category} className="space-y-3">
+              <div key={category} className="space-y-2">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   {category}
                 </h3>
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 gap-2">
                   {categoryMarkers.map((marker) => (
                     <div 
                       key={marker.name}
@@ -288,7 +317,7 @@ export default function BloodMarkerPreview({
             ))}
           </div>
 
-          <div className="mt-6 flex justify-end gap-3">
+          <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
@@ -301,7 +330,7 @@ export default function BloodMarkerPreview({
               onClick={handleSave}
               className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              Save Markers
+              {hasMultipleDates ? 'Save All Markers' : 'Save Markers'}
             </button>
           </div>
         </Dialog.Panel>

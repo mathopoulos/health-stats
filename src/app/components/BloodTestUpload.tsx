@@ -79,7 +79,12 @@ export default function BloodTestUpload() {
         throw new Error(data.error || `Failed to save with status ${response.status}`);
       }
 
-      toast.success('Blood markers saved successfully');
+      // Show success message and reset the upload form
+      toast.success(`${markers.length} blood markers saved successfully`);
+      
+      // Reset the upload state
+      resetUpload();
+      
       // We stay on the current page instead of redirecting to the dashboard
       // The modal will close automatically via the onClose call in BloodMarkerPreview's handleSave function
     } catch (error) {
