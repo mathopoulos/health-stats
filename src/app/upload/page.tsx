@@ -671,12 +671,12 @@ export default function UploadPage() {
 
   if (sessionStatus === 'loading') {
     return (
-      <main className="min-h-screen p-8 bg-gray-50">
+      <main className="min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
         <div className="max-w-5xl mx-auto">
-          <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm mb-6">
             <div className="flex justify-center items-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-              <span className="ml-2 text-gray-600">Loading session...</span>
+              <span className="ml-2 text-gray-600 dark:text-gray-400">Loading session...</span>
             </div>
           </div>
         </div>

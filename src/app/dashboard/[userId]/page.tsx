@@ -899,10 +899,10 @@ export default function Home() {
   // Add loading state
   if (status === 'loading' || data.loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your health data...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading your health data...</p>
         </div>
       </div>
     );
@@ -911,14 +911,14 @@ export default function Home() {
   // Add error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-500 mb-4">
             <svg className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <p className="text-gray-600">{error}</p>
+          <p className="text-gray-600 dark:text-gray-400">{error}</p>
           {error === 'Please sign in to view your health data' && (
             <button
               onClick={() => redirect('/auth/signin')}
@@ -1438,12 +1438,12 @@ export default function Home() {
                 </div>
             <div className="h-[300px]">
                   {data.loading && (
-                    <div className="h-full flex items-center justify-center text-gray-500">
+                    <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
                       Loading data...
                     </div>
                   )}
                   {!hasVO2MaxData && !data.loading && (
-                    <div className="h-full flex items-center justify-center text-gray-500">
+                    <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
                       No VO2 max data available for this {vo2maxTimeframe === 'yearly' ? '5 years' : vo2maxTimeframe === 'monthly' ? 'year' : vo2maxTimeframe === 'weekly' ? '12 weeks' : 'month'}
                     </div>
                   )}
@@ -1576,12 +1576,12 @@ export default function Home() {
                 </div>
             <div className="h-[300px]">
                   {data.loading && (
-                    <div className="h-full flex items-center justify-center text-gray-500">
+                    <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
                       Loading data...
                     </div>
                   )}
                   {!hasWeightData && !data.loading && (
-                    <div className="h-full flex items-center justify-center text-gray-500">
+                    <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
                       No weight data available for this {weightTimeframe === 'yearly' ? '5 years' : weightTimeframe === 'monthly' ? 'year' : weightTimeframe === 'weekly' ? '12 weeks' : 'month'}
                     </div>
                   )}
@@ -1714,12 +1714,12 @@ export default function Home() {
                 </div>
             <div className="h-[300px]">
                   {data.loading && (
-                    <div className="h-full flex items-center justify-center text-gray-500">
+                    <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
                       Loading data...
                     </div>
                   )}
                   {!hasBodyFatData && !data.loading && (
-                    <div className="h-full flex items-center justify-center text-gray-500">
+                    <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
                       No body fat data available for this {bodyFatTimeframe === 'yearly' ? '5 years' : bodyFatTimeframe === 'monthly' ? 'year' : bodyFatTimeframe === 'weekly' ? '12 weeks' : 'month'}
                     </div>
                   )}
