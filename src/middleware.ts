@@ -6,6 +6,7 @@ import type { NextRequest } from "next/server";
 const PUBLIC_API_ROUTES = [
   '/api/health-data',
   '/api/blood-markers',
+  '/api/validate-invite',
 ];
 
 // List of protected API routes that require authentication
@@ -26,6 +27,8 @@ export async function middleware(request: NextRequest) {
   console.log('Auth token present:', !!token);
   
   const isAuthPage = request.nextUrl.pathname.startsWith("/auth");
+  const isInvitePage = request.nextUrl.pathname === "/auth/invite";
+  const isSignInPage = request.nextUrl.pathname === "/auth/signin";
   const isApiAuthRoute = request.nextUrl.pathname.startsWith("/api/auth");
   const isPublicApiRoute = PUBLIC_API_ROUTES.some(route => 
     request.nextUrl.pathname.startsWith(route)
@@ -38,13 +41,17 @@ export async function middleware(request: NextRequest) {
     !isPublicApiRoute
   );
   const isUploadPage = request.nextUrl.pathname.startsWith("/upload");
+  const isDashboardPage = request.nextUrl.pathname.startsWith("/dashboard");
 
   console.log('Route type:', {
     isAuthPage,
+    isInvitePage,
+    isSignInPage,
     isApiAuthRoute,
     isPublicApiRoute,
     isProtectedApiRoute,
-    isUploadPage
+    isUploadPage,
+    isDashboardPage
   });
 
   // Handle API routes first
@@ -69,11 +76,14 @@ export async function middleware(request: NextRequest) {
   }
 
   // Handle non-API routes
-  if (isAuthPage && token) {
-    return NextResponse.redirect(new URL("/", request.url));
+  
+  // If user is authenticated and trying to access auth pages, redirect to home
+  if (isAuthPage && token && !isInvitePage) {
+    return NextResponse.redirect(new URL("/upload", request.url));
   }
 
-  if (isUploadPage && !token) {
+  // If user is not authenticated and trying to access protected pages, redirect to sign-in page
+  if ((isUploadPage || isDashboardPage) && !token) {
     return NextResponse.redirect(new URL("/auth/signin", request.url));
   }
 

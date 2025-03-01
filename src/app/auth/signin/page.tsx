@@ -2,8 +2,65 @@
 
 import { signIn } from "next-auth/react";
 import ThemeToggle from "@/app/components/ThemeToggle";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function SignIn() {
+  const [isNewUser, setIsNewUser] = useState(false);
+  const [hasValidInvite, setHasValidInvite] = useState(false);
+  const [validatedEmail, setValidatedEmail] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Check if this is a new sign-up (coming from outside) or a returning user
+    // "invite_required" query param can be set to "true" to force the invite flow
+    const inviteRequiredParam = searchParams?.get('invite_required');
+    const inviteCodeValidated = sessionStorage.getItem('inviteCodeValidated') === 'true';
+    const validatedEmailFromSession = sessionStorage.getItem('validatedEmail');
+    
+    // Only require invite if explicitly specified in URL params
+    // This ensures users clicking the login button will never be redirected to invite
+    const requireInvite = inviteRequiredParam === 'true';
+    
+    setIsNewUser(requireInvite);
+    setHasValidInvite(inviteCodeValidated);
+    setValidatedEmail(validatedEmailFromSession);
+    setLoading(false);
+
+    // Only redirect to the invite page if explicitly directed to require an invite
+    if (requireInvite && !inviteCodeValidated) {
+      router.push('/auth/invite');
+    }
+  }, [router, searchParams]);
+
+  const handleSignIn = () => {
+    // If the user has a validated email, include it in a hidden state
+    // parameter for the auth callback to pick up
+    signIn('google', { 
+      callbackUrl: '/upload',  // Always redirect to upload page after sign-in
+      state: validatedEmail ? JSON.stringify({ email: validatedEmail }) : undefined 
+    });
+  };
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-primary dark:bg-primary-dark-dark flex items-center justify-center relative">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500"></div>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Loading...</p>
+        </div>
+      </main>
+    );
+  }
+
+  // If this is a new user and they don't have a valid invite yet, don't show the sign-in page
+  // (they will be redirected to the invite page)
+  if (isNewUser && !hasValidInvite) {
+    return null;
+  }
+
   return (
     <main className="min-h-screen bg-primary dark:bg-primary-dark-dark flex items-center justify-center relative">
       {/* Floating Theme Toggle */}
@@ -38,7 +95,7 @@ export default function SignIn() {
           {/* Sign In Button */}
           <div className="mt-8 space-y-6 animate-fade-in-up delay-100">
             <button
-              onClick={() => signIn('google', { callbackUrl: '/upload' })}
+              onClick={handleSignIn}
               className="w-full group bg-white/50 dark:bg-gray-900/50 backdrop-blur flex items-center justify-center gap-3 px-6 py-4 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/10"
             >
               <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">

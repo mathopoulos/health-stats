@@ -88,7 +88,7 @@ export default function Home() {
             </a>
             <div className="flex items-center space-x-4">
               <a
-                href="/upload"
+                href="/auth/signin"
                 className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 Log in
@@ -145,7 +145,7 @@ export default function Home() {
 
           {/* Enhanced CTA Buttons */}
           <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4 animate-fade-in-up delay-200">
-            <a href="/upload" 
+            <a href="/auth/invite" 
                className="group inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/25">
               <span>Start Your Story</span>
               <span className="ml-2 transform translate-x-0 group-hover:translate-x-1 transition-transform">→</span>
