@@ -912,14 +912,15 @@ export default function UploadPage() {
                           <button
                             onClick={handleUpdateProfile}
                             disabled={isSavingProfile}
-                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 min-w-[100px] justify-center h-[38px]"
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 h-[38px]"
                           >
                             {isSavingProfile ? (
-                              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                              <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                               </svg>
-                            ) : 'Save Profile'}
+                            ) : ''}
+                            Update
                           </button>
                         </div>
                       </div>
@@ -938,10 +939,10 @@ export default function UploadPage() {
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Personal Information</h3>
                   
                   <div className="space-y-6">
-                    {/* Age and Sex Inputs Side by Side */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Age and Sex Inputs Side by Side with Update Button */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
                       {/* Age Input */}
-                      <div>
+                      <div className="md:col-span-5">
                         <label htmlFor="age" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Age
                         </label>
@@ -962,7 +963,7 @@ export default function UploadPage() {
                       </div>
                       
                       {/* Biological Sex Input */}
-                      <div>
+                      <div className="md:col-span-5">
                         <label htmlFor="sex" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Biological Sex
                         </label>
@@ -978,10 +979,27 @@ export default function UploadPage() {
                           <option value="female">Female</option>
                         </select>
                       </div>
+
+                      {/* Update Button */}
+                      <div className="md:col-span-2 flex justify-center">
+                        <button
+                          onClick={handleUpdateProfile}
+                          disabled={isSavingProfile}
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 h-[38px]"
+                        >
+                          {isSavingProfile ? (
+                            <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                          ) : ''}
+                          Update
+                        </button>
+                      </div>
                     </div>
                     
                     {/* Privacy Notice */}
-                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md mt-6">
                       <div className="flex items-start">
                         <div className="flex-shrink-0">
                           <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -994,23 +1012,6 @@ export default function UploadPage() {
                           </p>
                         </div>
                       </div>
-                    </div>
-                    
-                    {/* Save Button */}
-                    <div className="pt-4">
-                      <button
-                        onClick={handleUpdateProfile}
-                        disabled={isSavingProfile}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                      >
-                        {isSavingProfile ? (
-                          <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                          </svg>
-                        ) : ''}
-                        Save Personal Information
-                      </button>
                     </div>
                   </div>
                 </div>
