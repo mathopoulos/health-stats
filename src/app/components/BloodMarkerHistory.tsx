@@ -8,6 +8,10 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import ConfirmDialog from './ui/ConfirmDialog';
 
+// Add these types for sorting
+type SortColumn = 'name' | 'category' | 'unit' | 'date' | 'value';
+type SortDirection = 'asc' | 'desc';
+
 interface BloodMarker {
   name: string;
   value: number;
@@ -40,6 +44,10 @@ export default function BloodMarkerHistory() {
   const [categoryFilter, setcategoryFilter] = useState<string>('');
   const [dateFilter, setDateFilter] = useState<Date | null>(null);
   const [selectedBiomarkers, setSelectedBiomarkers] = useState<Set<string>>(new Set());
+  
+  // Add state for sorting
+  const [sortColumn, setSortColumn] = useState<SortColumn>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
   // Confirmation dialog states
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -298,7 +306,7 @@ export default function BloodMarkerHistory() {
     });
   };
 
-  // Transform data for flat table view (one row per biomarker per date)
+  // Update the getFlatTableData function to support sorting
   const getFlatTableData = useCallback(() => {
     // Create an array to hold all biomarker readings
     const flatData: Array<{
@@ -324,20 +332,101 @@ export default function BloodMarkerHistory() {
       });
     });
 
-    // Sort by biomarker name and then by date (newest first)
-    return flatData.sort((a, b) => {
-      // First sort by category
-      if (a.category !== b.category) {
-        return a.category.localeCompare(b.category);
-      }
-      // Then by name
-      if (a.name !== b.name) {
-        return a.name.localeCompare(b.name);
-      }
-      // Then by date (newest first)
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
-    });
+    return flatData;
   }, [entries]);
+
+  // Add a function to handle column sorting
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      // Toggle direction if clicking the same column
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new column with default ascending direction
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  // Modify the getFilteredData function to apply sorting
+  const getFilteredData = useCallback(() => {
+    const flatData = getFlatTableData();
+    
+    // Apply filters
+    const filtered = flatData.filter(item => {
+      // Filter by name (case insensitive)
+      if (nameFilter && item.name !== nameFilter) {
+        return false;
+      }
+      
+      // Filter by category
+      if (categoryFilter && item.category !== categoryFilter) {
+        return false;
+      }
+      
+      // Filter by date
+      if (dateFilter) {
+        const itemDate = new Date(item.date);
+        const filterDate = new Date(dateFilter);
+        
+        // Compare year, month, and day
+        if (
+          itemDate.getFullYear() !== filterDate.getFullYear() ||
+          itemDate.getMonth() !== filterDate.getMonth() ||
+          itemDate.getDate() !== filterDate.getDate()
+        ) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+
+    // Sort the data based on current sort column and direction
+    return [...filtered].sort((a, b) => {
+      let comparison = 0;
+      const multiplier = sortDirection === 'asc' ? 1 : -1;
+      
+      switch (sortColumn) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'category':
+          comparison = a.category.localeCompare(b.category);
+          break;
+        case 'unit':
+          comparison = a.unit.localeCompare(b.unit);
+          break;
+        case 'date':
+          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+          break;
+        case 'value':
+          comparison = a.value - b.value;
+          break;
+      }
+      
+      return comparison * multiplier;
+    });
+  }, [getFlatTableData, nameFilter, categoryFilter, dateFilter, sortColumn, sortDirection]);
+
+  // Function to render sort indicator
+  const renderSortIndicator = (column: SortColumn) => {
+    if (sortColumn !== column) {
+      return (
+        <svg className="ml-1 w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+        </svg>
+      );
+    }
+    return sortDirection === 'asc' ? (
+      <svg className="ml-1 w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 15l4 4 4-4" />
+      </svg>
+    ) : (
+      <svg className="ml-1 w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4" />
+      </svg>
+    );
+  };
 
   // New function to format dates for display
   const formatDate = (dateString: string) => {
@@ -376,40 +465,6 @@ export default function BloodMarkerHistory() {
     });
     return Array.from(names).sort();
   }, [entries]);
-
-  // Apply filters to the flat table data
-  const getFilteredData = useCallback(() => {
-    const flatData = getFlatTableData();
-    
-    return flatData.filter(item => {
-      // Filter by name (case insensitive)
-      if (nameFilter && item.name !== nameFilter) {
-        return false;
-      }
-      
-      // Filter by category
-      if (categoryFilter && item.category !== categoryFilter) {
-        return false;
-      }
-      
-      // Filter by date
-      if (dateFilter) {
-        const itemDate = new Date(item.date);
-        const filterDate = new Date(dateFilter);
-        
-        // Compare year, month, and day
-        if (
-          itemDate.getFullYear() !== filterDate.getFullYear() ||
-          itemDate.getMonth() !== filterDate.getMonth() ||
-          itemDate.getDate() !== filterDate.getDate()
-        ) {
-          return false;
-        }
-      }
-      
-      return true;
-    });
-  }, [getFlatTableData, nameFilter, categoryFilter, dateFilter]);
 
   // Function to clear all filters
   const clearFilters = () => {
@@ -835,20 +890,55 @@ export default function BloodMarkerHistory() {
                   />
                 </div>
               </th>
-              <th scope="col" className="w-[22%] sticky left-0 z-10 bg-gray-50 dark:bg-gray-700 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Biomarker
+              <th 
+                scope="col" 
+                className="w-[22%] sticky left-0 z-10 bg-gray-50 dark:bg-gray-700 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider group cursor-pointer"
+                onClick={() => handleSort('name')}
+              >
+                <div className="flex items-center">
+                  Biomarker
+                  {renderSortIndicator('name')}
+                </div>
               </th>
-              <th scope="col" className="w-[22%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Category
+              <th 
+                scope="col" 
+                className="w-[22%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider group cursor-pointer"
+                onClick={() => handleSort('category')}
+              >
+                <div className="flex items-center">
+                  Category
+                  {renderSortIndicator('category')}
+                </div>
               </th>
-              <th scope="col" className="w-[10%] px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Unit
+              <th 
+                scope="col" 
+                className="w-[10%] px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider group cursor-pointer"
+                onClick={() => handleSort('unit')}
+              >
+                <div className="flex items-center justify-center">
+                  Unit
+                  {renderSortIndicator('unit')}
+                </div>
               </th>
-              <th scope="col" className="w-[15%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Date
+              <th 
+                scope="col" 
+                className="w-[15%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider group cursor-pointer"
+                onClick={() => handleSort('date')}
+              >
+                <div className="flex items-center">
+                  Date
+                  {renderSortIndicator('date')}
+                </div>
               </th>
-              <th scope="col" className="w-[13%] px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Value
+              <th 
+                scope="col" 
+                className="w-[13%] px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider group cursor-pointer"
+                onClick={() => handleSort('value')}
+              >
+                <div className="flex items-center justify-center">
+                  Value
+                  {renderSortIndicator('value')}
+                </div>
               </th>
               <th scope="col" className="w-[13%] px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Act
