@@ -174,9 +174,12 @@ export default function Home() {
                   <div className="text-sm text-gray-500">ms</div>
                 </div>
                     </div>
-              <div className="h-[200px]">
+              <div className="h-[280px]">
                     <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={demoHRVData} margin={{ top: 20, right: 10, left: 10, bottom: 20 }}>
+                  <LineChart 
+                    data={demoHRVData} 
+                    margin={{ top: 30, right: 10, left: 10, bottom: 30 }}
+                  >
                     <defs>
                       <linearGradient id="hrvGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#6366F1" stopOpacity={0.2}/>
@@ -184,10 +187,26 @@ export default function Home() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid 
-                      stroke="rgba(75, 85, 99, 0.18)"
-                      strokeWidth={0.5}
+                      stroke="rgba(75, 85, 99, 0.3)"
+                      strokeWidth={0.75}
                       strokeDasharray="0" 
-                      vertical={false} 
+                      vertical={false}
+                    />
+                    <YAxis 
+                      domain={[(dataMin: number) => Math.max(40, dataMin - 5), (dataMax: number) => dataMax + 5]} 
+                      hide={true}
+                    />
+                    <XAxis
+                      dataKey="date"
+                      tickFormatter={(date) => {
+                        const d = new Date(date);
+                        return d.toLocaleString('default', { month: 'short', day: 'numeric' });
+                      }}
+                      stroke="#9CA3AF"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      dy={12}
                     />
                         <Tooltip
                       content={<CustomTooltip valueLabel="HRV" />}
@@ -219,9 +238,12 @@ export default function Home() {
                   <div className="text-sm text-gray-500">mL/kg·min</div>
                   </div>
                 </div>
-              <div className="h-[200px]">
+              <div className="h-[280px]">
                     <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={demoVO2MaxData} margin={{ top: 20, right: 10, left: 10, bottom: 20 }}>
+                  <LineChart 
+                    data={demoVO2MaxData} 
+                    margin={{ top: 30, right: 10, left: 10, bottom: 30 }}
+                  >
                     <defs>
                       <linearGradient id="vo2Gradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.2}/>
@@ -229,10 +251,26 @@ export default function Home() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid 
-                      stroke="rgba(75, 85, 99, 0.18)"
-                      strokeWidth={0.5}
+                      stroke="rgba(75, 85, 99, 0.3)"
+                      strokeWidth={0.75}
                       strokeDasharray="0" 
-                      vertical={false} 
+                      vertical={false}
+                    />
+                    <YAxis 
+                      domain={[(dataMin: number) => Math.max(40, dataMin - 1), (dataMax: number) => dataMax + 1]} 
+                      hide={true}
+                    />
+                    <XAxis
+                      dataKey="date"
+                      tickFormatter={(date) => {
+                        const d = new Date(date);
+                        return d.toLocaleString('default', { month: 'short', day: 'numeric' });
+                      }}
+                      stroke="#9CA3AF"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      dy={12}
                     />
                         <Tooltip
                       content={<CustomTooltip valueLabel="VO2 Max" />}

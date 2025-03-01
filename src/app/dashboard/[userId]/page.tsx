@@ -1300,7 +1300,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-            <div className="h-[300px]">
+            <div className="h-[340px]">
                   {data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
                       Loading data...
@@ -1315,16 +1315,20 @@ export default function Home() {
               <ResponsiveContainer width="100%" height="100%">
                       <LineChart 
                         data={currentHRVData}
-                        margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
+                        margin={{ top: 30, right: 10, left: 10, bottom: 20 }}
                       >
                         <CartesianGrid 
-                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.18)" : "rgba(156, 163, 175, 0.2)"}
-                          strokeWidth={0.5}
+                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.3)" : "rgba(156, 163, 175, 0.35)"}
+                          strokeWidth={0.75}
                           strokeDasharray="0" 
-                          vertical={false} 
+                          vertical={false}
                         />
-                  <XAxis 
-                    dataKey="date" 
+                        <YAxis 
+                          domain={[(dataMin: number) => Math.max(dataMin * 0.9, dataMin - 5), (dataMax: number) => dataMax * 1.05]} 
+                          hide={true}
+                        />
+                        <XAxis 
+                          dataKey="date" 
                           tickFormatter={(date) => {
                             const d = new Date(date);
                             switch (hrvTimeframe) {
@@ -1344,15 +1348,7 @@ export default function Home() {
                           axisLine={false}
                           dy={12}
                         />
-                        <YAxis 
-                          stroke="#9CA3AF"
-                          fontSize={12}
-                          tickCount={8}
-                          domain={['dataMin - 2', 'dataMax + 2']}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                  <Tooltip 
+                        <Tooltip 
                           contentStyle={{ 
                             backgroundColor: 'var(--tooltip-bg)',
                             border: 'none',
@@ -1445,7 +1441,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-            <div className="h-[300px]">
+            <div className="h-[340px]">
                   {data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
                       Loading data...
@@ -1460,16 +1456,20 @@ export default function Home() {
               <ResponsiveContainer width="100%" height="100%">
                       <LineChart 
                         data={currentVO2MaxData}
-                        margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
+                        margin={{ top: 30, right: 10, left: 10, bottom: 20 }}
                       >
                         <CartesianGrid 
-                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.18)" : "rgba(156, 163, 175, 0.2)"}
-                          strokeWidth={0.5}
+                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.3)" : "rgba(156, 163, 175, 0.35)"}
+                          strokeWidth={0.75}
                           strokeDasharray="0" 
-                          vertical={false} 
+                          vertical={false}
                         />
-                  <XAxis 
-                    dataKey="date" 
+                        <YAxis 
+                          domain={[(dataMin: number) => Math.max(dataMin * 0.9, dataMin - 2), (dataMax: number) => dataMax * 1.05]} 
+                          hide={true}
+                        />
+                        <XAxis 
+                          dataKey="date" 
                           tickFormatter={(date) => {
                             const d = new Date(date);
                             switch (vo2maxTimeframe) {
@@ -1489,15 +1489,7 @@ export default function Home() {
                           axisLine={false}
                           dy={12}
                         />
-                        <YAxis 
-                          stroke="#9CA3AF"
-                          fontSize={12}
-                          tickCount={8}
-                          domain={['dataMin - 2', 'dataMax + 2']}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                  <Tooltip 
+                        <Tooltip 
                           contentStyle={{ 
                             backgroundColor: 'white',
                             border: 'none',
@@ -1589,7 +1581,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-            <div className="h-[300px]">
+            <div className="h-[340px]">
                   {data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
                       Loading data...
@@ -1604,16 +1596,20 @@ export default function Home() {
               <ResponsiveContainer width="100%" height="100%">
                       <LineChart 
                         data={currentWeightData}
-                        margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
+                        margin={{ top: 30, right: 10, left: 10, bottom: 20 }}
                       >
                         <CartesianGrid 
-                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.18)" : "rgba(156, 163, 175, 0.2)"}
-                          strokeWidth={0.5}
+                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.3)" : "rgba(156, 163, 175, 0.35)"}
+                          strokeWidth={0.75}
                           strokeDasharray="0" 
-                          vertical={false} 
+                          vertical={false}
                         />
-                  <XAxis 
-                    dataKey="date" 
+                        <YAxis 
+                          domain={[(dataMin: number) => Math.max(dataMin * 0.9, dataMin - 5), (dataMax: number) => dataMax * 1.05]} 
+                          hide={true}
+                        />
+                        <XAxis 
+                          dataKey="date" 
                           tickFormatter={(date) => {
                             const d = new Date(date);
                             switch (weightTimeframe) {
@@ -1633,15 +1629,7 @@ export default function Home() {
                           axisLine={false}
                           dy={12}
                         />
-                        <YAxis 
-                          stroke="#9CA3AF"
-                          fontSize={12}
-                          tickCount={8}
-                          domain={['dataMin - 2', 'dataMax + 2']}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                  <Tooltip 
+                        <Tooltip 
                           contentStyle={{ 
                             backgroundColor: 'white',
                             border: 'none',
@@ -1733,7 +1721,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-            <div className="h-[300px]">
+            <div className="h-[340px]">
                   {data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
                       Loading data...
@@ -1748,16 +1736,20 @@ export default function Home() {
               <ResponsiveContainer width="100%" height="100%">
                       <LineChart 
                         data={currentBodyFatData}
-                        margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
+                        margin={{ top: 30, right: 10, left: 10, bottom: 20 }}
                       >
                         <CartesianGrid 
-                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.18)" : "rgba(156, 163, 175, 0.2)"}
-                          strokeWidth={0.5}
+                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.3)" : "rgba(156, 163, 175, 0.35)"}
+                          strokeWidth={0.75}
                           strokeDasharray="0" 
-                          vertical={false} 
+                          vertical={false}
                         />
-                  <XAxis 
-                    dataKey="date" 
+                        <YAxis 
+                          domain={[(dataMin: number) => Math.max(dataMin * 0.9, dataMin - 5), (dataMax: number) => dataMax * 1.05]} 
+                          hide={true}
+                        />
+                        <XAxis 
+                          dataKey="date" 
                           tickFormatter={(date) => {
                             const d = new Date(date);
                             switch (bodyFatTimeframe) {
@@ -1777,15 +1769,7 @@ export default function Home() {
                           axisLine={false}
                           dy={12}
                         />
-                        <YAxis 
-                          stroke="#9CA3AF"
-                          fontSize={12}
-                          tickCount={8}
-                          domain={['dataMin - 2', 'dataMax + 2']}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                  <Tooltip 
+                        <Tooltip 
                           contentStyle={{ 
                             backgroundColor: 'white',
                             border: 'none',
