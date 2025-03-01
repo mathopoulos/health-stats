@@ -61,7 +61,9 @@ export default function BloodTestUpload() {
     try {
       const dateISOString = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
       
-      console.log('Saving blood markers:', markers.length, 'Date:', dateISOString);
+      console.log('Saving blood markers for date:', dateISOString);
+      console.log('Number of markers:', markers.length);
+      console.log('Marker names:', markers.map(m => m.name).join(', '));
       
       const response = await fetch('/api/blood-markers', {
         method: 'POST',
@@ -79,23 +81,28 @@ export default function BloodTestUpload() {
         throw new Error(data.error || `Failed to save with status ${response.status}`);
       }
 
-      // Show success message and reset the upload form
-      toast.success(`${markers.length} blood markers saved successfully`);
-      
-      // Reset the upload state
-      resetUpload();
-      
-      // Notify other components about the change
-      if (typeof window !== 'undefined') {
-        console.log('Dispatching bloodMarkerAdded event after saving markers');
-        window.dispatchEvent(new Event('bloodMarkerAdded'));
+      // Individual group success (be quieter if there are multiple calls)
+      if (dateGroups.length > 1) {
+        console.log(`Saved ${markers.length} markers for date ${dateISOString}`);
+      } else {
+        // Show toast only for single date group
+        toast.success(`${markers.length} blood markers saved successfully`);
+        
+        // For single group, we can reset and dispatch here
+        resetUpload();
+        
+        // Notify other components about the change
+        if (typeof window !== 'undefined') {
+          console.log('Dispatching bloodMarkerAdded event after saving markers');
+          window.dispatchEvent(new Event('bloodMarkerAdded'));
+        }
       }
       
-      // We stay on the current page instead of redirecting to the dashboard
-      // The modal will close automatically via the onClose call in BloodMarkerPreview's handleSave function
+      return true; // Indicate success for the caller
     } catch (error) {
-      console.error('Error saving blood markers:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to save blood markers');
+      console.error(`Error saving blood markers for date ${date.toISOString().split('T')[0]}:`, error);
+      toast.error(`Failed to save markers for ${date.toLocaleDateString()}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return false; // Indicate failure
     }
   };
 
@@ -207,6 +214,7 @@ export default function BloodTestUpload() {
         // Handle multiple date groups if present
         if (data.dateGroups && Array.isArray(data.dateGroups) && data.dateGroups.length > 0) {
           console.log('📥 Setting date groups:', data.dateGroups.length);
+          console.log('📥 Date groups data:', JSON.stringify(data.dateGroups));
           setDateGroups(data.dateGroups);
           setHasMultipleDates(data.hasMultipleDates || data.dateGroups.length > 1);
         }

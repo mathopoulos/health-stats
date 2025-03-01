@@ -24,7 +24,7 @@ interface BloodMarkerPreviewProps {
   isOpen: boolean;
   onClose: () => void;
   markers: BloodMarker[];
-  onSave: (markers: BloodMarker[], date: Date) => void;
+  onSave: (markers: BloodMarker[], date: Date) => Promise<boolean | void>;
   initialDate?: string | null;
   dateGroups?: DateGroup[];
 }
@@ -49,13 +49,27 @@ export default function BloodMarkerPreview({
   // Track selected date group tab
   const [selectedTab, setSelectedTab] = useState<number>(0);
   
-  // Multiple date groups state
-  const hasMultipleDates = dateGroups.length > 1;
+  // Multiple date groups state - store this in state to ensure it's reactive
+  const [hasMultipleDates, setHasMultipleDates] = useState<boolean>(dateGroups.length > 1);
+
+  // Update hasMultipleDates whenever dateGroups changes
+  useEffect(() => {
+    console.log(`dateGroups changed: ${dateGroups.length} groups`);
+    setHasMultipleDates(dateGroups.length > 1);
+  }, [dateGroups]);
 
   // Sort date groups by newest first
   const sortedDateGroups = [...dateGroups].sort((a, b) => 
     new Date(b.testDate).getTime() - new Date(a.testDate).getTime()
   );
+  
+  useEffect(() => {
+    console.log(`BloodMarkerPreview mounted with ${dateGroups.length} date groups, hasMultipleDates: ${hasMultipleDates}`);
+    // Log the dateGroups array for debugging
+    if (dateGroups.length > 0) {
+      console.log('Date groups content:', JSON.stringify(dateGroups));
+    }
+  }, [dateGroups, hasMultipleDates]);
 
   // Handle tab selection change
   const handleTabChange = (index: number) => {
@@ -150,10 +164,17 @@ export default function BloodMarkerPreview({
   }, {} as Record<string, BloodMarker[]>);
 
   // Function to get all markers across all date groups
-  const getAllMarkers = (): BloodMarker[] => {
-    if (!hasMultipleDates) {
-      console.log('Single date group, returning active markers:', activeMarkers.length);
-      return activeMarkers;
+  const getAllMarkers = (): { markers: BloodMarker[], dateGroups: {date: string, markers: BloodMarker[]}[] } => {
+    // Always log the current state to debug
+    console.log(`getAllMarkers called - hasMultipleDates: ${hasMultipleDates}, dateGroups: ${dateGroups.length}, activeTab: ${selectedTab}`);
+    
+    // If we have multiple date groups, always use them regardless of the hasMultipleDates flag
+    if (dateGroups.length <= 1) {
+      console.log('No or single date group, returning active markers:', activeMarkers.length);
+      return { 
+        markers: activeMarkers, 
+        dateGroups: [{ date: selectedDate.toISOString().split('T')[0], markers: activeMarkers }] 
+      };
     }
     
     console.log('Multiple date groups detected:', sortedDateGroups.length);
@@ -172,25 +193,116 @@ export default function BloodMarkerPreview({
     
     // Use a Map to deduplicate markers by name (keeping the most recent occurrence)
     const markerMap = new Map();
+    
+    // Process in order from newest to oldest date (which is how sortedDateGroups is ordered)
     for (const marker of allMarkersWithMetadata) {
-      markerMap.set(marker.name, marker);
+      // Only add to the map if this marker name isn't already in the map
+      if (!markerMap.has(marker.name.trim())) {
+        markerMap.set(marker.name.trim(), marker);
+        console.log(`Added marker: ${marker.name} from date ${marker._dateGroup}`);
+      }
     }
     
-    // Convert back to array and remove our metadata property
-    const result = Array.from(markerMap.values()).map(({ _dateGroup, ...marker }) => marker);
-    console.log('Total markers after deduplication:', result.length);
+    // Convert back to array, but keep the _dateGroup property
+    const dedupedMarkers = Array.from(markerMap.values());
     
-    return result;
+    // Now group the deduplicated markers by their original date
+    const groupedByDate: Record<string, BloodMarker[]> = {};
+    for (const marker of dedupedMarkers) {
+      const date = marker._dateGroup;
+      if (!groupedByDate[date]) {
+        groupedByDate[date] = [];
+      }
+      // Add the marker without the _dateGroup property
+      const { _dateGroup, ...cleanMarker } = marker;
+      groupedByDate[date].push(cleanMarker);
+    }
+    
+    // Convert to the format we need
+    const dateGroupsResult = Object.entries(groupedByDate).map(([date, markers]) => ({
+      date,
+      markers
+    }));
+    
+    console.log('Grouped into', dateGroupsResult.length, 'date groups after deduplication');
+    dateGroupsResult.forEach(group => {
+      console.log(`- Date ${group.date}: ${group.markers.length} markers`);
+    });
+    
+    // Remove _dateGroup from all markers for the final markers array
+    const result = dedupedMarkers.map(({ _dateGroup, ...marker }) => marker);
+    
+    return {
+      markers: result,
+      dateGroups: dateGroupsResult
+    };
   };
 
   const handleSave = async () => {
     try {
-      // Get all markers across all date groups or just the active markers if single date
-      const markersToSave = getAllMarkers();
+      // Log the state before getting markers
+      console.log(`Save initiated - activeMarkers: ${activeMarkers.length}, dateGroups: ${dateGroups.length}, hasMultipleDates: ${hasMultipleDates}`);
+      
+      // Get all markers across all date groups with their original dates
+      const { markers: markersToSave, dateGroups: groupedMarkers } = getAllMarkers();
       
       console.log('Saving all markers from all date groups:', markersToSave.length);
+      console.log('Grouped into', groupedMarkers.length, 'date groups for saving');
       
-      await onSave(markersToSave, selectedDate);
+      // Save each date group separately
+      let totalSavedMarkers = 0;
+      let savedGroups = 0;
+      let failedGroups = 0;
+      
+      // Multiple groups need separate API calls
+      if (groupedMarkers.length > 1) {
+        for (const group of groupedMarkers) {
+          console.log(`Saving group for date ${group.date} with ${group.markers.length} markers`);
+          
+          // Parse the date string into a Date object for the API call
+          const groupDate = new Date(group.date);
+          
+          // Skip invalid dates
+          if (isNaN(groupDate.getTime())) {
+            console.warn(`Skipping group with invalid date: ${group.date}`);
+            continue;
+          }
+          
+          // Call onSave for this specific group
+          const result = await onSave(group.markers, groupDate);
+          // Check if result is explicitly false (for functions that return boolean)
+          if (result !== false) {
+            totalSavedMarkers += group.markers.length;
+            savedGroups++;
+          } else {
+            failedGroups++;
+          }
+        }
+        
+        // Show a summary toast after all saves are complete
+        if (savedGroups > 0) {
+          toast.success(`Successfully saved ${totalSavedMarkers} markers across ${savedGroups} date groups`);
+          
+          // Dispatch event to refresh data
+          if (typeof window !== 'undefined') {
+            console.log('Dispatching bloodMarkerAdded event after saving all marker groups');
+            window.dispatchEvent(new Event('bloodMarkerAdded'));
+          }
+        }
+        
+        if (failedGroups > 0) {
+          toast.error(`Failed to save ${failedGroups} date groups. See console for details.`);
+        }
+      } else if (groupedMarkers.length === 1) {
+        // Single group is handled by the onSave function itself
+        const group = groupedMarkers[0];
+        const groupDate = new Date(group.date);
+        await onSave(group.markers, groupDate);
+      }
+      
+      console.log(`Save complete: ${savedGroups} groups saved, ${failedGroups} groups failed`);
+      
+      // Close the dialog
       onClose();
     } catch (error) {
       console.error('Error saving blood markers:', error);
@@ -223,7 +335,7 @@ export default function BloodMarkerPreview({
           </Dialog.Title>
 
           {/* Date Group Tabs */}
-          {hasMultipleDates && (
+          {dateGroups.length > 1 && (
             <div className="mb-4">
               <div className="border-b border-gray-200 dark:border-gray-700">
                 <nav className="-mb-px flex space-x-4 overflow-x-auto scrollbar-thin" aria-label="Tabs">
@@ -245,9 +357,16 @@ export default function BloodMarkerPreview({
                   ))}
                 </nav>
               </div>
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                All markers will be saved when you click "Save All Markers".
-              </p>
+              <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-100 dark:border-blue-800">
+                <p className="text-sm text-blue-700 dark:text-blue-300 flex items-center">
+                  <svg className="w-4 h-4 mr-1.5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>
+                    <strong>All markers</strong> from all dates ({sortedDateGroups.reduce((sum, group) => sum + group.markers.length, 0)} total) will be saved with their <strong>original test dates</strong>.
+                  </span>
+                </p>
+              </div>
             </div>
           )}
 
@@ -335,7 +454,9 @@ export default function BloodMarkerPreview({
               onClick={handleSave}
               className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              {hasMultipleDates ? 'Save All Markers' : 'Save Markers'}
+              {dateGroups.length > 1 
+                ? `Save All Markers With Original Dates (${sortedDateGroups.reduce((sum, group) => sum + group.markers.length, 0)})` 
+                : `Save Markers (${activeMarkers.length})`}
             </button>
           </div>
         </Dialog.Panel>
