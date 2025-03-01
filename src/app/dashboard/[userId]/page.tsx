@@ -16,6 +16,10 @@ import { useTheme } from '@/app/context/ThemeContext';
 interface HealthData {
   date: string;
   value: number;
+  meta?: {
+    aggregationType?: 'weekly' | 'monthly';
+    pointCount?: number;
+  };
 }
 
 interface BloodMarker {
@@ -107,6 +111,9 @@ interface ChartData {
 }
 
 type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
+// New type definition for fixed time ranges
+type TimeRange = 'last30days' | 'last3months' | 'last6months' | 'last1year' | 'last3years';
 
 // Add this before the component definitions
 const BLOOD_MARKER_CONFIG = {
@@ -220,18 +227,14 @@ export default function Home() {
     loading: true
   });
   const [error, setError] = useState<string | null>(null);
-  const [weightTimeframe, setWeightTimeframe] = useState<TimeFrame>('weekly');
-  const [weightDate, setWeightDate] = useState<Date | null>(null);
-  const [bodyFatTimeframe, setBodyFatTimeframe] = useState<TimeFrame>('weekly');
-  const [bodyFatDate, setBodyFatDate] = useState<Date | null>(null);
-  const [hrvTimeframe, setHrvTimeframe] = useState<TimeFrame>('weekly');
-  const [hrvDate, setHrvDate] = useState<Date | null>(null);
-  const [vo2maxTimeframe, setVo2maxTimeframe] = useState<TimeFrame>('weekly');
-  const [vo2maxDate, setVo2maxDate] = useState<Date | null>(null);
-  const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
-    start: null,
-    end: null
-  });
+  const [weightTimeRange, setWeightTimeRange] = useState<TimeRange>('last3months');
+  const [bodyFatTimeRange, setBodyFatTimeRange] = useState<TimeRange>('last3months');
+  const [hrvTimeRange, setHrvTimeRange] = useState<TimeRange>('last3months');
+  const [vo2maxTimeRange, setVo2maxTimeRange] = useState<TimeRange>('last3months');
+  const [dateRange, setDateRange] = useState<{
+    start: Date | null;
+    end: Date | null;
+  }>({ start: null, end: null });
   const [activeTab, setActiveTab] = useState<'metrics' | 'blood'>('metrics');
   const [isAddResultsModalOpen, setIsAddResultsModalOpen] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -419,20 +422,11 @@ export default function Home() {
         const end = new Date(Math.max(...allDates.map(d => d.getTime())));
         setDateRange({ start, end });
         
-        const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
-        
-        if (!weightDate) {
-          setWeightDate(endMonth);
-        }
-        if (!bodyFatDate) {
-          setBodyFatDate(endMonth);
-        }
-        if (!hrvDate) {
-          setHrvDate(endMonth);
-        }
-        if (!vo2maxDate) {
-          setVo2maxDate(endMonth);
-        }
+        // Initialize time ranges with default values
+        setWeightTimeRange('last3months');
+        setBodyFatTimeRange('last3months');
+        setHrvTimeRange('last3months');
+        setVo2maxTimeRange('last3months');
       }
 
       return {
@@ -563,310 +557,251 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [userId]);
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  };
-
-  const goToPreviousMonth = (setter: React.Dispatch<React.SetStateAction<Date | null>>) => {
-    setter((prev: Date | null) => {
-      if (!prev) return null;
-      const newDate = new Date(prev);
-      newDate.setMonth(prev.getMonth() - 1);
-      return newDate;
-    });
-  };
-
-  const goToNextMonth = (setter: React.Dispatch<React.SetStateAction<Date | null>>) => {
-    setter((prev: Date | null) => {
-      if (!prev) return null;
-      const newDate = new Date(prev);
-      newDate.setMonth(prev.getMonth() + 1);
-      return newDate;
-    });
-  };
-
-  const isNextMonthDisabled = (currentDate: Date | null) => {
-    if (!dateRange.end) return true;
-    if (!currentDate) return true;
-    const nextMonth = new Date(currentDate);
-    nextMonth.setMonth(currentDate.getMonth() + 1);
-    return nextMonth > dateRange.end;
-  };
-
-  const isPrevMonthDisabled = (currentDate: Date | null) => {
-    if (!dateRange.start) return true;
-    if (!currentDate) return true;
-    const prevMonth = new Date(currentDate);
-    prevMonth.setMonth(currentDate.getMonth() - 1);
-    return prevMonth < dateRange.start;
-  };
-
-  const goToPreviousYear = (setter: React.Dispatch<React.SetStateAction<Date | null>>) => {
-    setter((prev: Date | null) => {
-      if (!prev) return null;
-      const newDate = new Date(prev);
-      newDate.setFullYear(prev.getFullYear() - 1);
-      return newDate;
-    });
-  };
-
-  const goToNextYear = (setter: React.Dispatch<React.SetStateAction<Date | null>>) => {
-    setter((prev: Date | null) => {
-      if (!prev) return null;
-      const newDate = new Date(prev);
-      newDate.setFullYear(prev.getFullYear() + 1);
-      return newDate;
-    });
-  };
-
-  const isNextYearDisabled = (currentDate: Date | null) => {
-    if (!dateRange.end) return true;
-    if (!currentDate) return true;
-    const nextYear = new Date(currentDate);
-    nextYear.setFullYear(currentDate.getFullYear() + 1);
-    return nextYear > dateRange.end;
-  };
-
-  const isPrevYearDisabled = (currentDate: Date | null) => {
-    if (!dateRange.start) return true;
-    if (!currentDate) return true;
-    const prevYear = new Date(currentDate);
-    prevYear.setFullYear(currentDate.getFullYear() - 1);
-    return prevYear < dateRange.start;
-  };
-
-  const getMonthData = (data: HealthData[], month: Date | null) => {
-    if (!month) return [];
-    
-    const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
-    const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0, 23, 59, 59, 999);
-    
-    const filteredData = data.filter(item => {
-      const date = new Date(item.date);
-      return date >= monthStart && date <= monthEnd;
-    });
-
-    const dailyData = filteredData.reduce((acc: { [key: string]: { sum: number; count: number } }, item) => {
-      const date = new Date(item.date);
-      const dayKey = date.toISOString().split('T')[0];
+  // ... existing code ...
+  useEffect(() => {
+    // Set initial state based on data range
+    if (dateRange.start && dateRange.end) {
+      // Initialize with default time ranges
+      setWeightTimeRange('last3months');
+      setBodyFatTimeRange('last3months');
+      setHrvTimeRange('last3months');
+      setVo2maxTimeRange('last3months');
       
-      if (!acc[dayKey]) {
-        acc[dayKey] = { sum: 0, count: 0 };
-      }
-      
-      acc[dayKey].sum += item.value;
-      acc[dayKey].count += 1;
-      
-      return acc;
-    }, {});
+      // No longer setting date variables as they have been removed
+    }
+  }, [dateRange.start, dateRange.end]);
+  // ... existing code ...
 
-    const aggregatedData = Object.entries(dailyData).map(([date, { sum, count }]) => ({
-      date: `${date}T12:00:00.000Z`,
-      value: Math.round(sum / count)
-    }));
-
-    aggregatedData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  // Add the getTimeRangeData function inside the component, e.g., after dateRange is defined
+  const getTimeRangeData = (data: HealthData[], timeRange: TimeRange) => {
+    if (!data.length) return [];
     
-    return aggregatedData;
-  };
-
-  const getYearlyHRVData = (data: HealthData[], year: Date | null) => {
-    if (!year) return [];
+    // Sort data by date in ascending order
+    const sortedData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
-    const yearStart = new Date(year.getFullYear(), 0, 1);
-    const yearEnd = new Date(year.getFullYear(), 11, 31, 23, 59, 59, 999);
-    
-    const filteredData = data.filter(item => {
-      const date = new Date(item.date);
-      return date >= yearStart && date <= yearEnd;
-    });
-
-    // Group by month and calculate averages
-    const monthlyData = filteredData.reduce((acc: { [key: string]: { sum: number; count: number } }, item) => {
-      const date = new Date(item.date);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      
-      if (!acc[monthKey]) {
-        acc[monthKey] = { sum: 0, count: 0 };
-      }
-      
-      acc[monthKey].sum += item.value;
-      acc[monthKey].count += 1;
-      
-      return acc;
-    }, {});
-
-    const aggregatedData = Object.entries(monthlyData).map(([monthKey, { sum, count }]) => {
-      const [year, month] = monthKey.split('-');
-      return {
-        date: `${year}-${month}-15T12:00:00.000Z`, // Use middle of month for consistent display
-        value: Math.round(sum / count)
-      };
-    });
-
-    aggregatedData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
-    return aggregatedData;
-  };
-
-  const getHRVData = (data: HealthData[], date: Date | null, timeframe: TimeFrame) => {
-    if (!date) return [];
-    
+    // Current date for comparison
+    const now = new Date();
     let startDate: Date;
-    let endDate: Date;
-    let groupingFunction: (date: Date) => string;
-    let displayDate: (key: string) => string;
+    let aggregationType: 'daily' | 'weekly' | 'monthly' = 'daily';
     
-    switch (timeframe) {
-      case 'daily':
-        // Show one month of daily data
-        startDate = new Date(date.getFullYear(), date.getMonth(), 1);
-        endDate = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
-        groupingFunction = (date: Date) => date.toISOString().split('T')[0];
-        displayDate = (key: string) => `${key}T12:00:00.000Z`;
-                break;
-        
-      case 'weekly':
-        // Show 12 weeks of weekly data
-        startDate = new Date(date.getTime());
-        startDate.setDate(startDate.getDate() - 84); // 12 weeks back
-        endDate = new Date(date.getTime());
-        groupingFunction = (date: Date) => {
-          const week = new Date(date.getTime());
-          week.setDate(week.getDate() - week.getDay());
-          return week.toISOString().split('T')[0];
-        };
-        displayDate = (key: string) => `${key}T12:00:00.000Z`;
-                break;
-        
-      case 'monthly':
-        // Show one year of monthly data
-        startDate = new Date(date.getFullYear(), 0, 1);
-        endDate = new Date(date.getFullYear(), 11, 31, 23, 59, 59, 999);
-        groupingFunction = (date: Date) => 
-          `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        displayDate = (key: string) => {
-          const [year, month] = key.split('-');
-          return `${year}-${month}-15T12:00:00.000Z`;
-        };
-                break;
-
-      case 'yearly':
-        // Show 5 years of yearly data
-        startDate = new Date(date.getFullYear() - 4, 0, 1);
-        endDate = new Date(date.getFullYear(), 11, 31, 23, 59, 59, 999);
-        groupingFunction = (date: Date) => date.getFullYear().toString();
-        displayDate = (key: string) => `${key}-06-15T12:00:00.000Z`; // Middle of the year
-                break;
-            }
-    
-    const filteredData = data.filter(item => {
-      const itemDate = new Date(item.date);
-      return itemDate >= startDate && itemDate <= endDate;
-    });
-
-    const groupedData = filteredData.reduce((acc: { [key: string]: { sum: number; count: number } }, item) => {
-      const date = new Date(item.date);
-      const key = groupingFunction(date);
-      
-      if (!acc[key]) {
-        acc[key] = { sum: 0, count: 0 };
-      }
-      
-      acc[key].sum += item.value;
-      acc[key].count += 1;
-      
-      return acc;
-    }, {});
-
-    const aggregatedData = Object.entries(groupedData).map(([key, { sum, count }]) => ({
-      date: displayDate(key),
-      value: Math.round(sum / count)
-    }));
-
-    aggregatedData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
-    return aggregatedData;
-  };
-
-  const getTimeframeLabel = (date: Date | null, timeframe: TimeFrame) => {
-    if (!date) return '';
-    
-    switch (timeframe) {
-      case 'daily':
-        return date.toLocaleString('default', { month: 'long', year: 'numeric' });
-      case 'weekly':
-        const endDate = new Date(date);
-        const startDate = new Date(date);
-        startDate.setDate(startDate.getDate() - 84);
-        return `${startDate.toLocaleString('default', { month: 'short' })} - ${endDate.toLocaleString('default', { month: 'short' })} ${endDate.getFullYear()}`;
-      case 'monthly':
-        return date.getFullYear().toString();
-      case 'yearly':
-        const startYear = date.getFullYear() - 4;
-        return `${startYear} - ${date.getFullYear()}`;
-    }
-  };
-
-  const handleTimeframeNavigation = (
-    direction: 'prev' | 'next',
-    date: Date | null,
-    setDate: React.Dispatch<React.SetStateAction<Date | null>>,
-    timeframe: TimeFrame
-  ) => {
-    setDate((prev: Date | null) => {
-      if (!prev) return null;
-      const newDate = new Date(prev);
-      
-      switch (timeframe) {
-        case 'daily':
-          direction === 'prev' ? newDate.setMonth(prev.getMonth() - 1) : newDate.setMonth(prev.getMonth() + 1);
-          break;
-        case 'weekly':
-          direction === 'prev' ? newDate.setDate(prev.getDate() - 84) : newDate.setDate(prev.getDate() + 84);
-          break;
-        case 'monthly':
-          direction === 'prev' ? newDate.setFullYear(prev.getFullYear() - 1) : newDate.setFullYear(prev.getFullYear() + 1);
-          break;
-        case 'yearly':
-          direction === 'prev' ? newDate.setFullYear(prev.getFullYear() - 5) : newDate.setFullYear(prev.getFullYear() + 5);
-          break;
-      }
-      
-      return newDate;
-    });
-  };
-
-  const isNavigationDisabled = (direction: 'prev' | 'next', date: Date | null, timeframe: TimeFrame) => {
-    if (!dateRange.start || !dateRange.end || !date) return true;
-    
-    const newDate = new Date(date);
-    
-    switch (timeframe) {
-      case 'daily':
-        direction === 'prev' ? newDate.setMonth(newDate.getMonth() - 1) : newDate.setMonth(newDate.getMonth() + 1);
+    // Calculate start date based on selected time range
+    switch (timeRange) {
+      case 'last30days':
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 30);
+        aggregationType = 'daily'; // Show every data point
         break;
-      case 'weekly':
-        direction === 'prev' ? newDate.setDate(newDate.getDate() - 84) : newDate.setDate(newDate.getDate() + 84);
+      case 'last3months':
+        startDate = new Date(now);
+        startDate.setMonth(startDate.getMonth() - 3);
+        aggregationType = 'weekly'; // Aggregate by week
         break;
-      case 'monthly':
-        direction === 'prev' ? newDate.setFullYear(newDate.getFullYear() - 1) : newDate.setFullYear(newDate.getFullYear() + 1);
+      case 'last6months':
+        startDate = new Date(now);
+        startDate.setMonth(startDate.getMonth() - 6);
+        aggregationType = 'weekly'; // Aggregate by week
         break;
-      case 'yearly':
-        direction === 'prev' ? newDate.setFullYear(newDate.getFullYear() - 5) : newDate.setFullYear(newDate.getFullYear() + 5);
+      case 'last1year':
+        startDate = new Date(now);
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        aggregationType = 'monthly'; // Aggregate by month
         break;
+      case 'last3years':
+        startDate = new Date(now);
+        startDate.setFullYear(startDate.getFullYear() - 3);
+        aggregationType = 'monthly'; // Aggregate by month
+        break;
+      default:
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 30);
+        aggregationType = 'daily';
     }
     
-    return direction === 'prev' ? newDate < dateRange.start : newDate > dateRange.end;
+    // Filter data based on start date
+    const filteredData = sortedData.filter(item => new Date(item.date) >= startDate);
+    
+    // If no data points in the range, return empty array
+    if (filteredData.length === 0) return [];
+    
+    // Return raw data for daily view
+    if (aggregationType === 'daily') {
+      return filteredData;
+    }
+    
+    // Aggregate data based on the aggregation type
+    return aggregateData(filteredData, aggregationType);
   };
-
-  const currentHeartRateData = getMonthData(data.heartRate, weightDate);
-  const currentWeightData = getHRVData(data.weight, weightDate, weightTimeframe);
-  const currentBodyFatData = getHRVData(data.bodyFat, bodyFatDate, bodyFatTimeframe);
-  const currentHRVData = getHRVData(data.hrv, hrvDate, hrvTimeframe);
-  const currentVO2MaxData = getHRVData(data.vo2max, vo2maxDate, vo2maxTimeframe);
   
+  // Helper function to aggregate data by week or month
+  const aggregateData = (data: HealthData[], aggregationType: 'weekly' | 'monthly'): HealthData[] => {
+    const groupedData = new Map<string, HealthData[]>();
+    
+    data.forEach(item => {
+      const date = new Date(item.date);
+      let key: string;
+      
+      if (aggregationType === 'weekly') {
+        // Get the week start date (Sunday) as key
+        const dayOfWeek = date.getDay();
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - dayOfWeek);
+        key = weekStart.toISOString().split('T')[0]; // YYYY-MM-DD format
+      } else {
+        // Monthly aggregation - use YYYY-MM as key
+        key = date.toISOString().slice(0, 7); // YYYY-MM format
+      }
+      
+      if (!groupedData.has(key)) {
+        groupedData.set(key, []);
+      }
+      
+      groupedData.get(key)?.push(item);
+    });
+    
+    // Aggregate each group to a single data point (average value)
+    const aggregatedData: HealthData[] = [];
+    
+    groupedData.forEach((items, key) => {
+      // Calculate average value for the group
+      const sum = items.reduce((acc, curr) => acc + curr.value, 0);
+      const avgValue = sum / items.length;
+      
+      // Use the middle item's date for a more representative point in time
+      const middleIndex = Math.floor(items.length / 2);
+      
+      const aggregatedItem: HealthData = {
+        date: items[middleIndex]?.date || items[0].date,
+        value: Number(avgValue.toFixed(2)), // Round to 2 decimal places
+        // Add metadata for tooltip
+        meta: {
+          aggregationType: aggregationType,
+          pointCount: items.length
+        }
+      };
+      
+      aggregatedData.push(aggregatedItem);
+    });
+    
+    // Sort aggregated data by date
+    return aggregatedData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  };
+  
+  // Add the handler functions inside the component, right after the timeRange state variables
+  const handleWeightTimeRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value as TimeRange;
+    setWeightTimeRange(value);
+  };
+  
+  const handleBodyFatTimeRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value as TimeRange;
+    setBodyFatTimeRange(value);
+  };
+  
+  const handleHRVTimeRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value as TimeRange;
+    setHrvTimeRange(value);
+  };
+  
+  const handleVO2MaxTimeRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value as TimeRange;
+    setVo2maxTimeRange(value);
+  };
+  
+  // Helper to convert timeRange to human-readable label
+  const getTimeRangeLabel = (timeRange: TimeRange): string => {
+    switch (timeRange) {
+      case 'last30days':
+        return 'Last 30 days';
+      case 'last3months':
+        return 'Last 3 months';
+      case 'last6months':
+        return 'Last 6 months';
+      case 'last1year':
+        return 'Last year';
+      case 'last3years':
+        return 'Last 3 years';
+      default:
+        return 'Last 3 months';
+    }
+  };
+  
+  // Update the data variables to use the new function
+  const currentHeartRateData = getTimeRangeData(data.heartRate, weightTimeRange);
+  const currentWeightData = getTimeRangeData(data.weight, weightTimeRange);
+  const currentBodyFatData = getTimeRangeData(data.bodyFat, bodyFatTimeRange);
+  const currentHRVData = getTimeRangeData(data.hrv, hrvTimeRange);
+  const currentVO2MaxData = getTimeRangeData(data.vo2max, vo2maxTimeRange);
+  
+  // Helper formatter for tick labels based on time range
+  const getTickFormatter = (timeRange: TimeRange) => (date: string) => {
+    const d = new Date(date);
+    
+    switch (timeRange) {
+      case 'last30days':
+        return d.toLocaleString('default', { day: 'numeric' });
+      case 'last3months':
+      case 'last6months':
+        return d.toLocaleString('default', { month: 'short', day: 'numeric' });
+      case 'last1year':
+      case 'last3years':
+        return d.toLocaleString('default', { month: 'short', year: '2-digit' });
+      default:
+        return d.toLocaleString('default', { month: 'short', day: 'numeric' });
+    }
+  };
+  
+  // Helper formatter for tooltip labels based on time range
+  const getTooltipFormatter = (timeRange: TimeRange) => (value: string) => {
+    const d = new Date(value);
+    
+    switch (timeRange) {
+      case 'last30days':
+        return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
+      case 'last3months':
+      case 'last6months':
+        return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
+      case 'last1year':
+      case 'last3years':
+        return d.toLocaleString('default', { month: 'long', year: 'numeric' });
+      default:
+        return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+  };
+
+  // Custom tooltip formatter to show aggregation info
+  const renderCustomTooltip = ({ active, payload, label, timeRange }: { 
+    active?: boolean; 
+    payload?: any[]; 
+    label?: string; 
+    timeRange: TimeRange;
+  }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      const dateFormatter = getTooltipFormatter(timeRange);
+      const formattedDate = dateFormatter(data.date);
+      
+      // Show aggregation info if present
+      const aggregationInfo = data.meta?.aggregationType ? 
+        `(${data.meta.aggregationType === 'weekly' ? 'Weekly' : 'Monthly'} average of ${data.meta.pointCount} readings)` : '';
+      
+      return (
+        <div className="bg-white dark:bg-gray-800 p-3 rounded shadow-md border border-gray-200 dark:border-gray-700">
+          <p className="text-gray-600 dark:text-gray-300 mb-1">{formattedDate}</p>
+          <p className="font-medium">
+            {payload[0].value} {payload[0].unit || ''}
+          </p>
+          {aggregationInfo && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {aggregationInfo}
+            </p>
+          )}
+        </div>
+      );
+    }
+    
+    return null;
+  };
+
   const hasHeartRateData = currentHeartRateData.length > 0;
   const hasWeightData = currentWeightData.length > 0;
   const hasBodyFatData = currentBodyFatData.length > 0;
@@ -1256,50 +1191,25 @@ export default function Home() {
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Heart Rate Variability</h2>
                   <div className="flex items-center">
                     <select
-                      value={hrvTimeframe}
-                      onChange={(e) => setHrvTimeframe(e.target.value as TimeFrame)}
-                      className="mr-6 h-9 pl-3 pr-8 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-600 focus:border-indigo-400 dark:focus:border-indigo-500 appearance-none cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                      value={hrvTimeRange}
+                      onChange={handleHRVTimeRangeChange}
+                      className="text-sm border border-gray-200 rounded px-3 py-1 pr-8 bg-white/90 dark:border-gray-800 dark:bg-gray-900/90 dark:text-gray-100 appearance-none"
                       style={{
-                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                        backgroundPosition: 'right 0.5rem center',
+                        backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='14' height='14' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M5.469 5.469a.75.75 0 0 1 1.062 0L10 8.94l3.469-3.469a.75.75 0 0 1 1.062 1.062l-4 4a.75.75 0 0 1-1.062 0l-4-4a.75.75 0 0 1 0-1.062Z' fill='%236b7280'/%3e%3c/svg%3e")`,
                         backgroundRepeat: 'no-repeat',
-                        backgroundSize: '1.5em 1.5em',
+                        backgroundPosition: 'right 0.5rem center',
+                        backgroundSize: '1.5em 1.5em'
                       }}
                     >
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="monthly">Monthly</option>
-                      <option value="yearly">Yearly</option>
+                      <option value="last30days">Last 30 days</option>
+                      <option value="last3months">Last 3 months</option>
+                      <option value="last6months">Last 6 months</option>
+                      <option value="last1year">Last year</option>
+                      <option value="last3years">Last 3 years</option>
                     </select>
-                    <div className="flex items-center h-9 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
-                      <button
-                        onClick={() => handleTimeframeNavigation('prev', hrvDate, setHrvDate, hrvTimeframe)}
-                        disabled={isNavigationDisabled('prev', hrvDate, hrvTimeframe)}
-                        className={`h-full px-2 rounded-l-lg hover:bg-white dark:hover:bg-gray-600 hover:shadow-sm transition-all ${
-                          isNavigationDisabled('prev', hrvDate, hrvTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                      </button>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mx-4 min-w-[100px] text-center">
-                        {getTimeframeLabel(hrvDate, hrvTimeframe)}
-                      </span>
-                      <button
-                        onClick={() => handleTimeframeNavigation('next', hrvDate, setHrvDate, hrvTimeframe)}
-                        disabled={isNavigationDisabled('next', hrvDate, hrvTimeframe)}
-                        className={`h-full px-2 rounded-r-lg hover:bg-white dark:hover:bg-gray-600 hover:shadow-sm transition-all ${
-                          isNavigationDisabled('next', hrvDate, hrvTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
+                    {/* Navigation buttons removed */}
                     </div>
                   </div>
-                </div>
             <div className="h-[340px]">
                   {data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
@@ -1308,7 +1218,7 @@ export default function Home() {
                   )}
                   {!hasHRVData && !data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
-                      No HRV data available for this {hrvTimeframe === 'yearly' ? '5 years' : hrvTimeframe === 'monthly' ? 'year' : hrvTimeframe === 'weekly' ? '12 weeks' : 'month'}
+                      No HRV data available for the {getTimeRangeLabel(hrvTimeRange)}
                     </div>
                   )}
                   {hasHRVData && !data.loading && (
@@ -1327,21 +1237,9 @@ export default function Home() {
                           domain={[(dataMin: number) => Math.max(dataMin * 0.9, dataMin - 5), (dataMax: number) => dataMax * 1.05]} 
                           hide={true}
                         />
-                        <XAxis 
-                          dataKey="date" 
-                          tickFormatter={(date) => {
-                            const d = new Date(date);
-                            switch (hrvTimeframe) {
-                              case 'daily':
-                                return d.getDate().toString();
-                              case 'weekly':
-                                return d.toLocaleString('default', { month: 'short', day: 'numeric' });
-                              case 'monthly':
-                                return d.toLocaleString('default', { month: 'short' });
-                              case 'yearly':
-                                return d.getFullYear().toString();
-                            }
-                          }}
+                  <XAxis 
+                    dataKey="date" 
+                          tickFormatter={getTickFormatter(hrvTimeRange)}
                           stroke="#9CA3AF"
                           fontSize={12}
                           tickLine={false}
@@ -1351,42 +1249,18 @@ export default function Home() {
                           minTickGap={40}
                           allowDuplicatedCategory={false}
                         />
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: 'var(--tooltip-bg)',
-                            border: 'none',
-                            borderRadius: '4px',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            fontSize: '12px',
-                            padding: '8px',
-                            color: 'var(--tooltip-text)'
-                          }}
-                          labelStyle={{ color: 'var(--tooltip-label)', marginBottom: '4px' }}
-                          cursor={{ stroke: isDarkMode ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.3)', strokeWidth: 0.7, strokeDasharray: '3 3' }}
-                          labelFormatter={(value) => {
-                            const d = new Date(value);
-                            switch (hrvTimeframe) {
-                              case 'daily':
-                                return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
-                              case 'weekly':
-                                const weekEnd = new Date(d);
-                                weekEnd.setDate(d.getDate() + 6);
-                                return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
-                              case 'monthly':
-                                return d.toLocaleString('default', { month: 'long', year: 'numeric' });
-                              case 'yearly':
-                                return d.getFullYear().toString();
-                            }
-                          }}
-                          formatter={(value: number) => [`${value} ms`]}
+                  <Tooltip 
+                          content={(props) => renderCustomTooltip({ ...props, timeRange: hrvTimeRange })}
                         />
-                        <Line
+                        <Line 
                           type="monotone"
-                          dataKey="value"
-                          stroke="#6366F1"
-                          strokeWidth={1.5}
-                          dot={false}
-                          activeDot={{ r: 3, fill: '#6366F1', strokeWidth: 1, stroke: '#4F46E5' }}
+                          dataKey="value" 
+                          stroke={isDarkMode ? "#818cf8" : "#4f46e5"} 
+                          activeDot={{ r: 6, stroke: isDarkMode ? "#818cf8" : "#4f46e5", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
+                          dot={{ r: 0 }}
+                          strokeWidth={2}
+                          isAnimationActive={false}
+                          unit="ms"
                         />
                 </LineChart>
               </ResponsiveContainer>
@@ -1400,50 +1274,25 @@ export default function Home() {
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-white">VO2 Max</h2>
                   <div className="flex items-center">
                     <select
-                      value={vo2maxTimeframe}
-                      onChange={(e) => setVo2maxTimeframe(e.target.value as TimeFrame)}
-                      className="mr-6 h-9 pl-3 pr-8 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-600 focus:border-indigo-400 dark:focus:border-indigo-500 appearance-none cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                      value={vo2maxTimeRange}
+                      onChange={handleVO2MaxTimeRangeChange}
+                      className="text-sm border border-gray-200 rounded px-3 py-1 pr-8 bg-white/90 dark:border-gray-800 dark:bg-gray-900/90 dark:text-gray-100 appearance-none"
                       style={{
-                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                        backgroundPosition: 'right 0.5rem center',
+                        backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='14' height='14' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M5.469 5.469a.75.75 0 0 1 1.062 0L10 8.94l3.469-3.469a.75.75 0 0 1 1.062 1.062l-4 4a.75.75 0 0 1-1.062 0l-4-4a.75.75 0 0 1 0-1.062Z' fill='%236b7280'/%3e%3c/svg%3e")`,
                         backgroundRepeat: 'no-repeat',
-                        backgroundSize: '1.5em 1.5em',
+                        backgroundPosition: 'right 0.5rem center',
+                        backgroundSize: '1.5em 1.5em'
                       }}
                     >
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="monthly">Monthly</option>
-                      <option value="yearly">Yearly</option>
+                      <option value="last30days">Last 30 days</option>
+                      <option value="last3months">Last 3 months</option>
+                      <option value="last6months">Last 6 months</option>
+                      <option value="last1year">Last year</option>
+                      <option value="last3years">Last 3 years</option>
                     </select>
-                    <div className="flex items-center h-9 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
-                      <button
-                        onClick={() => handleTimeframeNavigation('prev', vo2maxDate, setVo2maxDate, vo2maxTimeframe)}
-                        disabled={isNavigationDisabled('prev', vo2maxDate, vo2maxTimeframe)}
-                        className={`h-full px-2 rounded-l-lg hover:bg-white dark:hover:bg-gray-600 hover:shadow-sm transition-all ${
-                          isNavigationDisabled('prev', vo2maxDate, vo2maxTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                      </button>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mx-4 min-w-[100px] text-center">
-                        {getTimeframeLabel(vo2maxDate, vo2maxTimeframe)}
-                      </span>
-                      <button
-                        onClick={() => handleTimeframeNavigation('next', vo2maxDate, setVo2maxDate, vo2maxTimeframe)}
-                        disabled={isNavigationDisabled('next', vo2maxDate, vo2maxTimeframe)}
-                        className={`h-full px-2 rounded-r-lg hover:bg-white dark:hover:bg-gray-600 hover:shadow-sm transition-all ${
-                          isNavigationDisabled('next', vo2maxDate, vo2maxTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
+                    {/* Navigation buttons removed */}
                     </div>
                   </div>
-                </div>
             <div className="h-[340px]">
                   {data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
@@ -1452,7 +1301,7 @@ export default function Home() {
                   )}
                   {!hasVO2MaxData && !data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
-                      No VO2 max data available for this {vo2maxTimeframe === 'yearly' ? '5 years' : vo2maxTimeframe === 'monthly' ? 'year' : vo2maxTimeframe === 'weekly' ? '12 weeks' : 'month'}
+                      No VO2 max data available for the {getTimeRangeLabel(vo2maxTimeRange)}
                     </div>
                   )}
                   {hasVO2MaxData && !data.loading && (
@@ -1471,21 +1320,9 @@ export default function Home() {
                           domain={[(dataMin: number) => Math.max(dataMin * 0.9, dataMin - 2), (dataMax: number) => dataMax * 1.05]} 
                           hide={true}
                         />
-                        <XAxis 
-                          dataKey="date" 
-                          tickFormatter={(date) => {
-                            const d = new Date(date);
-                            switch (vo2maxTimeframe) {
-                              case 'daily':
-                                return d.getDate().toString();
-                              case 'weekly':
-                                return d.toLocaleString('default', { month: 'short', day: 'numeric' });
-                              case 'monthly':
-                                return d.toLocaleString('default', { month: 'short' });
-                              case 'yearly':
-                                return d.getFullYear().toString();
-                            }
-                          }}
+                  <XAxis 
+                    dataKey="date" 
+                          tickFormatter={getTickFormatter(vo2maxTimeRange)}
                           stroke="#9CA3AF"
                           fontSize={12}
                           tickLine={false}
@@ -1495,7 +1332,7 @@ export default function Home() {
                           minTickGap={40}
                           allowDuplicatedCategory={false}
                         />
-                        <Tooltip 
+                  <Tooltip 
                           contentStyle={{ 
                             backgroundColor: 'white',
                             border: 'none',
@@ -1506,21 +1343,7 @@ export default function Home() {
                           }}
                           labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
                           cursor={{ stroke: isDarkMode ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.3)', strokeWidth: 0.7, strokeDasharray: '3 3' }}
-                          labelFormatter={(value) => {
-                            const d = new Date(value);
-                            switch (vo2maxTimeframe) {
-                              case 'daily':
-                                return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
-                              case 'weekly':
-                                const weekEnd = new Date(d);
-                                weekEnd.setDate(d.getDate() + 6);
-                                return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
-                              case 'monthly':
-                                return d.toLocaleString('default', { month: 'long', year: 'numeric' });
-                              case 'yearly':
-                                return d.getFullYear().toString();
-                            }
-                          }}
+                          labelFormatter={getTooltipFormatter(vo2maxTimeRange)}
                           formatter={(value: number) => [`${value} mL/kg·min`]}
                         />
                         <Line
@@ -1543,50 +1366,25 @@ export default function Home() {
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Weight</h2>
                   <div className="flex items-center">
                     <select
-                      value={weightTimeframe}
-                      onChange={(e) => setWeightTimeframe(e.target.value as TimeFrame)}
-                      className="mr-6 h-9 pl-3 pr-8 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-600 focus:border-indigo-400 dark:focus:border-indigo-500 appearance-none cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                      value={weightTimeRange}
+                      onChange={handleWeightTimeRangeChange}
+                      className="text-sm border border-gray-200 rounded px-3 py-1 pr-8 bg-white/90 dark:border-gray-800 dark:bg-gray-900/90 dark:text-gray-100 appearance-none"
                       style={{
-                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                        backgroundPosition: 'right 0.5rem center',
+                        backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='14' height='14' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M5.469 5.469a.75.75 0 0 1 1.062 0L10 8.94l3.469-3.469a.75.75 0 0 1 1.062 1.062l-4 4a.75.75 0 0 1-1.062 0l-4-4a.75.75 0 0 1 0-1.062Z' fill='%236b7280'/%3e%3c/svg%3e")`,
                         backgroundRepeat: 'no-repeat',
-                        backgroundSize: '1.5em 1.5em',
+                        backgroundPosition: 'right 0.5rem center',
+                        backgroundSize: '1.5em 1.5em'
                       }}
                     >
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="monthly">Monthly</option>
-                      <option value="yearly">Yearly</option>
+                      <option value="last30days">Last 30 days</option>
+                      <option value="last3months">Last 3 months</option>
+                      <option value="last6months">Last 6 months</option>
+                      <option value="last1year">Last year</option>
+                      <option value="last3years">Last 3 years</option>
                     </select>
-                    <div className="flex items-center h-9 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
-                      <button
-                        onClick={() => handleTimeframeNavigation('prev', weightDate, setWeightDate, weightTimeframe)}
-                        disabled={isNavigationDisabled('prev', weightDate, weightTimeframe)}
-                        className={`h-full px-2 rounded-l-lg hover:bg-white dark:hover:bg-gray-600 hover:shadow-sm transition-all ${
-                          isNavigationDisabled('prev', weightDate, weightTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                      </button>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mx-4 min-w-[100px] text-center">
-                        {getTimeframeLabel(weightDate, weightTimeframe)}
-                      </span>
-                      <button
-                        onClick={() => handleTimeframeNavigation('next', weightDate, setWeightDate, weightTimeframe)}
-                        disabled={isNavigationDisabled('next', weightDate, weightTimeframe)}
-                        className={`h-full px-2 rounded-r-lg hover:bg-white dark:hover:bg-gray-600 hover:shadow-sm transition-all ${
-                          isNavigationDisabled('next', weightDate, weightTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
+                    {/* Navigation buttons removed */}
                     </div>
                   </div>
-                </div>
             <div className="h-[340px]">
                   {data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
@@ -1595,7 +1393,7 @@ export default function Home() {
                   )}
                   {!hasWeightData && !data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
-                      No weight data available for this {weightTimeframe === 'yearly' ? '5 years' : weightTimeframe === 'monthly' ? 'year' : weightTimeframe === 'weekly' ? '12 weeks' : 'month'}
+                      No weight data available for the {getTimeRangeLabel(weightTimeRange)}
                     </div>
                   )}
                   {hasWeightData && !data.loading && (
@@ -1614,21 +1412,9 @@ export default function Home() {
                           domain={[(dataMin: number) => Math.max(dataMin * 0.9, dataMin - 5), (dataMax: number) => dataMax * 1.05]} 
                           hide={true}
                         />
-                        <XAxis 
-                          dataKey="date" 
-                          tickFormatter={(date) => {
-                            const d = new Date(date);
-                            switch (weightTimeframe) {
-                              case 'daily':
-                                return d.getDate().toString();
-                              case 'weekly':
-                                return d.toLocaleString('default', { month: 'short', day: 'numeric' });
-                              case 'monthly':
-                                return d.toLocaleString('default', { month: 'short' });
-                              case 'yearly':
-                                return d.getFullYear().toString();
-                            }
-                          }}
+                  <XAxis 
+                    dataKey="date" 
+                          tickFormatter={getTickFormatter(weightTimeRange)}
                           stroke="#9CA3AF"
                           fontSize={12}
                           tickLine={false}
@@ -1638,7 +1424,7 @@ export default function Home() {
                           minTickGap={40}
                           allowDuplicatedCategory={false}
                         />
-                        <Tooltip 
+                  <Tooltip 
                           contentStyle={{ 
                             backgroundColor: 'white',
                             border: 'none',
@@ -1649,21 +1435,7 @@ export default function Home() {
                           }}
                           labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
                           cursor={{ stroke: isDarkMode ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.3)', strokeWidth: 0.7, strokeDasharray: '3 3' }}
-                          labelFormatter={(value) => {
-                            const d = new Date(value);
-                            switch (weightTimeframe) {
-                              case 'daily':
-                                return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
-                              case 'weekly':
-                                const weekEnd = new Date(d);
-                                weekEnd.setDate(d.getDate() + 6);
-                                return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
-                              case 'monthly':
-                                return d.toLocaleString('default', { month: 'long', year: 'numeric' });
-                              case 'yearly':
-                                return d.getFullYear().toString();
-                            }
-                          }}
+                          labelFormatter={getTooltipFormatter(weightTimeRange)}
                           formatter={(value: number) => [`${value} lb`]}
                         />
                         <Line
@@ -1686,50 +1458,25 @@ export default function Home() {
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Body Fat</h2>
                   <div className="flex items-center">
                     <select
-                      value={bodyFatTimeframe}
-                      onChange={(e) => setBodyFatTimeframe(e.target.value as TimeFrame)}
-                      className="mr-6 h-9 pl-3 pr-8 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-600 focus:border-indigo-400 dark:focus:border-indigo-500 appearance-none cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                      value={bodyFatTimeRange}
+                      onChange={handleBodyFatTimeRangeChange}
+                      className="text-sm border border-gray-200 rounded px-3 py-1 pr-8 bg-white/90 dark:border-gray-800 dark:bg-gray-900/90 dark:text-gray-100 appearance-none"
                       style={{
-                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                        backgroundPosition: 'right 0.5rem center',
+                        backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='14' height='14' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M5.469 5.469a.75.75 0 0 1 1.062 0L10 8.94l3.469-3.469a.75.75 0 0 1 1.062 1.062l-4 4a.75.75 0 0 1-1.062 0l-4-4a.75.75 0 0 1 0-1.062Z' fill='%236b7280'/%3e%3c/svg%3e")`,
                         backgroundRepeat: 'no-repeat',
-                        backgroundSize: '1.5em 1.5em',
+                        backgroundPosition: 'right 0.5rem center',
+                        backgroundSize: '1.5em 1.5em'
                       }}
                     >
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="monthly">Monthly</option>
-                      <option value="yearly">Yearly</option>
+                      <option value="last30days">Last 30 days</option>
+                      <option value="last3months">Last 3 months</option>
+                      <option value="last6months">Last 6 months</option>
+                      <option value="last1year">Last year</option>
+                      <option value="last3years">Last 3 years</option>
                     </select>
-                    <div className="flex items-center h-9 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
-                      <button
-                        onClick={() => handleTimeframeNavigation('prev', bodyFatDate, setBodyFatDate, bodyFatTimeframe)}
-                        disabled={isNavigationDisabled('prev', bodyFatDate, bodyFatTimeframe)}
-                        className={`h-full px-2 rounded-l-lg hover:bg-white dark:hover:bg-gray-600 hover:shadow-sm transition-all ${
-                          isNavigationDisabled('prev', bodyFatDate, bodyFatTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                      </button>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mx-4 min-w-[100px] text-center">
-                        {getTimeframeLabel(bodyFatDate, bodyFatTimeframe)}
-                      </span>
-                      <button
-                        onClick={() => handleTimeframeNavigation('next', bodyFatDate, setBodyFatDate, bodyFatTimeframe)}
-                        disabled={isNavigationDisabled('next', bodyFatDate, bodyFatTimeframe)}
-                        className={`h-full px-2 rounded-r-lg hover:bg-white dark:hover:bg-gray-600 hover:shadow-sm transition-all ${
-                          isNavigationDisabled('next', bodyFatDate, bodyFatTimeframe) ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
+                    {/* Navigation buttons removed */}
                     </div>
                   </div>
-                </div>
             <div className="h-[340px]">
                   {data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
@@ -1738,7 +1485,7 @@ export default function Home() {
                   )}
                   {!hasBodyFatData && !data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
-                      No body fat data available for this {bodyFatTimeframe === 'yearly' ? '5 years' : bodyFatTimeframe === 'monthly' ? 'year' : bodyFatTimeframe === 'weekly' ? '12 weeks' : 'month'}
+                      No body fat data available for the {getTimeRangeLabel(bodyFatTimeRange)}
                     </div>
                   )}
                   {hasBodyFatData && !data.loading && (
@@ -1757,28 +1504,16 @@ export default function Home() {
                           domain={[(dataMin: number) => Math.max(dataMin * 0.9, dataMin - 5), (dataMax: number) => dataMax * 1.05]} 
                           hide={true}
                         />
-                        <XAxis 
-                          dataKey="date" 
-                          tickFormatter={(date) => {
-                            const d = new Date(date);
-                            switch (bodyFatTimeframe) {
-                              case 'daily':
-                                return d.getDate().toString();
-                              case 'weekly':
-                                return d.toLocaleString('default', { month: 'short', day: 'numeric' });
-                              case 'monthly':
-                                return d.toLocaleString('default', { month: 'short' });
-                              case 'yearly':
-                                return d.getFullYear().toString();
-                            }
-                          }}
+                  <XAxis 
+                    dataKey="date" 
+                          tickFormatter={getTickFormatter(bodyFatTimeRange)}
                           stroke="#9CA3AF"
                           fontSize={12}
                           tickLine={false}
                           axisLine={false}
                           dy={12}
                         />
-                        <Tooltip 
+                  <Tooltip 
                           contentStyle={{ 
                             backgroundColor: 'white',
                             border: 'none',
@@ -1788,21 +1523,7 @@ export default function Home() {
                             padding: '8px'
                           }}
                           labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
-                          labelFormatter={(value) => {
-                            const d = new Date(value);
-                            switch (bodyFatTimeframe) {
-                              case 'daily':
-                                return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
-                              case 'weekly':
-                                const weekEnd = new Date(d);
-                                weekEnd.setDate(d.getDate() + 6);
-                                return `Week of ${d.toLocaleString('default', { month: 'long', day: 'numeric' })} - ${weekEnd.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' })}`;
-                              case 'monthly':
-                                return d.toLocaleString('default', { month: 'long', year: 'numeric' });
-                              case 'yearly':
-                                return d.getFullYear().toString();
-                            }
-                          }}
+                          labelFormatter={getTooltipFormatter(bodyFatTimeRange)}
                           formatter={(value: number) => [`${value}%`]}
                         />
                         <Line
