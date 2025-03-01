@@ -656,10 +656,10 @@ export default function BloodMarkerHistory() {
                 return (
                   <tr 
                     key={`${item.name}-${item.date}-${idx}`} 
-                    className={`${rowBgClass} ${selectionClass}`}
+                    className={`${selectionClass} hover:bg-gray-100 dark:hover:bg-gray-700/50`}
                   >
                     {/* Checkbox for row selection */}
-                    <td className="px-2 py-4">
+                    <td className={`px-2 py-4 ${rowBgClass}`}>
                       <div className="flex items-center justify-center">
                         <input
                           type="checkbox"
@@ -669,22 +669,22 @@ export default function BloodMarkerHistory() {
                         />
                       </div>
                     </td>
-                    <td className={`sticky left-0 z-10 px-3 py-4 text-sm font-medium text-gray-900 dark:text-white ${rowBgClass} truncate`}>
+                    <td className={`sticky left-0 z-10 px-3 py-4 text-sm font-medium text-gray-900 dark:text-white truncate ${rowBgClass}`}>
                       {item.name}
                     </td>
-                    <td className="px-3 py-4 text-sm text-gray-500 dark:text-gray-400 truncate">
+                    <td className={`px-3 py-4 text-sm text-gray-900 dark:text-white truncate ${rowBgClass}`}>
                       {item.category}
                     </td>
-                    <td className="px-3 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">
+                    <td className={`px-3 py-4 text-sm text-gray-900 dark:text-white text-center ${rowBgClass}`}>
                       {item.unit}
                     </td>
-                    <td className="px-3 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    <td className={`px-3 py-4 text-sm text-gray-900 dark:text-white ${rowBgClass}`}>
                       {formatDate(item.date)}
                     </td>
-                    <td className="px-3 py-4 text-sm font-medium text-gray-900 dark:text-white text-center">
+                    <td className={`px-3 py-4 text-sm text-gray-900 dark:text-white text-center ${rowBgClass}`}>
                       {item.value}
                     </td>
-                    <td className="px-3 py-4 text-sm">
+                    <td className={`px-3 py-4 text-sm ${rowBgClass}`}>
                       <div className="flex justify-end space-x-2">
                         <button 
                           onClick={() => {
