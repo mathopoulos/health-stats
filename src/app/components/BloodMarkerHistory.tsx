@@ -46,8 +46,8 @@ export default function BloodMarkerHistory() {
   const [selectedBiomarkers, setSelectedBiomarkers] = useState<Set<string>>(new Set());
   
   // Add state for sorting
-  const [sortColumn, setSortColumn] = useState<SortColumn>('name');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [sortColumn, setSortColumn] = useState<SortColumn>('date');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   
   // Confirmation dialog states
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
