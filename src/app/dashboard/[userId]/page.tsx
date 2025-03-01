@@ -920,7 +920,13 @@ export default function Home() {
       <div className="w-[120px] h-[35px] bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-100 dark:border-gray-700 px-2">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data.slice(-3)} margin={{ top: 3, right: 3, bottom: 3, left: 3 }}>
-            <CartesianGrid stroke={isDarkMode ? "rgba(75, 85, 99, 0.3)" : "rgba(156, 163, 175, 0.35)"} strokeWidth={0.75} strokeDasharray="4 4" horizontal={true} vertical={false} />
+            <CartesianGrid 
+              stroke={isDarkMode ? "rgba(75, 85, 99, 0.4)" : "rgba(156, 163, 175, 0.45)"} 
+              strokeWidth={0.75} 
+              strokeDasharray="4 4" 
+              horizontal={true} 
+              vertical={false} 
+            />
             <YAxis hide={false} tick={false} axisLine={false} tickLine={false} width={0} tickCount={5} />
             <Line
               type="natural"
@@ -931,7 +937,7 @@ export default function Home() {
             />
           </LineChart>
         </ResponsiveContainer>
-            </div>
+      </div>
     );
   };
 
@@ -1335,7 +1341,7 @@ export default function Home() {
                         style={{ userSelect: 'none' }}
                       >
                         <CartesianGrid 
-                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.3)" : "rgba(156, 163, 175, 0.35)"}
+                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.4)" : "rgba(156, 163, 175, 0.45)"}
                           strokeWidth={0.75}
                           strokeDasharray="4 4" 
                           vertical={false}
@@ -1347,7 +1353,7 @@ export default function Home() {
                           stroke="#9CA3AF"
                           fontSize={12}
                           width={40}
-                          tick={false}
+                          tickFormatter={() => ''}
                           tickCount={10}
                           scale="linear"
                           allowDataOverflow={false}
@@ -1428,7 +1434,7 @@ export default function Home() {
                         style={{ userSelect: 'none' }}
                       >
                         <CartesianGrid 
-                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.3)" : "rgba(156, 163, 175, 0.35)"}
+                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.4)" : "rgba(156, 163, 175, 0.45)"}
                           strokeWidth={0.75}
                           strokeDasharray="4 4" 
                           vertical={false}
@@ -1440,7 +1446,7 @@ export default function Home() {
                           stroke="#9CA3AF"
                           fontSize={12}
                           width={40}
-                          tick={false}
+                          tickFormatter={() => ''}
                           tickCount={10}
                           scale="linear"
                           allowDataOverflow={false}
@@ -1521,7 +1527,7 @@ export default function Home() {
                         style={{ userSelect: 'none' }}
                       >
                         <CartesianGrid 
-                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.3)" : "rgba(156, 163, 175, 0.35)"}
+                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.4)" : "rgba(156, 163, 175, 0.45)"}
                           strokeWidth={0.75}
                           strokeDasharray="4 4" 
                           vertical={false}
@@ -1533,7 +1539,7 @@ export default function Home() {
                           stroke="#9CA3AF"
                           fontSize={12}
                           width={40}
-                          tick={false}
+                          tickFormatter={() => ''}
                           tickCount={10}
                           scale="linear"
                           allowDataOverflow={false}
@@ -1614,7 +1620,7 @@ export default function Home() {
                         style={{ userSelect: 'none' }}
                       >
                         <CartesianGrid 
-                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.3)" : "rgba(156, 163, 175, 0.35)"}
+                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.4)" : "rgba(156, 163, 175, 0.45)"}
                           strokeWidth={0.75}
                           strokeDasharray="4 4" 
                           vertical={false}
@@ -1626,7 +1632,7 @@ export default function Home() {
                           stroke="#9CA3AF"
                           fontSize={12}
                           width={40}
-                          tick={false}
+                          tickFormatter={() => ''}
                           tickCount={10}
                           scale="linear"
                           allowDataOverflow={false}
