@@ -183,6 +183,12 @@ export default function Home() {
                         <stop offset="100%" stopColor="#6366F1" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
+                    <CartesianGrid 
+                      stroke="rgba(75, 85, 99, 0.18)"
+                      strokeWidth={0.5}
+                      strokeDasharray="0" 
+                      vertical={false} 
+                    />
                         <Tooltip
                       content={<CustomTooltip valueLabel="HRV" />}
                       cursor={{ stroke: '#4B5563', strokeWidth: 1, strokeDasharray: '4 4' }}
@@ -222,6 +228,12 @@ export default function Home() {
                         <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
+                    <CartesianGrid 
+                      stroke="rgba(75, 85, 99, 0.18)"
+                      strokeWidth={0.5}
+                      strokeDasharray="0" 
+                      vertical={false} 
+                    />
                         <Tooltip
                       content={<CustomTooltip valueLabel="VO2 Max" />}
                       cursor={{ stroke: '#4B5563', strokeWidth: 1, strokeDasharray: '4 4' }}

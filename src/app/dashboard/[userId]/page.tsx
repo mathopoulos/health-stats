@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Image from 'next/image';
 import AddResultsModal from '@/app/components/AddResultsModal';
@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import Head from 'next/head';
 import toast, { Toaster } from 'react-hot-toast';
 import ThemeToggle from '@/app/components/ThemeToggle';
+import { useTheme } from '@/app/context/ThemeContext';
 
 interface HealthData {
   date: string;
@@ -192,6 +193,8 @@ export default function Home() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const userId = searchParams?.get('userId') || session?.user?.id;
   const [data, setData] = useState<ChartData>({
     heartRate: [],
@@ -1314,7 +1317,12 @@ export default function Home() {
                         data={currentHRVData}
                         margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
                       >
-                        <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
+                        <CartesianGrid 
+                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.18)" : "rgba(156, 163, 175, 0.2)"}
+                          strokeWidth={0.5}
+                          strokeDasharray="0" 
+                          vertical={false} 
+                        />
                   <XAxis 
                     dataKey="date" 
                           tickFormatter={(date) => {
@@ -1453,7 +1461,12 @@ export default function Home() {
                         data={currentVO2MaxData}
                         margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
                       >
-                        <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
+                        <CartesianGrid 
+                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.18)" : "rgba(156, 163, 175, 0.2)"}
+                          strokeWidth={0.5}
+                          strokeDasharray="0" 
+                          vertical={false} 
+                        />
                   <XAxis 
                     dataKey="date" 
                           tickFormatter={(date) => {
@@ -1591,7 +1604,12 @@ export default function Home() {
                         data={currentWeightData}
                         margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
                       >
-                        <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
+                        <CartesianGrid 
+                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.18)" : "rgba(156, 163, 175, 0.2)"}
+                          strokeWidth={0.5}
+                          strokeDasharray="0" 
+                          vertical={false} 
+                        />
                   <XAxis 
                     dataKey="date" 
                           tickFormatter={(date) => {
@@ -1729,7 +1747,12 @@ export default function Home() {
                         data={currentBodyFatData}
                         margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
                       >
-                        <CartesianGrid stroke="#E5E7EB" strokeDasharray="1 4" vertical={false} />
+                        <CartesianGrid 
+                          stroke={isDarkMode ? "rgba(75, 85, 99, 0.18)" : "rgba(156, 163, 175, 0.2)"}
+                          strokeWidth={0.5}
+                          strokeDasharray="0" 
+                          vertical={false} 
+                        />
                   <XAxis 
                     dataKey="date" 
                           tickFormatter={(date) => {
