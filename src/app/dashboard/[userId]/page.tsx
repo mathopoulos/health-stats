@@ -1193,9 +1193,9 @@ export default function Home() {
                     <select
                       value={hrvTimeRange}
                       onChange={handleHRVTimeRangeChange}
-                      className="text-sm border border-gray-200 rounded px-3 py-1 pr-8 bg-white/90 dark:border-gray-800 dark:bg-gray-900/90 dark:text-gray-100 appearance-none"
+                      className="text-sm font-medium border border-gray-200 rounded-md px-3 py-2 pr-9 bg-white/90 dark:border-gray-700 dark:bg-gray-800/90 dark:text-gray-100 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800"
                       style={{
-                        backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='14' height='14' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M5.469 5.469a.75.75 0 0 1 1.062 0L10 8.94l3.469-3.469a.75.75 0 0 1 1.062 1.062l-4 4a.75.75 0 0 1-1.062 0l-4-4a.75.75 0 0 1 0-1.062Z' fill='%236b7280'/%3e%3c/svg%3e")`,
+                        backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M4.94 5.72a.75.75 0 0 0-1.06 1.06l3.83 3.83a.75.75 0 0 0 1.06 0l3.83-3.83a.75.75 0 0 0-1.06-1.06L8 9.28 4.94 5.72z' fill='%236b7280'/%3e%3c/svg%3e")`,
                         backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'right 0.5rem center',
                         backgroundSize: '1.5em 1.5em'
@@ -1276,9 +1276,9 @@ export default function Home() {
                     <select
                       value={vo2maxTimeRange}
                       onChange={handleVO2MaxTimeRangeChange}
-                      className="text-sm border border-gray-200 rounded px-3 py-1 pr-8 bg-white/90 dark:border-gray-800 dark:bg-gray-900/90 dark:text-gray-100 appearance-none"
+                      className="text-sm font-medium border border-gray-200 rounded-md px-3 py-2 pr-9 bg-white/90 dark:border-gray-700 dark:bg-gray-800/90 dark:text-gray-100 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800"
                       style={{
-                        backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='14' height='14' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M5.469 5.469a.75.75 0 0 1 1.062 0L10 8.94l3.469-3.469a.75.75 0 0 1 1.062 1.062l-4 4a.75.75 0 0 1-1.062 0l-4-4a.75.75 0 0 1 0-1.062Z' fill='%236b7280'/%3e%3c/svg%3e")`,
+                        backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M4.94 5.72a.75.75 0 0 0-1.06 1.06l3.83 3.83a.75.75 0 0 0 1.06 0l3.83-3.83a.75.75 0 0 0-1.06-1.06L8 9.28 4.94 5.72z' fill='%236b7280'/%3e%3c/svg%3e")`,
                         backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'right 0.5rem center',
                         backgroundSize: '1.5em 1.5em'
@@ -1317,7 +1317,7 @@ export default function Home() {
                           vertical={false}
                         />
                         <YAxis 
-                          domain={[(dataMin: number) => Math.max(dataMin * 0.9, dataMin - 2), (dataMax: number) => dataMax * 1.05]} 
+                          domain={[(dataMin: number) => Math.max(dataMin * 0.9, dataMin - 1), (dataMax: number) => dataMax * 1.05]} 
                           hide={true}
                         />
                   <XAxis 
@@ -1333,26 +1333,17 @@ export default function Home() {
                           allowDuplicatedCategory={false}
                         />
                   <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            fontSize: '12px',
-                            padding: '8px'
-                          }}
-                          labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
-                          cursor={{ stroke: isDarkMode ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.3)', strokeWidth: 0.7, strokeDasharray: '3 3' }}
-                          labelFormatter={getTooltipFormatter(vo2maxTimeRange)}
-                          formatter={(value: number) => [`${value} mL/kg·min`]}
+                          content={(props) => renderCustomTooltip({ ...props, timeRange: vo2maxTimeRange })}
                         />
-                        <Line
+                        <Line 
                           type="monotone"
-                          dataKey="value"
-                          stroke="#8B5CF6"
-                          strokeWidth={1.5}
-                          dot={false}
-                          activeDot={{ r: 3, fill: '#8B5CF6', strokeWidth: 1, stroke: '#7C3AED' }}
+                          dataKey="value" 
+                          stroke={isDarkMode ? "#f87171" : "#dc2626"} 
+                          activeDot={{ r: 6, stroke: isDarkMode ? "#f87171" : "#dc2626", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
+                          dot={{ r: 0 }}
+                          strokeWidth={2}
+                          isAnimationActive={false}
+                          unit="ml/kg/min"
                         />
                 </LineChart>
               </ResponsiveContainer>
@@ -1368,9 +1359,9 @@ export default function Home() {
                     <select
                       value={weightTimeRange}
                       onChange={handleWeightTimeRangeChange}
-                      className="text-sm border border-gray-200 rounded px-3 py-1 pr-8 bg-white/90 dark:border-gray-800 dark:bg-gray-900/90 dark:text-gray-100 appearance-none"
+                      className="text-sm font-medium border border-gray-200 rounded-md px-3 py-2 pr-9 bg-white/90 dark:border-gray-700 dark:bg-gray-800/90 dark:text-gray-100 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800"
                       style={{
-                        backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='14' height='14' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M5.469 5.469a.75.75 0 0 1 1.062 0L10 8.94l3.469-3.469a.75.75 0 0 1 1.062 1.062l-4 4a.75.75 0 0 1-1.062 0l-4-4a.75.75 0 0 1 0-1.062Z' fill='%236b7280'/%3e%3c/svg%3e")`,
+                        backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M4.94 5.72a.75.75 0 0 0-1.06 1.06l3.83 3.83a.75.75 0 0 0 1.06 0l3.83-3.83a.75.75 0 0 0-1.06-1.06L8 9.28 4.94 5.72z' fill='%236b7280'/%3e%3c/svg%3e")`,
                         backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'right 0.5rem center',
                         backgroundSize: '1.5em 1.5em'
@@ -1425,26 +1416,17 @@ export default function Home() {
                           allowDuplicatedCategory={false}
                         />
                   <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            fontSize: '12px',
-                            padding: '8px'
-                          }}
-                          labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
-                          cursor={{ stroke: isDarkMode ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.3)', strokeWidth: 0.7, strokeDasharray: '3 3' }}
-                          labelFormatter={getTooltipFormatter(weightTimeRange)}
-                          formatter={(value: number) => [`${value} lb`]}
+                          content={(props) => renderCustomTooltip({ ...props, timeRange: weightTimeRange })}
                         />
-                        <Line
+                        <Line 
                           type="monotone"
-                          dataKey="value"
-                          stroke="#10B981"
-                          strokeWidth={1.5}
-                          dot={false}
-                          activeDot={{ r: 3, fill: '#10B981', strokeWidth: 1, stroke: '#059669' }}
+                          dataKey="value" 
+                          stroke={isDarkMode ? "#10b981" : "#059669"} 
+                          activeDot={{ r: 6, stroke: isDarkMode ? "#10b981" : "#059669", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
+                          dot={{ r: 0 }}
+                          strokeWidth={2}
+                          isAnimationActive={false}
+                          unit="kg"
                         />
                 </LineChart>
               </ResponsiveContainer>
@@ -1460,9 +1442,9 @@ export default function Home() {
                     <select
                       value={bodyFatTimeRange}
                       onChange={handleBodyFatTimeRangeChange}
-                      className="text-sm border border-gray-200 rounded px-3 py-1 pr-8 bg-white/90 dark:border-gray-800 dark:bg-gray-900/90 dark:text-gray-100 appearance-none"
+                      className="text-sm font-medium border border-gray-200 rounded-md px-3 py-2 pr-9 bg-white/90 dark:border-gray-700 dark:bg-gray-800/90 dark:text-gray-100 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800"
                       style={{
-                        backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='14' height='14' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M5.469 5.469a.75.75 0 0 1 1.062 0L10 8.94l3.469-3.469a.75.75 0 0 1 1.062 1.062l-4 4a.75.75 0 0 1-1.062 0l-4-4a.75.75 0 0 1 0-1.062Z' fill='%236b7280'/%3e%3c/svg%3e")`,
+                        backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M4.94 5.72a.75.75 0 0 0-1.06 1.06l3.83 3.83a.75.75 0 0 0 1.06 0l3.83-3.83a.75.75 0 0 0-1.06-1.06L8 9.28 4.94 5.72z' fill='%236b7280'/%3e%3c/svg%3e")`,
                         backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'right 0.5rem center',
                         backgroundSize: '1.5em 1.5em'
@@ -1501,7 +1483,7 @@ export default function Home() {
                           vertical={false}
                         />
                         <YAxis 
-                          domain={[(dataMin: number) => Math.max(dataMin * 0.9, dataMin - 5), (dataMax: number) => dataMax * 1.05]} 
+                          domain={[(dataMin: number) => Math.max(0, dataMin * 0.9), (dataMax: number) => dataMax * 1.05]} 
                           hide={true}
                         />
                   <XAxis 
@@ -1512,27 +1494,22 @@ export default function Home() {
                           tickLine={false}
                           axisLine={false}
                           dy={12}
+                          interval="preserveStart"
+                          minTickGap={40}
+                          allowDuplicatedCategory={false}
                         />
                   <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            fontSize: '12px',
-                            padding: '8px'
-                          }}
-                          labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
-                          labelFormatter={getTooltipFormatter(bodyFatTimeRange)}
-                          formatter={(value: number) => [`${value}%`]}
+                          content={(props) => renderCustomTooltip({ ...props, timeRange: bodyFatTimeRange })}
                         />
-                        <Line
+                        <Line 
                           type="monotone"
-                          dataKey="value"
-                          stroke="#F59E0B"
-                          strokeWidth={1.5}
-                          dot={false}
-                          activeDot={{ r: 3, fill: '#F59E0B', strokeWidth: 1, stroke: '#D97706' }}
+                          dataKey="value" 
+                          stroke={isDarkMode ? "#fbbf24" : "#d97706"} 
+                          activeDot={{ r: 6, stroke: isDarkMode ? "#fbbf24" : "#d97706", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
+                          dot={{ r: 0 }}
+                          strokeWidth={2}
+                          isAnimationActive={false}
+                          unit="%"
                         />
                 </LineChart>
               </ResponsiveContainer>
