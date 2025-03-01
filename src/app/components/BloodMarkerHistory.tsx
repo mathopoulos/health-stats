@@ -610,50 +610,53 @@ export default function BloodMarkerHistory() {
       )}
       
       {/* Table View */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                {/* Checkbox column for select all */}
-                <th scope="col" className="px-2 py-3">
-                  <div className="flex items-center justify-center">
-                    <input
-                      type="checkbox"
-                      className="h-3.5 w-3.5 text-indigo-500 focus:ring-indigo-400 focus:ring-opacity-50 focus:ring-offset-0 border-gray-300 dark:border-gray-600 rounded cursor-pointer"
-                      checked={filteredData.length > 0 && selectedBiomarkers.size === filteredData.length}
-                      onChange={toggleSelectAll}
-                    />
-                  </div>
-                </th>
-                <th scope="col" className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-700 px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Biomarker
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Category
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Unit
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Date
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Value
-                </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredData.length > 0 ? (
-                filteredData.map((item, idx) => (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+        <table className="w-full divide-y divide-gray-200 dark:divide-gray-700 table-fixed">
+          <thead className="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              {/* Checkbox column for select all */}
+              <th scope="col" className="w-[5%] px-2 py-3">
+                <div className="flex items-center justify-center">
+                  <input
+                    type="checkbox"
+                    className="h-3.5 w-3.5 text-indigo-500 focus:ring-indigo-400 focus:ring-opacity-50 focus:ring-offset-0 border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+                    checked={filteredData.length > 0 && selectedBiomarkers.size === filteredData.length}
+                    onChange={toggleSelectAll}
+                  />
+                </div>
+              </th>
+              <th scope="col" className="w-[22%] sticky left-0 z-10 bg-gray-50 dark:bg-gray-700 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Biomarker
+              </th>
+              <th scope="col" className="w-[22%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Category
+              </th>
+              <th scope="col" className="w-[10%] px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Unit
+              </th>
+              <th scope="col" className="w-[15%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Date
+              </th>
+              <th scope="col" className="w-[13%] px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Value
+              </th>
+              <th scope="col" className="w-[13%] px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Act
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            {filteredData.length > 0 ? (
+              filteredData.map((item, idx) => {
+                // Check if the row has the same background as its index would suggest
+                const rowBgClass = idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/30';
+                // Add selection highlight if selected
+                const selectionClass = isSelected(item) ? 'bg-indigo-50 dark:bg-indigo-900/20' : '';
+                
+                return (
                   <tr 
                     key={`${item.name}-${item.date}-${idx}`} 
-                    className={`${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/30'} ${
-                      isSelected(item) ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
-                    }`}
+                    className={`${rowBgClass} ${selectionClass}`}
                   >
                     {/* Checkbox for row selection */}
                     <td className="px-2 py-4">
@@ -666,22 +669,22 @@ export default function BloodMarkerHistory() {
                         />
                       </div>
                     </td>
-                    <td className="sticky left-0 z-10 px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white bg-white dark:bg-gray-800">
+                    <td className={`sticky left-0 z-10 px-3 py-4 text-sm font-medium text-gray-900 dark:text-white ${rowBgClass} truncate`}>
                       {item.name}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-3 py-4 text-sm text-gray-500 dark:text-gray-400 truncate">
                       {item.category}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-3 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">
                       {item.unit}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                    <td className="px-3 py-4 text-sm text-gray-700 dark:text-gray-300">
                       {formatDate(item.date)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    <td className="px-3 py-4 text-sm font-medium text-gray-900 dark:text-white text-center">
                       {item.value}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                    <td className="px-3 py-4 text-sm">
                       <div className="flex justify-end space-x-2">
                         <button 
                           onClick={() => {
@@ -689,6 +692,7 @@ export default function BloodMarkerHistory() {
                             if (entry) handleEditEntry(entry);
                           }}
                           className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                          aria-label="Edit"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -697,6 +701,7 @@ export default function BloodMarkerHistory() {
                         <button 
                           onClick={() => handleDeleteSingleMarker(item.entryId, item.name)}
                           className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                          aria-label="Delete"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -705,23 +710,23 @@ export default function BloodMarkerHistory() {
                       </div>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                    No blood markers match your filter criteria.
-                    <button 
-                      onClick={clearFilters}
-                      className="ml-2 text-indigo-500 dark:text-indigo-400 hover:underline"
-                    >
-                      Clear filters
-                    </button>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                  No blood markers match your filter criteria.
+                  <button 
+                    onClick={clearFilters}
+                    className="ml-2 text-indigo-500 dark:text-indigo-400 hover:underline"
+                  >
+                    Clear filters
+                  </button>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
       
       {/* Edit Modal */}
