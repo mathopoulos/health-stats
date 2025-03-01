@@ -16,6 +16,11 @@ interface BloodMarker {
   category: string;
 }
 
+interface DateGroup {
+  testDate: string;
+  markers: BloodMarker[];
+}
+
 export default function BloodTestUpload() {
   const router = useRouter();
   const { data: session } = useSession();
@@ -25,6 +30,8 @@ export default function BloodTestUpload() {
   const [extractedMarkers, setExtractedMarkers] = useState<BloodMarker[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [extractedDate, setExtractedDate] = useState<string | null>(null);
+  const [dateGroups, setDateGroups] = useState<DateGroup[]>([]);
+  const [hasMultipleDates, setHasMultipleDates] = useState(false);
 
   // Initialize PDF.js
   useEffect(() => {
@@ -40,12 +47,21 @@ export default function BloodTestUpload() {
     setExtractedMarkers([]);
     setShowPreview(false);
     setExtractedDate(null);
+    setDateGroups([]);
+    setHasMultipleDates(false);
   }, []);
 
-  const handleSaveMarkers = async (markers: BloodMarker[], testDate: Date) => {
+  const handleSaveMarkers = async (markers: BloodMarker[], date: Date) => {
+    if (!session?.user?.id) {
+      toast.error('You must be logged in to save blood markers');
+      signIn();
+      return;
+    }
+
     try {
-      // Filter out markers with null or undefined values
-      const validMarkers = markers.filter(marker => marker.value !== null && marker.value !== undefined);
+      const dateISOString = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      
+      console.log('Saving blood markers:', markers.length, 'Date:', dateISOString);
       
       const response = await fetch('/api/blood-markers', {
         method: 'POST',
@@ -53,33 +69,22 @@ export default function BloodTestUpload() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          date: testDate,
-          markers: validMarkers.map(marker => ({
-            name: marker.name,
-            value: marker.value,
-            unit: marker.unit,
-            category: marker.category
-          }))
+          markers,
+          date: dateISOString,
         }),
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to save blood markers');
+        const data = await response.json();
+        throw new Error(data.error || `Failed to save with status ${response.status}`);
       }
 
       toast.success('Blood markers saved successfully');
-      
-      // Dispatch a custom event to notify the BloodMarkerHistory component that new data has been added
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('bloodMarkerAdded'));
-      }
-      
-      router.refresh(); // Refresh the page data
+      // We stay on the current page instead of redirecting to the dashboard
+      // The modal will close automatically via the onClose call in BloodMarkerPreview's handleSave function
     } catch (error) {
       console.error('Error saving blood markers:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to save blood markers');
-      throw error;
     }
   };
 
@@ -90,10 +95,11 @@ export default function BloodTestUpload() {
       let fullText = '';
       
       for (let i = 1; i <= pdf.numPages; i++) {
+        setUploadProgress(`Extracting text from page ${i} of ${pdf.numPages}`);
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
         const pageText = textContent.items
-          .map((item: any) => item.str)
+          .map(item => ('str' in item ? item.str : ''))
           .join(' ');
         fullText += pageText + '\n';
       }
@@ -106,36 +112,23 @@ export default function BloodTestUpload() {
   };
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (acceptedFiles.length === 0) return;
+
     const file = acceptedFiles[0];
-    if (!file) return;
-
-    // Check if user is authenticated
-    if (!session) {
-      toast.error('Please sign in to upload files');
-      signIn();
-      return;
-    }
-
     if (file.type !== 'application/pdf') {
       toast.error('Please upload a PDF file');
-      resetUpload();
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) { // 10MB
-      toast.error('File size must be less than 10MB');
-      resetUpload();
       return;
     }
 
     setIsUploading(true);
-    setUploadProgress('Processing blood test...');
+    setUploadProgress('Preparing PDF file...');
 
     try {
-      // Extract text from PDF on the client side
       const extractedText = await extractTextFromPdf(file);
       
-      // Send only the extracted text to the API
+      setUploadProgress('Processing blood test results...');
+      
+      console.log('📤 Sending PDF text to API for processing...');
       const response = await fetch('/api/pdf', {
         method: 'POST',
         headers: {
@@ -167,6 +160,8 @@ export default function BloodTestUpload() {
         // Log and validate the date before setting state
         console.log('📥 Raw testDate from API:', data.testDate);
         console.log('📥 testDate type:', typeof data.testDate);
+        console.log('📥 Multiple dates detected:', data.hasMultipleDates);
+        console.log('📥 Date groups count:', data.dateGroups?.length || 0);
         
         // Ensure the date is a properly formatted ISO string if present
         if (data.testDate && typeof data.testDate === 'string') {
@@ -183,7 +178,7 @@ export default function BloodTestUpload() {
                 console.warn('📥 Could not fix date to proper format:', fixedDate);
               }
             } catch (e) {
-              console.error('�� Failed to fix date format:', e);
+              console.error(' Failed to fix date format:', e);
             }
           } else {
             console.log('📥 testDate is in proper ISO format');
@@ -197,32 +192,36 @@ export default function BloodTestUpload() {
         setExtractedMarkers(data.markers);
         console.log('📥 Setting extractedDate to:', data.testDate);
         setExtractedDate(data.testDate);
+        
+        // Handle multiple date groups if present
+        if (data.dateGroups && Array.isArray(data.dateGroups) && data.dateGroups.length > 0) {
+          console.log('📥 Setting date groups:', data.dateGroups.length);
+          setDateGroups(data.dateGroups);
+          setHasMultipleDates(data.hasMultipleDates || data.dateGroups.length > 1);
+        }
+        
         console.log('📥 State after setting extractedDate, value is:', data.testDate);
         setShowPreview(true);
         
-        // Provide feedback about the date extraction
-        if (data.testDate) {
+        // Provide feedback about the extraction
+        if (data.hasMultipleDates) {
+          toast.success(`Found ${data.dateGroups.length} test dates with blood markers`);
+        } else if (data.testDate) {
           toast.success('Blood markers and test date extracted successfully');
         } else {
           toast.success('Blood markers extracted successfully');
-          toast('No test date was found. Please set the date manually.', {
-            icon: '⚠️',
-            duration: 5000
-          });
         }
       } else {
-        toast('No blood markers were found in the PDF', {
-          icon: '⚠️'
-        });
+        toast.error('No blood markers found in the PDF');
       }
     } catch (error) {
-      console.error('Error processing blood test:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to process blood test');
-      resetUpload();
+      console.error('Error processing PDF:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to process PDF');
     } finally {
       setIsUploading(false);
+      setUploadProgress('');
     }
-  }, [resetUpload, session, router]);
+  }, [signIn]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -231,65 +230,85 @@ export default function BloodTestUpload() {
     },
     maxFiles: 1,
     disabled: isUploading,
-    noClick: isUploading,
-    noDrag: isUploading,
   });
 
   return (
     <>
-      <div className="space-y-8">
-        {/* Upload section */}
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            Upload Blood Test PDF
-          </h2>
-          <div
-            {...getRootProps()}
-            className={`border-2 border-dashed rounded-lg p-8 text-center ${
-              isDragActive
-                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-                : 'border-gray-300 dark:border-gray-700'
-            } ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-          >
-            <input {...getInputProps()} key={fileKey} />
-            <div className="space-y-4">
-              {isUploading ? (
-                <>
-                  <div className="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
-                    <div className="h-full bg-indigo-500 animate-progress"></div>
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {uploadProgress}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <div className="flex justify-center">
-                    <svg
-                      className="w-12 h-12 text-gray-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
+      <div className="w-full mx-auto">
+        <div
+          {...getRootProps()}
+          className={`border-2 border-dashed rounded-lg p-6 text-center transition ${
+            isUploading
+              ? 'bg-gray-100 dark:bg-gray-800/50 border-gray-300 dark:border-gray-700 cursor-not-allowed'
+              : isDragActive
+              ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-300 dark:border-indigo-700'
+              : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+          }`}
+        >
+          <input {...getInputProps()} disabled={isUploading} key={fileKey} />
+          <div className="space-y-4">
+            {isUploading ? (
+              <>
+                <div className="flex justify-center">
+                  <svg
+                    className="animate-spin h-10 w-10 text-indigo-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
                       stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-base text-gray-600 dark:text-gray-400">
-                      Drop your blood test PDF here, or click to select
-                    </p>
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-base text-gray-600 dark:text-gray-400">
+                    Processing PDF...
+                  </p>
+                  {uploadProgress && (
                     <p className="text-sm text-gray-500 dark:text-gray-500">
-                      PDF file up to 10MB
+                      {uploadProgress}
                     </p>
-                  </div>
-                </>
-              )}
-            </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex justify-center">
+                  <svg
+                    className="w-12 h-12 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-base text-gray-600 dark:text-gray-400">
+                    Drop your blood test PDF here, or click to select
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-500">
+                    PDF file up to 10MB
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -303,6 +322,7 @@ export default function BloodTestUpload() {
         markers={extractedMarkers}
         onSave={handleSaveMarkers}
         initialDate={extractedDate}
+        dateGroups={dateGroups}
       />
     </>
   );

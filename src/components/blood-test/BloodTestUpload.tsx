@@ -13,11 +13,18 @@ interface BloodMarker {
   category: string;
 }
 
+interface DateGroup {
+  testDate: string;
+  markers: BloodMarker[];
+}
+
 export function BloodTestUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [extractedData, setExtractedData] = useState<{
     markers: BloodMarker[];
     testDate: string | null;
+    dateGroups?: DateGroup[];
+    hasMultipleDates?: boolean;
   } | null>(null);
 
   // Initialize PDF.js worker
@@ -79,7 +86,19 @@ export function BloodTestUpload() {
       if (data.success) {
         console.log('📥 Received data from API:', data);
         console.log('📥 Raw test date from API:', data.testDate);
-        console.log('📥 Test date type:', typeof data.testDate);
+        console.log('📥 Multiple dates detected:', data.hasMultipleDates);
+        
+        if (data.dateGroups && data.dateGroups.length > 0) {
+          console.log('📥 Date groups:', data.dateGroups.length);
+          console.log('📥 First date group sample:', data.dateGroups[0]);
+        }
+        
+        // Check if we have any markers
+        if (data.markers && data.markers.length === 0 && 
+           (!data.dateGroups || data.dateGroups.length === 0)) {
+          toast.error('No blood markers could be extracted from this PDF. Please try another file or format.');
+          return;
+        }
         
         // Ensure the date is properly formatted
         let finalDate = data.testDate;
@@ -108,11 +127,15 @@ export function BloodTestUpload() {
         console.log('📥 Final date to be set in state:', finalDate);
         setExtractedData({
           markers: data.markers,
-          testDate: finalDate
+          testDate: finalDate,
+          dateGroups: data.dateGroups || [],
+          hasMultipleDates: data.hasMultipleDates || false
         });
         
-        // Provide feedback about the date extraction
-        if (data.testDate) {
+        // Provide feedback about the extraction
+        if (data.hasMultipleDates) {
+          toast.success(`Found ${data.dateGroups.length} test dates with blood markers`);
+        } else if (data.testDate) {
           toast.success('Blood markers and test date extracted successfully');
         } else {
           toast.success('Blood markers extracted successfully, but no test date found');
@@ -123,7 +146,8 @@ export function BloodTestUpload() {
       }
     } catch (error) {
       console.error('Error processing PDF:', error);
-      toast.error('Failed to process PDF file. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to process PDF file';
+      toast.error(`${errorMessage}. Please try uploading a different file or contact support if the issue persists.`);
     } finally {
       setIsUploading(false);
     }
@@ -136,6 +160,21 @@ export function BloodTestUpload() {
     },
     maxFiles: 1,
   });
+  
+  // Create a preview message based on extraction results
+  const getPreviewMessage = () => {
+    if (!extractedData) return '';
+    
+    if (extractedData.hasMultipleDates && extractedData.dateGroups?.length) {
+      return `Found ${extractedData.dateGroups.length} test dates with a total of ${
+        extractedData.dateGroups.reduce((sum, group) => sum + group.markers.length, 0)
+      } blood markers`;
+    }
+    
+    return `Found ${extractedData.markers.length} blood markers${
+      extractedData.testDate ? ` from ${new Date(extractedData.testDate).toLocaleDateString()}` : ''
+    }`;
+  };
 
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -176,44 +215,29 @@ export function BloodTestUpload() {
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
               Extracted Blood Markers
             </h3>
-            {extractedData.testDate && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                Test Date: {new Date(extractedData.testDate).toLocaleDateString()}
-              </p>
-            )}
-            <div className="space-y-4">
-              {extractedData.markers.map((marker, index) => (
-                <div key={index} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white">{marker.name}</h4>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{marker.category}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className={`font-medium ${
-                      marker.flag === 'High' ? 'text-red-500' :
-                      marker.flag === 'Low' ? 'text-yellow-500' :
-                      'text-gray-900 dark:text-white'
-                    }`}>
-                      {marker.value} {marker.unit}
-                    </p>
-                    {marker.flag && (
-                      <span className={`text-sm px-2 py-1 rounded ${
-                        marker.flag === 'High' ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400' :
-                        'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400'
-                      }`}>
-                        {marker.flag}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
+            
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              {getPreviewMessage()}
+            </p>
+            
+            <div className="flex flex-col space-y-3">
+              <button
+                onClick={() => {
+                  // Display the BloodMarkerPreview component from the app directory
+                  // This is handled by your existing code elsewhere
+                }}
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Review & Save Markers
+              </button>
+              
+              <button
+                onClick={() => setExtractedData(null)}
+                className="w-full px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Upload Another PDF
+              </button>
             </div>
-            <button
-              onClick={() => setExtractedData(null)}
-              className="mt-4 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Upload Another PDF
-            </button>
           </div>
         </div>
       )}

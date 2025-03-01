@@ -17,6 +17,75 @@ const INITIAL_RETRY_DELAY = 2000; // Start with 2 second delay
 // Sleep utility
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Advanced JSON repair utility
+function attemptToRepairJson(jsonString) {
+  console.log('Attempting advanced JSON repair...');
+  
+  // Try standard JSON.parse first
+  try {
+    return JSON.parse(jsonString);
+  } catch (initialError) {
+    console.log('Initial JSON parse failed, attempting repairs');
+  }
+
+  let repaired = jsonString;
+  
+  // Replace single quotes with double quotes (but not in already quoted strings)
+  repaired = repaired.replace(/(\{|\,)\s*\'([^\']+)\'\s*\:/g, '$1"$2":');
+  
+  // Fix unquoted property names
+  repaired = repaired.replace(/(\{|\,)\s*([a-zA-Z0-9_]+)\s*\:/g, '$1"$2":');
+  
+  // Fix trailing commas in objects and arrays
+  repaired = repaired.replace(/,\s*\}/g, '}').replace(/,\s*\]/g, ']');
+  
+  // Fix missing quotes around string values
+  repaired = repaired.replace(/:\s*([a-zA-Z][a-zA-Z0-9_\s]+)(\s*[,\}])/g, ':"$1"$2');
+  
+  // Balance brackets and braces
+  const bracketStack = [];
+  let balancedString = '';
+  
+  for (let i = 0; i < repaired.length; i++) {
+    const char = repaired[i];
+    
+    if (char === '{' || char === '[') {
+      bracketStack.push(char);
+      balancedString += char;
+    } else if (char === '}') {
+      if (bracketStack.length > 0 && bracketStack[bracketStack.length - 1] === '{') {
+        bracketStack.pop();
+        balancedString += char;
+      }
+    } else if (char === ']') {
+      if (bracketStack.length > 0 && bracketStack[bracketStack.length - 1] === '[') {
+        bracketStack.pop();
+        balancedString += char;
+      }
+    } else {
+      balancedString += char;
+    }
+  }
+  
+  // Add missing closing brackets/braces if needed
+  while (bracketStack.length > 0) {
+    const lastOpen = bracketStack.pop();
+    balancedString += lastOpen === '{' ? '}' : ']';
+  }
+  
+  // Try to parse the repaired JSON
+  try {
+    console.log('Attempting to parse repaired JSON...');
+    return JSON.parse(balancedString);
+  } catch (repairError) {
+    console.error('Advanced JSON repair failed:', repairError.message);
+    console.log('Falling back to minimal JSON structure');
+    
+    // Return a minimal valid structure as fallback
+    return { dateGroups: [] };
+  }
+}
+
 // Define supported blood markers and their units for the LLM to extract
 const SUPPORTED_MARKERS = [
   // Lipid Panel
@@ -101,27 +170,33 @@ async function waitForRateLimit() {
 async function extractBloodMarkersWithLLM(text) {
   console.log('Processing text (first 500 chars):', text.slice(0, 500));
   
-  const prompt = `Extract blood test results and test date from the following text. 
+  const prompt = `Extract blood test results from the following text, paying attention to multiple test dates.
 
-For the date, thoroughly search for when the blood test was taken, looking for phrases like:
+This text may contain multiple test dates with different values for the same markers on different dates.
+For each identified test date, extract the associated marker values.
+
+For the dates, thoroughly search for when blood tests were taken, looking for phrases like:
 - "Received on", "Collection Date", "Test Date", "Specimen Date", "Date of Collection"
 - "Report Date", "Date Reported", "Date", "Collected", "Date Collected"
 - "Date of Service", "Drawn Date", "Draw Date", "Specimen Collected"
-- Any date in proximity to the blood markers or at the top of the report
-
-If multiple dates are found, prioritize the one most likely to be the specimen collection date rather than the report date.
-The date in the text should be used EXACTLY as found and converted to ISO format (YYYY-MM-DD).
+- Any date in proximity to blood markers
 
 Return the results in this exact JSON format:
 {
-  "testDate": "YYYY-MM-DD", // The test/collection date in ISO format, using the EXACT date found in the text. If not found, return null
-  "markers": [{
-    "name": "exact marker name",
-    "value": number,
-    "unit": "exact unit",
-    "flag": "High" | "Low" | null,
-    "category": "exact category name"
-  }]
+  "dateGroups": [
+    {
+      "testDate": "YYYY-MM-DD", // The test date in ISO format (YYYY-MM-DD)
+      "markers": [
+        {
+          "name": "exact marker name",
+          "value": number,
+          "unit": "exact unit",
+          "flag": "High" | "Low" | null,
+          "category": "exact category name"
+        }
+      ]
+    }
+  ]
 }
 
 Example date conversion:
@@ -129,6 +204,9 @@ Example date conversion:
 - If text shows "Collection Date: 8/5/2024", testDate should be "2024-08-05"
 - If text shows "Drawn: Jan 15, 2024", testDate should be "2024-01-15"
 - If text shows "SPECIMEN: 15 Apr 2024", testDate should be "2024-04-15"
+
+Group markers by their test date. If the date association is unclear for some markers, 
+place them with the most likely date based on context.
 
 Only include markers that match EXACTLY with the following supported markers, their units, and categories:
 
@@ -152,7 +230,7 @@ ${text}`;
         messages: [
           {
             role: "system",
-            content: "You are a precise blood test result extractor. You must exactly match marker names, units, and categories from the supported list. No variations or substitutions allowed. Pay special attention to finding and extracting the exact test date in the proper format."
+            content: "You are a precise blood test result extractor that always produces valid JSON. You must exactly match marker names, units, and categories from the supported list. No variations or substitutions allowed. Pay special attention to finding multiple test dates and associating the correct marker values with each date. Always verify your JSON is valid with properly quoted property names and string values before responding."
           },
           {
             role: "user",
@@ -160,84 +238,182 @@ ${text}`;
           }
         ],
         response_format: { type: "json_object" },
-        max_tokens: 1000,
+        max_tokens: 2500, // Increased from 1500 to handle more complex PDFs
         temperature: 0
       });
 
-      const result = JSON.parse(response.choices[0].message.content);
+      let result;
+      try {
+        // Store the raw content for debugging
+        const rawContent = response.choices[0].message.content;
+        console.log('Raw content from OpenAI (first 300 chars):', rawContent.slice(0, 300) + '...');
+        
+        // Try to parse the JSON response
+        result = JSON.parse(rawContent);
+      } catch (parseError) {
+        console.error('JSON parsing error:', parseError.message);
+        console.log('Attempting to fix malformed JSON...');
+        
+        // Get the raw content
+        const rawContent = response.choices[0].message.content;
+        
+        // Use the advanced JSON repair utility
+        result = attemptToRepairJson(rawContent);
+        
+        // If repair returned an empty structure, throw an error to trigger a retry
+        if (!result.dateGroups || result.dateGroups.length === 0) {
+          throw new Error(`Failed to parse or repair JSON: ${parseError.message}`);
+        }
+      }
       
-      // Validate date format
-      let validatedDate = null;
-      if (result.testDate) {
-        try {
-          // If the result.testDate is not already in ISO format, attempt to parse it
-          let dateString = result.testDate;
-          console.log('🧪 Raw date string from LLM:', dateString);
-          console.log('🧪 Date string type:', typeof dateString);
-          
-          // Check if already in ISO format (YYYY-MM-DD)
-          if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-            console.log('🧪 Date is not in ISO format, attempting to parse...');
-            // Try to parse with Date constructor
-            const dateObj = new Date(dateString);
-            console.log('🧪 Date object after parsing:', dateObj);
-            console.log('🧪 Date object validity:', !isNaN(dateObj.getTime()) ? 'valid' : 'invalid');
+      console.log('Raw LLM response:', JSON.stringify(result).slice(0, 300) + '...');
+      
+      // Validate the response structure
+      if (!result.dateGroups || !Array.isArray(result.dateGroups)) {
+        console.error('Invalid response format from OpenAI - missing dateGroups array:', result);
+        throw new Error('Invalid response format: missing dateGroups array');
+      }
+      
+      // Process and validate each date group
+      const validatedDateGroups = [];
+      
+      for (const dateGroup of result.dateGroups) {
+        // Validate test date
+        let validatedDate = null;
+        if (dateGroup.testDate) {
+          try {
+            // If the date is not already in ISO format, attempt to parse it
+            let dateString = dateGroup.testDate;
+            console.log('🧪 Raw date string from LLM:', dateString);
             
-            if (!isNaN(dateObj.getTime())) {
-              // Format as ISO date string
-              dateString = dateObj.toISOString().split('T')[0];
-              console.log('🧪 Successfully parsed to ISO format:', dateString);
-            } else {
-              throw new Error(`Could not parse date: ${dateString}`);
+            // Check if already in ISO format (YYYY-MM-DD)
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+              console.log('🧪 Date is not in ISO format, attempting to parse...');
+              // Try to parse with Date constructor
+              const dateObj = new Date(dateString);
+              
+              if (!isNaN(dateObj.getTime())) {
+                // Format as ISO date string
+                dateString = dateObj.toISOString().split('T')[0];
+                console.log('🧪 Successfully parsed to ISO format:', dateString);
+              } else {
+                throw new Error(`Could not parse date: ${dateString}`);
+              }
             }
-          } else {
-            console.log('🧪 Date is already in ISO format:', dateString);
+            
+            // Final validation of the ISO format
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+              validatedDate = dateString;
+              console.log('🧪 Successfully validated and formatted date:', validatedDate);
+            } else {
+              throw new Error(`Invalid ISO date format: ${dateString}`);
+            }
+          } catch (error) {
+            console.warn('🧪 Error validating date:', error.message);
+            console.warn('🧪 Original date string from LLM:', dateGroup.testDate);
           }
-          
-          // Final validation of the ISO format
-          if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-            validatedDate = dateString;
-            console.log('🧪 Successfully validated and formatted date:', validatedDate);
-          } else {
-            throw new Error(`Invalid ISO date format: ${dateString}`);
+        }
+
+        // Validate markers
+        if (!dateGroup.markers || !Array.isArray(dateGroup.markers)) {
+          console.warn('Invalid markers array for date group:', dateGroup);
+          continue; // Skip this date group
+        }
+        
+        // Validate each marker against the supported list
+        const validatedMarkers = dateGroup.markers.map(marker => {
+          const supportedMarker = SUPPORTED_MARKERS.find(m => m.name === marker.name);
+          if (!supportedMarker) {
+            console.warn(`Marker "${marker.name}" not found in supported list`);
+            return null;
           }
-        } catch (error) {
-          console.warn('🧪 Error validating date:', error.message);
-          console.warn('🧪 Original date string from LLM:', result.testDate);
+          if (supportedMarker.unit !== marker.unit) {
+            console.warn(`Invalid unit for ${marker.name}: got ${marker.unit}, expected ${supportedMarker.unit}`);
+            return null;
+          }
+          if (supportedMarker.category !== marker.category) {
+            console.warn(`Invalid category for ${marker.name}: got ${marker.category}, expected ${supportedMarker.category}`);
+            // Fix the category
+            return { ...marker, category: supportedMarker.category };
+          }
+          return marker;
+        }).filter(Boolean);
+        
+        // Only add date groups with a valid date and at least one valid marker
+        if (validatedDate && validatedMarkers.length > 0) {
+          validatedDateGroups.push({
+            testDate: validatedDate,
+            markers: validatedMarkers
+          });
         }
-      } else {
-        console.warn('🧪 No test date found in the PDF text');
       }
-
-      if (!result.markers || !Array.isArray(result.markers)) {
-        console.error('Invalid response format from OpenAI:', result);
-        throw new Error('Invalid response format');
-      }
-
-      // Validate each marker against the supported list
-      const validatedMarkers = result.markers.map(marker => {
-        const supportedMarker = SUPPORTED_MARKERS.find(m => m.name === marker.name);
-        if (!supportedMarker) {
-          console.warn(`Marker "${marker.name}" not found in supported list`);
-          return null;
-        }
-        if (supportedMarker.unit !== marker.unit) {
-          console.warn(`Invalid unit for ${marker.name}: got ${marker.unit}, expected ${supportedMarker.unit}`);
-          return null;
-        }
-        if (supportedMarker.category !== marker.category) {
-          console.warn(`Invalid category for ${marker.name}: got ${marker.category}, expected ${supportedMarker.category}`);
-          // Fix the category
-          return { ...marker, category: supportedMarker.category };
-        }
-        return marker;
-      }).filter(Boolean);
       
-      console.log('Successfully extracted and validated markers:', validatedMarkers);
-      return {
-        testDate: validatedDate,
-        markers: validatedMarkers
-      };
+      console.log('Successfully extracted and validated date groups:', 
+        validatedDateGroups.map(g => ({
+          testDate: g.testDate,
+          markerCount: g.markers.length
+        }))
+      );
+      
+      // Consolidate date groups with the same date
+      const consolidatedDateGroups = [];
+      const dateMap = new Map();
+      
+      // First, group all markers by date
+      for (const dateGroup of validatedDateGroups) {
+        const date = dateGroup.testDate;
+        if (!dateMap.has(date)) {
+          dateMap.set(date, []);
+        }
+        dateMap.get(date).push(...dateGroup.markers);
+      }
+      
+      // Create consolidated date groups with unique markers
+      for (const [date, markers] of dateMap.entries()) {
+        // Deduplicate markers by name (keeping the first occurrence)
+        const uniqueMarkers = [];
+        const markerNames = new Set();
+        
+        for (const marker of markers) {
+          if (!markerNames.has(marker.name)) {
+            markerNames.add(marker.name);
+            uniqueMarkers.push(marker);
+          }
+        }
+        
+        // Add the consolidated group
+        consolidatedDateGroups.push({
+          testDate: date,
+          markers: uniqueMarkers
+        });
+      }
+      
+      // Log the consolidation results
+      console.log('Consolidated date groups:', 
+        consolidatedDateGroups.map(g => ({
+          testDate: g.testDate,
+          markerCount: g.markers.length
+        }))
+      );
+      
+      // For backward compatibility, also return the most recent test date and its markers
+      // as top-level properties if we found any valid date groups
+      if (consolidatedDateGroups.length > 0) {
+        // Sort by date descending (newest first)
+        consolidatedDateGroups.sort((a, b) => 
+          new Date(b.testDate).getTime() - new Date(a.testDate).getTime()
+        );
+        
+        return {
+          // Most recent test date and markers for backward compatibility
+          testDate: consolidatedDateGroups[0].testDate,
+          markers: consolidatedDateGroups[0].markers,
+          // New multi-date structure
+          dateGroups: consolidatedDateGroups
+        };
+      }
+      
+      return { testDate: null, markers: [], dateGroups: [] };
 
     } catch (error) {
       lastError = error;
@@ -250,7 +426,13 @@ ${text}`;
         headers: error?.headers
       });
 
-      if (error?.status === 429 || error?.type === 'insufficient_quota') {
+      // Retry on API rate limits, quota issues, or JSON parsing errors
+      if (
+        error?.status === 429 || 
+        error?.type === 'insufficient_quota' ||
+        error?.message?.includes('JSON') || 
+        error?.message?.includes('parse')
+      ) {
         const retryDelay = INITIAL_RETRY_DELAY * Math.pow(2, attempt);
         console.log(`Retrying in ${retryDelay}ms...`);
         await sleep(retryDelay);
@@ -259,12 +441,12 @@ ${text}`;
       
       if (attempt === MAX_RETRIES - 1) {
         console.error('All retries failed');
-        return { testDate: null, markers: [] };
+        return { testDate: null, markers: [], dateGroups: [] };
       }
     }
   }
 
-  return { testDate: null, markers: [] };
+  return { testDate: null, markers: [], dateGroups: [] };
 }
 
 export async function POST(request) {
@@ -281,29 +463,22 @@ export async function POST(request) {
     }
 
     // Extract blood markers using LLM
-    const { testDate, markers: bloodMarkers } = await extractBloodMarkersWithLLM(text);
-    console.log('Extracted data:', { 
-      testDate, 
-      markers: bloodMarkers.length,
-      markerSample: bloodMarkers.length > 0 ? bloodMarkers[0] : null
+    const { testDate, markers: bloodMarkers, dateGroups } = await extractBloodMarkersWithLLM(text);
+    
+    console.log('Extraction summary:', {
+      dateGroupsCount: dateGroups?.length || 0,
+      mainDate: testDate,
+      mainMarkersCount: bloodMarkers?.length || 0
     });
     
-    if (testDate) {
-      console.log('🧪 Sending testDate to client:', testDate);
-      console.log('🧪 Date type:', typeof testDate);
-      console.log('🧪 Valid ISO format check:', /^\d{4}-\d{2}-\d{2}$/.test(testDate));
-      console.log('🧪 Date string length:', testDate.length);
-      console.log('🧪 Date string characters:', Array.from(testDate).map(c => c.charCodeAt(0)));
-    } else {
-      console.log('🧪 No testDate found, sending null to client');
-    }
-
     return NextResponse.json({ 
       success: true,
       text: text.trim(),
       markers: bloodMarkers,
       testDate,
-      message: 'Text processed successfully'
+      dateGroups: dateGroups || [],
+      message: 'Text processed successfully',
+      hasMultipleDates: (dateGroups?.length || 0) > 1
     });
 
   } catch (error) {
