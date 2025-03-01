@@ -13,6 +13,7 @@ const MIN_REQUEST_INTERVAL = 1000; // Minimum 1 second between requests
 // Retry configuration
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 2000; // Start with 2 second delay
+const MAX_CHUNK_SIZE = 10000; // Maximum characters to process in a single API call
 
 // Sleep utility
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -155,6 +156,106 @@ const SUPPORTED_MARKERS = [
   { name: 'Chloride', unit: 'mEq/L', category: 'Electrolytes' }
 ];
 
+// Create normalization map for alternative marker names
+const MARKER_NORMALIZATION_MAP = {
+  // Lipid Panel
+  'CHOLESTEROL, TOTAL': 'Total Cholesterol',
+  'CHOLESTEROL,TOTAL': 'Total Cholesterol',
+  'CHOLESTEROL TOTAL': 'Total Cholesterol',
+  'TOTAL CHOL': 'Total Cholesterol',
+  'CHOL': 'Total Cholesterol',
+  'CHOLESTEROL': 'Total Cholesterol',
+  
+  'LDL CHOLESTEROL': 'LDL-C',
+  'LDL CHOL': 'LDL-C',
+  'LDL': 'LDL-C',
+  'LOW DENSITY LIPOPROTEIN': 'LDL-C',
+  'LDL-CHOLESTEROL': 'LDL-C',
+  'LDL CHOLESTEROL CALC': 'LDL-C',
+  'LDL-CHOL': 'LDL-C',
+  
+  'HDL CHOLESTEROL': 'HDL-C',
+  'HDL CHOL': 'HDL-C',
+  'HDL': 'HDL-C',
+  'HIGH DENSITY LIPOPROTEIN': 'HDL-C',
+  'HDL-CHOLESTEROL': 'HDL-C',
+  'HDL-CHOL': 'HDL-C',
+  
+  'TRIG': 'Triglycerides',
+  'TG': 'Triglycerides',
+  'TRIGLYCERIDE': 'Triglycerides',
+  
+  // Complete Blood Count
+  'WBC': 'White Blood Cells',
+  'WHITE BLOOD CELL COUNT': 'White Blood Cells',
+  'WHITE CELL COUNT': 'White Blood Cells',
+  'LEUKOCYTES': 'White Blood Cells',
+  
+  'RBC': 'Red Blood Cells',
+  'RED BLOOD CELL COUNT': 'Red Blood Cells',
+  'RED CELL COUNT': 'Red Blood Cells',
+  'ERYTHROCYTES': 'Red Blood Cells',
+  
+  'HCT': 'Hematocrit',
+  
+  'HGB': 'Hemoglobin',
+  'HB': 'Hemoglobin',
+  
+  'PLT': 'Platelets',
+  'PLATELET COUNT': 'Platelets',
+  
+  // Glucose Markers
+  'A1C': 'HbA1c',
+  'HEMOGLOBIN A1C': 'HbA1c',
+  'GLYCOHEMOGLOBIN': 'HbA1c',
+  'GLYCATED HEMOGLOBIN': 'HbA1c',
+  
+  'INSULIN': 'Fasting Insulin',
+  
+  'GLUCOSE FASTING': 'Glucose',
+  'FASTING GLUCOSE': 'Glucose',
+  'BLOOD GLUCOSE': 'Glucose',
+  'SUGAR': 'Glucose',
+  
+  // Liver Markers
+  'SGPT': 'ALT',
+  'ALANINE AMINOTRANSFERASE': 'ALT',
+  'ALANINE TRANSAMINASE': 'ALT',
+  
+  'SGOT': 'AST',
+  'ASPARTATE AMINOTRANSFERASE': 'AST',
+  'ASPARTATE TRANSAMINASE': 'AST',
+  
+  'GAMMA-GLUTAMYL TRANSFERASE': 'GGT',
+  'GAMMA GLUTAMYL TRANSFERASE': 'GGT',
+  
+  // Common unit normalizations
+  'mg/dl': 'mg/dL',
+  'MG/DL': 'mg/dL',
+  'ng/dl': 'ng/dL',
+  'NG/DL': 'ng/dL',
+  'pg/ml': 'pg/mL',
+  'PG/ML': 'pg/mL',
+  'uIU/ml': 'µIU/mL',
+  'uIU/mL': 'µIU/mL',
+  'UIU/ML': 'µIU/mL',
+};
+
+// Add function to normalize marker names and units
+function normalizeMarker(marker) {
+  // Normalize marker name
+  const normalizedName = MARKER_NORMALIZATION_MAP[marker.name.toUpperCase()] || marker.name;
+  
+  // Normalize unit
+  const normalizedUnit = MARKER_NORMALIZATION_MAP[marker.unit] || marker.unit;
+  
+  return {
+    ...marker,
+    name: normalizedName,
+    unit: normalizedUnit
+  };
+}
+
 async function waitForRateLimit() {
   const now = Date.now();
   const timeSinceLastRequest = now - lastRequestTime;
@@ -208,9 +309,18 @@ Example date conversion:
 Group markers by their test date. If the date association is unclear for some markers, 
 place them with the most likely date based on context.
 
+DO AN EXTREMELY THOROUGH CHECK FOR EACH OF THE FOLLOWING MARKERS. 
+For each marker, try MULTIPLE different search patterns including abbreviations, variations in spacing, and common alternative phrasings.
+
 Only include markers that match EXACTLY with the following supported markers, their units, and categories:
 
 ${SUPPORTED_MARKERS.map(m => `- ${m.name} (${m.unit}) [Category: ${m.category}]`).join('\n')}
+
+For each marker, check for ALTERNATIVE NAMES AND FORMATS, for example:
+- "Total Cholesterol" might appear as "Cholesterol, Total", "Total CHOL", "CHOL", or "Cholesterol"
+- "LDL-C" might appear as "LDL Cholesterol", "LDL", "Low Density Lipoprotein", or "LDL-Cholesterol"
+- "HDL-C" might appear as "HDL Cholesterol", "HDL", "High Density Lipoprotein", or "HDL-Cholesterol"
+- "Triglycerides" might appear as "TRIG", "TG", or "Triglyceride"
 
 Only include markers that are explicitly present in the text with clear values. Do not infer or calculate values.
 If a marker from the supported list is not found in the text, do not include it in the markers array.
@@ -226,11 +336,11 @@ ${text}`;
       await waitForRateLimit();
       
       const response = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo-0125",
+        model: "gpt-4o", // Upgraded from gpt-3.5-turbo for better accuracy
         messages: [
           {
             role: "system",
-            content: "You are a precise blood test result extractor that always produces valid JSON. You must exactly match marker names, units, and categories from the supported list. No variations or substitutions allowed. Pay special attention to finding multiple test dates and associating the correct marker values with each date. Always verify your JSON is valid with properly quoted property names and string values before responding."
+            content: "You are a precise blood test result extractor that always produces valid JSON. You must exactly match marker names, units, and categories from the supported list. No variations or substitutions allowed. Pay special attention to finding multiple test dates and associating the correct marker values with each date. Always verify your JSON is valid with properly quoted property names and string values before responding. BE EXTREMELY THOROUGH AND CONSISTENT in searching for all supported markers, checking multiple variations and formats of each marker name."
           },
           {
             role: "user",
@@ -238,7 +348,7 @@ ${text}`;
           }
         ],
         response_format: { type: "json_object" },
-        max_tokens: 2500, // Increased from 1500 to handle more complex PDFs
+        max_tokens: 4000, // Increased from 2500 to handle more complex PDFs
         temperature: 0
       });
 
@@ -322,21 +432,35 @@ ${text}`;
         
         // Validate each marker against the supported list
         const validatedMarkers = dateGroup.markers.map(marker => {
-          const supportedMarker = SUPPORTED_MARKERS.find(m => m.name === marker.name);
+          // First normalize the marker
+          const normalizedMarker = normalizeMarker(marker);
+          
+          const supportedMarker = SUPPORTED_MARKERS.find(m => m.name === normalizedMarker.name);
           if (!supportedMarker) {
-            console.warn(`Marker "${marker.name}" not found in supported list`);
+            console.warn(`Marker "${normalizedMarker.name}" not found in supported list`);
             return null;
           }
-          if (supportedMarker.unit !== marker.unit) {
-            console.warn(`Invalid unit for ${marker.name}: got ${marker.unit}, expected ${supportedMarker.unit}`);
-            return null;
+          
+          // Check if the unit matches after normalization
+          if (supportedMarker.unit !== normalizedMarker.unit) {
+            console.warn(`Invalid unit for ${normalizedMarker.name}: got ${normalizedMarker.unit}, expected ${supportedMarker.unit}`);
+            // Try to fix the unit
+            return {
+              ...normalizedMarker,
+              unit: supportedMarker.unit
+            };
           }
-          if (supportedMarker.category !== marker.category) {
-            console.warn(`Invalid category for ${marker.name}: got ${marker.category}, expected ${supportedMarker.category}`);
+          
+          if (supportedMarker.category !== normalizedMarker.category) {
+            console.warn(`Invalid category for ${normalizedMarker.name}: got ${normalizedMarker.category}, expected ${supportedMarker.category}`);
             // Fix the category
-            return { ...marker, category: supportedMarker.category };
+            return {
+              ...normalizedMarker,
+              category: supportedMarker.category
+            };
           }
-          return marker;
+          
+          return normalizedMarker;
         }).filter(Boolean);
         
         // Only add date groups with a valid date and at least one valid marker
@@ -449,6 +573,110 @@ ${text}`;
   return { testDate: null, markers: [], dateGroups: [] };
 }
 
+// Add a function to process large PDFs in chunks
+async function processLargeText(text) {
+  // If text is small enough, process it directly
+  if (text.length <= MAX_CHUNK_SIZE) {
+    return await extractBloodMarkersWithLLM(text);
+  }
+  
+  console.log(`Text is large (${text.length} chars), processing in chunks...`);
+  
+  // Split text into chunks with some overlap
+  const overlap = 200;  // Characters of overlap between chunks
+  let chunks = [];
+  
+  for (let i = 0; i < text.length; i += MAX_CHUNK_SIZE - overlap) {
+    const end = Math.min(i + MAX_CHUNK_SIZE, text.length);
+    chunks.push(text.substring(i, end));
+  }
+  
+  console.log(`Split text into ${chunks.length} chunks`);
+  
+  // Process each chunk
+  const chunkResults = [];
+  
+  for (let i = 0; i < chunks.length; i++) {
+    console.log(`Processing chunk ${i + 1}/${chunks.length}...`);
+    try {
+      const result = await extractBloodMarkersWithLLM(chunks[i]);
+      chunkResults.push(result);
+    } catch (error) {
+      console.error(`Error processing chunk ${i + 1}:`, error);
+      // Continue with other chunks even if one fails
+    }
+  }
+  
+  // Merge the results
+  let allDateGroups = [];
+  
+  // Collect all date groups from all chunks
+  chunkResults.forEach(result => {
+    if (result.dateGroups && Array.isArray(result.dateGroups)) {
+      allDateGroups = [...allDateGroups, ...result.dateGroups];
+    }
+  });
+  
+  // Consolidate date groups just like in the original function
+  // (reusing this code to maintain consistency)
+  const consolidatedDateGroups = [];
+  const dateMap = new Map();
+  
+  // First, group all markers by date
+  for (const dateGroup of allDateGroups) {
+    const date = dateGroup.testDate;
+    if (!dateMap.has(date)) {
+      dateMap.set(date, []);
+    }
+    dateMap.get(date).push(...dateGroup.markers);
+  }
+  
+  // Create consolidated date groups with unique markers
+  for (const [date, markers] of dateMap.entries()) {
+    // Deduplicate markers by name (keeping the first occurrence)
+    const uniqueMarkers = [];
+    const markerNames = new Set();
+    
+    for (const marker of markers) {
+      if (!markerNames.has(marker.name)) {
+        markerNames.add(marker.name);
+        uniqueMarkers.push(marker);
+      }
+    }
+    
+    // Add the consolidated group
+    consolidatedDateGroups.push({
+      testDate: date,
+      markers: uniqueMarkers
+    });
+  }
+  
+  // Log the consolidation results
+  console.log('Consolidated date groups from all chunks:', 
+    consolidatedDateGroups.map(g => ({
+      testDate: g.testDate,
+      markerCount: g.markers.length
+    }))
+  );
+  
+  // For backward compatibility, also return the most recent test date and its markers
+  if (consolidatedDateGroups.length > 0) {
+    // Sort by date descending (newest first)
+    consolidatedDateGroups.sort((a, b) => 
+      new Date(b.testDate).getTime() - new Date(a.testDate).getTime()
+    );
+    
+    return {
+      testDate: consolidatedDateGroups[0].testDate,
+      markers: consolidatedDateGroups[0].markers,
+      dateGroups: consolidatedDateGroups
+    };
+  }
+  
+  return { testDate: null, markers: [], dateGroups: [] };
+}
+
+// Update the POST handler to use the new processLargeText function
 export async function POST(request) {
   console.log('=== Text Processing Started ===');
   
@@ -462,8 +690,8 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
-    // Extract blood markers using LLM
-    const { testDate, markers: bloodMarkers, dateGroups } = await extractBloodMarkersWithLLM(text);
+    // Process text with chunking for large PDFs
+    const { testDate, markers: bloodMarkers, dateGroups } = await processLargeText(text);
     
     console.log('Extraction summary:', {
       dateGroupsCount: dateGroups?.length || 0,
@@ -471,9 +699,10 @@ export async function POST(request) {
       mainMarkersCount: bloodMarkers?.length || 0
     });
     
+    // Don't return the full text in the response (it can be large)
     return NextResponse.json({ 
       success: true,
-      text: text.trim(),
+      textLength: text.length, // Just return the length for debugging
       markers: bloodMarkers,
       testDate,
       dateGroups: dateGroups || [],
