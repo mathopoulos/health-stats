@@ -1347,6 +1347,9 @@ export default function Home() {
                           tickLine={false}
                           axisLine={false}
                           dy={12}
+                          interval="preserveStart"
+                          minTickGap={40}
+                          allowDuplicatedCategory={false}
                         />
                         <Tooltip 
                           contentStyle={{ 
@@ -1488,6 +1491,9 @@ export default function Home() {
                           tickLine={false}
                           axisLine={false}
                           dy={12}
+                          interval="preserveStart"
+                          minTickGap={40}
+                          allowDuplicatedCategory={false}
                         />
                         <Tooltip 
                           contentStyle={{ 
@@ -1628,6 +1634,9 @@ export default function Home() {
                           tickLine={false}
                           axisLine={false}
                           dy={12}
+                          interval="preserveStart"
+                          minTickGap={40}
+                          allowDuplicatedCategory={false}
                         />
                         <Tooltip 
                           contentStyle={{ 
