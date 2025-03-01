@@ -101,7 +101,16 @@ async function waitForRateLimit() {
 async function extractBloodMarkersWithLLM(text) {
   console.log('Processing text (first 500 chars):', text.slice(0, 500));
   
-  const prompt = `Extract blood test results and test date from the following text. For the date, look for terms like "Received on", "Collection Date", "Test Date", etc. The date in the text should be used EXACTLY as found - do not modify or adjust the date.
+  const prompt = `Extract blood test results and test date from the following text. 
+
+For the date, thoroughly search for when the blood test was taken, looking for phrases like:
+- "Received on", "Collection Date", "Test Date", "Specimen Date", "Date of Collection"
+- "Report Date", "Date Reported", "Date", "Collected", "Date Collected"
+- "Date of Service", "Drawn Date", "Draw Date", "Specimen Collected"
+- Any date in proximity to the blood markers or at the top of the report
+
+If multiple dates are found, prioritize the one most likely to be the specimen collection date rather than the report date.
+The date in the text should be used EXACTLY as found and converted to ISO format (YYYY-MM-DD).
 
 Return the results in this exact JSON format:
 {
@@ -118,6 +127,8 @@ Return the results in this exact JSON format:
 Example date conversion:
 - If text shows "Received on 08/29/2024", testDate should be "2024-08-29"
 - If text shows "Collection Date: 8/5/2024", testDate should be "2024-08-05"
+- If text shows "Drawn: Jan 15, 2024", testDate should be "2024-01-15"
+- If text shows "SPECIMEN: 15 Apr 2024", testDate should be "2024-04-15"
 
 Only include markers that match EXACTLY with the following supported markers, their units, and categories:
 
@@ -141,7 +152,7 @@ ${text}`;
         messages: [
           {
             role: "system",
-            content: "You are a precise blood test result extractor. You must exactly match marker names, units, and categories from the supported list. No variations or substitutions allowed."
+            content: "You are a precise blood test result extractor. You must exactly match marker names, units, and categories from the supported list. No variations or substitutions allowed. Pay special attention to finding and extracting the exact test date in the proper format."
           },
           {
             role: "user",
@@ -158,12 +169,44 @@ ${text}`;
       // Validate date format
       let validatedDate = null;
       if (result.testDate) {
-        const dateObj = new Date(result.testDate);
-        if (!isNaN(dateObj.getTime())) {
-          validatedDate = result.testDate;
-        } else {
-          console.warn('Invalid date format received:', result.testDate);
+        try {
+          // If the result.testDate is not already in ISO format, attempt to parse it
+          let dateString = result.testDate;
+          console.log('🧪 Raw date string from LLM:', dateString);
+          console.log('🧪 Date string type:', typeof dateString);
+          
+          // Check if already in ISO format (YYYY-MM-DD)
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+            console.log('🧪 Date is not in ISO format, attempting to parse...');
+            // Try to parse with Date constructor
+            const dateObj = new Date(dateString);
+            console.log('🧪 Date object after parsing:', dateObj);
+            console.log('🧪 Date object validity:', !isNaN(dateObj.getTime()) ? 'valid' : 'invalid');
+            
+            if (!isNaN(dateObj.getTime())) {
+              // Format as ISO date string
+              dateString = dateObj.toISOString().split('T')[0];
+              console.log('🧪 Successfully parsed to ISO format:', dateString);
+            } else {
+              throw new Error(`Could not parse date: ${dateString}`);
+            }
+          } else {
+            console.log('🧪 Date is already in ISO format:', dateString);
+          }
+          
+          // Final validation of the ISO format
+          if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+            validatedDate = dateString;
+            console.log('🧪 Successfully validated and formatted date:', validatedDate);
+          } else {
+            throw new Error(`Invalid ISO date format: ${dateString}`);
+          }
+        } catch (error) {
+          console.warn('🧪 Error validating date:', error.message);
+          console.warn('🧪 Original date string from LLM:', result.testDate);
         }
+      } else {
+        console.warn('🧪 No test date found in the PDF text');
       }
 
       if (!result.markers || !Array.isArray(result.markers)) {
@@ -239,7 +282,21 @@ export async function POST(request) {
 
     // Extract blood markers using LLM
     const { testDate, markers: bloodMarkers } = await extractBloodMarkersWithLLM(text);
-    console.log('Extracted data:', { testDate, markers: bloodMarkers });
+    console.log('Extracted data:', { 
+      testDate, 
+      markers: bloodMarkers.length,
+      markerSample: bloodMarkers.length > 0 ? bloodMarkers[0] : null
+    });
+    
+    if (testDate) {
+      console.log('🧪 Sending testDate to client:', testDate);
+      console.log('🧪 Date type:', typeof testDate);
+      console.log('🧪 Valid ISO format check:', /^\d{4}-\d{2}-\d{2}$/.test(testDate));
+      console.log('🧪 Date string length:', testDate.length);
+      console.log('🧪 Date string characters:', Array.from(testDate).map(c => c.charCodeAt(0)));
+    } else {
+      console.log('🧪 No testDate found, sending null to client');
+    }
 
     return NextResponse.json({ 
       success: true,

@@ -62,6 +62,7 @@ export function BloodTestUpload() {
     try {
       const extractedText = await extractTextFromPdf(file);
       
+      console.log('📤 Sending PDF text to API for processing...');
       const response = await fetch('/api/pdf', {
         method: 'POST',
         headers: {
@@ -76,11 +77,47 @@ export function BloodTestUpload() {
 
       const data = await response.json();
       if (data.success) {
+        console.log('📥 Received data from API:', data);
+        console.log('📥 Raw test date from API:', data.testDate);
+        console.log('📥 Test date type:', typeof data.testDate);
+        
+        // Ensure the date is properly formatted
+        let finalDate = data.testDate;
+        if (finalDate && typeof finalDate === 'string') {
+          console.log('📥 Validating date format:', finalDate);
+          // Validate ISO format
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(finalDate)) {
+            console.log('📥 Date is not in ISO format, attempting to fix');
+            try {
+              // Try to fix the format
+              const fixedDate = new Date(finalDate).toISOString().split('T')[0];
+              console.log('📥 Reformatted date to ISO:', fixedDate);
+              finalDate = fixedDate;
+            } catch (e) {
+              console.error('📥 Failed to format date:', e);
+            }
+          } else {
+            console.log('📥 Date is already in proper ISO format');
+          }
+        } else if (finalDate === null) {
+          console.log('📥 No test date was found in the PDF (null)');
+        } else if (finalDate === undefined) {
+          console.log('📥 Test date is undefined');
+        }
+        
+        console.log('📥 Final date to be set in state:', finalDate);
         setExtractedData({
           markers: data.markers,
-          testDate: data.testDate
+          testDate: finalDate
         });
-        toast.success('Blood markers extracted successfully');
+        
+        // Provide feedback about the date extraction
+        if (data.testDate) {
+          toast.success('Blood markers and test date extracted successfully');
+        } else {
+          toast.success('Blood markers extracted successfully, but no test date found');
+          console.warn('No test date was found in the PDF');
+        }
       } else {
         toast.error(data.error || 'Failed to extract blood markers');
       }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog } from '@headlessui/react';
 import { toast } from 'react-hot-toast';
 import DatePicker from 'react-datepicker';
@@ -23,15 +23,53 @@ interface BloodMarkerPreviewProps {
 }
 
 export default function BloodMarkerPreview({ isOpen, onClose, markers, onSave, initialDate }: BloodMarkerPreviewProps) {
-  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+  // Date label and indicator
+  const [wasDateExtracted, setWasDateExtracted] = useState<boolean>(false);
+  
+  // Track if initial date has been processed
+  const initialDateProcessedRef = useRef<boolean>(false);
+  
+  // Handle initialDate changes
+  useEffect(() => {
     if (initialDate) {
-      const date = new Date(initialDate);
-      // Ensure we're using local timezone
-      date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
-      return isNaN(date.getTime()) ? new Date() : date;
+      setWasDateExtracted(true);
+      
+      // Only process initialDate once to avoid overriding user selection
+      if (!initialDateProcessedRef.current) {
+        try {
+          let parsedDate: Date | null = null;
+          
+          // Parse ISO format (YYYY-MM-DD)
+          if (/^\d{4}-\d{2}-\d{2}$/.test(initialDate)) {
+            const [yearStr, monthStr, dayStr] = initialDate.split('-');
+            const year = parseInt(yearStr, 10);
+            const month = parseInt(monthStr, 10) - 1; // JS months are 0-indexed
+            const day = parseInt(dayStr, 10);
+            
+            // Set time to noon to avoid timezone issues
+            parsedDate = new Date(year, month, day, 12, 0, 0);
+          } else {
+            // Fallback to standard date parsing
+            const date = new Date(initialDate);
+            if (!isNaN(date.getTime())) {
+              parsedDate = date;
+            }
+          }
+          
+          // Update state if valid date was parsed
+          if (parsedDate && !isNaN(parsedDate.getTime())) {
+            setSelectedDate(parsedDate);
+            initialDateProcessedRef.current = true;
+          }
+        } catch (error) {
+          console.error('Failed to parse date:', initialDate);
+        }
+      }
     }
-    return new Date();
-  });
+  }, [initialDate]);
+
+  // Initialize with today's date
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
 
   // Group markers by category
   const groupedMarkers = markers.reduce((acc, marker) => {
@@ -65,12 +103,22 @@ export default function BloodMarkerPreview({ isOpen, onClose, markers, onSave, i
 
           {/* Date Picker */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Test Date
-            </label>
+            <div className="mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Test Date
+              </label>
+            </div>
             <DatePicker
               selected={selectedDate}
-              onChange={(date: Date | null) => date && setSelectedDate(date)}
+              onChange={(date: Date | null) => {
+                if (date) {
+                  setSelectedDate(date);
+                  // If user manually changes the date, it's no longer the extracted date
+                  if (wasDateExtracted) {
+                    setWasDateExtracted(false);
+                  }
+                }
+              }}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400"
               placeholderText="Select test date"
               dateFormat="MM/dd/yyyy"
