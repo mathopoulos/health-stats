@@ -961,22 +961,21 @@ export default function UploadPage() {
                         )}
                       </div>
                       
-                      {/* Sex Input */}
+                      {/* Biological Sex Input */}
                       <div>
                         <label htmlFor="sex" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Sex
+                          Biological Sex
                         </label>
                         <select
                           name="sex"
                           id="sex"
                           value={sex}
-                          onChange={(e) => setSex(e.target.value as 'male' | 'female' | 'other' | '')}
+                          onChange={(e) => setSex(e.target.value as 'male' | 'female' | '')}
                           className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-[38px] px-3"
                         >
-                          <option value="">Select your sex</option>
+                          <option value="">Select your biological sex</option>
                           <option value="male">Male</option>
                           <option value="female">Female</option>
-                          <option value="other">Other</option>
                         </select>
                       </div>
                     </div>
