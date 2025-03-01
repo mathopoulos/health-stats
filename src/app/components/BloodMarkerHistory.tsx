@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
+import ConfirmDialog from './ui/ConfirmDialog';
 
 interface BloodMarker {
   name: string;
@@ -39,6 +40,16 @@ export default function BloodMarkerHistory() {
   const [categoryFilter, setcategoryFilter] = useState<string>('');
   const [dateFilter, setDateFilter] = useState<Date | null>(null);
   const [selectedBiomarkers, setSelectedBiomarkers] = useState<Set<string>>(new Set());
+  
+  // Confirmation dialog states
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [confirmDialogProps, setConfirmDialogProps] = useState({
+    title: '',
+    message: '',
+    confirmLabel: 'Delete',
+    confirmVariant: 'danger' as 'danger' | 'primary',
+    onConfirm: () => {},
+  });
 
   // Memoize the fetchBloodMarkers function to avoid recreating it on every render
   const fetchBloodMarkers = useCallback(async () => {
@@ -90,97 +101,109 @@ export default function BloodMarkerHistory() {
   }, []);
 
   const handleDeleteEntry = async (entryId: string) => {
-    if (!confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
-      return;
-    }
-    
-    try {
-      const response = await fetch(`/api/blood-markers/${entryId}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete entry');
-      }
-      
-      const data = await response.json();
-      if (data.success) {
-        toast.success('Entry deleted successfully');
-        // Remove the deleted entry from state
-        setEntries(prev => prev.filter(entry => entry._id !== entryId));
-        
-        // Notify other components about the change
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new Event('bloodMarkerAdded'));
+    // Show confirmation dialog instead of using native confirm
+    setConfirmDialogProps({
+      title: 'Delete Entry',
+      message: 'Are you sure you want to delete this entry? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      confirmVariant: 'danger',
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/blood-markers/${entryId}`, {
+            method: 'DELETE',
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to delete entry');
+          }
+          
+          const data = await response.json();
+          if (data.success) {
+            toast.success('Entry deleted successfully');
+            // Remove the deleted entry from state
+            setEntries(prev => prev.filter(entry => entry._id !== entryId));
+            
+            // Notify other components about the change
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new Event('bloodMarkerAdded'));
+            }
+          } else {
+            throw new Error(data.error || 'Failed to delete entry');
+          }
+        } catch (error) {
+          console.error('Error deleting entry:', error);
+          toast.error(error instanceof Error ? error.message : 'Failed to delete entry');
         }
-      } else {
-        throw new Error(data.error || 'Failed to delete entry');
-      }
-    } catch (error) {
-      console.error('Error deleting entry:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to delete entry');
-    }
+      },
+    });
+    setShowConfirmDialog(true);
   };
 
   // New function to delete a single biomarker from an entry
   const handleDeleteSingleMarker = async (entryId: string, markerName: string) => {
-    if (!confirm(`Are you sure you want to delete the ${markerName} marker? This action cannot be undone.`)) {
-      return;
-    }
-    
-    try {
-      // Find the entry containing this marker
-      const entry = entries.find(e => e._id === entryId);
-      if (!entry) {
-        throw new Error('Entry not found');
-      }
-      
-      // Filter out the marker to delete
-      const updatedMarkers = entry.markers.filter(marker => marker.name !== markerName);
-      
-      // If no markers left, delete the entire entry
-      if (updatedMarkers.length === 0) {
-        return handleDeleteEntry(entryId);
-      }
-      
-      // Otherwise, update the entry with the remaining markers
-      const response = await fetch(`/api/blood-markers/${entryId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          date: entry.date,
-          markers: updatedMarkers,
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to update entry');
-      }
-      
-      const data = await response.json();
-      if (data.success) {
-        toast.success(`${markerName} marker deleted successfully`);
-        
-        // Update the entry in state
-        setEntries(prev => 
-          prev.map(e => 
-            e._id === entryId ? { ...e, markers: updatedMarkers } : e
-          )
-        );
-        
-        // Notify other components about the change
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new Event('bloodMarkerAdded'));
+    // Show confirmation dialog instead of using native confirm
+    setConfirmDialogProps({
+      title: 'Delete Biomarker',
+      message: `Are you sure you want to delete the ${markerName} marker? This action cannot be undone.`,
+      confirmLabel: 'Delete',
+      confirmVariant: 'danger',
+      onConfirm: async () => {
+        try {
+          // Find the entry containing this marker
+          const entry = entries.find(e => e._id === entryId);
+          if (!entry) {
+            throw new Error('Entry not found');
+          }
+          
+          // Filter out the marker to delete
+          const updatedMarkers = entry.markers.filter(marker => marker.name !== markerName);
+          
+          // If no markers left, delete the entire entry
+          if (updatedMarkers.length === 0) {
+            return handleDeleteEntry(entryId);
+          }
+          
+          // Otherwise, update the entry with the remaining markers
+          const response = await fetch(`/api/blood-markers/${entryId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              date: entry.date,
+              markers: updatedMarkers,
+            }),
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to update entry');
+          }
+          
+          const data = await response.json();
+          if (data.success) {
+            toast.success(`${markerName} marker deleted successfully`);
+            
+            // Update the entry in state
+            setEntries(prev => 
+              prev.map(e => 
+                e._id === entryId ? { ...e, markers: updatedMarkers } : e
+              )
+            );
+            
+            // Notify other components about the change
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new Event('bloodMarkerAdded'));
+            }
+          } else {
+            throw new Error(data.error || 'Failed to update entry');
+          }
+        } catch (error) {
+          console.error('Error deleting marker:', error);
+          toast.error(error instanceof Error ? error.message : 'Failed to delete marker');
         }
-      } else {
-        throw new Error(data.error || 'Failed to update entry');
-      }
-    } catch (error) {
-      console.error('Error deleting marker:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to delete marker');
-    }
+      },
+    });
+    setShowConfirmDialog(true);
   };
 
   const handleEditEntry = (entry: BloodMarkerEntry) => {
@@ -401,85 +424,117 @@ export default function BloodMarkerHistory() {
   const deleteSelectedBiomarkers = async () => {
     if (selectedBiomarkers.size === 0) return;
     
-    if (!confirm(`Are you sure you want to delete ${selectedBiomarkers.size} selected biomarker(s)? This action cannot be undone.`)) {
-      return;
-    }
-    
-    // Group selected biomarkers by entry ID for efficient deletion
-    const entriesMap = new Map<string, string[]>();
-    
-    selectedBiomarkers.forEach(key => {
-      const [entryId, name] = key.split('-');
-      if (!entriesMap.has(entryId)) {
-        entriesMap.set(entryId, []);
-      }
-      entriesMap.get(entryId)?.push(name);
-    });
-    
-    let success = true;
-    let deleted = 0;
-    
-    // Process each entry
-    for (const [entryId, markerNames] of entriesMap.entries()) {
-      try {
-        // Find the entry
-        const entry = entries.find(e => e._id === entryId);
-        if (!entry) continue;
+    // Show confirmation dialog instead of using native confirm
+    setConfirmDialogProps({
+      title: 'Delete Selected Biomarkers',
+      message: `Are you sure you want to delete ${selectedBiomarkers.size} selected biomarker(s)? This action cannot be undone.`,
+      confirmLabel: 'Delete',
+      confirmVariant: 'danger',
+      onConfirm: async () => {
+        // Group selected biomarkers by entry ID for efficient deletion
+        const entriesMap = new Map<string, string[]>();
         
-        // Keep markers that are not selected for deletion
-        const updatedMarkers = entry.markers.filter(marker => !markerNames.includes(marker.name));
-        
-        // If all markers in the entry are to be deleted, delete the entire entry
-        if (updatedMarkers.length === 0) {
-          await handleDeleteEntry(entryId);
-          deleted += markerNames.length;
-          continue;
-        }
-        
-        // Otherwise, update the entry with the remaining markers
-        const response = await fetch(`/api/blood-markers/${entryId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            date: entry.date,
-            markers: updatedMarkers,
-          }),
+        selectedBiomarkers.forEach(key => {
+          const [entryId, name] = key.split('-');
+          if (!entriesMap.has(entryId)) {
+            entriesMap.set(entryId, []);
+          }
+          entriesMap.get(entryId)?.push(name);
         });
         
-        if (!response.ok) {
-          throw new Error(`Failed to update entry ${entryId}`);
+        let success = true;
+        let deleted = 0;
+        
+        // Process each entry
+        for (const [entryId, markerNames] of entriesMap.entries()) {
+          try {
+            // Find the entry
+            const entry = entries.find(e => e._id === entryId);
+            if (!entry) continue;
+            
+            // Keep markers that are not selected for deletion
+            const updatedMarkers = entry.markers.filter(marker => !markerNames.includes(marker.name));
+            
+            // If all markers in the entry are to be deleted, delete the entire entry
+            if (updatedMarkers.length === 0) {
+              await handleDeleteEntryDirect(entryId);
+              deleted += markerNames.length;
+              continue;
+            }
+            
+            // Otherwise, update the entry with the remaining markers
+            const response = await fetch(`/api/blood-markers/${entryId}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                date: entry.date,
+                markers: updatedMarkers,
+              }),
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Failed to update entry ${entryId}`);
+            }
+            
+            const data = await response.json();
+            if (data.success) {
+              // Update the entry in state
+              setEntries(prev => 
+                prev.map(e => 
+                  e._id === entryId ? { ...e, markers: updatedMarkers } : e
+                )
+              );
+              deleted += markerNames.length;
+            }
+          } catch (error) {
+            console.error(`Error processing entry ${entryId}:`, error);
+            success = false;
+          }
         }
         
-        const data = await response.json();
-        if (data.success) {
-          // Update the entry in state
-          setEntries(prev => 
-            prev.map(e => 
-              e._id === entryId ? { ...e, markers: updatedMarkers } : e
-            )
-          );
-          deleted += markerNames.length;
+        // Clear selection
+        setSelectedBiomarkers(new Set());
+        
+        // Show success/error message
+        if (success) {
+          toast.success(`${deleted} biomarker(s) deleted successfully`);
+          // Notify other components about the change
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('bloodMarkerAdded'));
+          }
+        } else {
+          toast.error('Some biomarkers could not be deleted. Please try again.');
         }
-      } catch (error) {
-        console.error(`Error processing entry ${entryId}:`, error);
-        success = false;
+      },
+    });
+    setShowConfirmDialog(true);
+  };
+
+  // Helper function to delete entry directly (without confirmation)
+  // Used by bulk delete operation
+  const handleDeleteEntryDirect = async (entryId: string) => {
+    try {
+      const response = await fetch(`/api/blood-markers/${entryId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete entry');
       }
-    }
-    
-    // Clear selection
-    setSelectedBiomarkers(new Set());
-    
-    // Show success/error message
-    if (success) {
-      toast.success(`${deleted} biomarker(s) deleted successfully`);
-      // Notify other components about the change
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('bloodMarkerAdded'));
+      
+      const data = await response.json();
+      if (data.success) {
+        // Remove the deleted entry from state
+        setEntries(prev => prev.filter(entry => entry._id !== entryId));
+        return true;
+      } else {
+        throw new Error(data.error || 'Failed to delete entry');
       }
-    } else {
-      toast.error('Some biomarkers could not be deleted. Please try again.');
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+      return false;
     }
   };
 
@@ -791,6 +846,20 @@ export default function BloodMarkerHistory() {
           </div>
         </div>
       )}
+      
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirmDialog}
+        title={confirmDialogProps.title}
+        message={confirmDialogProps.message}
+        confirmLabel={confirmDialogProps.confirmLabel}
+        confirmVariant={confirmDialogProps.confirmVariant}
+        onConfirm={() => {
+          confirmDialogProps.onConfirm();
+          setShowConfirmDialog(false);
+        }}
+        onCancel={() => setShowConfirmDialog(false)}
+      />
     </div>
   );
 } 
