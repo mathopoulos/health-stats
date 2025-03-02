@@ -11,7 +11,8 @@
         "AllowedOrigins": [
             "http://localhost:3000",
             "http://localhost:3001",
-            "https://*.vercel.app"
+            "https://*.vercel.app",
+            "https://www.revly.health"
         ],
         "ExposeHeaders": [
             "ETag"
