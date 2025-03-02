@@ -50,17 +50,9 @@ export const TrendIndicator = ({
     // If custom colors are provided, use them instead
     if (customColors) {
       // For big chart styling
-      const bgColor = isZeroChange 
-        ? 'bg-gray-50 dark:bg-gray-700/20'
-        : customColors.bgColor || '';
-      
-      const textColor = isZeroChange
-        ? 'text-gray-500 dark:text-gray-400'
-        : customColors.textColor || color;
-      
-      const iconColor = isZeroChange
-        ? 'text-gray-400'
-        : customColors.iconColor || color;
+      const bgColor = customColors.bgColor || '';
+      const textColor = customColors.textColor || color;
+      const iconColor = customColors.iconColor || color;
 
       return (
         <div className={`flex items-center ${bgColor} ${showTimeRange ? 'rounded-full px-3 py-1' : ''} ${className}`}>
@@ -83,7 +75,7 @@ export const TrendIndicator = ({
             />
           </svg>
           <span className={`${showTimeRange ? 'text-sm font-medium' : 'text-sm'} ${textColor}`}>
-            {isZeroChange ? '' : isIncrease ? '+' : '-'}{absPercentChange}%
+            {isIncrease ? '+' : '-'}{absPercentChange}%
             {showTimeRange && timeRangeLabel && (
               <span className="text-sm font-normal opacity-75"> over {timeRangeLabel.toLowerCase()}</span>
             )}
@@ -95,7 +87,11 @@ export const TrendIndicator = ({
     // Original compact styling for small indicators
     return (
       <span className={`text-sm flex items-center ${color} ${className}`}>
-        {isIncrease ? (
+        {isZeroChange ? (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        ) : isIncrease ? (
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
           </svg>
