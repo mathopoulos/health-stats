@@ -337,19 +337,35 @@ export default function Home() {
         'ApoB': 'apoB',
         'Lp(a)': 'lpA',
         'White Blood Cell Count': 'whiteBloodCells',
+        'White Blood Cells': 'whiteBloodCells', // Alternative naming
+        'WBC': 'whiteBloodCells', // Alternative naming
         'Red Blood Cell Count': 'redBloodCells',
+        'Red Blood Cells': 'redBloodCells', // Alternative naming
+        'RBC': 'redBloodCells', // Alternative naming
         'Hematocrit': 'hematocrit',
+        'HCT': 'hematocrit', // Alternative naming
         'Hemoglobin': 'hemoglobin',
+        'HGB': 'hemoglobin', // Alternative naming
         'Platelet Count': 'platelets',
+        'Platelets': 'platelets', // Alternative naming
         'HbA1c': 'hba1c',
+        'A1C': 'hba1c', // Alternative naming
+        'Hemoglobin A1C': 'hba1c', // Alternative naming
         'Fasting Insulin': 'fastingInsulin',
+        'Insulin': 'fastingInsulin', // Alternative naming
         'Glucose': 'glucose',
+        'Fasting Glucose': 'glucose', // Alternative naming
         'ALT (SGPT)': 'alt',
+        'ALT': 'alt', // Alternative naming
+        'SGPT': 'alt', // Alternative naming
         'AST (SGOT)': 'ast',
+        'AST': 'ast', // Alternative naming
+        'SGOT': 'ast', // Alternative naming
         'GGT': 'ggt',
         'eGFR': 'egfr',
         'Cystatin C': 'cystatinC',
         'Blood Urea Nitrogen': 'bun',
+        'BUN': 'bun', // Alternative naming
         'Creatinine': 'creatinine',
         'Albumin': 'albumin',
         'Testosterone': 'testosterone',
@@ -357,10 +373,16 @@ export default function Home() {
         'Estradiol': 'estradiol',
         'SHBG': 'shbg',
         'Free T3': 't3',
+        'T3': 't3', // Alternative naming
         'Free T4': 't4',
+        'T4': 't4', // Alternative naming
         'Thyroid Stimulating Hormone (TSH)': 'tsh',
+        'TSH': 'tsh', // Alternative naming
         'Vitamin D, 25-Hydroxy': 'vitaminD',
+        'Vitamin D': 'vitaminD', // Alternative naming
+        'Vitamin D3': 'vitaminD', // Alternative naming
         'hs-CRP': 'crp',
+        'CRP': 'crp', // Alternative naming
         'Homocysteine': 'homocysteine',
         'IGF-1': 'igf1',
         'Ferritin': 'ferritin',
@@ -373,6 +395,7 @@ export default function Home() {
         'Phosphorus': 'phosphorus',
         'Magnesium': 'magnesium',
         'Carbon Dioxide': 'bicarbonate',
+        'Bicarbonate': 'bicarbonate', // Alternative naming
         'Chloride': 'chloride'
       };
 
