@@ -280,8 +280,19 @@ export async function fetchAllHealthData(type: HealthDataType, userId: string): 
     console.log(`Fetching ${type} data from S3...`);
     
     try {
-      const data = await fetchDataFile(key);
-      return Array.isArray(data) ? data : [];
+      try {
+        const data = await fetchDataFile(key);
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        // If we're looking for bodyFat but couldn't find it, try the lowercase variant
+        if (type === 'bodyFat') {
+          console.log('Trying lowercase variant for body fat data...');
+          const lowercaseKey = `data/${userId}/bodyfat.json`;
+          const data = await fetchDataFile(lowercaseKey);
+          return Array.isArray(data) ? data : [];
+        }
+        throw error; // Re-throw for other data types
+      }
     } catch (error) {
       console.log(`No existing data for ${type}`);
       return [];
