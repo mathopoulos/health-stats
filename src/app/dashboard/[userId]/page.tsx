@@ -330,7 +330,9 @@ export default function Home() {
       const markerNameToKey: Record<string, keyof ChartData['bloodMarkers']> = {
         'Total Cholesterol': 'totalCholesterol',
         'LDL Cholesterol': 'ldl',
+        'LDL-C': 'ldl',          // Added hyphenated version
         'HDL Cholesterol': 'hdl',
+        'HDL-C': 'hdl',          // Added hyphenated version
         'Triglycerides': 'triglycerides',
         'ApoB': 'apoB',
         'Lp(a)': 'lpA',
