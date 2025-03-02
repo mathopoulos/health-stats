@@ -55,6 +55,25 @@ interface ChartData {
     hemoglobin: BloodMarker[];
     platelets: BloodMarker[];
     
+    // CBC Differentials
+    neutrophilCount: BloodMarker[];
+    neutrophilPercentage: BloodMarker[];
+    lymphocyteCount: BloodMarker[];
+    lymphocytePercentage: BloodMarker[];
+    monocyteCount: BloodMarker[];
+    monocytePercentage: BloodMarker[];
+    eosinophilCount: BloodMarker[];
+    eosinophilPercentage: BloodMarker[];
+    basophilCount: BloodMarker[];
+    basophilPercentage: BloodMarker[];
+    
+    // Red Blood Cell Indices
+    mcv: BloodMarker[];
+    mch: BloodMarker[];
+    mchc: BloodMarker[];
+    rdw: BloodMarker[];
+    mpv: BloodMarker[];
+    
     // Glucose Markers
     hba1c: BloodMarker[];
     fastingInsulin: BloodMarker[];
@@ -83,8 +102,13 @@ interface ChartData {
     t4: BloodMarker[];
     tsh: BloodMarker[];
     
-    // Vitamins
+    // Vitamins & Minerals
     vitaminD: BloodMarker[];
+    vitaminB12: BloodMarker[];
+    folate: BloodMarker[];
+    iron: BloodMarker[];
+    magnesium: BloodMarker[];
+    rbcMagnesium: BloodMarker[];
     
     // Inflammation
     crp: BloodMarker[];
@@ -104,9 +128,12 @@ interface ChartData {
     potassium: BloodMarker[];
     calcium: BloodMarker[];
     phosphorus: BloodMarker[];
-    magnesium: BloodMarker[];
     bicarbonate: BloodMarker[];
     chloride: BloodMarker[];
+    
+    // Additional markers
+    creatineKinase: BloodMarker[];
+    cortisol: BloodMarker[];
   };
   loading: boolean;
 }
@@ -132,6 +159,25 @@ const BLOOD_MARKER_CONFIG = {
   hematocrit: { min: 41, max: 50, decreaseIsGood: null },
   hemoglobin: { min: 13.5, max: 17.5, decreaseIsGood: null },
   platelets: { min: 150, max: 450, decreaseIsGood: null },
+  
+  // CBC Differentials
+  neutrophilcount: { min: 1500, max: 7800, decreaseIsGood: null },
+  neutrophilpercentage: { min: 39, max: 75, decreaseIsGood: null },
+  lymphocytecount: { min: 850, max: 3900, decreaseIsGood: null },
+  lymphocytepercentage: { min: 16, max: 47, decreaseIsGood: null },
+  monocytecount: { min: 200, max: 950, decreaseIsGood: null },
+  monocytepercentage: { min: 4, max: 12, decreaseIsGood: null },
+  eosinophilcount: { min: 15, max: 500, decreaseIsGood: null },
+  eosinophilpercentage: { min: 0, max: 7, decreaseIsGood: null },
+  basophilcount: { min: 0, max: 200, decreaseIsGood: null },
+  basophilpercentage: { min: 0, max: 2, decreaseIsGood: null },
+  
+  // Red Blood Cell Indices
+  mcv: { min: 80, max: 100, decreaseIsGood: null },
+  mch: { min: 27, max: 33, decreaseIsGood: null },
+  mchc: { min: 32, max: 36, decreaseIsGood: null },
+  rdw: { min: 11, max: 15, decreaseIsGood: true },
+  mpv: { min: 7.5, max: 12.5, decreaseIsGood: null },
   
   // Glucose Markers
   hba1c: { min: 4.0, max: 5.6, decreaseIsGood: true },
@@ -161,31 +207,39 @@ const BLOOD_MARKER_CONFIG = {
   t4: { min: 0.8, max: 1.8, decreaseIsGood: null },
   tsh: { min: 0.4, max: 4.0, decreaseIsGood: null },
   
-  // Vitamins
-  vitaminD: { min: 40, max: 80, decreaseIsGood: false },
+  // Vitamins & Minerals
+  vitaminD: { min: 30, max: 80, decreaseIsGood: false },
+  vitaminB12: { min: 200, max: 1100, decreaseIsGood: false },
+  folate: { min: 3.4, max: 40, decreaseIsGood: false },
+  iron: { min: 50, max: 195, decreaseIsGood: null },
+  magnesium: { min: 1.5, max: 2.5, decreaseIsGood: null },
+  rbcMagnesium: { min: 4, max: 6.4, decreaseIsGood: null },
   
   // Inflammation
   crp: { min: 0, max: 1.0, decreaseIsGood: true },
-  homocysteine: { min: 4, max: 10, decreaseIsGood: true },
+  homocysteine: { min: 0, max: 15, decreaseIsGood: true },
   
   // Growth Factors
-  igf1: { min: 115, max: 355, decreaseIsGood: null },
+  igf1: { min: 88, max: 240, decreaseIsGood: null },
   
   // Iron Panel
-  ferritin: { min: 30, max: 300, decreaseIsGood: null },
-  serumIron: { min: 65, max: 175, decreaseIsGood: null },
-  tibc: { min: 250, max: 450, decreaseIsGood: null },
-  transferrinSaturation: { min: 20, max: 50, decreaseIsGood: null },
+  ferritin: { min: 20, max: 345, decreaseIsGood: null },
+  serumIron: { min: 50, max: 195, decreaseIsGood: null },
+  tibc: { min: 250, max: 425, decreaseIsGood: null },
+  transferrinSaturation: { min: 15, max: 60, decreaseIsGood: null },
   
   // Electrolytes
-  sodium: { min: 135, max: 145, decreaseIsGood: null },
-  potassium: { min: 3.5, max: 5.0, decreaseIsGood: null },
-  calcium: { min: 8.5, max: 10.5, decreaseIsGood: null },
+  sodium: { min: 135, max: 146, decreaseIsGood: null },
+  potassium: { min: 3.5, max: 5.3, decreaseIsGood: null },
+  calcium: { min: 8.6, max: 10.3, decreaseIsGood: null },
   phosphorus: { min: 2.5, max: 4.5, decreaseIsGood: null },
-  magnesium: { min: 1.7, max: 2.4, decreaseIsGood: null },
-  bicarbonate: { min: 22, max: 29, decreaseIsGood: null },
-  chloride: { min: 96, max: 106, decreaseIsGood: null }
-} as const;
+  bicarbonate: { min: 22, max: 30, decreaseIsGood: null },
+  chloride: { min: 97, max: 107, decreaseIsGood: null },
+  
+  // Additional markers
+  creatineKinase: { min: 44, max: 1083, decreaseIsGood: null },
+  cortisol: { min: 4, max: 22, decreaseIsGood: null }
+};
 
 const OWNER_ID = 'usr_W2LWz83EurLxZwfjqT_EL';
 
@@ -214,16 +268,22 @@ export default function Home() {
       // Initialize all marker arrays
       totalCholesterol: [], ldl: [], hdl: [], triglycerides: [], apoB: [], lpA: [],
       whiteBloodCells: [], redBloodCells: [], hematocrit: [], hemoglobin: [], platelets: [],
+      neutrophilCount: [], neutrophilPercentage: [], lymphocyteCount: [], lymphocytePercentage: [],
+      monocyteCount: [], monocytePercentage: [], eosinophilCount: [], eosinophilPercentage: [],
+      basophilCount: [], basophilPercentage: [], mcv: [], mch: [], mchc: [], rdw: [], mpv: [],
       hba1c: [], fastingInsulin: [], glucose: [],
       alt: [], ast: [], ggt: [],
       egfr: [], cystatinC: [], bun: [], creatinine: [], albumin: [],
       testosterone: [], freeTesto: [], estradiol: [], shbg: [],
       t3: [], t4: [], tsh: [],
-      vitaminD: [],
+      vitaminD: [], vitaminB12: [], folate: [], iron: [],
+      magnesium: [], rbcMagnesium: [],
       crp: [], homocysteine: [],
       igf1: [],
       ferritin: [], serumIron: [], tibc: [], transferrinSaturation: [],
-      sodium: [], potassium: [], calcium: [], phosphorus: [], magnesium: [], bicarbonate: [], chloride: []
+      sodium: [], potassium: [], calcium: [], phosphorus: [],
+      bicarbonate: [], chloride: [],
+      creatineKinase: [], cortisol: []
     },
     loading: true
   });
@@ -265,16 +325,22 @@ export default function Home() {
             // Initialize all marker arrays
             totalCholesterol: [], ldl: [], hdl: [], triglycerides: [], apoB: [], lpA: [],
             whiteBloodCells: [], redBloodCells: [], hematocrit: [], hemoglobin: [], platelets: [],
+            neutrophilCount: [], neutrophilPercentage: [], lymphocyteCount: [], lymphocytePercentage: [],
+            monocyteCount: [], monocytePercentage: [], eosinophilCount: [], eosinophilPercentage: [],
+            basophilCount: [], basophilPercentage: [], mcv: [], mch: [], mchc: [], rdw: [], mpv: [],
             hba1c: [], fastingInsulin: [], glucose: [],
             alt: [], ast: [], ggt: [],
             egfr: [], cystatinC: [], bun: [], creatinine: [], albumin: [],
             testosterone: [], freeTesto: [], estradiol: [], shbg: [],
             t3: [], t4: [], tsh: [],
-            vitaminD: [],
+            vitaminD: [], vitaminB12: [], folate: [], iron: [],
+            magnesium: [], rbcMagnesium: [],
             crp: [], homocysteine: [],
             igf1: [],
             ferritin: [], serumIron: [], tibc: [], transferrinSaturation: [],
-            sodium: [], potassium: [], calcium: [], phosphorus: [], magnesium: [], bicarbonate: [], chloride: []
+            sodium: [], potassium: [], calcium: [], phosphorus: [],
+            bicarbonate: [], chloride: [],
+            creatineKinase: [], cortisol: []
           }
         };
       }
@@ -314,16 +380,22 @@ export default function Home() {
         // Initialize all marker arrays
         totalCholesterol: [], ldl: [], hdl: [], triglycerides: [], apoB: [], lpA: [],
         whiteBloodCells: [], redBloodCells: [], hematocrit: [], hemoglobin: [], platelets: [],
+        neutrophilCount: [], neutrophilPercentage: [], lymphocyteCount: [], lymphocytePercentage: [],
+        monocyteCount: [], monocytePercentage: [], eosinophilCount: [], eosinophilPercentage: [],
+        basophilCount: [], basophilPercentage: [], mcv: [], mch: [], mchc: [], rdw: [], mpv: [],
         hba1c: [], fastingInsulin: [], glucose: [],
         alt: [], ast: [], ggt: [],
         egfr: [], cystatinC: [], bun: [], creatinine: [], albumin: [],
         testosterone: [], freeTesto: [], estradiol: [], shbg: [],
         t3: [], t4: [], tsh: [],
-        vitaminD: [],
+        vitaminD: [], vitaminB12: [], folate: [], iron: [],
+        magnesium: [], rbcMagnesium: [],
         crp: [], homocysteine: [],
         igf1: [],
         ferritin: [], serumIron: [], tibc: [], transferrinSaturation: [],
-        sodium: [], potassium: [], calcium: [], phosphorus: [], magnesium: [], bicarbonate: [], chloride: []
+        sodium: [], potassium: [], calcium: [], phosphorus: [],
+        bicarbonate: [], chloride: [],
+        creatineKinase: [], cortisol: []
       };
 
       // Map marker names from API to chart data keys
@@ -348,6 +420,51 @@ export default function Home() {
         'HGB': 'hemoglobin', // Alternative naming
         'Platelet Count': 'platelets',
         'Platelets': 'platelets', // Alternative naming
+        
+        // CBC Differentials
+        'Neutrophil Count': 'neutrophilCount',
+        'Neutrophils Count': 'neutrophilCount',
+        'Neutrophil Percentage': 'neutrophilPercentage',
+        'Neutrophils Percentage': 'neutrophilPercentage',
+        'Neutrophil %': 'neutrophilPercentage',
+        'Neutrophils %': 'neutrophilPercentage',
+        'Lymphocyte Count': 'lymphocyteCount',
+        'Lymphocytes Count': 'lymphocyteCount',
+        'Lymphocyte Percentage': 'lymphocytePercentage',
+        'Lymphocytes Percentage': 'lymphocytePercentage',
+        'Lymphocyte %': 'lymphocytePercentage',
+        'Lymphocytes %': 'lymphocytePercentage',
+        'Monocyte Count': 'monocyteCount',
+        'Monocytes Count': 'monocyteCount',
+        'Monocyte Percentage': 'monocytePercentage',
+        'Monocytes Percentage': 'monocytePercentage',
+        'Monocyte %': 'monocytePercentage',
+        'Monocytes %': 'monocytePercentage',
+        'Eosinophil Count': 'eosinophilCount',
+        'Eosinophils Count': 'eosinophilCount',
+        'Eosinophil Percentage': 'eosinophilPercentage',
+        'Eosinophils Percentage': 'eosinophilPercentage',
+        'Eosinophil %': 'eosinophilPercentage',
+        'Eosinophils %': 'eosinophilPercentage',
+        'Basophil Count': 'basophilCount',
+        'Basophils Count': 'basophilCount',
+        'Basophil Percentage': 'basophilPercentage',
+        'Basophils Percentage': 'basophilPercentage',
+        'Basophil %': 'basophilPercentage',
+        'Basophils %': 'basophilPercentage',
+        
+        // Red Blood Cell Indices
+        'MCV': 'mcv',
+        'Mean Corpuscular Volume': 'mcv',
+        'MCH': 'mch',
+        'Mean Corpuscular Hemoglobin': 'mch',
+        'MCHC': 'mchc',
+        'Mean Corpuscular Hemoglobin Concentration': 'mchc',
+        'RDW': 'rdw',
+        'Red Cell Distribution Width': 'rdw',
+        'MPV': 'mpv',
+        'Mean Platelet Volume': 'mpv',
+        
         'HbA1c': 'hba1c',
         'A1C': 'hba1c', // Alternative naming
         'Hemoglobin A1C': 'hba1c', // Alternative naming
@@ -370,6 +487,7 @@ export default function Home() {
         'Albumin': 'albumin',
         'Testosterone': 'testosterone',
         'Free Testosterone': 'freeTesto',
+        'Free testosterone': 'freeTesto', // Alternative with lowercase 't'
         'Estradiol': 'estradiol',
         'SHBG': 'shbg',
         'Free T3': 't3',
@@ -378,25 +496,47 @@ export default function Home() {
         'T4': 't4', // Alternative naming
         'Thyroid Stimulating Hormone (TSH)': 'tsh',
         'TSH': 'tsh', // Alternative naming
+        
+        // Vitamins & Minerals
         'Vitamin D, 25-Hydroxy': 'vitaminD',
         'Vitamin D': 'vitaminD', // Alternative naming
         'Vitamin D3': 'vitaminD', // Alternative naming
+        'Vitamin B12': 'vitaminB12',
+        'B12': 'vitaminB12',
+        'Folate': 'folate',
+        'Folic Acid': 'folate',
+        'Iron': 'iron',
+        'Serum Iron': 'serumIron',
+        'Iron, Serum': 'serumIron',
+        'Magnesium': 'magnesium',
+        'RBC Magnesium': 'rbcMagnesium',
+        
         'hs-CRP': 'crp',
         'CRP': 'crp', // Alternative naming
+        'hsCRP': 'crp', // Alternative naming without hyphen
         'Homocysteine': 'homocysteine',
         'IGF-1': 'igf1',
         'Ferritin': 'ferritin',
-        'Serum Iron': 'serumIron',
         'TIBC': 'tibc',
+        'Total Iron Binding Capacity': 'tibc',
         'Transferrin Saturation': 'transferrinSaturation',
+        'Transferrin Sat': 'transferrinSaturation',
+        'Transferrin Sat.': 'transferrinSaturation',
+        'Transferrin saturation': 'transferrinSaturation',
+        
         'Sodium': 'sodium',
         'Potassium': 'potassium',
         'Calcium': 'calcium',
         'Phosphorus': 'phosphorus',
-        'Magnesium': 'magnesium',
         'Carbon Dioxide': 'bicarbonate',
         'Bicarbonate': 'bicarbonate', // Alternative naming
-        'Chloride': 'chloride'
+        'Chloride': 'chloride',
+        
+        // Additional markers
+        'Creatine Kinase': 'creatineKinase',
+        'Creatine kinase': 'creatineKinase',
+        'CK': 'creatineKinase',
+        'Cortisol': 'cortisol'
       };
 
       // Process each blood marker entry
@@ -475,16 +615,22 @@ export default function Home() {
         bloodMarkers: {
           totalCholesterol: [], ldl: [], hdl: [], triglycerides: [], apoB: [], lpA: [],
           whiteBloodCells: [], redBloodCells: [], hematocrit: [], hemoglobin: [], platelets: [],
+          neutrophilCount: [], neutrophilPercentage: [], lymphocyteCount: [], lymphocytePercentage: [],
+          monocyteCount: [], monocytePercentage: [], eosinophilCount: [], eosinophilPercentage: [],
+          basophilCount: [], basophilPercentage: [], mcv: [], mch: [], mchc: [], rdw: [], mpv: [],
           hba1c: [], fastingInsulin: [], glucose: [],
           alt: [], ast: [], ggt: [],
           egfr: [], cystatinC: [], bun: [], creatinine: [], albumin: [],
           testosterone: [], freeTesto: [], estradiol: [], shbg: [],
           t3: [], t4: [], tsh: [],
-          vitaminD: [],
+          vitaminD: [], vitaminB12: [], folate: [], iron: [],
+          magnesium: [], rbcMagnesium: [],
           crp: [], homocysteine: [],
           igf1: [],
           ferritin: [], serumIron: [], tibc: [], transferrinSaturation: [],
-          sodium: [], potassium: [], calcium: [], phosphorus: [], magnesium: [], bicarbonate: [], chloride: []
+          sodium: [], potassium: [], calcium: [], phosphorus: [],
+          bicarbonate: [], chloride: [],
+          creatineKinase: [], cortisol: []
         }
       };
     }
@@ -511,16 +657,22 @@ export default function Home() {
         bloodMarkers: {
           totalCholesterol: [], ldl: [], hdl: [], triglycerides: [], apoB: [], lpA: [],
           whiteBloodCells: [], redBloodCells: [], hematocrit: [], hemoglobin: [], platelets: [],
+          neutrophilCount: [], neutrophilPercentage: [], lymphocyteCount: [], lymphocytePercentage: [],
+          monocyteCount: [], monocytePercentage: [], eosinophilCount: [], eosinophilPercentage: [],
+          basophilCount: [], basophilPercentage: [], mcv: [], mch: [], mchc: [], rdw: [], mpv: [],
           hba1c: [], fastingInsulin: [], glucose: [],
           alt: [], ast: [], ggt: [],
           egfr: [], cystatinC: [], bun: [], creatinine: [], albumin: [],
           testosterone: [], freeTesto: [], estradiol: [], shbg: [],
           t3: [], t4: [], tsh: [],
-          vitaminD: [],
+          vitaminD: [], vitaminB12: [], folate: [], iron: [],
+          magnesium: [], rbcMagnesium: [],
           crp: [], homocysteine: [],
           igf1: [],
           ferritin: [], serumIron: [], tibc: [], transferrinSaturation: [],
-          sodium: [], potassium: [], calcium: [], phosphorus: [], magnesium: [], bicarbonate: [], chloride: []
+          sodium: [], potassium: [], calcium: [], phosphorus: [],
+          bicarbonate: [], chloride: [],
+          creatineKinase: [], cortisol: []
         }
       }));
     }
@@ -1966,11 +2118,65 @@ export default function Home() {
                     <MarkerRow label="Potassium" data={data.bloodMarkers.potassium} />
                     <MarkerRow label="Calcium" data={data.bloodMarkers.calcium} />
                     <MarkerRow label="Phosphorus" data={data.bloodMarkers.phosphorus} />
-                    <MarkerRow label="Magnesium" data={data.bloodMarkers.magnesium} />
                     <MarkerRow label="Bicarbonate" data={data.bloodMarkers.bicarbonate} />
                     <MarkerRow label="Chloride" data={data.bloodMarkers.chloride} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.sodium} />
+                </div>
+
+                {/* CBC Differentials */}
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">White Blood Cell Differentials</h3>
+                  <div className="space-y-6">
+                    <MarkerRow label="Neutrophil Count" data={data.bloodMarkers.neutrophilCount} />
+                    <MarkerRow label="Neutrophil Percentage" data={data.bloodMarkers.neutrophilPercentage} />
+                    <MarkerRow label="Lymphocyte Count" data={data.bloodMarkers.lymphocyteCount} />
+                    <MarkerRow label="Lymphocyte Percentage" data={data.bloodMarkers.lymphocytePercentage} />
+                    <MarkerRow label="Monocyte Count" data={data.bloodMarkers.monocyteCount} />
+                    <MarkerRow label="Monocyte Percentage" data={data.bloodMarkers.monocytePercentage} />
+                    <MarkerRow label="Eosinophil Count" data={data.bloodMarkers.eosinophilCount} />
+                    <MarkerRow label="Eosinophil Percentage" data={data.bloodMarkers.eosinophilPercentage} />
+                    <MarkerRow label="Basophil Count" data={data.bloodMarkers.basophilCount} />
+                    <MarkerRow label="Basophil Percentage" data={data.bloodMarkers.basophilPercentage} />
+                  </div>
+                  <LastTestedDate data={data.bloodMarkers.neutrophilCount} />
+                </div>
+                
+                {/* Red Blood Cell Indices */}
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Red Blood Cell Indices</h3>
+                  <div className="space-y-6">
+                    <MarkerRow label="MCV" data={data.bloodMarkers.mcv} />
+                    <MarkerRow label="MCH" data={data.bloodMarkers.mch} />
+                    <MarkerRow label="MCHC" data={data.bloodMarkers.mchc} />
+                    <MarkerRow label="RDW" data={data.bloodMarkers.rdw} />
+                    <MarkerRow label="MPV" data={data.bloodMarkers.mpv} />
+                  </div>
+                  <LastTestedDate data={data.bloodMarkers.mcv} />
+                </div>
+
+                {/* Vitamins & Minerals */}
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Vitamins & Minerals</h3>
+                  <div className="space-y-6">
+                    <MarkerRow label="Vitamin D" data={data.bloodMarkers.vitaminD} />
+                    <MarkerRow label="Vitamin B12" data={data.bloodMarkers.vitaminB12} />
+                    <MarkerRow label="Folate" data={data.bloodMarkers.folate} />
+                    <MarkerRow label="Iron" data={data.bloodMarkers.iron} />
+                    <MarkerRow label="Magnesium" data={data.bloodMarkers.magnesium} />
+                    <MarkerRow label="RBC Magnesium" data={data.bloodMarkers.rbcMagnesium} />
+                  </div>
+                  <LastTestedDate data={data.bloodMarkers.vitaminD} />
+                </div>
+
+                {/* Additional Markers */}
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Additional Markers</h3>
+                  <div className="space-y-6">
+                    <MarkerRow label="Creatine Kinase" data={data.bloodMarkers.creatineKinase} />
+                    <MarkerRow label="Cortisol" data={data.bloodMarkers.cortisol} />
+                  </div>
+                  <LastTestedDate data={data.bloodMarkers.creatineKinase} />
                 </div>
             </div>
           </div>

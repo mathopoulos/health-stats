@@ -104,6 +104,25 @@ const SUPPORTED_MARKERS = [
   { name: 'Hemoglobin', unit: 'g/dL', category: 'Complete Blood Count' },
   { name: 'Platelets', unit: 'K/µL', category: 'Complete Blood Count' },
   
+  // CBC Differentials
+  { name: 'Neutrophil Count', unit: 'K/µL', category: 'CBC Differentials' },
+  { name: 'Neutrophil Percentage', unit: '%', category: 'CBC Differentials' },
+  { name: 'Lymphocyte Count', unit: 'K/µL', category: 'CBC Differentials' },
+  { name: 'Lymphocyte Percentage', unit: '%', category: 'CBC Differentials' },
+  { name: 'Monocyte Count', unit: 'K/µL', category: 'CBC Differentials' },
+  { name: 'Monocyte Percentage', unit: '%', category: 'CBC Differentials' },
+  { name: 'Eosinophil Count', unit: 'K/µL', category: 'CBC Differentials' },
+  { name: 'Eosinophil Percentage', unit: '%', category: 'CBC Differentials' },
+  { name: 'Basophil Count', unit: 'K/µL', category: 'CBC Differentials' },
+  { name: 'Basophil Percentage', unit: '%', category: 'CBC Differentials' },
+  
+  // Red Blood Cell Indices
+  { name: 'MCV', unit: 'fL', category: 'Red Blood Cell Indices' },
+  { name: 'MCH', unit: 'pg', category: 'Red Blood Cell Indices' },
+  { name: 'MCHC', unit: 'g/dL', category: 'Red Blood Cell Indices' },
+  { name: 'RDW', unit: '%', category: 'Red Blood Cell Indices' },
+  { name: 'MPV', unit: 'fL', category: 'Red Blood Cell Indices' },
+  
   // Glucose Markers
   { name: 'HbA1c', unit: '%', category: 'Glucose Markers' },
   { name: 'Fasting Insulin', unit: 'µIU/mL', category: 'Glucose Markers' },
@@ -132,10 +151,17 @@ const SUPPORTED_MARKERS = [
   { name: 'T4', unit: 'ng/dL', category: 'Thyroid Markers' },
   { name: 'TSH', unit: 'mIU/L', category: 'Thyroid Markers' },
   
-  // Vitamins & Inflammation
-  { name: 'Vitamin D3', unit: 'ng/mL', category: 'Vitamins & Inflammation' },
-  { name: 'hs-CRP', unit: 'mg/L', category: 'Vitamins & Inflammation' },
-  { name: 'Homocysteine', unit: 'µmol/L', category: 'Vitamins & Inflammation' },
+  // Vitamins & Minerals
+  { name: 'Vitamin D', unit: 'ng/mL', category: 'Vitamins & Minerals' },
+  { name: 'Vitamin B12', unit: 'pg/mL', category: 'Vitamins & Minerals' },
+  { name: 'Folate', unit: 'ng/mL', category: 'Vitamins & Minerals' },
+  { name: 'Iron', unit: 'µg/dL', category: 'Vitamins & Minerals' },
+  { name: 'Magnesium', unit: 'mg/dL', category: 'Vitamins & Minerals' },
+  { name: 'RBC Magnesium', unit: 'mg/dL', category: 'Vitamins & Minerals' },
+  
+  // Inflammation
+  { name: 'hs-CRP', unit: 'mg/L', category: 'Inflammation' },
+  { name: 'Homocysteine', unit: 'µmol/L', category: 'Inflammation' },
   
   // Growth Factors
   { name: 'IGF-1', unit: 'ng/mL', category: 'Growth Factors' },
@@ -153,7 +179,11 @@ const SUPPORTED_MARKERS = [
   { name: 'Phosphorus', unit: 'mg/dL', category: 'Electrolytes' },
   { name: 'Magnesium', unit: 'mg/dL', category: 'Electrolytes' },
   { name: 'Bicarbonate', unit: 'mEq/L', category: 'Electrolytes' },
-  { name: 'Chloride', unit: 'mEq/L', category: 'Electrolytes' }
+  { name: 'Chloride', unit: 'mEq/L', category: 'Electrolytes' },
+  
+  // Additional markers
+  { name: 'Creatine Kinase', unit: 'U/L', category: 'Additional Markers' },
+  { name: 'Cortisol', unit: 'µg/dL', category: 'Additional Markers' }
 ];
 
 // Create normalization map for alternative marker names
@@ -204,6 +234,73 @@ const MARKER_NORMALIZATION_MAP = {
   'PLT': 'Platelets',
   'PLATELET COUNT': 'Platelets',
   
+  // CBC Differentials
+  'NEUTROPHILS, ABSOLUTE': 'Neutrophil Count',
+  'ABSOLUTE NEUTROPHILS': 'Neutrophil Count',
+  'ANC': 'Neutrophil Count',
+  'NEUT': 'Neutrophil Count',
+  'NEUTROPHILS': 'Neutrophil Count',
+  'NEUTROPHIL': 'Neutrophil Count',
+  'SEGS': 'Neutrophil Count',
+  
+  'NEUTROPHILS %': 'Neutrophil Percentage',
+  'NEUT %': 'Neutrophil Percentage',
+  'NEUTROPHIL %': 'Neutrophil Percentage',
+  'SEGS %': 'Neutrophil Percentage',
+  
+  'LYMPHOCYTES, ABSOLUTE': 'Lymphocyte Count',
+  'ABSOLUTE LYMPHOCYTES': 'Lymphocyte Count',
+  'LYMPHS': 'Lymphocyte Count',
+  'LYMPHOCYTES': 'Lymphocyte Count',
+  'LYMPHOCYTE': 'Lymphocyte Count',
+  
+  'LYMPHOCYTES %': 'Lymphocyte Percentage',
+  'LYMPHS %': 'Lymphocyte Percentage',
+  'LYMPHOCYTE %': 'Lymphocyte Percentage',
+  
+  'MONOCYTES, ABSOLUTE': 'Monocyte Count',
+  'ABSOLUTE MONOCYTES': 'Monocyte Count',
+  'MONOS': 'Monocyte Count',
+  'MONOCYTES': 'Monocyte Count',
+  'MONOCYTE': 'Monocyte Count',
+  
+  'MONOCYTES %': 'Monocyte Percentage',
+  'MONOS %': 'Monocyte Percentage',
+  'MONOCYTE %': 'Monocyte Percentage',
+  
+  'EOSINOPHILS, ABSOLUTE': 'Eosinophil Count',
+  'ABSOLUTE EOSINOPHILS': 'Eosinophil Count',
+  'EOS': 'Eosinophil Count',
+  'EOSINOPHILS': 'Eosinophil Count',
+  'EOSINOPHIL': 'Eosinophil Count',
+  
+  'EOSINOPHILS %': 'Eosinophil Percentage',
+  'EOS %': 'Eosinophil Percentage',
+  'EOSINOPHIL %': 'Eosinophil Percentage',
+  
+  'BASOPHILS, ABSOLUTE': 'Basophil Count',
+  'ABSOLUTE BASOPHILS': 'Basophil Count',
+  'BASOS': 'Basophil Count',
+  'BASOPHILS': 'Basophil Count',
+  'BASOPHIL': 'Basophil Count',
+  
+  'BASOPHILS %': 'Basophil Percentage',
+  'BASOS %': 'Basophil Percentage',
+  'BASOPHIL %': 'Basophil Percentage',
+  
+  // Red Blood Cell Indices
+  'MEAN CORPUSCULAR VOLUME': 'MCV',
+  
+  'MEAN CORPUSCULAR HEMOGLOBIN': 'MCH',
+  
+  'MEAN CORPUSCULAR HEMOGLOBIN CONCENTRATION': 'MCHC',
+  
+  'RED CELL DISTRIBUTION WIDTH': 'RDW',
+  'RDW-CV': 'RDW',
+  'RDW-SD': 'RDW',
+  
+  'MEAN PLATELET VOLUME': 'MPV',
+  
   // Glucose Markers
   'A1C': 'HbA1c',
   'HEMOGLOBIN A1C': 'HbA1c',
@@ -229,6 +326,61 @@ const MARKER_NORMALIZATION_MAP = {
   'GAMMA-GLUTAMYL TRANSFERASE': 'GGT',
   'GAMMA GLUTAMYL TRANSFERASE': 'GGT',
   
+  // Vitamins & Minerals
+  'VITAMIN D, 25-HYDROXY': 'Vitamin D',
+  'VITAMIN D 25-HYDROXY': 'Vitamin D',
+  'VITAMIN D3': 'Vitamin D',
+  '25-OH VITAMIN D': 'Vitamin D',
+  '25(OH)D': 'Vitamin D',
+  '25-HYDROXYVITAMIN D': 'Vitamin D',
+  
+  'VITAMIN B-12': 'Vitamin B12',
+  'VITAMIN B12': 'Vitamin B12',
+  'VIT B12': 'Vitamin B12',
+  'B12': 'Vitamin B12',
+  'COBALAMIN': 'Vitamin B12',
+  
+  'FOLIC ACID': 'Folate',
+  'VITAMIN B9': 'Folate',
+  
+  'SERUM IRON': 'Iron',
+  'IRON, SERUM': 'Iron',
+  
+  'MAGNESIUM, SERUM': 'Magnesium',
+  'MAGNESIUM, RBC': 'RBC Magnesium',
+  'RBC MAGNESIUM': 'RBC Magnesium',
+  
+  // Inflammation
+  'CRP': 'hs-CRP',
+  'C-REACTIVE PROTEIN': 'hs-CRP',
+  'HIGH SENSITIVITY CRP': 'hs-CRP',
+  'HS CRP': 'hs-CRP',
+  'HSCRP': 'hs-CRP',
+  
+  // Additional Markers
+  'CK': 'Creatine Kinase',
+  'CPK': 'Creatine Kinase',
+  'CREATINE PHOSPHOKINASE': 'Creatine Kinase',
+  
+  'CORTISOL, SERUM': 'Cortisol',
+  'SERUM CORTISOL': 'Cortisol',
+  
+  // Sex Hormones
+  'TOTAL TESTOSTERONE': 'Testosterone',
+  'TEST': 'Testosterone',
+  'TESTO': 'Testosterone',
+  'TOTAL TEST': 'Testosterone',
+  'T': 'Testosterone',
+  'SERUM TESTOSTERONE': 'Testosterone',
+  'TESTOSTERONE, SERUM': 'Testosterone',
+  
+  'FREE TESTO': 'Free Testosterone',
+  'FREE TEST': 'Free Testosterone',
+  'DIRECT FREE TESTOSTERONE': 'Free Testosterone',
+  'FREE TESTOSTERONE DIRECT': 'Free Testosterone',
+  'BIOAVAILABLE TESTOSTERONE': 'Free Testosterone',
+  'FREE T': 'Free Testosterone',
+  
   // Common unit normalizations
   'mg/dl': 'mg/dL',
   'MG/DL': 'mg/dL',
@@ -239,6 +391,24 @@ const MARKER_NORMALIZATION_MAP = {
   'uIU/ml': 'µIU/mL',
   'uIU/mL': 'µIU/mL',
   'UIU/ML': 'µIU/mL',
+  'K/uL': 'K/µL',
+  'K/ul': 'K/µL',
+  'M/uL': 'M/µL',
+  'M/ul': 'M/µL',
+  'g/dl': 'g/dL',
+  'G/DL': 'g/dL',
+  'meq/L': 'mEq/L',
+  'MEQ/L': 'mEq/L',
+  'umol/L': 'µmol/L',
+  'UMOL/L': 'µmol/L',
+  'ug/dL': 'µg/dL',
+  'UG/DL': 'µg/dL',
+  'ml/min/1.73m2': 'mL/min/1.73m²',
+  'ML/MIN/1.73M2': 'mL/min/1.73m²',
+  'fl': 'fL',
+  'FL': 'fL',
+  'U/l': 'U/L',
+  'u/L': 'U/L',
 };
 
 // Add function to normalize marker names and units
