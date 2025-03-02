@@ -869,6 +869,59 @@ export default function Home() {
     );
   }
 
+  // Add this helper function before the render function or with other utilities
+  const getAdaptiveYAxisDomain = (data: HealthData[], metricType: 'weight' | 'hrv' | 'vo2max' | 'bodyFat'): [number, number] => {
+    if (!data || data.length <= 1) {
+      return [0, 100]; // Default domain if no data
+    }
+    
+    // Get min and max values
+    const values = data.map(item => item.value);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min;
+    
+    // Calculate standard deviation to understand data variation
+    const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
+    const squaredDiffs = values.map(val => Math.pow(val - mean, 2));
+    const variance = squaredDiffs.reduce((sum, val) => sum + val, 0) / values.length;
+    const stdDev = Math.sqrt(variance);
+    
+    // Set min/max padding based on data variation
+    // If variation is very small, increase the padding to make changes more visible
+    let minPadding, maxPadding;
+    
+    // Different metrics need different scaling approaches
+    if (metricType === 'bodyFat') {
+      // Body fat typically has small percentage variations that are significant
+      minPadding = range < 2 ? Math.max(0.5, stdDev * 2) : range * 0.1;
+      maxPadding = range < 2 ? Math.max(0.5, stdDev * 2) : range * 0.1;
+    } else if (metricType === 'weight') {
+      // Weight typically has small variations that are significant
+      minPadding = range < 5 ? Math.max(1, stdDev * 2) : range * 0.1;
+      maxPadding = range < 5 ? Math.max(1, stdDev * 2) : range * 0.1;
+    } else if (metricType === 'vo2max') {
+      // VO2 Max typically has small variations that are significant
+      minPadding = range < 3 ? Math.max(0.5, stdDev * 2) : range * 0.1;
+      maxPadding = range < 3 ? Math.max(0.5, stdDev * 2) : range * 0.1;
+    } else if (metricType === 'hrv') {
+      // HRV can have larger variations
+      minPadding = range < 10 ? Math.max(2, stdDev) : range * 0.1;
+      maxPadding = range < 10 ? Math.max(2, stdDev) : range * 0.1;
+    } else {
+      // Default approach
+      minPadding = range * 0.1;
+      maxPadding = range * 0.1;
+    }
+    
+    // Ensure we don't go below zero for metrics that can't be negative
+    const lowerBound = metricType === 'bodyFat' || metricType === 'weight' || metricType === 'vo2max' 
+      ? Math.max(0, min - minPadding)
+      : min - minPadding;
+    
+    return [lowerBound, max + maxPadding];
+  };
+
   return (
     <>
       <Head>
@@ -1233,7 +1286,7 @@ export default function Home() {
                           vertical={false}
                         />
                         <YAxis 
-                          domain={[(dataMin: number) => Math.max(dataMin * 0.9, dataMin - 5), (dataMax: number) => dataMax * 1.05]} 
+                          domain={getAdaptiveYAxisDomain(currentHRVData, 'hrv')}
                           hide={true}
                         />
                   <XAxis 
@@ -1315,7 +1368,7 @@ export default function Home() {
                           vertical={false}
                         />
                         <YAxis 
-                          domain={[(dataMin: number) => Math.max(dataMin * 0.9, dataMin - 1), (dataMax: number) => dataMax * 1.05]} 
+                          domain={getAdaptiveYAxisDomain(currentVO2MaxData, 'vo2max')}
                           hide={true}
                         />
                   <XAxis 
@@ -1397,7 +1450,7 @@ export default function Home() {
                           vertical={false}
                         />
                         <YAxis 
-                          domain={[(dataMin: number) => Math.max(dataMin * 0.9, dataMin - 5), (dataMax: number) => dataMax * 1.05]} 
+                          domain={getAdaptiveYAxisDomain(currentWeightData, 'weight')}
                           hide={true}
                         />
                   <XAxis 
@@ -1479,7 +1532,7 @@ export default function Home() {
                           vertical={false}
                         />
                         <YAxis 
-                          domain={[(dataMin: number) => Math.max(0, dataMin * 0.9), (dataMax: number) => dataMax * 1.05]} 
+                          domain={getAdaptiveYAxisDomain(currentBodyFatData, 'bodyFat')}
                           hide={true}
                         />
                   <XAxis 
