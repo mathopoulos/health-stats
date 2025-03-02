@@ -227,10 +227,10 @@ export default function Home() {
     loading: true
   });
   const [error, setError] = useState<string | null>(null);
-  const [weightTimeRange, setWeightTimeRange] = useState<TimeRange>('last3months');
-  const [bodyFatTimeRange, setBodyFatTimeRange] = useState<TimeRange>('last3months');
-  const [hrvTimeRange, setHrvTimeRange] = useState<TimeRange>('last3months');
-  const [vo2maxTimeRange, setVo2maxTimeRange] = useState<TimeRange>('last3months');
+  const [weightTimeRange, setWeightTimeRange] = useState<TimeRange>('last1year');
+  const [bodyFatTimeRange, setBodyFatTimeRange] = useState<TimeRange>('last1year');
+  const [hrvTimeRange, setHrvTimeRange] = useState<TimeRange>('last1year');
+  const [vo2maxTimeRange, setVo2maxTimeRange] = useState<TimeRange>('last1year');
   const [dateRange, setDateRange] = useState<{
     start: Date | null;
     end: Date | null;
@@ -423,10 +423,10 @@ export default function Home() {
         setDateRange({ start, end });
         
         // Initialize time ranges with default values
-        setWeightTimeRange('last3months');
-        setBodyFatTimeRange('last3months');
-        setHrvTimeRange('last3months');
-        setVo2maxTimeRange('last3months');
+        setWeightTimeRange('last1year');
+        setBodyFatTimeRange('last1year');
+        setHrvTimeRange('last1year');
+        setVo2maxTimeRange('last1year');
       }
 
       return {
@@ -562,10 +562,10 @@ export default function Home() {
     // Set initial state based on data range
     if (dateRange.start && dateRange.end) {
       // Initialize with default time ranges
-      setWeightTimeRange('last3months');
-      setBodyFatTimeRange('last3months');
-      setHrvTimeRange('last3months');
-      setVo2maxTimeRange('last3months');
+      setWeightTimeRange('last1year');
+      setBodyFatTimeRange('last1year');
+      setHrvTimeRange('last1year');
+      setVo2maxTimeRange('last1year');
       
       // No longer setting date variables as they have been removed
     }
