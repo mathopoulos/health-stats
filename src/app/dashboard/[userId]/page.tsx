@@ -12,6 +12,7 @@ import Head from 'next/head';
 import toast, { Toaster } from 'react-hot-toast';
 import ThemeToggle from '@/app/components/ThemeToggle';
 import { useTheme } from '@/app/context/ThemeContext';
+import TrendIndicator from '@/components/TrendIndicator';
 
 interface HealthData {
   date: string;
@@ -1229,54 +1230,13 @@ export default function Home() {
                             
                             // Only show if we have enough data
                             if (currentAvg > 0 && prevAvg > 0) {
-                              const isIncrease = percentChange > 0;
-                              // For body fat, a decrease is typically considered positive
-                              const isPositiveTrend = !isIncrease;
-                              const absPercentChange = Math.abs(percentChange).toFixed(1);
-                              const isZeroChange = absPercentChange === '0.0';
-                              
                               return (
-                                <div className={`ml-3 flex items-center ${
-                                  isZeroChange
-                                    ? 'bg-gray-50 dark:bg-gray-700/20'
-                                    : isPositiveTrend
-                                      ? 'bg-emerald-50 dark:bg-emerald-900/20' 
-                                      : 'bg-red-50 dark:bg-red-900/20'
-                                } rounded-full px-3 py-1`}>
-                                  <svg 
-                                    className={`w-3.5 h-3.5 ${
-                                      isZeroChange
-                                        ? 'text-gray-400'
-                                        : isPositiveTrend 
-                                          ? 'text-emerald-500' 
-                                          : 'text-red-500'
-                                    } mr-1.5`}
-                                    viewBox="0 0 24 24" 
-                                    fill="none" 
-                                    stroke="currentColor"
-                                    strokeLinecap="round" 
-                                    strokeLinejoin="round" 
-                                    strokeWidth={2}
-                                  >
-                                    <path 
-                                      d={isZeroChange
-                                        ? "M5 12h14M12 5l7 7-7 7"
-                                        : isIncrease 
-                                          ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" 
-                                          : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"
-                                      } 
-                                    />
-                                  </svg>
-                                  <span className={`text-sm font-medium ${
-                                    isZeroChange
-                                      ? 'text-gray-500 dark:text-gray-400'
-                                      : isPositiveTrend 
-                                        ? 'text-emerald-600 dark:text-emerald-400' 
-                                        : 'text-red-600 dark:text-red-400'
-                                  }`}>
-                                    {isZeroChange ? '' : isIncrease ? '+' : '-'}{absPercentChange}% <span className="text-sm font-normal opacity-75">over {getTimeRangeLabel(bodyFatTimeRange).toLowerCase()}</span>
-                                  </span>
-                                </div>
+                                <TrendIndicator 
+                                  current={currentAvg} 
+                                  previous={prevAvg} 
+                                  isFitnessMetric={true}
+                                  isBodyFat={true}
+                                />
                               );
                             }
                             return null;
@@ -1324,46 +1284,27 @@ export default function Home() {
                           
                           // Previous period (older half of the data)
                           const previousPeriodData = rangeData.slice(-periodLength, -halfPeriod);
-                          const prevAvg = previousPeriodData.length > 0
-                            ? previousPeriodData.reduce((sum, item) => sum + item.value, 0) / previousPeriodData.length
-                            : 0;
-                          
-                          // Calculate percent change
-                          const percentChange = prevAvg > 0
-                            ? ((currentAvg - prevAvg) / prevAvg) * 100
+                          const previousAvg = previousPeriodData.length > 0 
+                            ? previousPeriodData.reduce((sum, item) => sum + item.value, 0) / previousPeriodData.length 
                             : 0;
                           
                           // Only show if we have enough data
                           if (currentPeriodData.length > 0 && previousPeriodData.length > 0) {
-                            const isIncrease = percentChange > 0;
-                            const absPercentChange = Math.abs(percentChange).toFixed(1);
-                            
+                            // Use HRV chart colors (indigo/purple)
                             return (
-                              <div className={`ml-3 flex items-center ${
-                                isIncrease 
-                                  ? 'bg-emerald-50 dark:bg-emerald-900/20' 
-                                  : 'bg-red-50 dark:bg-red-900/20'
-                              } rounded-full px-3 py-1`}>
-                                <svg 
-                                  className={`w-3.5 h-3.5 ${isIncrease ? 'text-emerald-500' : 'text-red-500'} mr-1.5`}
-                                  viewBox="0 0 24 24" 
-                                  fill="none" 
-                                  stroke="currentColor"
-                                >
-                                  <path 
-                                    strokeLinecap="round" 
-                                    strokeLinejoin="round" 
-                                    strokeWidth={2} 
-                                    d={isIncrease 
-                                      ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" 
-                                      : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"
-                                    } 
-                                  />
-                                </svg>
-                                <span className={`text-sm font-medium ${isIncrease ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                                  {isIncrease ? '+' : '-'}{absPercentChange}% <span className="text-sm font-normal opacity-75">over {getTimeRangeLabel(hrvTimeRange).toLowerCase()}</span>
-                                </span>
-                              </div>
+                              <TrendIndicator 
+                                current={currentAvg} 
+                                previous={previousAvg} 
+                                isFitnessMetric={true}
+                                showTimeRange={true}
+                                timeRangeLabel={getTimeRangeLabel(hrvTimeRange)}
+                                customColors={{
+                                  bgColor: 'bg-indigo-50 dark:bg-indigo-900/20',
+                                  textColor: 'text-indigo-600 dark:text-indigo-400',
+                                  iconColor: 'text-indigo-500'
+                                }}
+                                className="ml-3"
+                              />
                             );
                           }
                           return null;
@@ -1490,44 +1431,23 @@ export default function Home() {
                             ? previousPeriodData.reduce((sum, item) => sum + item.value, 0) / previousPeriodData.length
                             : 0;
                           
-                          // Calculate percent change
-                          const percentChange = prevAvg > 0
-                            ? ((currentAvg - prevAvg) / prevAvg) * 100
-                            : null;
-                          
                           // Only show if we have enough data
-                          if (currentPeriodData.length > 0 && previousPeriodData.length > 0 && percentChange !== null) {
-                            const isIncrease = percentChange > 0;
-                            // For VO2 Max, an increase is positive (higher VO2 Max is better)
-                            const isPositiveTrend = isIncrease;
-                            const absPercentChange = Math.abs(percentChange).toFixed(1);
-                            
+                          if (currentPeriodData.length > 0 && previousPeriodData.length > 0 && prevAvg > 0) {
+                            // Use VO2Max chart colors (red)
                             return (
-                              <div className={`ml-3 flex items-center ${
-                                isPositiveTrend
-                                  ? 'bg-emerald-50 dark:bg-emerald-900/20' 
-                                  : 'bg-red-50 dark:bg-red-900/20'
-                              } rounded-full px-3 py-1`}>
-                                <svg 
-                                  className={`w-3.5 h-3.5 ${isPositiveTrend ? 'text-emerald-500' : 'text-red-500'} mr-1.5`}
-                                  viewBox="0 0 24 24" 
-                                  fill="none" 
-                                  stroke="currentColor"
-                                  strokeLinecap="round" 
-                                  strokeLinejoin="round" 
-                                  strokeWidth={2}
-                                >
-                                  <path 
-                                    d={isIncrease 
-                                      ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" 
-                                      : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"
-                                    } 
-                                  />
-                                </svg>
-                                <span className={`text-sm font-medium ${isPositiveTrend ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                                  {isIncrease ? '+' : '-'}{absPercentChange}% <span className="text-sm font-normal opacity-75">over {getTimeRangeLabel(vo2maxTimeRange).toLowerCase()}</span>
-                                </span>
-                              </div>
+                              <TrendIndicator 
+                                current={currentAvg} 
+                                previous={prevAvg} 
+                                isFitnessMetric={true}
+                                showTimeRange={true}
+                                timeRangeLabel={getTimeRangeLabel(vo2maxTimeRange)}
+                                customColors={{
+                                  bgColor: 'bg-red-50 dark:bg-red-900/20',
+                                  textColor: 'text-red-600 dark:text-red-400',
+                                  iconColor: 'text-red-500'
+                                }}
+                                className="ml-3"
+                              />
                             );
                           }
                           return null;
@@ -1652,61 +1572,23 @@ export default function Home() {
                             ? previousPeriodData.reduce((sum, item) => sum + item.value, 0) / previousPeriodData.length
                             : 0;
                           
-                          // Calculate percent change
-                          const percentChange = prevAvg !== 0
-                            ? ((currentAvg - prevAvg) / prevAvg) * 100
-                            : 0;
-                          
                           // Only show if we have enough data
                           if (currentPeriodData.length > 0 && previousPeriodData.length > 0) {
-                            const isIncrease = percentChange > 0;
-                            // For weight, a decrease is typically considered positive
-                            const isPositiveTrend = !isIncrease;
-                            const absPercentChange = Math.abs(percentChange).toFixed(1);
-                            const isZeroChange = absPercentChange === '0.0';
-                            
+                            // Use weight chart colors (green)
                             return (
-                              <div className={`ml-3 flex items-center ${
-                                isZeroChange
-                                  ? 'bg-gray-50 dark:bg-gray-700/20'
-                                  : isPositiveTrend
-                                    ? 'bg-emerald-50 dark:bg-emerald-900/20' 
-                                    : 'bg-red-50 dark:bg-red-900/20'
-                              } rounded-full px-3 py-1`}>
-                                <svg 
-                                  className={`w-3.5 h-3.5 ${
-                                    isZeroChange
-                                      ? 'text-gray-400'
-                                      : isPositiveTrend 
-                                        ? 'text-emerald-500' 
-                                        : 'text-red-500'
-                                  } mr-1.5`}
-                                  viewBox="0 0 24 24" 
-                                  fill="none" 
-                                  stroke="currentColor"
-                                  strokeLinecap="round" 
-                                  strokeLinejoin="round" 
-                                  strokeWidth={2}
-                                >
-                                  <path 
-                                    d={isZeroChange
-                                      ? "M5 12h14M12 5l7 7-7 7"
-                                      : isIncrease 
-                                        ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" 
-                                        : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"
-                                    } 
-                                  />
-                                </svg>
-                                <span className={`text-sm font-medium ${
-                                  isZeroChange
-                                    ? 'text-gray-500 dark:text-gray-400'
-                                    : isPositiveTrend 
-                                      ? 'text-emerald-600 dark:text-emerald-400' 
-                                      : 'text-red-600 dark:text-red-400'
-                                }`}>
-                                  {isZeroChange ? '' : isIncrease ? '+' : '-'}{absPercentChange}% <span className="text-sm font-normal opacity-75">over {getTimeRangeLabel(weightTimeRange).toLowerCase()}</span>
-                                </span>
-                              </div>
+                              <TrendIndicator 
+                                current={currentAvg} 
+                                previous={prevAvg} 
+                                isFitnessMetric={true}
+                                showTimeRange={true}
+                                timeRangeLabel={getTimeRangeLabel(weightTimeRange)}
+                                customColors={{
+                                  bgColor: 'bg-green-50 dark:bg-green-900/20',
+                                  textColor: isDarkMode ? 'text-[#34d399]' : 'text-[#10b981]',
+                                  iconColor: isDarkMode ? 'text-[#34d399]' : 'text-[#10b981]'
+                                }}
+                                className="ml-3"
+                              />
                             );
                           }
                           return null;
@@ -1830,44 +1712,26 @@ export default function Home() {
                             ? previousPeriodData.reduce((sum, item) => sum + item.value, 0) / previousPeriodData.length
                             : 0;
                           
-                          // Calculate percent change
-                          const percentChange = prevAvg > 0
-                            ? ((currentAvg - prevAvg) / prevAvg) * 100
-                            : null;
-                          
                           // Only show if we have enough data
-                          if (currentPeriodData.length > 0 && previousPeriodData.length > 0 && percentChange !== null) {
-                            const isIncrease = percentChange > 0;
+                          if (currentPeriodData.length > 0 && previousPeriodData.length > 0 && prevAvg > 0) {
                             // For body fat, a decrease is typically considered positive
-                            const isPositiveTrend = !isIncrease;
-                            const absPercentChange = Math.abs(percentChange).toFixed(1);
+                            const isPositiveTrend = currentAvg < prevAvg;
                             
                             return (
-                              <div className={`ml-3 flex items-center ${
-                                isPositiveTrend
-                                  ? 'bg-emerald-50 dark:bg-emerald-900/20' 
-                                  : 'bg-red-50 dark:bg-red-900/20'
-                              } rounded-full px-3 py-1`}>
-                                <svg 
-                                  className={`w-3.5 h-3.5 ${isPositiveTrend ? 'text-emerald-500' : 'text-red-500'} mr-1.5`}
-                                  viewBox="0 0 24 24" 
-                                  fill="none" 
-                                  stroke="currentColor"
-                                  strokeLinecap="round" 
-                                  strokeLinejoin="round" 
-                                  strokeWidth={2}
-                                >
-                                  <path 
-                                    d={isIncrease 
-                                      ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" 
-                                      : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"
-                                    } 
-                                  />
-                                </svg>
-                                <span className={`text-sm font-medium ${isPositiveTrend ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                                  {isIncrease ? '+' : '-'}{absPercentChange}% <span className="text-sm font-normal opacity-75">over {getTimeRangeLabel(bodyFatTimeRange).toLowerCase()}</span>
-                                </span>
-                              </div>
+                              <TrendIndicator 
+                                current={currentAvg} 
+                                previous={prevAvg} 
+                                isFitnessMetric={true}
+                                isBodyFat={true}
+                                showTimeRange={true}
+                                timeRangeLabel={getTimeRangeLabel(bodyFatTimeRange)}
+                                customColors={{
+                                  bgColor: 'bg-amber-50 dark:bg-amber-900/20',
+                                  textColor: isDarkMode ? 'text-[#fbbf24]' : 'text-[#d97706]',
+                                  iconColor: isDarkMode ? 'text-[#fbbf24]' : 'text-[#d97706]'
+                                }}
+                                className="ml-3"
+                              />
                             );
                           }
                           return null;
@@ -2101,97 +1965,6 @@ export default function Home() {
 }
 
 // Helper Components
-const TrendIndicator = ({ 
-  current, 
-  previous, 
-  isBodyFat = false,
-  decreaseIsGood = null,
-  min = 0,
-  max = 100,
-  isFitnessMetric = false
-}: { 
-  current: number, 
-  previous: number, 
-  isBodyFat?: boolean,
-  decreaseIsGood?: boolean | null,
-  min?: number,
-  max?: number,
-  isFitnessMetric?: boolean
-}) => {
-  const percentChange = ((current - previous) / previous) * 100;
-  const isIncrease = percentChange > 0;
-
-  // Handle fitness metrics differently
-  if (isFitnessMetric) {
-    let color = 'text-gray-500';
-    if (isBodyFat) {
-      // For body fat, decrease is good
-      color = !isIncrease ? 'text-green-500' : 'text-red-500';
-    } else {
-      // For HRV, VO2 max, and weight, increase is good
-      color = isIncrease ? 'text-green-500' : 'text-red-500';
-    }
-    return (
-      <span className={`text-sm flex items-center ${color}`}>
-        {isIncrease ? (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-          </svg>
-        ) : (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
-          </svg>
-        )}
-        <span className="ml-1">{Math.abs(percentChange).toFixed(1)}%</span>
-      </span>
-    );
-  }
-  
-  // Blood marker logic
-  const range = max - min;
-  const optimalMin = min + (range * 0.25);
-  const optimalMax = max - (range * 0.25);
-
-  const isInOptimalRange = (value: number) => value >= optimalMin && value <= optimalMax;
-  const isInNormalRange = (value: number) => value >= min && value <= max;
-  const isMovingTowardsOptimal = () => {
-    if (isInOptimalRange(current)) return true;
-    if (current > optimalMax && previous > current) return true;
-    if (current < optimalMin && previous < current) return true;
-    return false;
-  };
-  const isMovingFromOptimalToNormal = () => {
-    return isInOptimalRange(previous) && !isInOptimalRange(current) && isInNormalRange(current);
-  };
-  const isMovingTowardsAbnormal = () => {
-    return (current > max && previous < current) || (current < min && previous > current);
-  };
-
-  let color = 'text-gray-500';
-  if (isMovingTowardsOptimal()) {
-    color = 'text-green-500';
-  } else if (isMovingFromOptimalToNormal() || isMovingTowardsAbnormal()) {
-    color = 'text-red-500';
-  } else if (decreaseIsGood !== null) {
-    color = (isIncrease !== decreaseIsGood) ? 'text-green-500' : 'text-red-500';
-  }
-
-  return (
-    <span className={`text-sm flex items-center ${color}`}>
-      {isIncrease ? (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-        </svg>
-      ) : (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
-        </svg>
-      )}
-      <span className="ml-1">{Math.abs(percentChange).toFixed(1)}%</span>
-    </span>
-  );
-};
-
 const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
   // Convert label to config key
   const configKey = label.toLowerCase()
