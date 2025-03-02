@@ -1223,11 +1223,63 @@ export default function Home() {
                               .slice(-60, -30)
                               .reduce((sum, item) => sum + item.value, 0) / 
                               Math.min(data.bodyFat.slice(-60, -30).length, 30);
-                            const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
-                            const isIncrease = percentChange > 0;
-                            return (
-                              <TrendIndicator current={currentAvg} previous={prevAvg} isBodyFat={true} isFitnessMetric={true} />
-                            );
+                            const percentChange = prevAvg > 0
+                              ? ((currentAvg - prevAvg) / prevAvg) * 100
+                              : 0;
+                            
+                            // Only show if we have enough data
+                            if (currentAvg > 0 && prevAvg > 0) {
+                              const isIncrease = percentChange > 0;
+                              // For body fat, a decrease is typically considered positive
+                              const isPositiveTrend = !isIncrease;
+                              const absPercentChange = Math.abs(percentChange).toFixed(1);
+                              const isZeroChange = absPercentChange === '0.0';
+                              
+                              return (
+                                <div className={`ml-3 flex items-center ${
+                                  isZeroChange
+                                    ? 'bg-gray-50 dark:bg-gray-700/20'
+                                    : isPositiveTrend
+                                      ? 'bg-emerald-50 dark:bg-emerald-900/20' 
+                                      : 'bg-red-50 dark:bg-red-900/20'
+                                } rounded-full px-3 py-1`}>
+                                  <svg 
+                                    className={`w-3.5 h-3.5 ${
+                                      isZeroChange
+                                        ? 'text-gray-400'
+                                        : isPositiveTrend 
+                                          ? 'text-emerald-500' 
+                                          : 'text-red-500'
+                                    } mr-1.5`}
+                                    viewBox="0 0 24 24" 
+                                    fill="none" 
+                                    stroke="currentColor"
+                                    strokeLinecap="round" 
+                                    strokeLinejoin="round" 
+                                    strokeWidth={2}
+                                  >
+                                    <path 
+                                      d={isZeroChange
+                                        ? "M5 12h14M12 5l7 7-7 7"
+                                        : isIncrease 
+                                          ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" 
+                                          : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"
+                                      } 
+                                    />
+                                  </svg>
+                                  <span className={`text-sm font-medium ${
+                                    isZeroChange
+                                      ? 'text-gray-500 dark:text-gray-400'
+                                      : isPositiveTrend 
+                                        ? 'text-emerald-600 dark:text-emerald-400' 
+                                        : 'text-red-600 dark:text-red-400'
+                                  }`}>
+                                    {isZeroChange ? '' : isIncrease ? '+' : '-'}{absPercentChange}% <span className="text-sm font-normal opacity-75">over {getTimeRangeLabel(bodyFatTimeRange).toLowerCase()}</span>
+                                  </span>
+                                </div>
+                              );
+                            }
+                            return null;
                           })()}
                         </div>
                       )}
@@ -1611,15 +1663,24 @@ export default function Home() {
                             // For weight, a decrease is typically considered positive
                             const isPositiveTrend = !isIncrease;
                             const absPercentChange = Math.abs(percentChange).toFixed(1);
+                            const isZeroChange = absPercentChange === '0.0';
                             
                             return (
                               <div className={`ml-3 flex items-center ${
-                                isPositiveTrend
-                                  ? 'bg-emerald-50 dark:bg-emerald-900/20' 
-                                  : 'bg-red-50 dark:bg-red-900/20'
+                                isZeroChange
+                                  ? 'bg-gray-50 dark:bg-gray-700/20'
+                                  : isPositiveTrend
+                                    ? 'bg-emerald-50 dark:bg-emerald-900/20' 
+                                    : 'bg-red-50 dark:bg-red-900/20'
                               } rounded-full px-3 py-1`}>
                                 <svg 
-                                  className={`w-3.5 h-3.5 ${isPositiveTrend ? 'text-emerald-500' : 'text-red-500'} mr-1.5`}
+                                  className={`w-3.5 h-3.5 ${
+                                    isZeroChange
+                                      ? 'text-gray-400'
+                                      : isPositiveTrend 
+                                        ? 'text-emerald-500' 
+                                        : 'text-red-500'
+                                  } mr-1.5`}
                                   viewBox="0 0 24 24" 
                                   fill="none" 
                                   stroke="currentColor"
@@ -1628,14 +1689,22 @@ export default function Home() {
                                   strokeWidth={2}
                                 >
                                   <path 
-                                    d={isIncrease 
-                                      ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" 
-                                      : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"
+                                    d={isZeroChange
+                                      ? "M5 12h14M12 5l7 7-7 7"
+                                      : isIncrease 
+                                        ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" 
+                                        : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"
                                     } 
                                   />
                                 </svg>
-                                <span className={`text-sm font-medium ${isPositiveTrend ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                                  {isIncrease ? '+' : '-'}{absPercentChange}% <span className="text-sm font-normal opacity-75">over {getTimeRangeLabel(weightTimeRange).toLowerCase()}</span>
+                                <span className={`text-sm font-medium ${
+                                  isZeroChange
+                                    ? 'text-gray-500 dark:text-gray-400'
+                                    : isPositiveTrend 
+                                      ? 'text-emerald-600 dark:text-emerald-400' 
+                                      : 'text-red-600 dark:text-red-400'
+                                }`}>
+                                  {isZeroChange ? '' : isIncrease ? '+' : '-'}{absPercentChange}% <span className="text-sm font-normal opacity-75">over {getTimeRangeLabel(weightTimeRange).toLowerCase()}</span>
                                 </span>
                               </div>
                             );
