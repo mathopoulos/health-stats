@@ -1240,7 +1240,85 @@ export default function Home() {
               {/* HRV Chart */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Heart Rate Variability</h2>
+                  <div className="flex items-center">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Heart Rate Variability</h2>
+                    {hasHRVData && !data.loading && (
+                      <>
+                        {(() => {
+                          // Calculate time range based on the selected option
+                          const timeRangeInDays = (() => {
+                            switch(hrvTimeRange) {
+                              case 'last30days': return 30;
+                              case 'last3months': return 90;
+                              case 'last6months': return 180;
+                              case 'last1year': return 365;
+                              case 'last3years': return 1095;
+                              default: return 30;
+                            }
+                          })();
+                          
+                          // Get filtered data based on selected time range
+                          const rangeData = currentHRVData;
+                          
+                          // Calculate averages for current and previous periods
+                          const periodLength = Math.min(timeRangeInDays, rangeData.length);
+                          const halfPeriod = Math.floor(periodLength / 2);
+                          
+                          // Current period (most recent half of the data)
+                          const currentPeriodData = rangeData.slice(-halfPeriod);
+                          const currentAvg = currentPeriodData.length > 0 
+                            ? currentPeriodData.reduce((sum, item) => sum + item.value, 0) / currentPeriodData.length 
+                            : 0;
+                          
+                          // Previous period (older half of the data)
+                          const previousPeriodData = rangeData.slice(-periodLength, -halfPeriod);
+                          const prevAvg = previousPeriodData.length > 0
+                            ? previousPeriodData.reduce((sum, item) => sum + item.value, 0) / previousPeriodData.length
+                            : 0;
+                          
+                          // Calculate percent change
+                          const percentChange = prevAvg > 0
+                            ? ((currentAvg - prevAvg) / prevAvg) * 100
+                            : 0;
+                          
+                          // Only show if we have enough data
+                          if (currentPeriodData.length > 0 && previousPeriodData.length > 0) {
+                            const isIncrease = percentChange > 0;
+                            const absPercentChange = Math.abs(percentChange).toFixed(1);
+                            
+                            return (
+                              <div className={`ml-3 flex items-center ${
+                                isIncrease 
+                                  ? 'bg-emerald-50 dark:bg-emerald-900/20' 
+                                  : 'bg-red-50 dark:bg-red-900/20'
+                              } rounded-full px-3 py-1`}>
+                                <svg 
+                                  className={`w-3.5 h-3.5 ${isIncrease ? 'text-emerald-500' : 'text-red-500'} mr-1.5`}
+                                  viewBox="0 0 24 24" 
+                                  fill="none" 
+                                  stroke="currentColor"
+                                >
+                                  <path 
+                                    strokeLinecap="round" 
+                                    strokeLinejoin="round" 
+                                    strokeWidth={2} 
+                                    d={isIncrease 
+                                      ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" 
+                                      : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"
+                                    } 
+                                  />
+                                </svg>
+                                <span className={`text-sm font-medium ${isIncrease ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                                  {isIncrease ? '+' : '-'}{absPercentChange}% <span className="text-sm font-normal opacity-75">over {getTimeRangeLabel(hrvTimeRange).toLowerCase()}</span>
+                                </span>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </>
+                    )}
+                  </div>
                   <div className="flex items-center">
                     <select
                       value={hrvTimeRange}
@@ -1317,12 +1395,94 @@ export default function Home() {
               </ResponsiveContainer>
                   )}
             </div>
+            
+            {/* Remove the trend summary section from the bottom */}
           </div>
 
               {/* VO2 Max Chart */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">VO2 Max</h2>
+                  <div className="flex items-center">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">VO2 Max</h2>
+                    {hasVO2MaxData && !data.loading && (
+                      <>
+                        {(() => {
+                          // Calculate time range based on the selected option
+                          const timeRangeInDays = (() => {
+                            switch(vo2maxTimeRange) {
+                              case 'last30days': return 30;
+                              case 'last3months': return 90;
+                              case 'last6months': return 180;
+                              case 'last1year': return 365;
+                              case 'last3years': return 1095;
+                              default: return 30;
+                            }
+                          })();
+                          
+                          // Get filtered data based on selected time range
+                          const rangeData = currentVO2MaxData;
+                          
+                          // Calculate averages for current and previous periods
+                          const periodLength = Math.min(timeRangeInDays, rangeData.length);
+                          const halfPeriod = Math.floor(periodLength / 2);
+                          
+                          // Current period (most recent half of the data)
+                          const currentPeriodData = rangeData.slice(-halfPeriod);
+                          const currentAvg = currentPeriodData.length > 0 
+                            ? currentPeriodData.reduce((sum, item) => sum + item.value, 0) / currentPeriodData.length 
+                            : 0;
+                          
+                          // Previous period (older half of the data)
+                          const previousPeriodData = rangeData.slice(-periodLength, -halfPeriod);
+                          const prevAvg = previousPeriodData.length > 0
+                            ? previousPeriodData.reduce((sum, item) => sum + item.value, 0) / previousPeriodData.length
+                            : 0;
+                          
+                          // Calculate percent change
+                          const percentChange = prevAvg > 0
+                            ? ((currentAvg - prevAvg) / prevAvg) * 100
+                            : null;
+                          
+                          // Only show if we have enough data
+                          if (currentPeriodData.length > 0 && previousPeriodData.length > 0 && percentChange !== null) {
+                            const isIncrease = percentChange > 0;
+                            // For VO2 Max, an increase is positive (higher VO2 Max is better)
+                            const isPositiveTrend = isIncrease;
+                            const absPercentChange = Math.abs(percentChange).toFixed(1);
+                            
+                            return (
+                              <div className={`ml-3 flex items-center ${
+                                isPositiveTrend
+                                  ? 'bg-emerald-50 dark:bg-emerald-900/20' 
+                                  : 'bg-red-50 dark:bg-red-900/20'
+                              } rounded-full px-3 py-1`}>
+                                <svg 
+                                  className={`w-3.5 h-3.5 ${isPositiveTrend ? 'text-emerald-500' : 'text-red-500'} mr-1.5`}
+                                  viewBox="0 0 24 24" 
+                                  fill="none" 
+                                  stroke="currentColor"
+                                  strokeLinecap="round" 
+                                  strokeLinejoin="round" 
+                                  strokeWidth={2}
+                                >
+                                  <path 
+                                    d={isIncrease 
+                                      ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" 
+                                      : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"
+                                    } 
+                                  />
+                                </svg>
+                                <span className={`text-sm font-medium ${isPositiveTrend ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                                  {isIncrease ? '+' : '-'}{absPercentChange}% <span className="text-sm font-normal opacity-75">over {getTimeRangeLabel(vo2maxTimeRange).toLowerCase()}</span>
+                                </span>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </>
+                    )}
+                  </div>
                   <div className="flex items-center">
                     <select
                       value={vo2maxTimeRange}
@@ -1404,7 +1564,87 @@ export default function Home() {
               {/* Weight Chart */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Weight</h2>
+                  <div className="flex items-center">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Weight</h2>
+                    {hasWeightData && !data.loading && (
+                      <>
+                        {(() => {
+                          // Calculate time range based on the selected option
+                          const timeRangeInDays = (() => {
+                            switch(weightTimeRange) {
+                              case 'last30days': return 30;
+                              case 'last3months': return 90;
+                              case 'last6months': return 180;
+                              case 'last1year': return 365;
+                              case 'last3years': return 1095;
+                              default: return 30;
+                            }
+                          })();
+                          
+                          // Get filtered data based on selected time range
+                          const rangeData = currentWeightData;
+                          
+                          // Calculate averages for current and previous periods
+                          const periodLength = Math.min(timeRangeInDays, rangeData.length);
+                          const halfPeriod = Math.floor(periodLength / 2);
+                          
+                          // Current period (most recent half of the data)
+                          const currentPeriodData = rangeData.slice(-halfPeriod);
+                          const currentAvg = currentPeriodData.length > 0 
+                            ? currentPeriodData.reduce((sum, item) => sum + item.value, 0) / currentPeriodData.length 
+                            : 0;
+                          
+                          // Previous period (older half of the data)
+                          const previousPeriodData = rangeData.slice(-periodLength, -halfPeriod);
+                          const prevAvg = previousPeriodData.length > 0
+                            ? previousPeriodData.reduce((sum, item) => sum + item.value, 0) / previousPeriodData.length
+                            : 0;
+                          
+                          // Calculate percent change
+                          const percentChange = prevAvg !== 0
+                            ? ((currentAvg - prevAvg) / prevAvg) * 100
+                            : 0;
+                          
+                          // Only show if we have enough data
+                          if (currentPeriodData.length > 0 && previousPeriodData.length > 0) {
+                            const isIncrease = percentChange > 0;
+                            // For weight, a decrease is typically considered positive
+                            const isPositiveTrend = !isIncrease;
+                            const absPercentChange = Math.abs(percentChange).toFixed(1);
+                            
+                            return (
+                              <div className={`ml-3 flex items-center ${
+                                isPositiveTrend
+                                  ? 'bg-emerald-50 dark:bg-emerald-900/20' 
+                                  : 'bg-red-50 dark:bg-red-900/20'
+                              } rounded-full px-3 py-1`}>
+                                <svg 
+                                  className={`w-3.5 h-3.5 ${isPositiveTrend ? 'text-emerald-500' : 'text-red-500'} mr-1.5`}
+                                  viewBox="0 0 24 24" 
+                                  fill="none" 
+                                  stroke="currentColor"
+                                  strokeLinecap="round" 
+                                  strokeLinejoin="round" 
+                                  strokeWidth={2}
+                                >
+                                  <path 
+                                    d={isIncrease 
+                                      ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" 
+                                      : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"
+                                    } 
+                                  />
+                                </svg>
+                                <span className={`text-sm font-medium ${isPositiveTrend ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                                  {isIncrease ? '+' : '-'}{absPercentChange}% <span className="text-sm font-normal opacity-75">over {getTimeRangeLabel(weightTimeRange).toLowerCase()}</span>
+                                </span>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </>
+                    )}
+                  </div>
                   <div className="flex items-center">
                     <select
                       value={weightTimeRange}
@@ -1423,9 +1663,8 @@ export default function Home() {
                       <option value="last1year">Last year</option>
                       <option value="last3years">Last 3 years</option>
                     </select>
-                    {/* Navigation buttons removed */}
-                    </div>
                   </div>
+                </div>
             <div className="h-[340px]">
                   {data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
@@ -1471,11 +1710,11 @@ export default function Home() {
                         <Line 
                           type="monotone"
                           dataKey="value" 
-                          stroke={isDarkMode ? "#10b981" : "#059669"} 
-                          activeDot={{ r: 6, stroke: isDarkMode ? "#10b981" : "#059669", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
+                          stroke={isDarkMode ? "#34d399" : "#10b981"} 
+                          activeDot={{ r: 6, stroke: isDarkMode ? "#34d399" : "#10b981", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
                           dot={{ r: 0 }}
                           strokeWidth={2}
-                          unit="kg"
+                          unit=""
                         />
                 </LineChart>
               </ResponsiveContainer>
@@ -1486,7 +1725,87 @@ export default function Home() {
               {/* Body Fat Chart */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Body Fat</h2>
+                  <div className="flex items-center">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Body Fat</h2>
+                    {hasBodyFatData && !data.loading && (
+                      <>
+                        {(() => {
+                          // Calculate time range based on the selected option
+                          const timeRangeInDays = (() => {
+                            switch(bodyFatTimeRange) {
+                              case 'last30days': return 30;
+                              case 'last3months': return 90;
+                              case 'last6months': return 180;
+                              case 'last1year': return 365;
+                              case 'last3years': return 1095;
+                              default: return 30;
+                            }
+                          })();
+                          
+                          // Get filtered data based on selected time range
+                          const rangeData = currentBodyFatData;
+                          
+                          // Calculate averages for current and previous periods
+                          const periodLength = Math.min(timeRangeInDays, rangeData.length);
+                          const halfPeriod = Math.floor(periodLength / 2);
+                          
+                          // Current period (most recent half of the data)
+                          const currentPeriodData = rangeData.slice(-halfPeriod);
+                          const currentAvg = currentPeriodData.length > 0 
+                            ? currentPeriodData.reduce((sum, item) => sum + item.value, 0) / currentPeriodData.length 
+                            : 0;
+                          
+                          // Previous period (older half of the data)
+                          const previousPeriodData = rangeData.slice(-periodLength, -halfPeriod);
+                          const prevAvg = previousPeriodData.length > 0
+                            ? previousPeriodData.reduce((sum, item) => sum + item.value, 0) / previousPeriodData.length
+                            : 0;
+                          
+                          // Calculate percent change
+                          const percentChange = prevAvg > 0
+                            ? ((currentAvg - prevAvg) / prevAvg) * 100
+                            : null;
+                          
+                          // Only show if we have enough data
+                          if (currentPeriodData.length > 0 && previousPeriodData.length > 0 && percentChange !== null) {
+                            const isIncrease = percentChange > 0;
+                            // For body fat, a decrease is typically considered positive
+                            const isPositiveTrend = !isIncrease;
+                            const absPercentChange = Math.abs(percentChange).toFixed(1);
+                            
+                            return (
+                              <div className={`ml-3 flex items-center ${
+                                isPositiveTrend
+                                  ? 'bg-emerald-50 dark:bg-emerald-900/20' 
+                                  : 'bg-red-50 dark:bg-red-900/20'
+                              } rounded-full px-3 py-1`}>
+                                <svg 
+                                  className={`w-3.5 h-3.5 ${isPositiveTrend ? 'text-emerald-500' : 'text-red-500'} mr-1.5`}
+                                  viewBox="0 0 24 24" 
+                                  fill="none" 
+                                  stroke="currentColor"
+                                  strokeLinecap="round" 
+                                  strokeLinejoin="round" 
+                                  strokeWidth={2}
+                                >
+                                  <path 
+                                    d={isIncrease 
+                                      ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" 
+                                      : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"
+                                    } 
+                                  />
+                                </svg>
+                                <span className={`text-sm font-medium ${isPositiveTrend ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                                  {isIncrease ? '+' : '-'}{absPercentChange}% <span className="text-sm font-normal opacity-75">over {getTimeRangeLabel(bodyFatTimeRange).toLowerCase()}</span>
+                                </span>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </>
+                    )}
+                  </div>
                   <div className="flex items-center">
                     <select
                       value={bodyFatTimeRange}
