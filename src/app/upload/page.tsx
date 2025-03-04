@@ -8,6 +8,7 @@ import Link from 'next/link';
 import ThemeToggle from '../components/ThemeToggle';
 import BloodTestUpload from '../components/BloodTestUpload';
 import BloodMarkerHistory from '../components/BloodMarkerHistory';
+import FitnessMetricsHistory from '../components/FitnessMetricsHistory';
 import { toast } from 'react-hot-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
 
@@ -1267,7 +1268,7 @@ export default function UploadPage() {
                 </div>
               </div>
 
-              {/* Uploaded Files History Section - As a separate standalone section */}
+              {/* Uploaded Files History Section */}
               <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm mt-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white">Uploaded Files History</h3>
@@ -1384,6 +1385,9 @@ export default function UploadPage() {
                   </div>
                 )}
               </div>
+
+              {/* Move FitnessMetricsHistory component here, below the Uploaded Files History section */}
+              <FitnessMetricsHistory />
             </div>
           )}
 

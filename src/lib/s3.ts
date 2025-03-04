@@ -277,7 +277,6 @@ export async function fetchDataFile(key: string): Promise<any> {
 export async function fetchAllHealthData(type: HealthDataType, userId: string): Promise<any[]> {
   try {
     const key = `data/${userId}/${type}.json`;
-    console.log(`Fetching ${type} data from S3...`);
     
     try {
       try {
@@ -286,7 +285,6 @@ export async function fetchAllHealthData(type: HealthDataType, userId: string): 
       } catch (error) {
         // If we're looking for bodyFat but couldn't find it, try the lowercase variant
         if (type === 'bodyFat') {
-          console.log('Trying lowercase variant for body fat data...');
           const lowercaseKey = `data/${userId}/bodyfat.json`;
           const data = await fetchDataFile(lowercaseKey);
           return Array.isArray(data) ? data : [];
@@ -294,7 +292,6 @@ export async function fetchAllHealthData(type: HealthDataType, userId: string): 
         throw error; // Re-throw for other data types
       }
     } catch (error) {
-      console.log(`No existing data for ${type}`);
       return [];
     }
   } catch (error) {

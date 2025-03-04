@@ -309,6 +309,37 @@ export default function Home() {
     }
   }, [userData?.name]);
 
+  // Listen for health data deletion events
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    
+    const handleHealthDataDeleted = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail && customEvent.detail.type) {
+        const deletedMetricType = customEvent.detail.type as string;
+        console.log(`Health data deletion detected for: ${deletedMetricType}`);
+        
+        // Clear the specific metric data in state
+        setData(prevData => {
+          const updatedData = { ...prevData };
+          
+          // Clear the deleted metric type data
+          if (Object.hasOwnProperty.call(updatedData, deletedMetricType)) {
+            (updatedData as any)[deletedMetricType] = [];
+          }
+          
+          return updatedData;
+        });
+      }
+    };
+    
+    window.addEventListener('healthDataDeleted', handleHealthDataDeleted);
+    
+    return () => {
+      window.removeEventListener('healthDataDeleted', handleHealthDataDeleted);
+    };
+  }, [session?.user?.id]);
+
   const fetchData = async () => {
     try {
         setError(null);
@@ -345,13 +376,52 @@ export default function Home() {
         };
       }
 
+      // Add timestamp to each request to prevent caching
+      const timestamp = Date.now();
+      
       const [heartRateRes, weightRes, bodyFatRes, hrvRes, vo2maxRes, bloodMarkersRes] = await Promise.all([
-        fetch(`/api/health-data?type=heartRate&userId=${userId}`),
-        fetch(`/api/health-data?type=weight&userId=${userId}`),
-        fetch(`/api/health-data?type=bodyFat&userId=${userId}`),
-        fetch(`/api/health-data?type=hrv&userId=${userId}`),
-        fetch(`/api/health-data?type=vo2max&userId=${userId}`),
-        fetch(`/api/blood-markers?userId=${userId}`)
+        fetch(`/api/health-data?type=heartRate&userId=${userId}&t=${timestamp}`, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        }),
+        fetch(`/api/health-data?type=weight&userId=${userId}&t=${timestamp}`, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        }),
+        fetch(`/api/health-data?type=bodyFat&userId=${userId}&t=${timestamp}`, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        }),
+        fetch(`/api/health-data?type=hrv&userId=${userId}&t=${timestamp}`, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        }),
+        fetch(`/api/health-data?type=vo2max&userId=${userId}&t=${timestamp}`, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        }),
+        fetch(`/api/blood-markers?userId=${userId}&t=${timestamp}`, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        })
       ]);
 
       // Check if any request failed

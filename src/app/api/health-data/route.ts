@@ -9,6 +9,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const searchParams = request.nextUrl.searchParams;
     const type = searchParams.get('type');
     const userId = searchParams.get('userId');
+    const forceRefresh = searchParams.get('forceRefresh') === 'true';
 
     if (!type || !['heartRate', 'weight', 'bodyFat', 'hrv', 'vo2max'].includes(type)) {
       return NextResponse.json(
@@ -36,17 +37,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     let data: Array<{ date: string; value: number }> = [];
     try {
-      console.log(`Fetching ${type} data from S3 for user ${userId}...`);
       data = await fetchAllHealthData(type as HealthDataType, userId);
-      console.log(`Fetched ${type} data:`, data);
     } catch (error) {
-      console.error(`Error fetching ${type} data from S3:`, error);
-      // Don't throw error for missing files, just return empty data
       return NextResponse.json({
         success: true,
         data: [],
         count: 0,
         lastUpdated: new Date().toISOString()
+      }, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       });
     }
     
@@ -55,6 +58,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       data,
       count: data.length,
       lastUpdated: new Date().toISOString()
+    }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     });
   } catch (error) {
     console.error('Error fetching health data:', error);
@@ -63,6 +72,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       data: [],
       count: 0,
       error: error instanceof Error ? error.message : 'Failed to fetch health data'
-    }, { status: 500 });
+    }, { 
+      status: 500,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
   }
-} 
+}

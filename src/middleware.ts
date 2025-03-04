@@ -18,13 +18,14 @@ const PROTECTED_API_ROUTES = [
 ];
 
 export async function middleware(request: NextRequest) {
-  console.log('=== Middleware Start ===');
-  console.log('Request path:', request.nextUrl.pathname);
-  console.log('Request method:', request.method);
-  console.log('Content-Type:', request.headers.get('content-type'));
+  // Comment out or remove console logs to reduce noise
+  // console.log('=== Middleware Start ===');
+  // console.log('Request path:', request.nextUrl.pathname);
+  // console.log('Request method:', request.method);
+  // console.log('Content-Type:', request.headers.get('content-type'));
   
   const token = await getToken({ req: request });
-  console.log('Auth token present:', !!token);
+  // console.log('Auth token present:', !!token);
   
   const isAuthPage = request.nextUrl.pathname.startsWith("/auth");
   const isInvitePage = request.nextUrl.pathname === "/auth/invite";
@@ -43,16 +44,16 @@ export async function middleware(request: NextRequest) {
   const isUploadPage = request.nextUrl.pathname.startsWith("/upload");
   const isDashboardPage = request.nextUrl.pathname.startsWith("/dashboard");
 
-  console.log('Route type:', {
-    isAuthPage,
-    isInvitePage,
-    isSignInPage,
-    isApiAuthRoute,
-    isPublicApiRoute,
-    isProtectedApiRoute,
-    isUploadPage,
-    isDashboardPage
-  });
+  // console.log('Route type:', {
+  //   isAuthPage,
+  //   isInvitePage,
+  //   isSignInPage,
+  //   isApiAuthRoute,
+  //   isPublicApiRoute,
+  //   isProtectedApiRoute,
+  //   isUploadPage,
+  //   isDashboardPage
+  // });
 
   // Handle API routes first
   if (request.nextUrl.pathname.startsWith("/api")) {
@@ -68,7 +69,7 @@ export async function middleware(request: NextRequest) {
 
     // Check authentication for protected routes
     if (!token) {
-      console.log('API authentication failed');
+      // console.log('API authentication failed');
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
