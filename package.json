@@ -26,6 +26,8 @@
     "@radix-ui/react-slot": "^1.1.1",
     "@radix-ui/react-tooltip": "^1.1.6",
     "@shadcn/ui": "^0.0.4",
+    "@stripe/react-stripe-js": "^3.4.0",
+    "@stripe/stripe-js": "^6.0.0",
     "@types/node-fetch": "^2.6.4",
     "@types/pdfjs-dist": "^2.10.378",
     "@types/react-datepicker": "^7.0.0",
@@ -53,6 +55,7 @@
     "react-dropzone": "^14.3.5",
     "react-hot-toast": "^2.5.1",
     "recharts": "^2.15.0",
+    "stripe": "^17.7.0",
     "tailwind-merge": "^2.6.0",
     "xml2js": "^0.6.2"
   },

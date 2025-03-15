@@ -10,6 +10,7 @@ export default function SignIn() {
   const [hasValidInvite, setHasValidInvite] = useState(false);
   const [validatedEmail, setValidatedEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [comingFromPayment, setComingFromPayment] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -19,6 +20,14 @@ export default function SignIn() {
     const inviteRequiredParam = searchParams?.get('invite_required');
     const inviteCodeValidated = sessionStorage.getItem('inviteCodeValidated') === 'true';
     const validatedEmailFromSession = sessionStorage.getItem('validatedEmail');
+    
+    // Check if user is coming from payment
+    const paymentStatus = sessionStorage.getItem('justCompletedPayment');
+    if (paymentStatus === 'pending') {
+      // User is coming from payment, update the flag
+      sessionStorage.setItem('justCompletedPayment', 'true');
+      setComingFromPayment(true);
+    }
     
     // Only require invite if explicitly specified in URL params
     // This ensures users clicking the login button will never be redirected to invite
@@ -30,10 +39,11 @@ export default function SignIn() {
     setLoading(false);
 
     // Only redirect to the invite page if explicitly directed to require an invite
-    if (requireInvite && !inviteCodeValidated) {
+    // and not coming from payment
+    if (requireInvite && !inviteCodeValidated && !comingFromPayment) {
       router.push('/auth/invite');
     }
-  }, [router, searchParams]);
+  }, [router, searchParams, comingFromPayment]);
 
   const handleSignIn = () => {
     // If the user has a validated email, include it in a hidden state
@@ -57,7 +67,7 @@ export default function SignIn() {
 
   // If this is a new user and they don't have a valid invite yet, don't show the sign-in page
   // (they will be redirected to the invite page)
-  if (isNewUser && !hasValidInvite) {
+  if (isNewUser && !hasValidInvite && !comingFromPayment) {
     return null;
   }
 
@@ -85,11 +95,21 @@ export default function SignIn() {
           {/* Title Section */}
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-3 animate-fade-in text-gray-900 dark:text-white">
-              Welcome Back
+              {comingFromPayment ? "Payment Successful!" : "Welcome Back"}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 text-lg animate-fade-in-up">
-              Sign in to track and share your health journey
+              {comingFromPayment 
+                ? "Please sign in with Google to access your account" 
+                : "Sign in to track and share your health journey"}
             </p>
+            
+            {comingFromPayment && (
+              <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-800">
+                <p className="text-green-700 dark:text-green-400 text-sm">
+                  Thank you for your payment! You now have lifetime access to all features.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Sign In Button */}

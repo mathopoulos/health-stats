@@ -93,14 +93,6 @@ export default function Home() {
               >
                 Log in
               </a>
-              {/* Temporarily hidden
-              <a
-                href="/upload"
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all hover:scale-105"
-              >
-                Sign up
-              </a>
-              */}
             </div>
           </div>
         </div>
@@ -145,20 +137,20 @@ export default function Home() {
 
           {/* Enhanced CTA Buttons */}
           <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4 animate-fade-in-up delay-200">
-            <a href="/auth/invite" 
+            <a href="/auth/checkout" 
                className="group inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/25">
               <span>Get Access (Beta)</span>
               <span className="ml-2 transform translate-x-0 group-hover:translate-x-1 transition-transform">→</span>
             </a>
-                      <button
+            <button
               onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })}
               className="group inline-flex items-center justify-center px-8 py-3 border border-gray-300 dark:border-gray-700 text-base font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-600 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-gray-800/25">
               Explore
               <svg className="ml-2 w-4 h-4 transform group-hover:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
-                    </div>
+              </svg>
+            </button>
+          </div>
 
           {/* Enhanced Demo Charts */}
           <div className="mt-24 grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in-up delay-300">

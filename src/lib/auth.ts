@@ -10,6 +10,22 @@ const authenticatedUsers = new Set<string>();
 // In a real app, this would be stored in a database
 const usersWithValidatedInviteCodes = new Set<string>();
 
+// Track users who have paid
+// In a real app, this would be stored in a database
+const paidUsers = new Set<string>();
+
+// Temporary solution for development - mark some test accounts as paid
+if (process.env.NODE_ENV === 'development') {
+  // Add some test emails that are always considered paid
+  const testPaidEmails = [
+    'test@example.com',
+    'demo@example.com',
+    // Add any email you want to test with here
+  ];
+  
+  testPaidEmails.forEach(email => paidUsers.add(email));
+}
+
 interface StateData {
   email?: string;
   [key: string]: any;
@@ -46,6 +62,9 @@ export const authOptions: NextAuthOptions = {
         // Check if the user has a validated invite code
         let hasValidatedInvite = usersWithValidatedInviteCodes.has(user.email);
         
+        // Check if the user has paid
+        let hasPaid = paidUsers.has(user.email);
+        
         // If a state parameter was passed with a validated email, check if it matches
         try {
           if (account?.provider === 'google' && account.state) {
@@ -60,18 +79,55 @@ export const authOptions: NextAuthOptions = {
           console.error('Error parsing state parameter:', err);
         }
         
-        // TEMPORARY SOLUTION: Consider all Google users as authenticated
-        // In development mode, allow all Google logins
-        // In production, you would use a database check instead
+        // Check for checkout email in session storage
+        // This is set by the checkout page before redirecting to Stripe payment
+        // and is used to mark the user as paid when they return from payment
+        try {
+          if (typeof window !== 'undefined') {
+            const checkoutEmail = sessionStorage.getItem('checkoutEmail');
+            if (checkoutEmail && checkoutEmail.toLowerCase() === user.email.toLowerCase()) {
+              // Mark the user as paid
+              console.log(`User ${user.email} marked as paid from checkout flow`);
+              paidUsers.add(user.email);
+              hasPaid = true;
+              
+              // Clear the session storage after using it
+              sessionStorage.removeItem('checkoutEmail');
+            }
+            
+            // Also check for a flag indicating the user just completed payment
+            const justPaid = sessionStorage.getItem('justCompletedPayment');
+            if (justPaid === 'true') {
+              // This is a user coming directly from payment
+              console.log(`User ${user.email} coming directly from payment`);
+              
+              // If we have their email stored, mark them as paid
+              const storedEmail = sessionStorage.getItem('checkoutEmail');
+              if (storedEmail && storedEmail.toLowerCase() === user.email.toLowerCase()) {
+                paidUsers.add(user.email);
+                hasPaid = true;
+                console.log(`User ${user.email} marked as paid from direct payment flow`);
+                
+                // Clear the flags after using them
+                sessionStorage.removeItem('checkoutEmail');
+                sessionStorage.removeItem('justCompletedPayment');
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Error checking session storage:', err);
+        }
+        
+        // TEMPORARY SOLUTION: Consider all Google users as authenticated in development
         if (process.env.NODE_ENV !== 'production') {
           // Add the user to authenticated users
           authenticatedUsers.add(user.email);
           return true;
         }
         
-        // For production: If this is a new user and they haven't validated an invite code,
-        // reject the sign-in (this will redirect to the invite page)
-        if (!isReturningUser && !hasValidatedInvite) {
+        // For production: If this is a new user and they haven't validated an invite code or paid,
+        // reject the sign-in (this will redirect to the checkout page)
+        if (!isReturningUser && !hasValidatedInvite && !hasPaid) {
           return false;
         }
         
@@ -103,9 +159,9 @@ export const authOptions: NextAuthOptions = {
         return `${baseUrl}/upload`;
       }
       
-      // In production: If auth failed due to missing invite code, redirect to invite page
+      // In production: If auth failed due to missing invite code or payment, redirect to checkout page
       if (url.includes('error=Callback') || url.includes('error=AccessDenied')) {
-        return `${baseUrl}/auth/invite`;
+        return `${baseUrl}/auth/checkout`;
       }
       
       // If the URL is explicitly set to /upload, honor that
@@ -129,10 +185,12 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/auth/signin',
-    error: '/auth/invite', // Send people to invite page on errors
+    error: '/auth/checkout', // Send people to checkout page on errors
     signOut: '/auth/signin',
   },
 };
+
+// Helper functions for managing user state
 
 // This function allows other server components to mark a user as having a valid invite code
 export function markUserWithValidInviteCode(email: string) {
@@ -141,4 +199,19 @@ export function markUserWithValidInviteCode(email: string) {
     return true;
   }
   return false;
+}
+
+// This function allows marking a user as having paid
+export function markUserAsPaid(email: string) {
+  if (email) {
+    paidUsers.add(email);
+    console.log(`User ${email} marked as paid directly`);
+    return true;
+  }
+  return false;
+}
+
+// This function checks if a user has paid
+export function hasUserPaid(email: string) {
+  return paidUsers.has(email);
 } 
