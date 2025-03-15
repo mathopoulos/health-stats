@@ -7,6 +7,14 @@ export async function GET() {
     const keyPreview = process.env.STRIPE_SECRET_KEY?.substring(0, 8) + '...';
     console.log('Testing Stripe connectivity with key beginning with:', keyPreview);
     
+    // Check if stripe client is initialized
+    if (!stripe) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Stripe client not initialized'
+      }, { status: 500 });
+    }
+    
     const balance = await stripe.balance.retrieve();
     
     return NextResponse.json({ 
