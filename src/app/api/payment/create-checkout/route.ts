@@ -35,8 +35,31 @@ export async function POST(req: Request) {
       );
     }
 
+    // First, try to find an existing customer
+    const customers = await stripe.customers.list({
+      email: email,
+      limit: 1,
+    });
+
+    let customerId;
+
+    if (customers.data.length > 0) {
+      // Use existing customer
+      customerId = customers.data[0].id;
+    } else {
+      // Create a new customer
+      const customer = await stripe.customers.create({
+        email: email,
+        metadata: {
+          source: 'revly.health'
+        }
+      });
+      customerId = customer.id;
+    }
+
     // Create a Stripe checkout session
     const session = await stripe.checkout.sessions.create({
+      customer: customerId, // Use the customer ID
       payment_method_types: ['card'],
       line_items: [
         {
@@ -47,7 +70,7 @@ export async function POST(req: Request) {
       mode: 'payment',
       success_url: `${BASE_URL}/auth/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${BASE_URL}/auth/checkout`,
-      customer_email: email,
+      customer_email: email, // Keep this as a backup
       metadata: {
         userEmail: email,
       },
