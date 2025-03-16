@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import stripe from '@/lib/stripe';
 
+// Price IDs for different environments
+const PRICE_ID = process.env.NODE_ENV === 'production'
+  ? process.env.STRIPE_LIVE_PRICE_ID
+  : process.env.STRIPE_TEST_PRICE_ID;
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -20,19 +25,19 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!PRICE_ID) {
+      return NextResponse.json(
+        { error: 'Stripe price ID is not configured' },
+        { status: 500 }
+      );
+    }
+
     // Create a Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'Beta Access',
-              description: 'Lifetime membership to Health Stats Beta',
-            },
-            unit_amount: 2500, // $25.00
-          },
+          price: PRICE_ID,
           quantity: 1,
         },
       ],
