@@ -1,5 +1,6 @@
 import { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
+import { hasUserPurchasedProduct } from './stripe';
 
 // This is a server-side map to track users who are authenticated
 // In a real app, you would use a database table for this
@@ -86,13 +87,25 @@ export const authOptions: NextAuthOptions = {
           if (typeof window !== 'undefined') {
             const checkoutEmail = sessionStorage.getItem('checkoutEmail');
             if (checkoutEmail && checkoutEmail.toLowerCase() === user.email.toLowerCase()) {
-              // Mark the user as paid
-              console.log(`User ${user.email} marked as paid from checkout flow`);
-              paidUsers.add(user.email);
-              hasPaid = true;
-              
-              // Clear the session storage after using it
-              sessionStorage.removeItem('checkoutEmail');
+              // Check if the user is coming from the checkout flow with the "already purchased" flag
+              const alreadyPurchased = sessionStorage.getItem('alreadyPurchased');
+              if (alreadyPurchased === 'true') {
+                console.log(`User ${user.email} already purchased, verified from checkout flow`);
+                paidUsers.add(user.email);
+                hasPaid = true;
+                
+                // Clear the session storage after using it
+                sessionStorage.removeItem('checkoutEmail');
+                sessionStorage.removeItem('alreadyPurchased');
+              } else {
+                // Mark the user as paid
+                console.log(`User ${user.email} marked as paid from checkout flow`);
+                paidUsers.add(user.email);
+                hasPaid = true;
+                
+                // Clear the session storage after using it
+                sessionStorage.removeItem('checkoutEmail');
+              }
             }
             
             // Also check for a flag indicating the user just completed payment
@@ -116,6 +129,20 @@ export const authOptions: NextAuthOptions = {
           }
         } catch (err) {
           console.error('Error checking session storage:', err);
+        }
+        
+        // If the user is not marked as paid, check with Stripe API
+        if (!hasPaid) {
+          try {
+            const hasPurchased = await hasUserPurchasedProduct(user.email);
+            if (hasPurchased) {
+              console.log(`User ${user.email} verified as paid via Stripe API`);
+              paidUsers.add(user.email);
+              hasPaid = true;
+            }
+          } catch (err) {
+            console.error('Error checking purchase status with Stripe:', err);
+          }
         }
         
         // TEMPORARY SOLUTION: Consider all Google users as authenticated in development

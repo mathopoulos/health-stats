@@ -7,6 +7,8 @@ const PUBLIC_API_ROUTES = [
   '/api/health-data',
   '/api/blood-markers',
   '/api/validate-invite',
+  // Add payment check-purchase to public routes
+  '/api/payment/check-purchase'
 ];
 
 // List of protected API routes that require authentication

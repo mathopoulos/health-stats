@@ -5,23 +5,69 @@ import { useRouter } from 'next/navigation';
 import ThemeToggle from "@/app/components/ThemeToggle";
 import Link from 'next/link';
 
-export default function CheckoutPage() {
+interface CheckoutPageProps {
+  searchParams: {
+    error?: string;
+    success?: string;
+    product?: string;
+  };
+}
+
+export default function CheckoutPage({ searchParams }: CheckoutPageProps) {
   const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    setErrorMessage(null);
     
-    // Store email in session storage for later
     const cleanEmail = email.trim().toLowerCase();
-    sessionStorage.setItem('checkoutEmail', cleanEmail);
     
-    // Set a flag indicating the user is going to payment
-    // This will be checked when they return to the signin page
-    sessionStorage.setItem('justCompletedPayment', 'pending');
-    
-    // Redirect directly to the Stripe payment link
-    window.location.href = 'https://buy.stripe.com/test_7sI5lt9Vf4c20eceUU';
+    try {
+      // First, check if the user has already purchased the product
+      const response = await fetch('/api/payment/check-purchase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: cleanEmail }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to check purchase status');
+      }
+      
+      const data = await response.json();
+      console.log('Purchase check result:', data);
+      
+      if (data.hasPurchased) {
+        // User has already purchased, store email and redirect to signin
+        sessionStorage.setItem('checkoutEmail', cleanEmail);
+        sessionStorage.setItem('alreadyPurchased', 'true');
+        router.push('/auth/signin');
+        return;
+      }
+      
+      // User hasn't purchased, proceed with checkout
+      // Store email in session storage for later
+      sessionStorage.setItem('checkoutEmail', cleanEmail);
+      
+      // Set a flag indicating the user is going to payment
+      // This will be checked when they return to the signin page
+      sessionStorage.setItem('justCompletedPayment', 'pending');
+      
+      // Redirect directly to the Stripe payment link
+      window.location.href = 'https://buy.stripe.com/test_7sI5lt9Vf4c20eceUU';
+    } catch (error) {
+      console.error('Error checking purchase status:', error);
+      setErrorMessage('An error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const isFormValid = () => email.trim() !== '' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -75,12 +121,18 @@ export default function CheckoutPage() {
               />
             </div>
 
+            {errorMessage && (
+              <div className="text-red-500 text-sm mt-2">
+                {errorMessage}
+              </div>
+            )}
+
             <button
               type="submit"
-              disabled={!isFormValid()}
+              disabled={!isFormValid() || isLoading}
               className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Continue to Payment
+              {isLoading ? 'Checking...' : 'Continue to Payment'}
             </button>
             
             <div className="text-center mt-2">
