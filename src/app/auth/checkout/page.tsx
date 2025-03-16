@@ -114,7 +114,7 @@ export default function CheckoutPage({ searchParams }: CheckoutPageProps) {
               Get Beta Access
             </h1>
             <p className="text-gray-600 dark:text-gray-400 text-lg animate-fade-in-up">
-              Lifetime membership - one-time payment of $25
+              Lifetime membership - one-time payment of $29.99
             </p>
           </div>
 
