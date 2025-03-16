@@ -56,15 +56,30 @@ export default function CheckoutPage({ searchParams }: CheckoutPageProps) {
       // Store email in session storage for later
       sessionStorage.setItem('checkoutEmail', cleanEmail);
       
+      // Create a Stripe checkout session
+      const checkoutResponse = await fetch('/api/payment/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: cleanEmail }),
+      });
+
+      if (!checkoutResponse.ok) {
+        const errorData = await checkoutResponse.json();
+        throw new Error(errorData.error || 'Failed to create checkout session');
+      }
+
+      const checkoutData = await checkoutResponse.json();
+      
       // Set a flag indicating the user is going to payment
-      // This will be checked when they return to the signin page
       sessionStorage.setItem('justCompletedPayment', 'pending');
       
-      // Redirect directly to the Stripe payment link
-      window.location.href = 'https://buy.stripe.com/test_7sI5lt9Vf4c20eceUU';
-    } catch (error) {
-      console.error('Error checking purchase status:', error);
-      setErrorMessage('An error occurred. Please try again.');
+      // Redirect to Stripe checkout
+      window.location.href = checkoutData.url;
+    } catch (error: any) {
+      console.error('Error:', error);
+      setErrorMessage(error.message || 'An error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
