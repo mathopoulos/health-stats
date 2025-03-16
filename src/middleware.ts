@@ -10,7 +10,6 @@ const PUBLIC_API_ROUTES = [
   // Payment routes
   '/api/payment/check-purchase',
   '/api/payment/create-checkout',
-  '/api/payment/webhook',
   '/api/payment/verify-payment'
 ];
 
