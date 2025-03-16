@@ -70,9 +70,9 @@ export async function POST(req: Request) {
       mode: 'payment',
       success_url: `${BASE_URL}/auth/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${BASE_URL}/auth/checkout`,
-      customer_email: email, // Keep this as a backup
       metadata: {
         userEmail: email,
+        priceId: PRICE_ID
       },
     });
 

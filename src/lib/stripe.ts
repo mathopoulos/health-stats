@@ -114,98 +114,77 @@ export function hasUserPaid(email: string) {
 }
 
 // Function to check if a user has purchased a product
-export async function hasUserPurchasedProduct(email: string, productId?: string): Promise<boolean> {
+export async function hasUserPurchasedProduct(email: string): Promise<boolean> {
   try {
-    // Use axios for reliable API calls
-    console.log(`Checking if user ${email} has purchased product ${productId || 'any'}`);
+    console.log('========== Payment Verification Start ==========');
+    console.log(`Checking purchase status for email: ${email}`);
     
-    // Find customer by email
-    const customersData = await makeStripeApiCall('customers', `?email=${encodeURIComponent(email)}&limit=1`);
-    
-    if (!customersData.data || customersData.data.length === 0) {
-      console.log(`No customer found with email: ${email}`);
-      return false;
+    // Check local cache first
+    if (hasUserPaid(email)) {
+      console.log('User found in local paid cache - allowing access');
+      return true;
     }
-    
-    const customerId = customersData.data[0].id;
-    console.log(`Found customer with ID: ${customerId}`);
-    
-    // Get all successful payments for this customer
-    const paymentsData = await makeStripeApiCall('payment_intents', `?customer=${customerId}&limit=100`);
-    
-    console.log(`Found ${paymentsData.data.length} payments for customer`);
-    
-    // Check if any payment was successful
-    const hasPurchased = paymentsData.data.some((payment: any) => {
-      const isSuccessful = payment.status === 'succeeded';
-      const matchesProduct = !productId || payment.metadata?.productId === productId;
-      return isSuccessful && matchesProduct;
-    });
-    
-    if (hasPurchased) {
-      // If they've purchased, also mark them as paid in our local cache
-      markUserAsPaid(email);
-      console.log(`User ${email} has purchased, marking as paid`);
-    } else {
-      console.log(`User ${email} has not purchased`);
-    }
-    
-    return hasPurchased;
-  } catch (error: any) {
-    console.error('Error checking purchase status:', error);
-    
-    // Fall back to the library approach if direct API call fails
+
     const stripeInstance = getStripe();
-    
-    if (!stripeInstance || !email) {
-      console.log('Cannot check purchase: Stripe not initialized or email missing');
+    if (!stripeInstance) {
+      console.error('Stripe not initialized');
       return false;
     }
-    
-    try {
-      console.log(`Falling back to library approach to check if user ${email} has purchased`);
-      
-      // Find the customer by email
-      const customers = await stripeInstance.customers.list({
-        email: email,
-        limit: 1,
-      });
-      
-      if (customers.data.length === 0) {
-        console.log(`No customer found with email: ${email} (via library)`);
-        return false;
-      }
-      
-      const customerId = customers.data[0].id;
-      console.log(`Found customer with ID: ${customerId} (via library)`);
-      
-      // Get all successful payments for this customer
-      const payments = await stripeInstance.paymentIntents.list({
-        customer: customerId,
-        limit: 100,
-      });
-      
-      console.log(`Found ${payments.data.length} payments for customer (via library)`);
-      
-      // Check if any payment was successful
-      const hasPurchased = payments.data.some(payment => {
-        const isSuccessful = payment.status === 'succeeded';
-        const matchesProduct = !productId || payment.metadata?.productId === productId;
-        return isSuccessful && matchesProduct;
-      });
-      
-      if (hasPurchased) {
-        // If they've purchased, also mark them as paid in our local cache
-        markUserAsPaid(email);
-        console.log(`User ${email} has purchased, marking as paid (via library)`);
-      } else {
-        console.log(`User ${email} has not purchased (via library)`);
-      }
-      
-      return hasPurchased;
-    } catch (libraryError) {
-      console.error('Error checking purchase status via library:', libraryError);
+
+    // Find customer by email
+    const customers = await stripeInstance.customers.list({
+      email: email,
+      limit: 1,
+    });
+
+    if (customers.data.length === 0) {
+      console.log('❌ No customer found with this email');
       return false;
     }
+
+    const customerId = customers.data[0].id;
+    console.log(`✓ Found customer ID: ${customerId}`);
+
+    // Get all checkout sessions for this customer
+    const sessions = await stripeInstance.checkout.sessions.list({
+      customer: customerId,
+      limit: 100,
+    });
+
+    console.log(`Found ${sessions.data.length} checkout sessions`);
+
+    // Check if any session was successful for our price ID
+    const priceId = process.env.NODE_ENV === 'production' 
+      ? process.env.STRIPE_LIVE_PRICE_ID 
+      : process.env.STRIPE_TEST_PRICE_ID;
+
+    console.log(`Checking for successful sessions with price ID: ${priceId}`);
+
+    const hasPurchased = sessions.data.some(session => {
+      const isSuccessful = session.payment_status === 'paid';
+      const matchesPrice = session.metadata?.priceId === priceId;
+      console.log(`Session ${session.id}:`, {
+        payment_status: session.payment_status,
+        metadata_priceId: session.metadata?.priceId,
+        expected_priceId: priceId,
+        isSuccessful,
+        matchesPrice
+      });
+      return isSuccessful && matchesPrice;
+    });
+
+    console.log(`Final verification result: ${hasPurchased ? '✓ Has purchased' : '❌ Has not purchased'}`);
+
+    if (hasPurchased) {
+      markUserAsPaid(email);
+      console.log('User marked as paid in local cache');
+    }
+
+    console.log('========== Payment Verification End ==========');
+    return hasPurchased;
+
+  } catch (error) {
+    console.error('Error checking purchase status:', error);
+    return false;
   }
 } 
