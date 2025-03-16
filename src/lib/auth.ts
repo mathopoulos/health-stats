@@ -60,110 +60,39 @@ export const authOptions: NextAuthOptions = {
         // Check if this is a returning user (previously authenticated)
         const isReturningUser = authenticatedUsers.has(user.email);
         
-        // Check if the user has a validated invite code
-        let hasValidatedInvite = usersWithValidatedInviteCodes.has(user.email);
-        
         // Check if the user has paid
         let hasPaid = paidUsers.has(user.email);
-        
-        // If a state parameter was passed with a validated email, check if it matches
-        try {
-          if (account?.provider === 'google' && account.state) {
-            const stateData = JSON.parse(account.state as string) as StateData;
-            if (stateData.email === user.email) {
-              // Mark this email as having a validated invite code
-              usersWithValidatedInviteCodes.add(user.email);
-              hasValidatedInvite = true;
-            }
-          }
-        } catch (err) {
-          console.error('Error parsing state parameter:', err);
-        }
-        
-        // Check for checkout email in session storage
-        // This is set by the checkout page before redirecting to Stripe payment
-        // and is used to mark the user as paid when they return from payment
-        try {
-          if (typeof window !== 'undefined') {
-            const checkoutEmail = sessionStorage.getItem('checkoutEmail');
-            if (checkoutEmail && checkoutEmail.toLowerCase() === user.email.toLowerCase()) {
-              // Check if the user is coming from the checkout flow with the "already purchased" flag
-              const alreadyPurchased = sessionStorage.getItem('alreadyPurchased');
-              if (alreadyPurchased === 'true') {
-                console.log(`User ${user.email} already purchased, verified from checkout flow`);
-                paidUsers.add(user.email);
-                hasPaid = true;
-                
-                // Clear the session storage after using it
-                sessionStorage.removeItem('checkoutEmail');
-                sessionStorage.removeItem('alreadyPurchased');
-              } else {
-                // Mark the user as paid
-                console.log(`User ${user.email} marked as paid from checkout flow`);
-                paidUsers.add(user.email);
-                hasPaid = true;
-                
-                // Clear the session storage after using it
-                sessionStorage.removeItem('checkoutEmail');
-              }
-            }
-            
-            // Also check for a flag indicating the user just completed payment
-            const justPaid = sessionStorage.getItem('justCompletedPayment');
-            if (justPaid === 'true') {
-              // This is a user coming directly from payment
-              console.log(`User ${user.email} coming directly from payment`);
-              
-              // If we have their email stored, mark them as paid
-              const storedEmail = sessionStorage.getItem('checkoutEmail');
-              if (storedEmail && storedEmail.toLowerCase() === user.email.toLowerCase()) {
-                paidUsers.add(user.email);
-                hasPaid = true;
-                console.log(`User ${user.email} marked as paid from direct payment flow`);
-                
-                // Clear the flags after using them
-                sessionStorage.removeItem('checkoutEmail');
-                sessionStorage.removeItem('justCompletedPayment');
-              }
-            }
-          }
-        } catch (err) {
-          console.error('Error checking session storage:', err);
-        }
         
         // If the user is not marked as paid, check with Stripe API
         if (!hasPaid) {
           try {
+            console.log('Checking Stripe payment status for:', user.email);
             const hasPurchased = await hasUserPurchasedProduct(user.email);
             if (hasPurchased) {
               console.log(`User ${user.email} verified as paid via Stripe API`);
               paidUsers.add(user.email);
               hasPaid = true;
+            } else {
+              console.log(`User ${user.email} has not paid according to Stripe API`);
             }
           } catch (err) {
             console.error('Error checking purchase status with Stripe:', err);
           }
         }
-        
-        // TEMPORARY SOLUTION: Consider all Google users as authenticated in development
-        if (process.env.NODE_ENV !== 'production') {
-          // Add the user to authenticated users
+
+        // If user has paid, allow sign in
+        if (hasPaid) {
+          console.log(`User ${user.email} is paid, allowing sign in`);
           authenticatedUsers.add(user.email);
           return true;
         }
-        
-        // For production: If this is a new user and they haven't validated an invite code or paid,
-        // reject the sign-in (this will redirect to the checkout page)
-        if (!isReturningUser && !hasValidatedInvite && !hasPaid) {
-          return false;
-        }
-        
-        // Add this user to our authenticated users set for future sign-ins
-        authenticatedUsers.add(user.email);
+
+        // If user hasn't paid, redirect to checkout
+        console.log(`User ${user.email} has not paid, redirecting to checkout`);
+        return false;
       }
       
-      // Allow sign in
-      return true;
+      return false;
     },
     async session({ session, token }) {
       if (session.user && token.sub) {
@@ -180,6 +109,9 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async redirect({ url, baseUrl }) {
+      // Get the production URL from env
+      const productionUrl = process.env.NEXTAUTH_URL || baseUrl;
+      
       // For development, bypass invite page redirect for errors
       if (process.env.NODE_ENV !== 'production' && (url.includes('error=Callback') || url.includes('error=AccessDenied'))) {
         console.log('Auth error in development mode, still redirecting to upload page:', url);
@@ -188,26 +120,26 @@ export const authOptions: NextAuthOptions = {
       
       // In production: If auth failed due to missing invite code or payment, redirect to checkout page
       if (url.includes('error=Callback') || url.includes('error=AccessDenied')) {
-        return `${baseUrl}/auth/checkout`;
+        return `${productionUrl}/auth/checkout`;
       }
       
       // If the URL is explicitly set to /upload, honor that
       if (url.includes('/upload')) {
-        return url;
+        return url.startsWith('http') ? url : `${productionUrl}${url}`;
       }
       
       // For all successful auth callbacks, direct to upload page
       if (url.includes('auth/callback')) {
-        return `${baseUrl}/upload`;
+        return `${productionUrl}/upload`;
       }
       
-      // If the URL starts with baseUrl, go to the requested URL
-      if (url.startsWith(baseUrl)) {
+      // If the URL starts with baseUrl or productionUrl, go to the requested URL
+      if (url.startsWith(baseUrl) || url.startsWith(productionUrl)) {
         return url;
       }
       
       // Default fallback - go to upload page
-      return `${baseUrl}/upload`;
+      return `${productionUrl}/upload`;
     }
   },
   pages: {

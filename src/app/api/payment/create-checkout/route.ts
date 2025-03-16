@@ -6,6 +6,9 @@ const PRICE_ID = process.env.NODE_ENV === 'production'
   ? process.env.STRIPE_LIVE_PRICE_ID
   : process.env.STRIPE_TEST_PRICE_ID;
 
+// Get the base URL for the environment
+const BASE_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -42,8 +45,8 @@ export async function POST(req: Request) {
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXTAUTH_URL}/auth/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXTAUTH_URL}/auth/checkout`,
+      success_url: `${BASE_URL}/auth/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${BASE_URL}/auth/checkout`,
       customer_email: email,
       metadata: {
         userEmail: email,
