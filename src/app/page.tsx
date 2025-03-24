@@ -82,7 +82,7 @@ export default function Home() {
               {/* Dashboard Header */}
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-300">Live Dashboard Preview</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-300">Live Dashboard Preview</h3>
                 </div>
                 <a
                   href="/dashboard/userId=100492380040453908509"
