@@ -1177,11 +1177,9 @@ export default function Home() {
       </Head>
       <Toaster position="bottom-left" />
       <main className="min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
-        {/* Fixed position theme toggle */}
-        <div className="fixed bottom-16 right-4 z-[100]">
-          <div className="bg-white/10 dark:bg-gray-900/30 backdrop-blur-lg rounded-full p-3 shadow-lg hover:shadow-xl transition-all scale-110 hover:scale-125">
-            <ThemeToggle />
-          </div>
+        {/* Theme Toggle */}
+        <div className="fixed bottom-4 right-4 z-[100]">
+          <ThemeToggle />
         </div>
         
         <div className="max-w-6xl mx-auto space-y-6">

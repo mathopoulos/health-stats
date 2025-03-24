@@ -24,12 +24,10 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Floating Theme Toggle */}
-      <div className="fixed bottom-16 right-4 z-[100]">
-        <div className="bg-white/10 dark:bg-gray-900/30 backdrop-blur-lg rounded-full p-3 shadow-lg hover:shadow-xl transition-all scale-110 hover:scale-125">
-          <ThemeToggle />
-            </div>
-          </div>
+      {/* Theme Toggle */}
+      <div className="fixed bottom-4 right-4 z-[100]">
+        <ThemeToggle />
+      </div>
 
       {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/10 via-purple-500/5 to-transparent dark:from-indigo-500/20 dark:via-purple-500/10 pointer-events-none" />

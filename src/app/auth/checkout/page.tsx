@@ -89,11 +89,9 @@ export default function CheckoutPage({ searchParams }: CheckoutPageProps) {
 
   return (
     <main className="min-h-screen bg-primary dark:bg-primary-dark-dark flex items-center justify-center relative">
-      {/* Floating Theme Toggle */}
-      <div className="fixed bottom-16 right-4 z-[100]">
-        <div className="bg-white/10 dark:bg-gray-900/30 backdrop-blur-lg rounded-full p-3 shadow-lg hover:shadow-xl transition-all scale-110 hover:scale-125">
-          <ThemeToggle />
-        </div>
+      {/* Theme Toggle */}
+      <div className="fixed bottom-4 right-4 z-[100]">
+        <ThemeToggle />
       </div>
 
       {/* Background Effects */}
