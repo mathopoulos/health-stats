@@ -1,80 +1,6 @@
 'use client';
 
-import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import ThemeToggle from './components/ThemeToggle';
-
-interface TooltipProps {
-  active?: boolean;
-  payload?: Array<{
-  value: number;
-    unit?: string;
-  }>;
-  label?: string;
-  valueLabel: string;
-}
-
-// Enhanced demo data with daily points for smoother curves
-const demoHRVData = [
-  { date: '2024-01-01', value: 45 },
-  { date: '2024-01-05', value: 46 },
-  { date: '2024-01-10', value: 47 },
-  { date: '2024-01-15', value: 48 },
-  { date: '2024-01-20', value: 49 },
-  { date: '2024-01-25', value: 51 },
-  { date: '2024-02-01', value: 50 },
-  { date: '2024-02-05', value: 52 },
-  { date: '2024-02-10', value: 51 },
-  { date: '2024-02-15', value: 53 },
-  { date: '2024-02-20', value: 54 },
-  { date: '2024-02-25', value: 53 },
-  { date: '2024-03-01', value: 55 },
-  { date: '2024-03-05', value: 54 },
-  { date: '2024-03-10', value: 56 },
-  { date: '2024-03-15', value: 55 },
-  { date: '2024-03-20', value: 57 },
-  { date: '2024-03-25', value: 56 },
-  { date: '2024-04-01', value: 58 }
-];
-
-const demoVO2MaxData = [
-  { date: '2024-01-01', value: 42.0 },
-  { date: '2024-01-05', value: 42.1 },
-  { date: '2024-01-10', value: 42.3 },
-  { date: '2024-01-15', value: 42.4 },
-  { date: '2024-01-20', value: 42.6 },
-  { date: '2024-01-25', value: 42.8 },
-  { date: '2024-02-01', value: 42.9 },
-  { date: '2024-02-05', value: 43.1 },
-  { date: '2024-02-10', value: 43.2 },
-  { date: '2024-02-15', value: 43.4 },
-  { date: '2024-02-20', value: 43.5 },
-  { date: '2024-02-25', value: 43.7 },
-  { date: '2024-03-01', value: 43.8 },
-  { date: '2024-03-05', value: 44.0 },
-  { date: '2024-03-10', value: 44.1 },
-  { date: '2024-03-15', value: 44.2 },
-  { date: '2024-03-20', value: 44.3 },
-  { date: '2024-03-25', value: 44.4 },
-  { date: '2024-04-01', value: 44.5 }
-];
-
-// Custom tooltip component with proper types
-const CustomTooltip = ({ active, payload, label, valueLabel }: TooltipProps) => {
-  if (active && payload && payload.length && label) {
-    const date = new Date(label);
-    const formattedDate = date.toLocaleString('default', { month: 'long', day: 'numeric' });
-    return (
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 shadow-xl">
-        <p className="text-gray-400 text-sm mb-2">{formattedDate}</p>
-        <p className="text-white font-medium">
-          {valueLabel}: {payload[0].value}
-          <span className="text-xs ml-1">{payload[0].unit}</span>
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
 
 export default function Home() {
     return (
@@ -152,142 +78,38 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Enhanced Demo Charts */}
-          <div className="mt-24 grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in-up delay-300">
-            {/* Simplified HRV Chart */}
-            <div className="group bg-white/50 dark:bg-gray-900/50 backdrop-blur rounded-2xl p-6 border border-gray-200 dark:border-gray-800 hover:border-indigo-500/50 transition-colors hover:shadow-lg hover:shadow-indigo-500/10">
+          {/* Enhanced Demo Section */}
+          <div className="mt-24 animate-fade-in-up delay-300">
+            <div className="group relative bg-white/50 dark:bg-gray-900/50 backdrop-blur-lg rounded-2xl p-6 border border-gray-200 dark:border-gray-800 hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10">
+              {/* Dashboard Header */}
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-300">Heart Rate Variability</h3>
-                  <p className="text-sm text-gray-500 mt-1">30-day rolling average</p>
-                  </div>
-                <div className="text-right">
-                  <div className="text-2xl font-semibold text-indigo-400">{demoHRVData[demoHRVData.length - 1].value}</div>
-                  <div className="text-sm text-gray-500">ms</div>
+                  <h3 className="text-lg font-medium text-gray-300">Live Dashboard Preview</h3>
                 </div>
-                    </div>
-              <div className="h-[280px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                  <LineChart 
-                    data={demoHRVData} 
-                    margin={{ top: 30, right: 10, left: 10, bottom: 30 }}
-                  >
-                    <defs>
-                      <linearGradient id="hrvGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#6366F1" stopOpacity={0.2}/>
-                        <stop offset="100%" stopColor="#6366F1" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid 
-                      stroke="rgba(75, 85, 99, 0.3)"
-                      strokeWidth={0.75}
-                      strokeDasharray="0" 
-                      vertical={false}
-                    />
-                    <YAxis 
-                      domain={[(dataMin: number) => Math.max(40, dataMin - 5), (dataMax: number) => dataMax + 5]} 
-                      hide={true}
-                    />
-                    <XAxis
-                      dataKey="date"
-                      tickFormatter={(date) => {
-                        const d = new Date(date);
-                        return d.toLocaleString('default', { month: 'short', day: 'numeric' });
-                      }}
-                      stroke="#9CA3AF"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                      dy={12}
-                      interval="preserveStart"
-                      minTickGap={40}
-                      allowDuplicatedCategory={false}
-                    />
-                        <Tooltip
-                      content={<CustomTooltip valueLabel="HRV" />}
-                      cursor={{ stroke: 'rgba(156, 163, 175, 0.3)', strokeWidth: 0.7, strokeDasharray: '3 3' }}
-                        />
-                        <Line
-                      type="natural"
-                          dataKey="value"
-                          stroke="#6366F1"
-                      strokeWidth={2}
-                      dot={false}
-                      activeDot={{ r: 4, fill: '#6366F1', strokeWidth: 2, stroke: '#312E81' }}
-                      fill="url(#hrvGradient)"
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                </div>
+                <a
+                  href="/dashboard/userId=100492380040453908509"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                >
+                  See Full Demo Dashboard →
+                </a>
               </div>
-
-            {/* Simplified VO2 Max Chart */}
-            <div className="group bg-white/50 dark:bg-gray-900/50 backdrop-blur rounded-2xl p-6 border border-gray-200 dark:border-gray-800 hover:border-purple-500/50 transition-colors hover:shadow-lg hover:shadow-purple-500/10">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-300">VO2 Max</h3>
-                  <p className="text-sm text-gray-500 mt-1">30-day rolling average</p>
-                    </div>
-                <div className="text-right">
-                  <div className="text-2xl font-semibold text-purple-400">{demoVO2MaxData[demoVO2MaxData.length - 1].value}</div>
-                  <div className="text-sm text-gray-500">mL/kg·min</div>
-                  </div>
-                </div>
-              <div className="h-[280px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                  <LineChart 
-                    data={demoVO2MaxData} 
-                    margin={{ top: 30, right: 10, left: 10, bottom: 30 }}
-                  >
-                    <defs>
-                      <linearGradient id="vo2Gradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.2}/>
-                        <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid 
-                      stroke="rgba(75, 85, 99, 0.3)"
-                      strokeWidth={0.75}
-                      strokeDasharray="0" 
-                      vertical={false}
-                    />
-                    <YAxis 
-                      domain={[(dataMin: number) => Math.max(40, dataMin - 1), (dataMax: number) => dataMax + 1]} 
-                      hide={true}
-                    />
-                    <XAxis
-                      dataKey="date"
-                      tickFormatter={(date) => {
-                        const d = new Date(date);
-                        return d.toLocaleString('default', { month: 'short', day: 'numeric' });
-                      }}
-                      stroke="#9CA3AF"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                      dy={12}
-                      interval="preserveStart"
-                      minTickGap={40}
-                      allowDuplicatedCategory={false}
-                    />
-                        <Tooltip
-                      content={<CustomTooltip valueLabel="VO2 Max" />}
-                      cursor={{ stroke: 'rgba(156, 163, 175, 0.3)', strokeWidth: 0.7, strokeDasharray: '3 3' }}
-                        />
-                        <Line
-                      type="natural"
-                          dataKey="value"
-                          stroke="#8B5CF6"
-                      strokeWidth={2}
-                      dot={false}
-                      activeDot={{ r: 4, fill: '#8B5CF6', strokeWidth: 2, stroke: '#4C1D95' }}
-                      fill="url(#vo2Gradient)"
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
+              
+              {/* Dashboard Preview */}
+              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none z-10" />
+                <iframe
+                  src="/dashboard/userId=100492380040453908509"
+                  className="w-full h-full transform hover:scale-[1.02] transition-transform duration-300"
+                  style={{
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                  }}
+                />
               </div>
-                </div>
-              </div>
+            </div>
+          </div>
 
           {/* Enhanced Features Grid */}
           <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8 animate-fade-in-up delay-400">
