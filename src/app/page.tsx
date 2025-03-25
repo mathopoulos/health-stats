@@ -74,10 +74,10 @@ export default function Home() {
           </div>
 
           {/* Enhanced Demo Section */}
-          <div className="mt-24 animate-fade-in-up delay-300">
-            <div className="group relative bg-white/50 dark:bg-gray-900/50 backdrop-blur-lg rounded-2xl p-6 border border-gray-200 dark:border-gray-800 hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10">
+          <div className="mt-16 sm:mt-24 animate-fade-in-up delay-300 px-2 sm:px-4">
+            <div className="group relative bg-white/50 dark:bg-gray-900/50 backdrop-blur-lg rounded-2xl p-4 sm:p-6 border border-gray-200 dark:border-gray-800 hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10">
               {/* Dashboard Header */}
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 space-y-2 sm:space-y-0">
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-gray-300">Live Dashboard Preview</h3>
                 </div>
@@ -85,14 +85,16 @@ export default function Home() {
                   href="/dashboard/userId=100492380040453908509"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                  className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
                 >
                   See Full Demo Dashboard →
                 </a>
               </div>
               
               {/* Dashboard Preview */}
-              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg">
+              <div className="relative w-full overflow-hidden rounded-lg 
+                aspect-[4/5] sm:aspect-[16/12] md:aspect-[16/9] 
+                min-h-[500px] sm:min-h-[400px] md:min-h-0">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none z-10" />
                 <iframe
                   src="/dashboard/userId=100492380040453908509"
@@ -100,6 +102,8 @@ export default function Home() {
                   style={{
                     border: 'none',
                     borderRadius: '0.5rem',
+                    transform: 'scale(0.95)',
+                    transformOrigin: 'top center',
                   }}
                 />
               </div>
@@ -107,7 +111,7 @@ export default function Home() {
           </div>
 
           {/* Enhanced Features Grid */}
-          <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8 animate-fade-in-up delay-400">
+          <div className="mt-16 sm:mt-24 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 animate-fade-in-up delay-400 px-2 sm:px-4">
             {/* Enhanced Feature 1 */}
             <div className="group bg-white/30 dark:bg-gray-900/30 backdrop-blur rounded-xl p-6 border border-gray-200/50 dark:border-gray-800/50 hover:border-indigo-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/10">
               <div className="w-12 h-12 bg-indigo-500/20 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
