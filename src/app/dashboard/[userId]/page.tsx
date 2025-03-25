@@ -2315,9 +2315,17 @@ export default function Home() {
           <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span className="w-0 overflow-hidden group-hover:w-auto transition-all duration-300 ease-in-out whitespace-nowrap">
-            Powered by OpenHealth
-          </span>
+          <a 
+            href="https://revly.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center w-0 overflow-hidden group-hover:w-auto transition-all duration-300 ease-in-out whitespace-nowrap"
+          >
+            Powered by Revly
+            <svg className="w-3 h-3 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M7 17L17 7M17 7H7M17 7V17" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </a>
       </div>
     </main>
     </>
