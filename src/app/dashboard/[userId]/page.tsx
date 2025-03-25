@@ -1304,7 +1304,7 @@ export default function Home() {
                     </div>
                     <div>
                       <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                        {userData?.name ? `${userData.name}'s` : ''} Health Dashboard
+                        {userData?.name || ''}
                       </h1>
                       <div className="flex items-center gap-2">
                         <p className="text-gray-600 dark:text-gray-400">Viewing user data</p>
