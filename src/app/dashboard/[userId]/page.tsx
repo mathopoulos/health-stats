@@ -2311,18 +2311,18 @@ export default function Home() {
           </div>
         )}
       </div>
-        <div className="fixed bottom-4 left-4 bg-indigo-500/10 hover:bg-indigo-500/20 backdrop-blur px-3 py-2 rounded-full shadow-lg text-sm font-medium tracking-wide text-indigo-600 border border-indigo-500/20 hover:shadow-md transition-all duration-300 flex items-center gap-0 hover:gap-2 hover:px-4 group">
-          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <div className="fixed bottom-4 left-4 bg-indigo-500/15 hover:bg-indigo-500/25 backdrop-blur px-3 py-2.5 rounded-full shadow-lg text-sm font-medium tracking-wide text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 hover:shadow-md transition-all duration-300 flex items-center gap-1 hover:gap-2 hover:px-4 group">
+          <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
           <a 
             href="https://revly.com" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="flex items-center w-0 overflow-hidden group-hover:w-auto transition-all duration-300 ease-in-out whitespace-nowrap"
+            className="flex items-center w-0 overflow-hidden group-hover:w-auto transition-all duration-300 ease-in-out whitespace-nowrap font-semibold"
           >
             Powered by Revly
-            <svg className="w-3 h-3 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <svg className="w-3.5 h-3.5 ml-1.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M7 17L17 7M17 7H7M17 7V17" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </a>
