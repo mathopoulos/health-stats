@@ -44,19 +44,16 @@ export default function Home() {
           {/* Enhanced Main Title with Animation */}
           <h1 className="text-center animate-fade-in">
             <span className="block text-5xl md:text-6xl font-bold mb-4 hover:scale-105 transition-transform">
-              Share Your Health Journey
-                      </span>
+              Track Your Health in One Place
+            </span>
             <span className="block text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 text-transparent bg-clip-text bg-animate hover:scale-105 transition-transform">
-              Track • Share • Inspire
-                      </span>
+              Analyze • Improve • Share
+            </span>
           </h1>
 
           {/* Enhanced Subtitle */}
           <p className="mt-8 text-xl text-center text-gray-600 dark:text-gray-300 max-w-3xl mx-auto animate-fade-in-up">
-            Join the movement of radical health transparency. Track your metrics, share your wins, inspire your community.
-          </p>
-          <p className="mt-4 text-lg text-center text-indigo-600 dark:text-indigo-400 font-medium animate-fade-in-up delay-100">
-            No gatekeeping, just vibes ✨
+            Revly syncs with your devices to show what matters most for better sleep, fitness, and longevity.
           </p>
 
           {/* Enhanced CTA Buttons */}
@@ -118,34 +115,34 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
                     </div>
-              <h3 className="text-lg font-semibold mb-2 group-hover:text-indigo-400 transition-colors">Track Everything</h3>
-              <p className="text-gray-400 group-hover:text-gray-300 transition-colors">Monitor your health metrics from HRV to blood markers, all in one place.</p>
+              <h3 className="text-lg font-semibold mb-2 group-hover:text-indigo-400 transition-colors">Centralize Your Health Data</h3>
+              <p className="text-gray-400 group-hover:text-gray-300 transition-colors">Automatically connect wearables and lab results to track sleep quality, activity levels, HRV, and biomarkers in one unified dashboard.</p>
               </div>
 
             {/* Enhanced Feature 2 */}
             <div className="group bg-white/30 dark:bg-gray-900/30 backdrop-blur rounded-xl p-6 border border-gray-200/50 dark:border-gray-800/50 hover:border-purple-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10">
               <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                    </div>
-              <h3 className="text-lg font-semibold mb-2 group-hover:text-purple-400 transition-colors">Share Progress</h3>
-              <p className="text-gray-400 group-hover:text-gray-300 transition-colors">Build in public and inspire others with your health journey.</p>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold mb-2 group-hover:text-purple-400 transition-colors">Personalized Insights</h3>
+              <p className="text-gray-400 group-hover:text-gray-300 transition-colors">Get actionable recommendations based on your unique data patterns to improve sleep, recovery, and overall wellbeing.</p>
               </div>
               
             {/* Enhanced Feature 3 */}
             <div className="group bg-white/30 dark:bg-gray-900/30 backdrop-blur rounded-xl p-6 border border-gray-200/50 dark:border-gray-800/50 hover:border-pink-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-pink-500/10">
               <div className="w-12 h-12 bg-pink-500/20 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <svg className="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
-                  </div>
-              <h3 className="text-lg font-semibold mb-2 group-hover:text-pink-400 transition-colors">Optimize Health</h3>
-              <p className="text-gray-400 group-hover:text-gray-300 transition-colors">Get insights and optimize your health with data-driven decisions.</p>
-                </div>
-                  </div>
-                </div>
-                </div>
+              </div>
+              <h3 className="text-lg font-semibold mb-2 group-hover:text-pink-400 transition-colors">Build in Public</h3>
+              <p className="text-gray-400 group-hover:text-gray-300 transition-colors">Share your health journey with friends or the community to stay accountable and inspire others with your progress.</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Enhanced Footer */}
       <footer className="border-t border-gray-200 dark:border-gray-800">
