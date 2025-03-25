@@ -6,6 +6,7 @@ import type { NextRequest } from "next/server";
 const PUBLIC_API_ROUTES = [
   '/api/health-data',
   '/api/blood-markers',
+  '/api/users',
   '/api/validate-invite',
   // Payment routes
   '/api/payment/check-purchase',
@@ -30,6 +31,12 @@ export async function middleware(request: NextRequest) {
   
   const token = await getToken({ req: request });
   // console.log('Auth token present:', !!token);
+  
+  // Handle redirects for old dashboard URL format
+  if (request.nextUrl.pathname.match(/^\/dashboard\/userId=(.+)$/)) {
+    const userId = request.nextUrl.pathname.replace('/dashboard/userId=', '');
+    return NextResponse.redirect(new URL(`/dashboard/${userId}`, request.url));
+  }
   
   const isAuthPage = request.nextUrl.pathname.startsWith("/auth");
   const isInvitePage = request.nextUrl.pathname === "/auth/invite";
@@ -87,8 +94,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/upload", request.url));
   }
 
-  // If user is not authenticated and trying to access protected pages, redirect to sign-in page
-  if ((isUploadPage || isDashboardPage) && !token) {
+  // If user is not authenticated and trying to access upload page, redirect to sign-in page
+  if (isUploadPage && !token) {
     return NextResponse.redirect(new URL("/auth/signin", request.url));
   }
 

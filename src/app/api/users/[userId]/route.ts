@@ -41,13 +41,22 @@ export async function GET(
 
     // If user has a profile image, generate a presigned URL
     if (user.profileImage) {
-      const key = new URL(user.profileImage).pathname.slice(1); // Remove leading slash
-      const command = new GetObjectCommand({
-        Bucket: process.env.AWS_BUCKET_NAME!,
-        Key: key,
-      });
-      const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
-      user.profileImage = presignedUrl;
+      try {
+        const imageUrl = new URL(user.profileImage);
+        const key = imageUrl.pathname.slice(1); // Remove leading slash
+        
+        const command = new GetObjectCommand({
+          Bucket: process.env.AWS_BUCKET_NAME!,
+          Key: key,
+        });
+        
+        const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+        user.profileImage = presignedUrl;
+      } catch (error) {
+        console.error('Error generating presigned URL for profile image:', error);
+        // Remove the profile image if there's an error
+        user.profileImage = null;
+      }
     }
 
     return NextResponse.json({ success: true, user });

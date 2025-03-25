@@ -252,12 +252,24 @@ interface UserData {
 
 export default function Home() {
   const { data: session, status } = useSession();
-  const params = useParams();
+  const params = useParams<{ userId: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
-  const userId = searchParams?.get('userId') || session?.user?.id;
+  
+  // Get userId from path parameter or search parameter or session
+  const routeUserId = params?.userId;
+  const queryUserId = searchParams?.get('userId');
+  
+  // Check if routeUserId starts with "userId=" and extract the actual ID if needed
+  const extractedUserId = routeUserId?.startsWith('userId=') 
+    ? routeUserId.substring(7) 
+    : routeUserId;
+  
+  // Use the first available ID source
+  const userId = queryUserId || extractedUserId || session?.user?.id;
+  
   const [data, setData] = useState<ChartData>({
     heartRate: [],
     weight: [],
@@ -343,9 +355,9 @@ export default function Home() {
   const fetchData = async () => {
     try {
         setError(null);
-      if (!session?.user) {
-        console.error('No user session available');
-        setError('Please sign in to view your health data');
+      if (!userId) {
+        console.error('No userId available');
+        setError('User ID is required to view health data');
         return {
           heartRate: [],
           weight: [],
@@ -768,18 +780,32 @@ export default function Home() {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!userId) return;
-      
-      try {
-        const response = await fetch(`/api/users/${userId}`);
-        if (response.ok) {
+      if (userId) {
+        try {
+          // Fetch user data from API
+          const response = await fetch(`/api/users/${userId}`);
           const data = await response.json();
+          
           if (data.success) {
+            // Validate profileImage URL before setting in state
+            if (data.user.profileImage) {
+              try {
+                // Test if the URL is valid
+                new URL(data.user.profileImage);
+              } catch (error) {
+                // If URL is invalid, remove it
+                console.error('Invalid profile image URL:', data.user.profileImage);
+                data.user.profileImage = null;
+              }
+            }
+            
             setUserData(data.user);
+          } else {
+            console.error('Failed to fetch user data:', data.error);
           }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
         }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
       }
     };
 
@@ -1195,6 +1221,14 @@ export default function Home() {
                         width={80}
                         height={80}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          // Hide the image on error and show fallback
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          // Force fallback to show
+                          target.parentElement?.classList.add('profile-image-error');
+                          console.error('Failed to load profile image');
+                        }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
@@ -1242,39 +1276,66 @@ export default function Home() {
                 </>
               ) : (
                 <div className="flex items-center justify-between w-full">
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {userData?.name ? `${userData.name}'s` : ''} Health Dashboard
-                    </h1>
-                    <div className="flex items-center gap-2">
-                      <p className="text-gray-600 dark:text-gray-400">Viewing user data</p>
-                      <button
-                        onClick={() => {
-                          const url = window.location.href;
-                          navigator.clipboard.writeText(url).then(() => {
-                            toast.success('Dashboard link copied to clipboard!', {
-                              duration: 2000,
-                              style: {
-                                background: '#333',
-                                color: '#fff',
-                              },
+                  <div className="flex items-center gap-4">
+                    <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700">
+                      {userData?.profileImage ? (
+                        <Image
+                          src={userData.profileImage}
+                          alt="Profile"
+                          width={80}
+                          height={80}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Hide the image on error and show fallback
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            // Force fallback to show
+                            target.parentElement?.classList.add('profile-image-error');
+                            console.error('Failed to load profile image');
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
+                          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {userData?.name ? `${userData.name}'s` : ''} Health Dashboard
+                      </h1>
+                      <div className="flex items-center gap-2">
+                        <p className="text-gray-600 dark:text-gray-400">Viewing user data</p>
+                        <button
+                          onClick={() => {
+                            const url = window.location.href;
+                            navigator.clipboard.writeText(url).then(() => {
+                              toast.success('Dashboard link copied to clipboard!', {
+                                duration: 2000,
+                                style: {
+                                  background: '#333',
+                                  color: '#fff',
+                                },
+                              });
+                            }).catch(() => {
+                              toast.error('Failed to copy link', {
+                                duration: 2000,
+                                style: {
+                                  background: '#333',
+                                  color: '#fff',
+                                },
+                              });
                             });
-                          }).catch(() => {
-                            toast.error('Failed to copy link', {
-                              duration: 2000,
-                              style: {
-                                background: '#333',
-                                color: '#fff',
-                              },
-                            });
-                          });
-                        }}
-                        className="inline-flex items-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                        </svg>
-                      </button>
+                          }}
+                          className="inline-flex items-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
