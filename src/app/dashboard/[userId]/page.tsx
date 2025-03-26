@@ -1522,8 +1522,8 @@ export default function Home() {
 
               {/* HRV Chart */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-                <div className="flex justify-between items-center mb-6">
-                  <div className="flex items-center">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                  <div className="flex flex-wrap items-center gap-3">
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Heart Rate Variability</h2>
                     {hasHRVData && !data.loading && (
                       <>
@@ -1574,7 +1574,7 @@ export default function Home() {
                                   textColor: 'text-indigo-600 dark:text-indigo-400',
                                   iconColor: 'text-indigo-500'
                                 }}
-                                className="ml-3"
+                                className="ml-0 sm:ml-3"
                               />
                             );
                           }
@@ -1587,7 +1587,7 @@ export default function Home() {
                     <select
                       value={hrvTimeRange}
                       onChange={handleHRVTimeRangeChange}
-                      className="text-sm font-medium border border-gray-200 rounded-md px-3 py-2 pr-9 bg-white/90 dark:border-gray-700 dark:bg-gray-800/90 dark:text-gray-100 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800"
+                      className="w-full sm:w-auto text-sm font-medium border border-gray-200 rounded-md px-3 py-2 pr-9 bg-white/90 dark:border-gray-700 dark:bg-gray-800/90 dark:text-gray-100 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800"
                       style={{
                         backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M4.94 5.72a.75.75 0 0 0-1.06 1.06l3.83 3.83a.75.75 0 0 0 1.06 0l3.83-3.83a.75.75 0 0 0-1.06-1.06L8 9.28 4.94 5.72z' fill='%236b7280'/%3e%3c/svg%3e")`,
                         backgroundRepeat: 'no-repeat',
@@ -1601,9 +1601,8 @@ export default function Home() {
                       <option value="last1year">Last year</option>
                       <option value="last3years">Last 3 years</option>
                     </select>
-                    {/* Navigation buttons removed */}
-                    </div>
                   </div>
+                </div>
             <div className="h-[340px]">
                   {data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
