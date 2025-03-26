@@ -2348,9 +2348,9 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
   const optimalMax = config.max - (range * 0.25);
 
   return (
-    <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-700 pb-4">
-      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{label}</span>
-      <div className="flex items-center gap-3">
+    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 border-b border-gray-100 dark:border-gray-700 pb-4">
+      <span className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{label}</span>
+      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
         {data.length > 0 && (
           <>
             <div className="group relative">
@@ -2360,7 +2360,7 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
                 }`}
               />
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
-                <div className="bg-white dark:bg-gray-800 rounded-lg py-3 px-4 shadow-sm border border-gray-100 dark:border-gray-700 min-w-[200px]">
+                <div className="bg-white dark:bg-gray-800 rounded-lg py-3 px-4 shadow-sm border border-gray-100 dark:border-gray-700 w-[200px] sm:w-[250px]">
                   <div className="flex flex-col gap-3">
                     <div className={`text-sm font-medium ${getStatusColor(getStatusInfo(data[0].value))}`}>
                       {getStatusInfo(data[0].value)}
@@ -2391,11 +2391,12 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
                 decreaseIsGood={config.decreaseIsGood}
                 min={config.min}
                 max={config.max}
+                className="min-w-[60px] justify-end"
               />
             )}
           </>
         )}
-        <span className="text-lg font-semibold text-gray-900 dark:text-white">
+        <span className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white whitespace-nowrap">
           {data.length > 0 ?
            `${data[0].value} ${data[0].unit}` :
            "No data"}
@@ -2407,7 +2408,7 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
 
 const LastTestedDate = ({ data }: { data: BloodMarker[] }) => (
   data.length > 0 && (
-    <p className="text-sm text-gray-500 dark:text-gray-400 mt-6">
+    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-4 sm:mt-6">
       Last tested: {new Date(data[0].date).toLocaleDateString()}
     </p>
   )
