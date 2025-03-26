@@ -1663,9 +1663,9 @@ export default function Home() {
           </div>
 
               {/* VO2 Max Chart */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-                <div className="flex justify-between items-center mb-6">
-                  <div className="flex items-center">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                  <div className="flex flex-wrap items-center gap-3">
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white">VO2 Max</h2>
                     {hasVO2MaxData && !data.loading && (
                       <>
@@ -1712,11 +1712,11 @@ export default function Home() {
                                 showTimeRange={true}
                                 timeRangeLabel={getTimeRangeLabel(vo2maxTimeRange)}
                                 customColors={{
-                                  bgColor: 'bg-red-50 dark:bg-red-900/20',
-                                  textColor: 'text-red-600 dark:text-red-400',
-                                  iconColor: 'text-red-500'
+                                  bgColor: 'bg-rose-50 dark:bg-rose-900/20',
+                                  textColor: 'text-rose-600 dark:text-rose-400',
+                                  iconColor: 'text-rose-500'
                                 }}
-                                className="ml-3"
+                                className="ml-0 sm:ml-3"
                               />
                             );
                           }
@@ -1729,7 +1729,7 @@ export default function Home() {
                     <select
                       value={vo2maxTimeRange}
                       onChange={handleVO2MaxTimeRangeChange}
-                      className="text-sm font-medium border border-gray-200 rounded-md px-3 py-2 pr-9 bg-white/90 dark:border-gray-700 dark:bg-gray-800/90 dark:text-gray-100 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800"
+                      className="w-full sm:w-auto text-sm font-medium border border-gray-200 rounded-md px-3 py-2 pr-9 bg-white/90 dark:border-gray-700 dark:bg-gray-800/90 dark:text-gray-100 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800"
                       style={{
                         backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M4.94 5.72a.75.75 0 0 0-1.06 1.06l3.83 3.83a.75.75 0 0 0 1.06 0l3.83-3.83a.75.75 0 0 0-1.06-1.06L8 9.28 4.94 5.72z' fill='%236b7280'/%3e%3c/svg%3e")`,
                         backgroundRepeat: 'no-repeat',
@@ -1743,9 +1743,8 @@ export default function Home() {
                       <option value="last1year">Last year</option>
                       <option value="last3years">Last 3 years</option>
                     </select>
-                    {/* Navigation buttons removed */}
-                    </div>
                   </div>
+                </div>
             <div className="h-[340px]">
                   {data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
@@ -1804,9 +1803,9 @@ export default function Home() {
           </div>
 
               {/* Weight Chart */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-                <div className="flex justify-between items-center mb-6">
-                  <div className="flex items-center">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                  <div className="flex flex-wrap items-center gap-3">
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Weight</h2>
                     {hasWeightData && !data.loading && (
                       <>
@@ -1853,11 +1852,11 @@ export default function Home() {
                                 showTimeRange={true}
                                 timeRangeLabel={getTimeRangeLabel(weightTimeRange)}
                                 customColors={{
-                                  bgColor: 'bg-green-50 dark:bg-green-900/20',
-                                  textColor: isDarkMode ? 'text-[#34d399]' : 'text-[#10b981]',
-                                  iconColor: isDarkMode ? 'text-[#34d399]' : 'text-[#10b981]'
+                                  bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
+                                  textColor: 'text-emerald-600 dark:text-emerald-400',
+                                  iconColor: 'text-emerald-500'
                                 }}
-                                className="ml-3"
+                                className="ml-0 sm:ml-3"
                               />
                             );
                           }
@@ -1870,7 +1869,7 @@ export default function Home() {
                     <select
                       value={weightTimeRange}
                       onChange={handleWeightTimeRangeChange}
-                      className="text-sm font-medium border border-gray-200 rounded-md px-3 py-2 pr-9 bg-white/90 dark:border-gray-700 dark:bg-gray-800/90 dark:text-gray-100 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800"
+                      className="w-full sm:w-auto text-sm font-medium border border-gray-200 rounded-md px-3 py-2 pr-9 bg-white/90 dark:border-gray-700 dark:bg-gray-800/90 dark:text-gray-100 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800"
                       style={{
                         backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M4.94 5.72a.75.75 0 0 0-1.06 1.06l3.83 3.83a.75.75 0 0 0 1.06 0l3.83-3.83a.75.75 0 0 0-1.06-1.06L8 9.28 4.94 5.72z' fill='%236b7280'/%3e%3c/svg%3e")`,
                         backgroundRepeat: 'no-repeat',
@@ -1944,9 +1943,9 @@ export default function Home() {
           </div>
 
               {/* Body Fat Chart */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-                <div className="flex justify-between items-center mb-6">
-                  <div className="flex items-center">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                  <div className="flex flex-wrap items-center gap-3">
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Body Fat</h2>
                     {hasBodyFatData && !data.loading && (
                       <>
@@ -1997,10 +1996,10 @@ export default function Home() {
                                 timeRangeLabel={getTimeRangeLabel(bodyFatTimeRange)}
                                 customColors={{
                                   bgColor: 'bg-amber-50 dark:bg-amber-900/20',
-                                  textColor: isDarkMode ? 'text-[#fbbf24]' : 'text-[#d97706]',
-                                  iconColor: isDarkMode ? 'text-[#fbbf24]' : 'text-[#d97706]'
+                                  textColor: 'text-amber-600 dark:text-amber-400',
+                                  iconColor: 'text-amber-500'
                                 }}
-                                className="ml-3"
+                                className="ml-0 sm:ml-3"
                               />
                             );
                           }
@@ -2013,7 +2012,7 @@ export default function Home() {
                     <select
                       value={bodyFatTimeRange}
                       onChange={handleBodyFatTimeRangeChange}
-                      className="text-sm font-medium border border-gray-200 rounded-md px-3 py-2 pr-9 bg-white/90 dark:border-gray-700 dark:bg-gray-800/90 dark:text-gray-100 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800"
+                      className="w-full sm:w-auto text-sm font-medium border border-gray-200 rounded-md px-3 py-2 pr-9 bg-white/90 dark:border-gray-700 dark:bg-gray-800/90 dark:text-gray-100 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800"
                       style={{
                         backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M4.94 5.72a.75.75 0 0 0-1.06 1.06l3.83 3.83a.75.75 0 0 0 1.06 0l3.83-3.83a.75.75 0 0 0-1.06-1.06L8 9.28 4.94 5.72z' fill='%236b7280'/%3e%3c/svg%3e")`,
                         backgroundRepeat: 'no-repeat',
@@ -2027,9 +2026,8 @@ export default function Home() {
                       <option value="last1year">Last year</option>
                       <option value="last3years">Last 3 years</option>
                     </select>
-                    {/* Navigation buttons removed */}
-                    </div>
                   </div>
+                </div>
             <div className="h-[340px]">
                   {data.loading && (
                     <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
