@@ -5,6 +5,7 @@ import './globals.css';
 import { ThemeProvider } from './context/ThemeContext';
 import { SessionProvider } from 'next-auth/react';
 import { Toaster } from 'react-hot-toast';
+import { Analytics } from '@vercel/analytics/react';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -22,6 +23,7 @@ export default function RootLayout({
           </ThemeProvider>
         </SessionProvider>
         <Toaster position="bottom-left" />
+        <Analytics />
       </body>
     </html>
   );
