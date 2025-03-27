@@ -46,11 +46,26 @@ export default function SignIn() {
   }, [router, searchParams, comingFromPayment]);
 
   const handleSignIn = () => {
+    // Check if authenticating from iOS app
+    const isIosApp = searchParams?.get('platform') === 'ios';
+    const callbackUrl = searchParams?.get('callback_url') || '/upload';
+    
     // If the user has a validated email, include it in a hidden state
     // parameter for the auth callback to pick up
+    const stateData: any = {};
+    
+    if (validatedEmail) {
+      stateData.email = validatedEmail;
+    }
+    
+    // Add platform info for iOS
+    if (isIosApp) {
+      stateData.platform = 'ios';
+    }
+    
     signIn('google', { 
-      callbackUrl: '/upload',  // Always redirect to upload page after sign-in
-      state: validatedEmail ? JSON.stringify({ email: validatedEmail }) : undefined 
+      callbackUrl: isIosApp ? 'health.revly://auth' : callbackUrl,
+      state: Object.keys(stateData).length > 0 ? JSON.stringify(stateData) : undefined 
     });
   };
 

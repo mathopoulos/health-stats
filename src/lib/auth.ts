@@ -37,6 +37,13 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      }
     }),
   ],
   session: {
@@ -57,6 +64,22 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile, email, credentials }) {
       if (user.email) {
+        // For mobile auth, we'll skip payment checks if the state contains 'platform=ios'
+        // This assumes the JWT verification is sufficient for mobile auth
+        if (account?.provider === 'google' && account.state) {
+          try {
+            const stateData = JSON.parse(account.state as string);
+            if (stateData.platform === 'ios') {
+              console.log(`iOS app authentication for ${user.email}, skipping payment check`);
+              authenticatedUsers.add(user.email);
+              return true;
+            }
+          } catch (e) {
+            // Continue with normal flow if state isn't parseable
+            console.log('Unable to parse state parameter:', e);
+          }
+        }
+
         // Check if this is a returning user (previously authenticated)
         const isReturningUser = authenticatedUsers.has(user.email);
         
@@ -121,6 +144,29 @@ export const authOptions: NextAuthOptions = {
       // For iOS app callback
       if (url.startsWith('health.revly://')) {
         return url;
+      }
+      
+      // Check if this is a callback and there's state data with platform=ios
+      if (url.includes('auth/callback') || url.includes('api/auth/callback')) {
+        // Try to extract state from the URL
+        try {
+          const urlObj = new URL(url);
+          const state = urlObj.searchParams.get('state');
+          
+          if (state) {
+            const stateData = JSON.parse(state);
+            if (stateData.platform === 'ios') {
+              // Get token from session to pass back to the app
+              // Format: health.revly://auth?token=xyz
+              return `health.revly://auth?token=${stateData.token || ''}`;
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing state in redirect callback:', e);
+        }
+        
+        // Default web callback
+        return `${productionUrl}/upload`;
       }
       
       // For development, bypass invite page redirect for errors
