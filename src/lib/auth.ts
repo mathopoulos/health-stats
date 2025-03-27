@@ -98,19 +98,30 @@ export const authOptions: NextAuthOptions = {
       if (session.user && token.sub) {
         // Add the user ID to the session
         session.user.id = token.sub;
+        // Make access token available to the client for iOS app
+        session.accessToken = token.accessToken as string | undefined;
       }
       return session;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         // Add any additional user info to the token if needed
         token.id = user.id;
+      }
+      // Pass the access token to the JWT if available
+      if (account) {
+        token.accessToken = account.access_token;
       }
       return token;
     },
     async redirect({ url, baseUrl }) {
       // Get the production URL from env
       const productionUrl = process.env.NEXTAUTH_URL || baseUrl;
+      
+      // For iOS app callback
+      if (url.startsWith('health.revly://')) {
+        return url;
+      }
       
       // For development, bypass invite page redirect for errors
       if (process.env.NODE_ENV !== 'production' && (url.includes('error=Callback') || url.includes('error=AccessDenied'))) {
