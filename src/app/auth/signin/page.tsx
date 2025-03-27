@@ -61,10 +61,12 @@ export default function SignIn() {
     // Add platform info for iOS
     if (isIosApp) {
       stateData.platform = 'ios';
+      stateData.redirect = 'health.revly://auth'; // Store the iOS URL scheme in state instead
     }
     
     signIn('google', { 
-      callbackUrl: isIosApp ? 'health.revly://auth' : callbackUrl,
+      // Always use a web URL as the callback URL for NextAuth compatibility
+      callbackUrl: isIosApp ? '/auth/mobile-callback' : callbackUrl,
       state: Object.keys(stateData).length > 0 ? JSON.stringify(stateData) : undefined 
     });
   };
