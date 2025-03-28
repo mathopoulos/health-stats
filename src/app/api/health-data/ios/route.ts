@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
     const normalizedMeasurements: ManualHrvMeasurement[] = validHrvMeasurements.map((item: HrvMeasurement) => {
       // Convert to the format matching manually processed data
       return {
-        date: item.timestamp.endsWith('Z') ? item.timestamp : `${item.timestamp}Z`,
+        date: item.timestamp?.endsWith('Z') ? item.timestamp : `${item.timestamp || ''}Z`,
         value: item.value,
         source: "iOS App",
         unit: "ms",
@@ -139,23 +139,54 @@ export async function POST(request: NextRequest) {
       };
     });
 
+    // Ensure all existing data has proper date format
+    const normalizedExistingData = existingData.map(item => {
+      // Handle existing data that might be in different formats
+      if (!item.date && item.timestamp) {
+        // Convert old format to new format
+        return {
+          ...item,
+          date: item.timestamp?.endsWith('Z') ? item.timestamp : `${item.timestamp}Z`,
+          source: item.source || "Unknown Source",
+          unit: item.unit || "ms",
+          metadata: item.metadata || { HKAlgorithmVersion: 2 }
+        };
+      }
+      // Ensure the item has all required fields
+      return {
+        ...item,
+        source: item.source || "Unknown Source",
+        unit: item.unit || "ms",
+        metadata: item.metadata || { HKAlgorithmVersion: 2 }
+      };
+    });
+
     // Build a set of dates that already exist in the data
-    const existingDates = new Set(existingData.map(item => 
-      // Normalize date format by removing milliseconds if present
-      item.date.replace(/\.\d{3}Z$/, 'Z')
-    ));
+    const existingDates = new Set(normalizedExistingData
+      .filter(item => typeof item.date === 'string' && item.date)
+      .map(item => {
+        // Normalize date format by removing milliseconds if present
+        return item.date.replace(/\.\d{3}Z$/, 'Z');
+      })
+    );
 
     // Filter out measurements with dates that already exist
-    const newMeasurements = normalizedMeasurements.filter(item => {
-      const normalizedDate = item.date.replace(/\.\d{3}Z$/, 'Z');
-      return !existingDates.has(normalizedDate);
-    });
+    const newMeasurements = normalizedMeasurements
+      .filter(item => typeof item.date === 'string' && item.date)
+      .filter(item => {
+        const normalizedDate = item.date.replace(/\.\d{3}Z$/, 'Z');
+        return !existingDates.has(normalizedDate);
+      });
     
-    const combinedData = [...existingData, ...newMeasurements];
+    const combinedData = [...normalizedExistingData, ...newMeasurements];
     console.log(`iOS health data: Adding ${newMeasurements.length} new records, total: ${combinedData.length}`);
 
-    // Sort by date
-    combinedData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // Sort by date - with safety check
+    combinedData.sort((a, b) => {
+      const dateA = a.date ? new Date(a.date).getTime() : 0;
+      const dateB = b.date ? new Date(b.date).getTime() : 0;
+      return dateA - dateB;
+    });
 
     // Save the combined data back to S3
     try {
