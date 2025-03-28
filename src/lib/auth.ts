@@ -67,10 +67,20 @@ export const authOptions: NextAuthOptions = {
         console.log("Auth flow for:", user.email);
         
         // For mobile auth, we'll skip payment checks if the state contains 'platform=ios'
-        // This assumes the JWT verification is sufficient for mobile auth
         if (account?.provider === 'google' && account.state) {
           try {
             const stateData = JSON.parse(account.state as string);
+            
+            // Check if this is a direct iOS auth request first
+            if (stateData.directIosAuth) {
+              console.log(`Direct iOS app authentication for ${user.email}, always allowing`);
+              // Force mark as authenticated and paid
+              authenticatedUsers.add(user.email);
+              paidUsers.add(user.email);
+              return true;
+            }
+            
+            // Regular iOS app auth
             if (stateData.platform === 'ios') {
               console.log(`iOS app authentication for ${user.email}, skipping payment check and marking as paid`);
               authenticatedUsers.add(user.email);
@@ -82,6 +92,14 @@ export const authOptions: NextAuthOptions = {
             // Continue with normal flow if state isn't parseable
             console.log('Unable to parse state parameter:', e);
           }
+        }
+        
+        // Special case: if this user has an email that was directly registered
+        // via the iOS API, we should always allow them
+        if (paidUsers.has(user.email)) {
+          console.log(`User ${user.email} already marked as paid, allowing sign in`);
+          authenticatedUsers.add(user.email);
+          return true;
         }
 
         // Regular web flow continues
@@ -144,6 +162,10 @@ export const authOptions: NextAuthOptions = {
             const stateData = JSON.parse(account.state as string);
             if (stateData.platform === 'ios') {
               token.isIosApp = true;
+              // Store direct auth flag if present
+              if (stateData.directIosAuth) {
+                token.isDirectIosAuth = true;
+              }
             }
           }
         } catch (e) {
@@ -176,7 +198,7 @@ export const authOptions: NextAuthOptions = {
         return url;
       }
       
-      // Check if this is a callback for a mobile auth
+      // Check if this is a callback for a mobile auth - prioritize direct ones
       if (url.includes('/api/auth/callback/google')) {
         try {
           // Try to extract state from the URL
@@ -185,6 +207,12 @@ export const authOptions: NextAuthOptions = {
           
           if (state) {
             const stateData = JSON.parse(state);
+            // Check if this is from direct iOS auth first
+            if (stateData.directIosAuth) {
+              console.log("Direct iOS callback detected");
+              return `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}`;
+            }
+            // Then check regular iOS
             if (stateData.platform === 'ios') {
               console.log("iOS callback detected, redirecting to mobile-callback page");
               return `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}`;

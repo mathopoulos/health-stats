@@ -21,8 +21,25 @@ export default function SignIn() {
     const inviteCodeValidated = sessionStorage.getItem('inviteCodeValidated') === 'true';
     const validatedEmailFromSession = sessionStorage.getItem('validatedEmail');
     
-    // Check if user is coming from iOS app
+    // Check if user is coming from iOS app - Direct flag takes precedence
     const isIosApp = searchParams?.get('platform') === 'ios';
+    const isDirectIosAuth = searchParams?.get('ios_direct') === 'true';
+    
+    // Store iOS flags in session storage for persistence through redirects
+    if (isIosApp) {
+      sessionStorage.setItem('isIosApp', 'true');
+    }
+    
+    if (isDirectIosAuth) {
+      sessionStorage.setItem('isDirectIosAuth', 'true');
+    }
+    
+    // Read from session storage in case we lost params during redirects
+    const isIosAppFromSession = sessionStorage.getItem('isIosApp') === 'true';
+    const isDirectIosAuthFromSession = sessionStorage.getItem('isDirectIosAuth') === 'true';
+    
+    const finalIsIosApp = isIosApp || isIosAppFromSession;
+    const finalIsDirectIosAuth = isDirectIosAuth || isDirectIosAuthFromSession;
     
     // Check if user is coming from payment
     const paymentStatus = sessionStorage.getItem('justCompletedPayment');
@@ -32,45 +49,66 @@ export default function SignIn() {
       setComingFromPayment(true);
     }
     
-    // Skip invite requirement for iOS app users
-    const requireInvite = inviteRequiredParam === 'true' && !isIosApp;
+    // Skip invite for iOS users
+    const requireInvite = inviteRequiredParam === 'true' && !finalIsIosApp;
     
     setIsNewUser(requireInvite);
     setHasValidInvite(inviteCodeValidated);
     setValidatedEmail(validatedEmailFromSession);
     setLoading(false);
 
-    // Only redirect to the invite page if explicitly directed to require an invite,
-    // not coming from payment, and not coming from iOS app
-    if (requireInvite && !inviteCodeValidated && !comingFromPayment && !isIosApp) {
+    // If this is a direct iOS auth, trigger sign-in immediately
+    if (finalIsDirectIosAuth) {
+      // Slight delay to ensure the component is fully mounted
+      const timer = setTimeout(() => {
+        console.log('Auto-triggering sign-in for direct iOS auth');
+        handleSignIn(finalIsIosApp, finalIsDirectIosAuth);
+        // Clear the direct auth flag after use
+        sessionStorage.removeItem('isDirectIosAuth');
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+    
+    // Only redirect to invite if needed and not from iOS
+    if (requireInvite && !inviteCodeValidated && !comingFromPayment && !finalIsIosApp) {
       router.push('/auth/invite');
     }
   }, [router, searchParams, comingFromPayment]);
 
-  const handleSignIn = () => {
-    // Check if authenticating from iOS app - make sure to use a very visible query param
-    const isIosApp = searchParams?.get('platform') === 'ios';
-    console.log("iOS authentication:", isIosApp); // Debug logging
+  // Refactor handleSignIn to accept parameters for more control
+  const handleSignIn = (isIosApp?: boolean, isDirectIosAuth?: boolean) => {
+    // Check if authenticating from iOS app - use passed param or check search params
+    const iosParam = searchParams?.get('platform') === 'ios';
+    const iosSessionFlag = sessionStorage.getItem('isIosApp') === 'true';
+    const finalIsIosApp = isIosApp || iosParam || iosSessionFlag;
+    
+    console.log("iOS authentication:", finalIsIosApp, "Direct:", isDirectIosAuth);
     const callbackUrl = searchParams?.get('callback_url') || '/upload';
     
-    // If the user has a validated email, include it in a hidden state
-    // parameter for the auth callback to pick up
+    // State data with iOS flags to ensure they're preserved through redirects
     const stateData: any = {};
     
     if (validatedEmail) {
       stateData.email = validatedEmail;
     }
     
-    // Add platform info for iOS
-    if (isIosApp) {
+    // Always add these flags to the state to ensure they survive redirects
+    if (finalIsIosApp) {
       stateData.platform = 'ios';
-      stateData.redirect = 'health.revly://auth'; // Store the iOS URL scheme in state instead
-      console.log("Adding iOS platform to state", stateData); // Debug logging
+      stateData.redirect = 'health.revly://auth';
+      
+      // For direct auth, we need to ensure it's tagged specially
+      if (isDirectIosAuth) {
+        stateData.directIosAuth = true;
+      }
+      
+      console.log("Adding iOS platform to state", stateData);
     }
     
     signIn('google', { 
-      // Always use a web URL as the callback URL for NextAuth compatibility
-      callbackUrl: isIosApp ? '/auth/mobile-callback' : callbackUrl,
+      // Always use a web URL for NextAuth compatibility
+      callbackUrl: finalIsIosApp ? '/auth/mobile-callback' : callbackUrl,
       state: Object.keys(stateData).length > 0 ? JSON.stringify(stateData) : undefined 
     });
   };
@@ -134,7 +172,7 @@ export default function SignIn() {
           {/* Sign In Button */}
           <div className="mt-8 space-y-6 animate-fade-in-up delay-100">
             <button
-              onClick={handleSignIn}
+              onClick={() => handleSignIn()}
               className="w-full group bg-white/50 dark:bg-gray-900/50 backdrop-blur flex items-center justify-center gap-3 px-6 py-4 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/10"
             >
               <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">

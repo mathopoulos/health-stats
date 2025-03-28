@@ -11,6 +11,7 @@ export default function MobileCallback() {
   const [redirecting, setRedirecting] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<string>('Initializing...');
+  const [redirectAttempted, setRedirectAttempted] = useState(false);
 
   useEffect(() => {
     // Log session status for debugging
@@ -18,7 +19,7 @@ export default function MobileCallback() {
     console.log("Session data:", session);
     setDebugInfo(`Session status: ${status}, Has token: ${session?.accessToken ? 'Yes' : 'No'}`);
     
-    // Only proceed if session is loaded
+    // Only proceed if session is loaded or we have an error
     if (status === 'loading') return;
     
     // Get state from query params
@@ -39,17 +40,25 @@ export default function MobileCallback() {
     }
     
     // If we have a session and it's authenticated, redirect to the iOS app
-    if (status === 'authenticated' && session) {
+    if (status === 'authenticated' && session && !redirectAttempted) {
       const token = session.accessToken || '';
       setDebugInfo(prev => `${prev}\nAuthenticated with token: ${token ? token.substring(0, 10) + '...' : 'missing'}`);
       
+      // Check for direct iOS flag in session or state
+      const isDirect = (session as any).isDirectIosAuth || stateData.directIosAuth;
+      if (isDirect) {
+        setDebugInfo(prev => `${prev}\nDetected direct iOS auth`);
+      }
+      
       // If we have platform=ios in the state, or the session is marked as iOS
-      if ((stateData.platform === 'ios' && stateData.redirect) || (session as any).isIosApp) {
+      const isIosApp = (stateData.platform === 'ios' && stateData.redirect) || (session as any).isIosApp;
+      if (isIosApp) {
         const redirectUrl = stateData.redirect || 'health.revly://auth';
         const mobileRedirectUrl = `${redirectUrl}?token=${token}`;
         
         console.log('Redirecting to mobile app:', mobileRedirectUrl);
         setDebugInfo(prev => `${prev}\nRedirecting to: ${mobileRedirectUrl}`);
+        setRedirectAttempted(true);
         
         // Use a short timeout to ensure the session is ready
         const redirectTimer = setTimeout(() => {
@@ -70,13 +79,45 @@ export default function MobileCallback() {
       setDebugInfo(prev => `${prev}\nSession is unauthenticated`);
     }
     
-    // Redirect to upload page after a delay
-    const fallbackTimer = setTimeout(() => {
-      router.push('/upload');
-    }, 5000);
+    // Redirect to upload page after a delay if we're not an iOS session
+    if (!redirectAttempted && (status === 'unauthenticated' || error)) {
+      const fallbackTimer = setTimeout(() => {
+        router.push('/upload');
+      }, 5000);
+      
+      return () => clearTimeout(fallbackTimer);
+    }
+  }, [router, searchParams, session, status, error, redirectAttempted]);
+
+  // Force redirect if no status after timeout (in case something's wrong with session)
+  useEffect(() => {
+    let forceRedirectTimeout: NodeJS.Timeout;
     
-    return () => clearTimeout(fallbackTimer);
-  }, [router, searchParams, session, status]);
+    // If we're still loading or waiting after 10 seconds, try direct redirect
+    if (redirecting && !redirectAttempted) {
+      forceRedirectTimeout = setTimeout(() => {
+        setDebugInfo(prev => `${prev}\nForce redirecting after timeout`);
+        try {
+          // Try to extract redirect from state param directly
+          const state = searchParams?.get('state');
+          if (state) {
+            const stateData = JSON.parse(state);
+            if (stateData.platform === 'ios' && stateData.redirect) {
+              // Even without token, go back to app to avoid getting stuck
+              window.location.href = `${stateData.redirect}?error=timeout`;
+              setRedirectAttempted(true);
+            }
+          }
+        } catch (e) {
+          console.error('Error in force redirect:', e);
+        }
+      }, 10000);
+    }
+    
+    return () => {
+      clearTimeout(forceRedirectTimeout);
+    };
+  }, [searchParams, redirecting, redirectAttempted]);
 
   if (!redirecting && error) {
     return (
