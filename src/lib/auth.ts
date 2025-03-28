@@ -66,15 +66,30 @@ export const authOptions: NextAuthOptions = {
       if (user.email) {
         console.log("Auth flow for:", user.email);
         
-        // For mobile auth, we'll skip payment checks if the state contains 'platform=ios'
+        // For mobile auth, we'll skip payment checks if the state contains platform=ios flag
         if (account?.provider === 'google' && account.state) {
           try {
             const stateData = JSON.parse(account.state as string);
             
-            // If this is an iOS authentication, mark the user as paid
+            // First priority check: explicit iOS bypass flag
+            if (stateData.iosBypass === true) {
+              console.log(`iOS auth: Found iosBypass flag for ${user.email}, always allowing`);
+              authenticatedUsers.add(user.email);
+              paidUsers.add(user.email);
+              return true;
+            }
+            
+            // Second priority: iOS platform flag
             if (stateData.platform === 'ios') {
-              console.log(`iOS app authentication for ${user.email}, marking as paid and allowing`);
-              // Mark as authenticated and paid
+              console.log(`iOS auth: Found platform=ios for ${user.email}, marking as paid and allowing`);
+              authenticatedUsers.add(user.email);
+              paidUsers.add(user.email);
+              return true;
+            }
+            
+            // Third priority: Check for auth ID that indicates iOS flow
+            if (stateData.authId && stateData.authId.startsWith('ios-auth-')) {
+              console.log(`iOS auth: Found iOS auth ID for ${user.email}, allowing`);
               authenticatedUsers.add(user.email);
               paidUsers.add(user.email);
               return true;
@@ -85,9 +100,9 @@ export const authOptions: NextAuthOptions = {
           }
         }
         
-        // Special case: if this user has been pre-registered via iOS API
-        if (paidUsers.has(user.email)) {
-          console.log(`User ${user.email} already marked as paid, allowing sign in`);
+        // Special case: if this user has been pre-registered via iOS API or is a temp iOS user
+        if (paidUsers.has(user.email) || user.email.includes('ios-temp-')) {
+          console.log(`User ${user.email} has iOS marker or is pre-registered, allowing sign in`);
           authenticatedUsers.add(user.email);
           return true;
         }
@@ -152,9 +167,15 @@ export const authOptions: NextAuthOptions = {
         try {
           if (account.state) {
             const stateData = JSON.parse(account.state as string);
-            if (stateData.platform === 'ios') {
-              console.log("Setting iOS app flag in JWT");
+            
+            // Check for any iOS-related flags
+            if (stateData.platform === 'ios' || stateData.iosBypass === true || 
+                (stateData.authId && stateData.authId.startsWith('ios-auth-'))) {
+              console.log("iOS auth: Setting iOS app flag in JWT");
               token.isIosApp = true;
+              
+              // Also add the bypass flag to ensure consistent behavior
+              token.iosBypass = true;
             }
           }
         } catch (e) {
@@ -174,20 +195,40 @@ export const authOptions: NextAuthOptions = {
       // Get the production URL from env
       const productionUrl = process.env.NEXTAUTH_URL || baseUrl;
       
-      // Special case for mobile callback page
+      // Special case for mobile callback page - highest priority
       if (url.includes('/auth/mobile-callback')) {
-        console.log("Found mobile callback URL, preserving");
+        console.log("iOS auth: Found mobile callback URL, preserving it");
         return url;
       }
       
-      // For iOS app direct callback (should not happen normally)
+      // Special case for direct app scheme - second priority
       if (url.startsWith('health.revly://')) {
-        console.log("Found direct iOS scheme URL");
+        console.log("iOS auth: Found direct iOS scheme URL");
         return url;
       }
       
-      // Handle Google callback for iOS auth
-      // This is crucial for redirecting the user after Google auth
+      // Handle error cases for iOS auth - prevent going to payment
+      if ((url.includes('/auth/checkout') || url.includes('error=')) && url.includes('state=')) {
+        try {
+          // Try to extract state to check if this is iOS auth
+          const urlObj = new URL(url);
+          const state = urlObj.searchParams.get('state');
+          
+          if (state) {
+            const stateData = JSON.parse(state);
+            // If this is iOS auth, redirect to mobile-callback instead of payment
+            if (stateData.platform === 'ios' || stateData.iosBypass === true || 
+                (stateData.authId && stateData.authId.startsWith('ios-auth-'))) {
+              console.log("iOS auth: Intercepted error/checkout redirect for iOS, sending to mobile-callback");
+              return `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}&iosRedirect=true`;
+            }
+          }
+        } catch (e) {
+          console.error('Error checking iOS state in error redirect:', e);
+        }
+      }
+      
+      // Handle Google callback for iOS auth - third priority
       if (url.includes('/api/auth/callback/google')) {
         try {
           // Extract state parameter
@@ -196,9 +237,10 @@ export const authOptions: NextAuthOptions = {
           
           if (state) {
             const stateData = JSON.parse(state);
-            if (stateData.platform === 'ios') {
-              // Redirect to our mobile callback handler
-              console.log("iOS auth callback, redirecting to mobile-callback");
+            // Check for any iOS identifiers
+            if (stateData.platform === 'ios' || stateData.iosBypass === true || 
+                (stateData.authId && stateData.authId.startsWith('ios-auth-'))) {
+              console.log("iOS auth: Detected iOS in Google callback, redirecting to mobile-callback");
               return `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}`;
             }
           }

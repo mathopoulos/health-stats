@@ -13,26 +13,37 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const email = searchParams.get('email');
     
-    // Pre-register the email as paid if provided to avoid payment flows
+    // Generate a strong identifier for this authentication attempt
+    const authId = `ios-auth-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+    
+    // Pre-register a generic iOS user ID if no email provided
+    // This ensures all iOS authentication attempts bypass payment verification
     if (email) {
+      console.log(`iOS auth: Pre-registering user with email ${email}`);
       markUserAsPaid(email);
+    } else {
+      // If no email provided, we'll create a placeholder that will be replaced later
+      console.log(`iOS auth: Pre-registering generic iOS user with ID ${authId}`);
+      markUserAsPaid(`ios-temp-${authId}@revly.health`);
     }
     
     // Redirect to the Google sign-in flow with special iOS flags
     const redirectUrl = new URL('/api/auth/signin/google', request.url);
     
-    // Add special state parameter to indicate iOS app and keep track through redirects
+    // Add special state parameter that will be preserved through all redirects
     const stateData = {
       platform: 'ios',
       redirect: 'health.revly://auth',
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      authId: authId,  // Include the auth ID for tracking
+      iosBypass: true  // Special flag to guarantee bypassing payment check
     };
     
     // Add callbackUrl to ensure proper redirection after Google auth
     redirectUrl.searchParams.set('callbackUrl', '/auth/mobile-callback');
     redirectUrl.searchParams.set('state', JSON.stringify(stateData));
     
-    console.log('Redirecting iOS authentication to:', redirectUrl.toString());
+    console.log(`iOS auth: Redirecting to Google auth with state: ${JSON.stringify(stateData)}`);
     
     return NextResponse.redirect(redirectUrl);
   } catch (error) {

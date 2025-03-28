@@ -19,8 +19,14 @@ export default function MobileCallback() {
     console.log("Mobile callback - Session data:", session);
     setDebugInfo(`Session status: ${status}, Has token: ${session?.accessToken ? 'Yes' : 'No'}`);
     
+    // Check if this is a redirect from an error or payment page
+    const isErrorRedirect = searchParams?.get('iosRedirect') === 'true';
+    if (isErrorRedirect) {
+      setDebugInfo(prev => `${prev}\nDetected iOS redirect from error/payment page`);
+    }
+    
     // Only proceed if we have a valid session or authentication error
-    if (status === 'loading') return;
+    if (status === 'loading' && !isErrorRedirect) return;
     
     // Extract state from URL if present
     const state = searchParams?.get('state');
@@ -34,7 +40,11 @@ export default function MobileCallback() {
         stateData = JSON.parse(state);
         console.log("Mobile callback - Parsed state data:", stateData);
         setDebugInfo(prev => `${prev}\nParsed state: ${JSON.stringify(stateData)}`);
-        isIosAuth = stateData.platform === 'ios';
+        
+        // Check all possible iOS indicators
+        isIosAuth = stateData.platform === 'ios' || 
+                   stateData.iosBypass === true || 
+                   (stateData.authId && stateData.authId.startsWith('ios-auth-'));
       }
     } catch (e) {
       console.error('Error parsing state:', e);
@@ -43,7 +53,14 @@ export default function MobileCallback() {
     
     // If we couldn't determine if this is iOS auth from state, check the session
     if (!isIosAuth && session) {
-      isIosAuth = (session as any).isIosApp === true;
+      isIosAuth = (session as any).isIosApp === true || (session as any).iosBypass === true;
+    }
+    
+    // Force iOS auth if redirected from error page with state containing iOS info
+    if (!isIosAuth && isErrorRedirect && state) {
+      console.log("Mobile callback - Forcing iOS auth due to redirect from error page");
+      setDebugInfo(prev => `${prev}\nForcing iOS auth flag due to redirect param`);
+      isIosAuth = true;
     }
     
     if (!isIosAuth) {
@@ -85,15 +102,20 @@ export default function MobileCallback() {
       }, 1000);
       
       return () => clearTimeout(redirectTimer);
-    } else if (status === 'unauthenticated') {
-      // Authentication failed
+    } else if (status === 'unauthenticated' || isErrorRedirect) {
+      // If this is a redirect from error page or auth failed, try to send back to app anyway
+      // This helps break the redirect loop
       setRedirecting(false);
-      setError('Google authentication failed');
-      setDebugInfo(prev => `${prev}\nGoogle authentication failed`);
+      setError('Google authentication process incomplete');
+      setDebugInfo(prev => `${prev}\nAuth incomplete, but sending back to app anyway to break loop`);
       
-      // Redirect to error URL if available
+      // Redirect to error URL in app if available
       if (stateData.redirect) {
-        const errorRedirectUrl = `${stateData.redirect}?error=auth_failed`;
+        const errorRedirectUrl = `${stateData.redirect}?error=auth_incomplete&authId=${stateData.authId || ''}`;
+        setDebugInfo(prev => `${prev}\nForce redirecting to: ${errorRedirectUrl}`);
+        
+        // Prevent multiple redirect attempts
+        setRedirectAttempted(true);
         
         const errorTimer = setTimeout(() => {
           window.location.href = errorRedirectUrl;
