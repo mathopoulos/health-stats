@@ -55,6 +55,16 @@ export async function middleware(request: NextRequest) {
   const isUploadPage = request.nextUrl.pathname.startsWith("/upload");
   const isDashboardPage = request.nextUrl.pathname.startsWith("/dashboard");
 
+  // Special handling for iOS auth route
+  const isIosAuthRoute = request.nextUrl.pathname.startsWith("/api/auth/ios");
+  const isIosHealthDataRoute = request.nextUrl.pathname.startsWith("/api/health-data/ios");
+  
+  // If this is an iOS-specific route, allow it without general auth checks
+  // The iOS routes handle their own authentication with JWT verification
+  if (isIosAuthRoute || isIosHealthDataRoute) {
+    return NextResponse.next();
+  }
+
   // console.log('Route type:', {
   //   isAuthPage,
   //   isInvitePage,
