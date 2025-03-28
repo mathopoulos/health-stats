@@ -2,11 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-// Define type for HRV measurements
+// Define type for manual HRV measurement format
+interface ManualHrvMeasurement {
+  date: string;
+  value: number;
+  source?: string;
+  unit?: string;
+  metadata?: {
+    HKAlgorithmVersion?: number;
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
+// Define type for iOS HRV measurement format
 interface HrvMeasurement {
   timestamp: string;
   value: number;
-  [key: string]: any; // Allow additional properties
+  [key: string]: any;
 }
 
 // Check if required environment variables are available
@@ -92,7 +105,7 @@ export async function POST(request: NextRequest) {
     const s3Key = `data/${userId}/hrv.json`;
 
     // Check if the user already has data in S3
-    let existingData: HrvMeasurement[] = [];
+    let existingData: ManualHrvMeasurement[] = [];
     try {
       // Get the existing data from S3
       const getObjectCommand = new GetObjectCommand({
@@ -112,16 +125,37 @@ export async function POST(request: NextRequest) {
       console.log('iOS health data: No existing data found or error reading data:', error);
     }
 
-    // Combine existing and new data, avoiding duplicates
-    // Use timestamp as the unique identifier
-    const existingTimestamps = new Set(existingData.map((item: HrvMeasurement) => item.timestamp));
-    const newMeasurements = validHrvMeasurements.filter((item: HrvMeasurement) => !existingTimestamps.has(item.timestamp));
+    // Convert iOS format to match manual format
+    const normalizedMeasurements: ManualHrvMeasurement[] = validHrvMeasurements.map((item: HrvMeasurement) => {
+      // Convert to the format matching manually processed data
+      return {
+        date: item.timestamp.endsWith('Z') ? item.timestamp : `${item.timestamp}Z`,
+        value: item.value,
+        source: "iOS App",
+        unit: "ms",
+        metadata: {
+          HKAlgorithmVersion: 2
+        }
+      };
+    });
+
+    // Build a set of dates that already exist in the data
+    const existingDates = new Set(existingData.map(item => 
+      // Normalize date format by removing milliseconds if present
+      item.date.replace(/\.\d{3}Z$/, 'Z')
+    ));
+
+    // Filter out measurements with dates that already exist
+    const newMeasurements = normalizedMeasurements.filter(item => {
+      const normalizedDate = item.date.replace(/\.\d{3}Z$/, 'Z');
+      return !existingDates.has(normalizedDate);
+    });
     
     const combinedData = [...existingData, ...newMeasurements];
     console.log(`iOS health data: Adding ${newMeasurements.length} new records, total: ${combinedData.length}`);
 
-    // Sort by timestamp
-    combinedData.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    // Sort by date
+    combinedData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     // Save the combined data back to S3
     try {
