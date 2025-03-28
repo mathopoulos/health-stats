@@ -195,15 +195,36 @@ export const authOptions: NextAuthOptions = {
       // Get the production URL from env
       const productionUrl = process.env.NEXTAUTH_URL || baseUrl;
       
-      // Special case for mobile callback page - highest priority
-      if (url.includes('/auth/mobile-callback')) {
-        console.log("iOS auth: Found mobile callback URL, preserving it");
+      // HIGHEST PRIORITY: Direct iOS app URL scheme redirect - must always return this
+      if (url.startsWith('health.revly://')) {
+        console.log("iOS auth: Found direct iOS scheme URL, redirecting to app");
         return url;
       }
       
-      // Special case for direct app scheme - second priority
-      if (url.startsWith('health.revly://')) {
-        console.log("iOS auth: Found direct iOS scheme URL");
+      // NEW: Check for successful Google auth and iOS state in the callback URL
+      if (url.includes('/api/auth/callback/google')) {
+        try {
+          const urlObj = new URL(url);
+          const state = urlObj.searchParams.get('state');
+          
+          if (state) {
+            const stateData = JSON.parse(state);
+            // If this is an iOS auth, redirect to mobile callback
+            if (stateData.platform === 'ios' || stateData.iosBypass === true || 
+                (stateData.authId && stateData.authId.startsWith('ios-auth-'))) {
+              
+              console.log("iOS auth: Successful Google auth, redirecting to mobile-callback");
+              return `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}`;
+            }
+          }
+        } catch (e) {
+          console.error('Error in redirect callback:', e);
+        }
+      }
+      
+      // Special case for mobile callback page
+      if (url.includes('/auth/mobile-callback')) {
+        console.log("iOS auth: Found mobile callback URL, preserving it");
         return url;
       }
       
@@ -228,27 +249,7 @@ export const authOptions: NextAuthOptions = {
         }
       }
       
-      // Handle Google callback for iOS auth - third priority
-      if (url.includes('/api/auth/callback/google')) {
-        try {
-          // Extract state parameter
-          const urlObj = new URL(url);
-          const state = urlObj.searchParams.get('state');
-          
-          if (state) {
-            const stateData = JSON.parse(state);
-            // Check for any iOS identifiers
-            if (stateData.platform === 'ios' || stateData.iosBypass === true || 
-                (stateData.authId && stateData.authId.startsWith('ios-auth-'))) {
-              console.log("iOS auth: Detected iOS in Google callback, redirecting to mobile-callback");
-              return `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}`;
-            }
-          }
-        } catch (e) {
-          console.error('Error in redirect callback:', e);
-        }
-      }
-      
+      // Rest of redirect logic for non-iOS flow
       // For iOS app callback
       if (url.includes('auth/callback') || url.includes('api/auth/callback')) {
         // Try to extract state from the URL
