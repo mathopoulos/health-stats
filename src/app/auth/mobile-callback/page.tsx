@@ -23,7 +23,7 @@ export default function MobileCallback() {
     // Check if this is a redirect from an error or payment page
     const isErrorRedirect = searchParams?.get('iosRedirect') === 'true';
     if (isErrorRedirect) {
-      setDebugInfo(prev => `${prev}\nDetected iOS redirect from error/payment page`);
+      setDebugInfo(prev => `${prev}\nDetected redirect from error/payment page`);
     }
     
     // Still loading and not an error redirect - wait for session
@@ -35,6 +35,7 @@ export default function MobileCallback() {
     
     let stateData: any = {};
     let isIosAuth = false;
+    let hasIosToken = false;
     
     try {
       if (state) {
@@ -42,10 +43,17 @@ export default function MobileCallback() {
         console.log("Mobile callback - Parsed state data:", stateData);
         setDebugInfo(prev => `${prev}\nParsed state: ${JSON.stringify(stateData)}`);
         
+        // Check for iOS token first - most reliable
+        hasIosToken = !!stateData.iosToken;
+        
         // Check all possible iOS indicators
-        isIosAuth = stateData.platform === 'ios' || 
-                    stateData.iosBypass === true || 
-                    (stateData.authId && stateData.authId.startsWith('ios-auth-'));
+        isIosAuth = hasIosToken || 
+                    stateData.platform === 'ios' || 
+                    stateData.iosBypass === true;
+                    
+        if (hasIosToken) {
+          setDebugInfo(prev => `${prev}\nFound iOS verification token`);
+        }
       }
     } catch (e) {
       console.error('Error parsing state:', e);
@@ -54,7 +62,7 @@ export default function MobileCallback() {
     
     // If we couldn't determine if this is iOS auth from state, check the session
     if (!isIosAuth && session) {
-      isIosAuth = (session as any).isIosApp === true || (session as any).iosBypass === true;
+      isIosAuth = (session as any).isIosApp === true;
     }
     
     // Force iOS auth for error redirects with state
@@ -91,7 +99,7 @@ export default function MobileCallback() {
       const fullRedirectUrl = `${redirectUrl}?token=${token}`;
       
       console.log('Mobile callback - Redirecting to app:', fullRedirectUrl);
-      setDebugInfo(prev => `${prev}\nRedirecting to iOS app: ${fullRedirectUrl}`);
+      setDebugInfo(prev => `${prev}\nRedirecting to iOS app with token`);
       
       // Mark redirect as attempted to prevent multiple attempts
       setRedirectAttempted(true);
@@ -120,7 +128,13 @@ export default function MobileCallback() {
       // Still redirect to app with error code
       if (stateData.redirect) {
         const errorCode = retryCount >= 10 ? 'timeout' : 'auth_incomplete';
-        const errorRedirectUrl = `${stateData.redirect}?error=${errorCode}&authId=${stateData.authId || ''}`;
+        let errorRedirectUrl = `${stateData.redirect}?error=${errorCode}`;
+        
+        // Add the iOS token if available to help the app handle the error
+        if (hasIosToken) {
+          errorRedirectUrl += `&iosToken=${stateData.iosToken}`;
+        }
+        
         setDebugInfo(prev => `${prev}\nSending to iOS app with error: ${errorRedirectUrl}`);
         
         // Mark redirect as attempted

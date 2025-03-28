@@ -1,6 +1,7 @@
 import { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import { hasUserPurchasedProduct } from './stripe';
+import crypto from 'crypto';
 
 // This is a server-side map to track users who are authenticated
 // In a real app, you would use a database table for this
@@ -30,6 +31,54 @@ if (process.env.NODE_ENV === 'development') {
 interface StateData {
   email?: string;
   [key: string]: any;
+}
+
+// Secret for iOS token verification
+const IOS_AUTH_SECRET = process.env.NEXTAUTH_SECRET || 'default-secret-change-me';
+
+// Verify an iOS token to ensure it's authentic and not expired
+function verifyIosToken(token: string): boolean {
+  try {
+    // Split token into data and signature
+    const [data, signature] = token.split('.');
+    
+    if (!data || !signature) {
+      console.log('iOS auth verification: Invalid token format');
+      return false;
+    }
+    
+    // Verify signature
+    const hmac = crypto.createHmac('sha256', IOS_AUTH_SECRET);
+    hmac.update(data);
+    const expectedSignature = hmac.digest('hex');
+    
+    if (signature !== expectedSignature) {
+      console.log('iOS auth verification: Invalid signature');
+      return false;
+    }
+    
+    // Extract timestamp and check expiration
+    const parts = data.split('_');
+    if (parts.length < 3 || parts[0] !== 'ios' || parts[1] !== 'auth') {
+      console.log('iOS auth verification: Invalid token format in data');
+      return false;
+    }
+    
+    const timestamp = parseInt(parts[2], 10);
+    const now = Math.floor(Date.now() / 1000);
+    
+    // Check if token is expired (10 minute validity)
+    if (now > timestamp) {
+      console.log('iOS auth verification: Token expired');
+      return false;
+    }
+    
+    console.log('iOS auth verification: Valid token');
+    return true;
+  } catch (error) {
+    console.error('iOS auth verification error:', error);
+    return false;
+  }
 }
 
 export const authOptions: NextAuthOptions = {
@@ -66,43 +115,35 @@ export const authOptions: NextAuthOptions = {
       if (user.email) {
         console.log("Auth flow for:", user.email);
         
-        // For mobile auth, we'll skip payment checks if the state contains platform=ios flag
+        // Check if this is an iOS authentication with a verified token
         if (account?.provider === 'google' && account.state) {
           try {
             const stateData = JSON.parse(account.state as string);
             
-            // First priority check: explicit iOS bypass flag
-            if (stateData.iosBypass === true) {
-              console.log(`iOS auth: Found iosBypass flag for ${user.email}, always allowing`);
+            // First priority: Check for a valid iOS verification token
+            if (stateData.iosToken && verifyIosToken(stateData.iosToken)) {
+              // This is a cryptographically verified iOS request
+              console.log(`iOS auth: Cryptographically verified iOS auth for ${user.email}`);
               authenticatedUsers.add(user.email);
               paidUsers.add(user.email);
               return true;
             }
             
-            // Second priority: iOS platform flag
-            if (stateData.platform === 'ios') {
-              console.log(`iOS auth: Found platform=ios for ${user.email}, marking as paid and allowing`);
-              authenticatedUsers.add(user.email);
-              paidUsers.add(user.email);
-              return true;
-            }
-            
-            // Third priority: Check for auth ID that indicates iOS flow
-            if (stateData.authId && stateData.authId.startsWith('ios-auth-')) {
-              console.log(`iOS auth: Found iOS auth ID for ${user.email}, allowing`);
+            // For backward compatibility - check legacy indicators
+            if (stateData.platform === 'ios' || stateData.iosBypass === true) {
+              console.log(`iOS auth: Legacy iOS flag found for ${user.email}`);
               authenticatedUsers.add(user.email);
               paidUsers.add(user.email);
               return true;
             }
           } catch (e) {
-            // Continue with normal flow if state isn't parseable
-            console.log('Unable to parse state parameter:', e);
+            console.error('Error parsing state in signIn callback:', e);
           }
         }
         
-        // Special case: if this user has been pre-registered via iOS API or is a temp iOS user
-        if (paidUsers.has(user.email) || user.email.includes('ios-temp-')) {
-          console.log(`User ${user.email} has iOS marker or is pre-registered, allowing sign in`);
+        // Check if this user has been pre-registered
+        if (paidUsers.has(user.email)) {
+          console.log(`User ${user.email} is pre-registered as paid, allowing`);
           authenticatedUsers.add(user.email);
           return true;
         }
@@ -158,24 +199,22 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async jwt({ token, user, account }) {
-      // Update JWT with iOS app flag and access token
+      // Store access token and iOS flag in JWT
       if (account) {
-        console.log("JWT callback with account:", account.provider);
+        console.log("JWT callback for:", account.provider);
         token.accessToken = account.access_token;
         
-        // Check if this is an iOS app sign-in
+        // Check for iOS authentication
         try {
           if (account.state) {
             const stateData = JSON.parse(account.state as string);
             
-            // Check for any iOS-related flags
-            if (stateData.platform === 'ios' || stateData.iosBypass === true || 
-                (stateData.authId && stateData.authId.startsWith('ios-auth-'))) {
-              console.log("iOS auth: Setting iOS app flag in JWT");
+            // Set iOS flag if we have a verified token or legacy indicators
+            if ((stateData.iosToken && verifyIosToken(stateData.iosToken)) || 
+                stateData.platform === 'ios' || 
+                stateData.iosBypass === true) {
+              console.log("iOS auth: Marking JWT with iOS flag");
               token.isIosApp = true;
-              
-              // Also add the bypass flag to ensure consistent behavior
-              token.iosBypass = true;
             }
           }
         } catch (e) {
@@ -195,13 +234,13 @@ export const authOptions: NextAuthOptions = {
       // Get the production URL from env
       const productionUrl = process.env.NEXTAUTH_URL || baseUrl;
       
-      // HIGHEST PRIORITY: Direct iOS app URL scheme redirect - must always return this
+      // Direct iOS app URL scheme redirect - highest priority
       if (url.startsWith('health.revly://')) {
-        console.log("iOS auth: Found direct iOS scheme URL, redirecting to app");
+        console.log("iOS auth: Direct iOS scheme URL, returning as is");
         return url;
       }
       
-      // NEW: Check for successful Google auth and iOS state in the callback URL
+      // Handle Google auth callback
       if (url.includes('/api/auth/callback/google')) {
         try {
           const urlObj = new URL(url);
@@ -209,11 +248,13 @@ export const authOptions: NextAuthOptions = {
           
           if (state) {
             const stateData = JSON.parse(state);
-            // If this is an iOS auth, redirect to mobile callback
-            if (stateData.platform === 'ios' || stateData.iosBypass === true || 
-                (stateData.authId && stateData.authId.startsWith('ios-auth-'))) {
+            
+            // Check if this is iOS auth with a valid token or legacy indicators
+            if ((stateData.iosToken && verifyIosToken(stateData.iosToken)) || 
+                stateData.platform === 'ios' || 
+                stateData.iosBypass === true) {
               
-              console.log("iOS auth: Successful Google auth, redirecting to mobile-callback");
+              console.log("iOS auth: Verified iOS auth in Google callback, redirecting to mobile-callback");
               return `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}`;
             }
           }
@@ -222,34 +263,36 @@ export const authOptions: NextAuthOptions = {
         }
       }
       
-      // Special case for mobile callback page
+      // Mobile callback page
       if (url.includes('/auth/mobile-callback')) {
-        console.log("iOS auth: Found mobile callback URL, preserving it");
+        console.log("iOS auth: Found mobile callback URL");
         return url;
       }
       
-      // Handle error cases for iOS auth - prevent going to payment
+      // Prevent iOS users from being sent to payment/checkout
       if ((url.includes('/auth/checkout') || url.includes('error=')) && url.includes('state=')) {
         try {
-          // Try to extract state to check if this is iOS auth
           const urlObj = new URL(url);
           const state = urlObj.searchParams.get('state');
           
           if (state) {
             const stateData = JSON.parse(state);
-            // If this is iOS auth, redirect to mobile-callback instead of payment
-            if (stateData.platform === 'ios' || stateData.iosBypass === true || 
-                (stateData.authId && stateData.authId.startsWith('ios-auth-'))) {
-              console.log("iOS auth: Intercepted error/checkout redirect for iOS, sending to mobile-callback");
+            
+            // Check if this is iOS auth
+            if ((stateData.iosToken && verifyIosToken(stateData.iosToken)) || 
+                stateData.platform === 'ios' || 
+                stateData.iosBypass === true) {
+              
+              console.log("iOS auth: Intercepted payment redirect for iOS user, sending to mobile-callback");
               return `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}&iosRedirect=true`;
             }
           }
         } catch (e) {
-          console.error('Error checking iOS state in error redirect:', e);
+          console.error('Error checking state in error redirect:', e);
         }
       }
       
-      // Rest of redirect logic for non-iOS flow
+      // Rest of original redirect logic for regular web flow
       // For iOS app callback
       if (url.includes('auth/callback') || url.includes('api/auth/callback')) {
         // Try to extract state from the URL

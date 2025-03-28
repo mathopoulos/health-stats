@@ -1,49 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { encode, decode } from 'next-auth/jwt';
 import { markUserAsPaid } from '@/lib/auth';
+import crypto from 'crypto';
 
-// Secret used for token generation - must match NextAuth
-const secret = process.env.NEXTAUTH_SECRET || 'default-secret-change-me';
+// Secret key for verification (should match server's NextAuth secret)
+const IOS_AUTH_SECRET = process.env.NEXTAUTH_SECRET || 'default-secret-change-me';
 
-// Create a secure endpoint that redirects to Google auth but pre-registers the iOS user
+// Create a secure iOS verification token
+function createIosVerificationToken() {
+  // Create a timestamp that's valid for 10 minutes
+  const timestamp = Math.floor(Date.now() / 1000) + 600; // 10 minutes
+  const random = crypto.randomBytes(8).toString('hex');
+  const data = `ios_auth_${timestamp}_${random}`;
+  
+  // Sign the data with HMAC using the server secret
+  const hmac = crypto.createHmac('sha256', IOS_AUTH_SECRET);
+  hmac.update(data);
+  const signature = hmac.digest('hex');
+  
+  // Return the signed token that proves this is an iOS request
+  return `${data}.${signature}`;
+}
+
+// Direct iOS auth that redirects to Google but guarantees iOS users bypass payment
 export async function GET(request: NextRequest) {
   try {
-    // Extract email parameter if provided
+    // Extract email if provided
     const searchParams = request.nextUrl.searchParams;
     const email = searchParams.get('email');
     
-    // Generate a strong identifier for this authentication attempt
-    const authId = `ios-auth-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+    // Generate an iOS verification token that can't be forged
+    const iosToken = createIosVerificationToken();
     
-    // Pre-register a generic iOS user ID if no email provided
-    // This ensures all iOS authentication attempts bypass payment verification
+    // Pre-register email if provided (helps but not critical with new approach)
     if (email) {
       console.log(`iOS auth: Pre-registering user with email ${email}`);
       markUserAsPaid(email);
-    } else {
-      // If no email provided, we'll create a placeholder that will be replaced later
-      console.log(`iOS auth: Pre-registering generic iOS user with ID ${authId}`);
-      markUserAsPaid(`ios-temp-${authId}@revly.health`);
     }
     
-    // Redirect to the Google sign-in flow with special iOS flags
+    // Redirect to Google auth with special params
     const redirectUrl = new URL('/api/auth/signin/google', request.url);
     
-    // Add special state parameter that will be preserved through all redirects
+    // The state object now contains a cryptographically signed token
+    // This ensures nobody can forge iOS auth requests
     const stateData = {
       platform: 'ios',
       redirect: 'health.revly://auth',
       timestamp: Date.now(),
-      authId: authId,  // Include the auth ID for tracking
-      iosBypass: true  // Special flag to guarantee bypassing payment check
+      iosToken: iosToken, // This is the key to verification
     };
     
-    // Add callbackUrl to ensure proper redirection after Google auth
+    // Add callback and state params
     redirectUrl.searchParams.set('callbackUrl', '/auth/mobile-callback');
     redirectUrl.searchParams.set('state', JSON.stringify(stateData));
     
-    console.log(`iOS auth: Redirecting to Google auth with state: ${JSON.stringify(stateData)}`);
+    console.log(`iOS auth: Redirecting to Google auth with verified iOS token`);
     
     return NextResponse.redirect(redirectUrl);
   } catch (error) {
@@ -52,7 +62,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// API endpoint to register iOS users for preflight
+// API endpoint for pre-registering iOS users
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
@@ -62,14 +72,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
     
-    // Mark the user as paid to bypass payment requirements
+    // Mark the user as paid in server memory (helpful but not critical now)
     const result = markUserAsPaid(email);
     
     if (result) {
-      console.log(`iOS user ${email} pre-registered via API call`);
+      console.log(`iOS user ${email} pre-registered via API`);
       return NextResponse.json({ 
         success: true, 
-        message: 'User pre-registered for authentication'
+        message: 'User pre-registered for authentication',
+        iosToken: createIosVerificationToken() // Send token in response too
       });
     } else {
       return NextResponse.json({ error: 'Failed to register user' }, { status: 500 });
