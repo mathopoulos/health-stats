@@ -2,8 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-// Define type for manual HRV measurement format
-interface ManualHrvMeasurement {
+// Define measurement types and their units
+const MEASUREMENT_TYPES = {
+  hrv: { unit: 'ms', source: 'iOS App' },
+  vo2max: { unit: 'mL/kg/min', source: 'iOS App' },
+  weight: { unit: 'kg', source: 'iOS App' },
+  bodyFat: { unit: '%', source: 'iOS App' }
+} as const;
+
+type MeasurementType = keyof typeof MEASUREMENT_TYPES;
+
+// Define type for manual measurement format
+interface HealthMeasurement {
   date: string;
   value: number;
   source?: string;
@@ -15,8 +25,8 @@ interface ManualHrvMeasurement {
   [key: string]: any;
 }
 
-// Define type for iOS HRV measurement format
-interface HrvMeasurement {
+// Define type for iOS measurement format
+interface RawMeasurement {
   timestamp: string;
   value: number;
   [key: string]: any;
@@ -58,6 +68,22 @@ function validateAwsConfig() {
   return true;
 }
 
+// Validate measurement value based on type
+function isValidMeasurement(type: MeasurementType, value: number): boolean {
+  switch (type) {
+    case 'bodyFat':
+      return value >= 0 && value <= 100;
+    case 'weight':
+      return value > 0 && value < 500; // Reasonable weight range in kg
+    case 'vo2max':
+      return value > 0 && value < 100; // Reasonable VO2 max range
+    case 'hrv':
+      return value > 0 && value < 300; // Reasonable HRV range
+    default:
+      return false;
+  }
+}
+
 // Process health data from iOS
 export async function POST(request: NextRequest) {
   try {
@@ -84,138 +110,128 @@ export async function POST(request: NextRequest) {
     const requestData = await request.json();
     
     // Validate basic structure
-    if (!requestData || !requestData.measurements || !Array.isArray(requestData.measurements)) {
+    if (!requestData?.measurements || typeof requestData.measurements !== 'object') {
       console.log('iOS health data: Invalid data format');
       return NextResponse.json({ error: 'Invalid data format' }, { status: 400 });
     }
 
-    // Extract and validate HRV measurements
-    const measurements = requestData.measurements;
-    const validHrvMeasurements = measurements.filter((m: any) => {
-      // Basic validation for HRV measurements
-      return m && 
-             typeof m.timestamp === 'string' && 
-             typeof m.value === 'number' && 
-             !isNaN(m.value);
-    });
+    const results: Record<MeasurementType, { added: number; total: number }> = {
+      hrv: { added: 0, total: 0 },
+      vo2max: { added: 0, total: 0 },
+      weight: { added: 0, total: 0 },
+      bodyFat: { added: 0, total: 0 }
+    };
 
-    console.log(`iOS health data: Received ${validHrvMeasurements.length} valid HRV measurements`);
+    // Process each measurement type
+    for (const [type, config] of Object.entries(MEASUREMENT_TYPES)) {
+      const measurementType = type as MeasurementType;
+      const measurements = requestData.measurements[type] || [];
 
-    // Define the S3 key for this user's data
-    const s3Key = `data/${userId}/hrv.json`;
-
-    // Check if the user already has data in S3
-    let existingData: ManualHrvMeasurement[] = [];
-    try {
-      // Get the existing data from S3
-      const getObjectCommand = new GetObjectCommand({
-        Bucket: requiredEnvVars.AWS_BUCKET_NAME,
-        Key: s3Key
-      });
-      
-      const response = await s3Client.send(getObjectCommand);
-      const responseBody = await response.Body?.transformToString();
-      
-      if (responseBody) {
-        existingData = JSON.parse(responseBody);
-        console.log(`iOS health data: Found ${existingData.length} existing HRV records`);
+      if (!Array.isArray(measurements)) {
+        console.log(`iOS health data: Invalid ${type} data format`);
+        continue;
       }
-    } catch (error) {
-      // Only log the error and continue - first upload will create the file
-      console.log('iOS health data: No existing data found or error reading data:', error);
-    }
 
-    // Convert iOS format to match manual format
-    const normalizedMeasurements: ManualHrvMeasurement[] = validHrvMeasurements.map((item: HrvMeasurement) => {
-      // Convert to the format matching manually processed data
-      return {
+      // Validate and filter measurements
+      const validMeasurements = measurements.filter((m: any) => {
+        return m && 
+               typeof m.timestamp === 'string' && 
+               typeof m.value === 'number' && 
+               !isNaN(m.value) &&
+               isValidMeasurement(measurementType, m.value);
+      });
+
+      console.log(`iOS health data: Received ${validMeasurements.length} valid ${type} measurements`);
+
+      // Define the S3 key for this measurement type
+      const s3Key = `data/${HARDCODED_USER_ID}/${type}.json`;
+
+      // Get existing data
+      let existingData: HealthMeasurement[] = [];
+      try {
+        const getObjectCommand = new GetObjectCommand({
+          Bucket: requiredEnvVars.AWS_BUCKET_NAME,
+          Key: s3Key
+        });
+        
+        const response = await s3Client.send(getObjectCommand);
+        const responseBody = await response.Body?.transformToString();
+        
+        if (responseBody) {
+          existingData = JSON.parse(responseBody);
+          console.log(`iOS health data: Found ${existingData.length} existing ${type} records`);
+        }
+      } catch (error) {
+        console.log(`iOS health data: No existing ${type} data found or error reading data:`, error);
+      }
+
+      // Convert to standard format
+      const normalizedMeasurements: HealthMeasurement[] = validMeasurements.map((item: RawMeasurement) => ({
         date: item.timestamp?.endsWith('Z') ? item.timestamp : `${item.timestamp || ''}Z`,
         value: item.value,
-        source: "iOS App",
-        unit: "ms",
+        source: config.source,
+        unit: config.unit,
         metadata: {
           HKAlgorithmVersion: 2
         }
-      };
-    });
+      }));
 
-    // Ensure all existing data has proper date format
-    const normalizedExistingData = existingData.map(item => {
-      // Handle existing data that might be in different formats
-      if (!item.date && item.timestamp) {
-        // Convert old format to new format
-        return {
-          ...item,
-          date: item.timestamp?.endsWith('Z') ? item.timestamp : `${item.timestamp}Z`,
-          source: item.source || "Unknown Source",
-          unit: item.unit || "ms",
-          metadata: item.metadata || { HKAlgorithmVersion: 2 }
-        };
-      }
-      // Ensure the item has all required fields
-      return {
+      // Normalize existing data
+      const normalizedExistingData = existingData.map(item => ({
         ...item,
-        source: item.source || "Unknown Source",
-        unit: item.unit || "ms",
+        date: item.date || (item.timestamp?.endsWith('Z') ? item.timestamp : `${item.timestamp}Z`),
+        source: item.source || config.source,
+        unit: item.unit || config.unit,
         metadata: item.metadata || { HKAlgorithmVersion: 2 }
-      };
-    });
+      }));
 
-    // Build a set of dates that already exist in the data
-    const existingDates = new Set(normalizedExistingData
-      .filter(item => typeof item.date === 'string' && item.date)
-      .map(item => {
-        // Normalize date format by removing milliseconds if present
-        return item.date.replace(/\.\d{3}Z$/, 'Z');
-      })
-    );
+      // Remove duplicates
+      const existingDates = new Set(normalizedExistingData
+        .filter(item => typeof item.date === 'string' && item.date)
+        .map(item => item.date.replace(/\.\d{3}Z$/, 'Z'))
+      );
 
-    // Filter out measurements with dates that already exist
-    const newMeasurements = normalizedMeasurements
-      .filter(item => typeof item.date === 'string' && item.date)
-      .filter(item => {
-        const normalizedDate = item.date.replace(/\.\d{3}Z$/, 'Z');
-        return !existingDates.has(normalizedDate);
-      });
-    
-    const combinedData = [...normalizedExistingData, ...newMeasurements];
-    console.log(`iOS health data: Adding ${newMeasurements.length} new records, total: ${combinedData.length}`);
+      const newMeasurements = normalizedMeasurements
+        .filter(item => typeof item.date === 'string' && item.date)
+        .filter(item => !existingDates.has(item.date.replace(/\.\d{3}Z$/, 'Z')));
 
-    // Sort by date - with safety check
-    combinedData.sort((a, b) => {
-      const dateA = a.date ? new Date(a.date).getTime() : 0;
-      const dateB = b.date ? new Date(b.date).getTime() : 0;
-      return dateA - dateB;
-    });
+      const combinedData = [...normalizedExistingData, ...newMeasurements];
 
-    // Save the combined data back to S3
-    try {
-      const putObjectCommand = new PutObjectCommand({
-        Bucket: requiredEnvVars.AWS_BUCKET_NAME,
-        Key: s3Key,
-        Body: JSON.stringify(combinedData),
-        ContentType: 'application/json'
+      // Sort by date
+      combinedData.sort((a, b) => {
+        const dateA = a.date ? new Date(a.date).getTime() : 0;
+        const dateB = b.date ? new Date(b.date).getTime() : 0;
+        return dateA - dateB;
       });
 
-      await s3Client.send(putObjectCommand);
-      
-      console.log(`iOS health data: Successfully saved ${combinedData.length} records to S3`);
-      
-      return NextResponse.json({
-        success: true,
-        message: 'HRV data processed successfully',
-        stats: {
-          recordsAdded: newMeasurements.length,
-          totalRecords: combinedData.length
-        }
-      });
-    } catch (saveError) {
-      console.error('Error saving data to S3:', saveError);
-      return NextResponse.json({ 
-        error: 'Failed to save data to S3',
-        errorDetail: (saveError as Error).message 
-      }, { status: 500 });
+      // Save to S3
+      try {
+        const putObjectCommand = new PutObjectCommand({
+          Bucket: requiredEnvVars.AWS_BUCKET_NAME,
+          Key: s3Key,
+          Body: JSON.stringify(combinedData),
+          ContentType: 'application/json'
+        });
+
+        await s3Client.send(putObjectCommand);
+        
+        results[measurementType] = {
+          added: newMeasurements.length,
+          total: combinedData.length
+        };
+
+        console.log(`iOS health data: Successfully saved ${combinedData.length} ${type} records to S3`);
+      } catch (saveError) {
+        console.error(`Error saving ${type} data to S3:`, saveError);
+      }
     }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Health data processed successfully',
+      stats: results
+    });
+
   } catch (error) {
     console.error('Error processing iOS health data:', error);
     return NextResponse.json({ 
