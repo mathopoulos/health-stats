@@ -2,12 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-// AWS S3 configuration
+// Define type for HRV measurements
+interface HrvMeasurement {
+  timestamp: string;
+  value: number;
+  [key: string]: any; // Allow additional properties
+}
+
+// Check if required environment variables are available
+const requiredEnvVars = {
+  AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+  AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+  AWS_REGION: process.env.AWS_REGION || 'us-east-1',
+  AWS_BUCKET_NAME: process.env.AWS_BUCKET_NAME
+};
+
+// Create S3 client with proper variable names (AWS SDK expects specific names)
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION || 'us-east-1',
+  region: requiredEnvVars.AWS_REGION,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY || '',
-    secretAccessKey: process.env.AWS_SECRET_KEY || ''
+    accessKeyId: requiredEnvVars.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: requiredEnvVars.AWS_SECRET_ACCESS_KEY || ''
   }
 });
 
@@ -17,11 +32,17 @@ const HARDCODED_USER_ID = '100492380040453908509';
 // Simple API key for basic security
 const IOS_API_KEY = process.env.IOS_API_KEY || 'ios-test-key-change-me';
 
-// Define type for HRV measurements
-interface HrvMeasurement {
-  timestamp: string;
-  value: number;
-  [key: string]: any; // Allow additional properties
+// Check if AWS credentials are properly configured
+function validateAwsConfig() {
+  const missingVars = Object.entries(requiredEnvVars)
+    .filter(([_, value]) => !value)
+    .map(([key]) => key);
+
+  if (missingVars.length > 0) {
+    console.error(`Missing required environment variables: ${missingVars.join(', ')}`);
+    return false;
+  }
+  return true;
 }
 
 // Process health data from iOS
@@ -32,6 +53,14 @@ export async function POST(request: NextRequest) {
     if (!apiKey || apiKey !== IOS_API_KEY) {
       console.log('iOS health data: Invalid or missing API key');
       return NextResponse.json({ error: 'Unauthorized: Invalid API key' }, { status: 401 });
+    }
+
+    // Validate AWS configuration
+    if (!validateAwsConfig()) {
+      return NextResponse.json({ 
+        error: 'Server configuration error: AWS credentials not properly configured',
+        errorCode: 'AWS_CONFIG_ERROR' 
+      }, { status: 500 });
     }
 
     // Use the hardcoded user ID for all iOS submissions
@@ -63,11 +92,11 @@ export async function POST(request: NextRequest) {
     const s3Key = `data/${userId}/hrv.json`;
 
     // Check if the user already has data in S3
-    let existingData = [];
+    let existingData: HrvMeasurement[] = [];
     try {
       // Get the existing data from S3
       const getObjectCommand = new GetObjectCommand({
-        Bucket: process.env.AWS_BUCKET_NAME,
+        Bucket: requiredEnvVars.AWS_BUCKET_NAME,
         Key: s3Key
       });
       
@@ -79,7 +108,7 @@ export async function POST(request: NextRequest) {
         console.log(`iOS health data: Found ${existingData.length} existing HRV records`);
       }
     } catch (error) {
-      // File might not exist yet, which is fine
+      // Only log the error and continue - first upload will create the file
       console.log('iOS health data: No existing data found or error reading data:', error);
     }
 
@@ -95,25 +124,38 @@ export async function POST(request: NextRequest) {
     combinedData.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
     // Save the combined data back to S3
-    const putObjectCommand = new PutObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: s3Key,
-      Body: JSON.stringify(combinedData),
-      ContentType: 'application/json'
-    });
+    try {
+      const putObjectCommand = new PutObjectCommand({
+        Bucket: requiredEnvVars.AWS_BUCKET_NAME,
+        Key: s3Key,
+        Body: JSON.stringify(combinedData),
+        ContentType: 'application/json'
+      });
 
-    await s3Client.send(putObjectCommand);
-
-    return NextResponse.json({
-      success: true,
-      message: 'HRV data processed successfully',
-      stats: {
-        recordsAdded: newMeasurements.length,
-        totalRecords: combinedData.length
-      }
-    });
+      await s3Client.send(putObjectCommand);
+      
+      console.log(`iOS health data: Successfully saved ${combinedData.length} records to S3`);
+      
+      return NextResponse.json({
+        success: true,
+        message: 'HRV data processed successfully',
+        stats: {
+          recordsAdded: newMeasurements.length,
+          totalRecords: combinedData.length
+        }
+      });
+    } catch (saveError) {
+      console.error('Error saving data to S3:', saveError);
+      return NextResponse.json({ 
+        error: 'Failed to save data to S3',
+        errorDetail: (saveError as Error).message 
+      }, { status: 500 });
+    }
   } catch (error) {
     console.error('Error processing iOS health data:', error);
-    return NextResponse.json({ error: 'Server error processing data' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Server error processing data',
+      errorDetail: (error as Error).message 
+    }, { status: 500 });
   }
 } 
