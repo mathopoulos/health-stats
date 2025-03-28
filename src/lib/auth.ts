@@ -64,14 +64,18 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile, email, credentials }) {
       if (user.email) {
+        console.log("Auth flow for:", user.email);
+        
         // For mobile auth, we'll skip payment checks if the state contains 'platform=ios'
         // This assumes the JWT verification is sufficient for mobile auth
         if (account?.provider === 'google' && account.state) {
           try {
             const stateData = JSON.parse(account.state as string);
             if (stateData.platform === 'ios') {
-              console.log(`iOS app authentication for ${user.email}, skipping payment check`);
+              console.log(`iOS app authentication for ${user.email}, skipping payment check and marking as paid`);
               authenticatedUsers.add(user.email);
+              // Mark iOS app users as paid directly so they pass all checks
+              paidUsers.add(user.email);
               return true;
             }
           } catch (e) {
@@ -80,6 +84,7 @@ export const authOptions: NextAuthOptions = {
           }
         }
 
+        // Regular web flow continues
         // Check if this is a returning user (previously authenticated)
         const isReturningUser = authenticatedUsers.has(user.email);
         
@@ -119,34 +124,78 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user && token.sub) {
-        // Add the user ID to the session
         session.user.id = token.sub;
-        // Make access token available to the client for iOS app
         session.accessToken = token.accessToken as string | undefined;
+        // Pass the iOS flag to the session if present
+        if (token.isIosApp) {
+          (session as any).isIosApp = true;
+        }
       }
       return session;
     },
     async jwt({ token, user, account }) {
+      // Store the whole account object for debugging purposes
+      if (account) {
+        console.log("JWT callback with account:", account.provider);
+        token.accessToken = account.access_token;
+        // Store ios flag if present in state
+        try {
+          if (account.state) {
+            const stateData = JSON.parse(account.state as string);
+            if (stateData.platform === 'ios') {
+              token.isIosApp = true;
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing state in JWT callback:', e);
+        }
+      }
+      
       if (user) {
-        // Add any additional user info to the token if needed
         token.id = user.id;
       }
-      // Pass the access token to the JWT if available
-      if (account) {
-        token.accessToken = account.access_token;
-      }
+      
       return token;
     },
     async redirect({ url, baseUrl }) {
+      // Log the redirect URL for debugging
+      console.log("NextAuth redirect:", url);
+      
       // Get the production URL from env
       const productionUrl = process.env.NEXTAUTH_URL || baseUrl;
       
-      // For iOS app callback
-      if (url.startsWith('health.revly://')) {
+      // Check for mobile-callback path which is our dedicated iOS redirect page
+      if (url.includes('/auth/mobile-callback')) {
+        console.log("Mobile callback redirect detected");
         return url;
       }
       
-      // Check if this is a callback and there's state data with platform=ios
+      // For iOS app callback (should not happen normally but handle just in case)
+      if (url.startsWith('health.revly://')) {
+        console.log("Direct iOS scheme redirect detected");
+        return url;
+      }
+      
+      // Check if this is a callback for a mobile auth
+      if (url.includes('/api/auth/callback/google')) {
+        try {
+          // Try to extract state from the URL
+          const urlObj = new URL(url);
+          const state = urlObj.searchParams.get('state');
+          
+          if (state) {
+            const stateData = JSON.parse(state);
+            if (stateData.platform === 'ios') {
+              console.log("iOS callback detected, redirecting to mobile-callback page");
+              return `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}`;
+            }
+          }
+        } catch (e) {
+          console.error('Error in redirect callback:', e);
+        }
+      }
+      
+      // For iOS app callback
       if (url.includes('auth/callback') || url.includes('api/auth/callback')) {
         // Try to extract state from the URL
         try {

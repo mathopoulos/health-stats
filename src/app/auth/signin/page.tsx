@@ -21,6 +21,9 @@ export default function SignIn() {
     const inviteCodeValidated = sessionStorage.getItem('inviteCodeValidated') === 'true';
     const validatedEmailFromSession = sessionStorage.getItem('validatedEmail');
     
+    // Check if user is coming from iOS app
+    const isIosApp = searchParams?.get('platform') === 'ios';
+    
     // Check if user is coming from payment
     const paymentStatus = sessionStorage.getItem('justCompletedPayment');
     if (paymentStatus === 'pending') {
@@ -29,25 +32,25 @@ export default function SignIn() {
       setComingFromPayment(true);
     }
     
-    // Only require invite if explicitly specified in URL params
-    // This ensures users clicking the login button will never be redirected to invite
-    const requireInvite = inviteRequiredParam === 'true';
+    // Skip invite requirement for iOS app users
+    const requireInvite = inviteRequiredParam === 'true' && !isIosApp;
     
     setIsNewUser(requireInvite);
     setHasValidInvite(inviteCodeValidated);
     setValidatedEmail(validatedEmailFromSession);
     setLoading(false);
 
-    // Only redirect to the invite page if explicitly directed to require an invite
-    // and not coming from payment
-    if (requireInvite && !inviteCodeValidated && !comingFromPayment) {
+    // Only redirect to the invite page if explicitly directed to require an invite,
+    // not coming from payment, and not coming from iOS app
+    if (requireInvite && !inviteCodeValidated && !comingFromPayment && !isIosApp) {
       router.push('/auth/invite');
     }
   }, [router, searchParams, comingFromPayment]);
 
   const handleSignIn = () => {
-    // Check if authenticating from iOS app
+    // Check if authenticating from iOS app - make sure to use a very visible query param
     const isIosApp = searchParams?.get('platform') === 'ios';
+    console.log("iOS authentication:", isIosApp); // Debug logging
     const callbackUrl = searchParams?.get('callback_url') || '/upload';
     
     // If the user has a validated email, include it in a hidden state
@@ -62,6 +65,7 @@ export default function SignIn() {
     if (isIosApp) {
       stateData.platform = 'ios';
       stateData.redirect = 'health.revly://auth'; // Store the iOS URL scheme in state instead
+      console.log("Adding iOS platform to state", stateData); // Debug logging
     }
     
     signIn('google', { 
