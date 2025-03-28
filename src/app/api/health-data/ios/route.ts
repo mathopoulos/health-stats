@@ -1,46 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { decode } from 'next-auth/jwt';
+import { getToken } from 'next-auth/jwt';
 import { generatePresignedUploadUrl, fetchAllHealthData } from '@/lib/s3';
 
-// Secret used for token verification - must match NextAuth
+// Secret used for token verification
 const secret = process.env.NEXTAUTH_SECRET || 'default-secret-change-me';
-
-// Verify the iOS token from the Authorization header
-async function verifyIosToken(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return null;
-    }
-    
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    const decoded = await decode({ token, secret });
-    
-    if (!decoded || !decoded.isIosApp) {
-      return null;
-    }
-    
-    return decoded;
-  } catch (error) {
-    console.error('Error verifying iOS token:', error);
-    return null;
-  }
-}
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify token
-    const decoded = await verifyIosToken(request);
-    if (!decoded) {
+    // Verify token using NextAuth
+    const token = await getToken({ req: request as any, secret });
+    
+    if (!token || !token.sub) {
+      console.log("iOS health data - Unauthorized access attempt");
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
     // The user ID is stored in the 'sub' field of the token
-    const userId = decoded.sub;
+    const userId = token.sub;
     
-    if (!userId) {
-      return NextResponse.json({ error: 'Invalid user identification' }, { status: 401 });
-    }
+    console.log(`iOS health data - Processing for user ID: ${userId}`);
     
     // Parse the request body
     const data = await request.json();
@@ -65,10 +43,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
-    // Save data using the S3 functions
+    console.log(`iOS health data - Found ${measurements.length} valid HRV measurements`);
+    
+    // Save data
     try {
       // Get existing data
       const existingData = await fetchAllHealthData('hrv', userId);
+      console.log(`iOS health data - Found ${existingData.length} existing measurements`);
       
       // Merge with new data and remove duplicates
       const mergedData = [...existingData, ...measurements];
@@ -78,6 +59,8 @@ export async function POST(request: NextRequest) {
       const uniqueData = mergedData.filter((item, index, self) =>
         index === self.findIndex((t) => t.date === item.date)
       );
+      
+      console.log(`iOS health data - Saving ${uniqueData.length} measurements (${uniqueData.length - existingData.length} new)`);
       
       // Save to S3
       const url = await generatePresignedUploadUrl('data/hrv.json', 'application/json', userId);
@@ -90,17 +73,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         success: true, 
         message: `Successfully processed ${measurements.length} HRV measurements`,
-        recordsAdded: measurements.length
+        recordsAdded: measurements.length,
+        totalRecords: uniqueData.length
       });
     } catch (error) {
-      console.error('Error saving iOS app HRV data:', error);
+      console.error('iOS health data - Error saving HRV data:', error);
       return NextResponse.json({ 
         success: false, 
         error: 'Failed to save HRV data'
       }, { status: 500 });
     }
   } catch (error) {
-    console.error('Error processing iOS app health data:', error);
+    console.error('iOS health data - Error processing health data:', error);
     return NextResponse.json({ 
       success: false, 
       error: 'Internal server error' 

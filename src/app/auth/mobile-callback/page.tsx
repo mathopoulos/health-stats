@@ -15,109 +15,124 @@ export default function MobileCallback() {
 
   useEffect(() => {
     // Log session status for debugging
-    console.log("Session status:", status);
-    console.log("Session data:", session);
+    console.log("Mobile callback - Session status:", status);
+    console.log("Mobile callback - Session data:", session);
     setDebugInfo(`Session status: ${status}, Has token: ${session?.accessToken ? 'Yes' : 'No'}`);
     
-    // Only proceed if session is loaded or we have an error
+    // Only proceed if we have a valid session or authentication error
     if (status === 'loading') return;
     
-    // Get state from query params
+    // Extract state from URL if present
     const state = searchParams?.get('state');
-    console.log("State from URL:", state);
+    console.log("Mobile callback - State from URL:", state);
     
     let stateData: any = {};
+    let isIosAuth = false;
     
     try {
       if (state) {
         stateData = JSON.parse(state);
-        console.log("Parsed state data:", stateData);
+        console.log("Mobile callback - Parsed state data:", stateData);
         setDebugInfo(prev => `${prev}\nParsed state: ${JSON.stringify(stateData)}`);
+        isIosAuth = stateData.platform === 'ios';
       }
     } catch (e) {
       console.error('Error parsing state:', e);
       setDebugInfo(prev => `${prev}\nError parsing state: ${e}`);
     }
     
-    // If we have a session and it's authenticated, redirect to the iOS app
-    if (status === 'authenticated' && session && !redirectAttempted) {
-      const token = session.accessToken || '';
-      setDebugInfo(prev => `${prev}\nAuthenticated with token: ${token ? token.substring(0, 10) + '...' : 'missing'}`);
-      
-      // Check for direct iOS flag in session or state
-      const isDirect = (session as any).isDirectIosAuth || stateData.directIosAuth;
-      if (isDirect) {
-        setDebugInfo(prev => `${prev}\nDetected direct iOS auth`);
-      }
-      
-      // If we have platform=ios in the state, or the session is marked as iOS
-      const isIosApp = (stateData.platform === 'ios' && stateData.redirect) || (session as any).isIosApp;
-      if (isIosApp) {
-        const redirectUrl = stateData.redirect || 'health.revly://auth';
-        const mobileRedirectUrl = `${redirectUrl}?token=${token}`;
-        
-        console.log('Redirecting to mobile app:', mobileRedirectUrl);
-        setDebugInfo(prev => `${prev}\nRedirecting to: ${mobileRedirectUrl}`);
-        setRedirectAttempted(true);
-        
-        // Use a short timeout to ensure the session is ready
-        const redirectTimer = setTimeout(() => {
-          window.location.href = mobileRedirectUrl;
-        }, 1000);
-        
-        return () => clearTimeout(redirectTimer);
-      } else {
-        // Not for mobile or missing redirect info
-        setRedirecting(false);
-        setError('Session authenticated but not marked for iOS app');
-        setDebugInfo(prev => `${prev}\nNot an iOS auth session`);
-      }
-    } else if (status === 'unauthenticated') {
-      // No authenticated session
-      setRedirecting(false);
-      setError('Authentication failed');
-      setDebugInfo(prev => `${prev}\nSession is unauthenticated`);
+    // If we couldn't determine if this is iOS auth from state, check the session
+    if (!isIosAuth && session) {
+      isIosAuth = (session as any).isIosApp === true;
     }
     
-    // Redirect to upload page after a delay if we're not an iOS session
-    if (!redirectAttempted && (status === 'unauthenticated' || error)) {
+    if (!isIosAuth) {
+      console.log("Mobile callback - Not an iOS authentication");
+      setDebugInfo(prev => `${prev}\nNot an iOS authentication flow`);
+      setRedirecting(false);
+      setError('Invalid authentication flow');
+      
+      // Redirect to main app after a short delay
       const fallbackTimer = setTimeout(() => {
         router.push('/upload');
-      }, 5000);
+      }, 3000);
       
       return () => clearTimeout(fallbackTimer);
     }
-  }, [router, searchParams, session, status, error, redirectAttempted]);
-
-  // Force redirect if no status after timeout (in case something's wrong with session)
-  useEffect(() => {
-    let forceRedirectTimeout: NodeJS.Timeout;
     
-    // If we're still loading or waiting after 10 seconds, try direct redirect
-    if (redirecting && !redirectAttempted) {
-      forceRedirectTimeout = setTimeout(() => {
-        setDebugInfo(prev => `${prev}\nForce redirecting after timeout`);
+    // We've confirmed this is an iOS auth flow
+    setDebugInfo(prev => `${prev}\nConfirmed iOS authentication flow`);
+    
+    // Handle successful authentication
+    if (status === 'authenticated' && session && !redirectAttempted) {
+      // Get the token from the session
+      const token = session.accessToken || '';
+      setDebugInfo(prev => `${prev}\nAuthenticated with token: ${token ? token.substring(0, 10) + '...' : 'missing'}`);
+      
+      // Get the redirect URL from state or use default
+      const redirectUrl = stateData.redirect || 'health.revly://auth';
+      const fullRedirectUrl = `${redirectUrl}?token=${token}`;
+      
+      console.log('Mobile callback - Redirecting to app:', fullRedirectUrl);
+      setDebugInfo(prev => `${prev}\nRedirecting to: ${fullRedirectUrl}`);
+      
+      // Prevent multiple redirect attempts
+      setRedirectAttempted(true);
+      
+      // Redirect to the iOS app with token
+      const redirectTimer = setTimeout(() => {
+        window.location.href = fullRedirectUrl;
+      }, 1000);
+      
+      return () => clearTimeout(redirectTimer);
+    } else if (status === 'unauthenticated') {
+      // Authentication failed
+      setRedirecting(false);
+      setError('Google authentication failed');
+      setDebugInfo(prev => `${prev}\nGoogle authentication failed`);
+      
+      // Redirect to error URL if available
+      if (stateData.redirect) {
+        const errorRedirectUrl = `${stateData.redirect}?error=auth_failed`;
+        
+        const errorTimer = setTimeout(() => {
+          window.location.href = errorRedirectUrl;
+        }, 2000);
+        
+        return () => clearTimeout(errorTimer);
+      }
+    }
+    
+  }, [router, searchParams, session, status, redirectAttempted]);
+  
+  // Add fallback redirect in case something goes wrong
+  useEffect(() => {
+    const fallbackTimeout = setTimeout(() => {
+      if (redirecting && !redirectAttempted) {
+        setDebugInfo(prev => `${prev}\nFallback redirect triggered after timeout`);
+        
+        // Try to extract redirect URL from state
         try {
-          // Try to extract redirect from state param directly
           const state = searchParams?.get('state');
           if (state) {
             const stateData = JSON.parse(state);
-            if (stateData.platform === 'ios' && stateData.redirect) {
-              // Even without token, go back to app to avoid getting stuck
+            if (stateData.redirect) {
               window.location.href = `${stateData.redirect}?error=timeout`;
               setRedirectAttempted(true);
+              return;
             }
           }
         } catch (e) {
-          console.error('Error in force redirect:', e);
+          console.error('Error in fallback redirect:', e);
         }
-      }, 10000);
-    }
+        
+        // Default fallback if we couldn't extract redirect URL
+        router.push('/upload');
+      }
+    }, 10000); // 10 second timeout
     
-    return () => {
-      clearTimeout(forceRedirectTimeout);
-    };
-  }, [searchParams, redirecting, redirectAttempted]);
+    return () => clearTimeout(fallbackTimeout);
+  }, [router, searchParams, redirecting, redirectAttempted]);
 
   if (!redirecting && error) {
     return (
@@ -127,7 +142,7 @@ export default function MobileCallback() {
             Authentication Error
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            {error}. Redirecting to dashboard...
+            {error}. Redirecting...
           </p>
           {/* Debug information */}
           <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded text-left text-xs overflow-auto max-h-60">

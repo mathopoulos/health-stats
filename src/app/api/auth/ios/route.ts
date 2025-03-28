@@ -6,44 +6,42 @@ import { markUserAsPaid } from '@/lib/auth';
 // Secret used for token generation - must match NextAuth
 const secret = process.env.NEXTAUTH_SECRET || 'default-secret-change-me';
 
-// Direct iOS auth handler
+// Create a secure endpoint that redirects to Google auth but pre-registers the iOS user
 export async function GET(request: NextRequest) {
   try {
-    // Extract email and redirect params
+    // Extract email parameter if provided
     const searchParams = request.nextUrl.searchParams;
     const email = searchParams.get('email');
     
-    if (!email) {
-      return NextResponse.json({ error: 'Email parameter is required' }, { status: 400 });
+    // Pre-register the email as paid if provided to avoid payment flows
+    if (email) {
+      markUserAsPaid(email);
     }
     
-    // Always mark iOS users as paid to avoid payment flows
-    markUserAsPaid(email);
+    // Redirect to the Google sign-in flow with special iOS flags
+    const redirectUrl = new URL('/api/auth/signin/google', request.url);
     
-    // Generate a JWT token directly without going through NextAuth
-    // This token will be similar to what NextAuth would generate
-    const token = await encode({
-      token: {
-        email,
-        name: email.split('@')[0], // Basic name from email
-        sub: `ios-user-${Buffer.from(email).toString('base64')}`, // User ID
-        iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60), // 30 days
-        jti: crypto.randomUUID(),
-        isIosApp: true,
-      },
-      secret,
-    });
+    // Add special state parameter to indicate iOS app and keep track through redirects
+    const stateData = {
+      platform: 'ios',
+      redirect: 'health.revly://auth',
+      timestamp: Date.now()
+    };
     
-    // Redirect directly to the iOS app with the token
-    return NextResponse.redirect(`health.revly://auth?token=${token}`);
+    // Add callbackUrl to ensure proper redirection after Google auth
+    redirectUrl.searchParams.set('callbackUrl', '/auth/mobile-callback');
+    redirectUrl.searchParams.set('state', JSON.stringify(stateData));
+    
+    console.log('Redirecting iOS authentication to:', redirectUrl.toString());
+    
+    return NextResponse.redirect(redirectUrl);
   } catch (error) {
-    console.error('Error in direct iOS auth:', error);
+    console.error('Error in iOS auth route:', error);
     return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
   }
 }
 
-// Allows registering an iOS user via POST
+// API endpoint to register iOS users for preflight
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
@@ -53,30 +51,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
     
-    // Mark the user as paid directly
+    // Mark the user as paid to bypass payment requirements
     const result = markUserAsPaid(email);
     
     if (result) {
-      console.log(`iOS user ${email} marked as paid via direct API call`);
-      
-      // Generate a token for this user
-      const token = await encode({
-        token: {
-          email,
-          name: email.split('@')[0],
-          sub: `ios-user-${Buffer.from(email).toString('base64')}`,
-          iat: Math.floor(Date.now() / 1000),
-          exp: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60),
-          jti: crypto.randomUUID(),
-          isIosApp: true,
-        },
-        secret,
-      });
-      
+      console.log(`iOS user ${email} pre-registered via API call`);
       return NextResponse.json({ 
         success: true, 
-        message: 'User authenticated',
-        token
+        message: 'User pre-registered for authentication'
       });
     } else {
       return NextResponse.json({ error: 'Failed to register user' }, { status: 500 });
