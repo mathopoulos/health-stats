@@ -4,10 +4,10 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 // Define measurement types and their units
 const MEASUREMENT_TYPES = {
-  hrv: { unit: 'ms', source: 'iOS App' },
-  vo2max: { unit: 'mL/kg/min', source: 'iOS App' },
-  weight: { unit: 'kg', source: 'iOS App' },
-  bodyFat: { unit: '%', source: 'iOS App' }
+  hrv: { unit: 'ms', source: 'iOS App', fileKey: 'hrv' },
+  vo2max: { unit: 'mL/kg/min', source: 'iOS App', fileKey: 'vo2max' },
+  weight: { unit: 'kg', source: 'iOS App', fileKey: 'weight' },
+  bodyfat: { unit: '%', source: 'iOS App', fileKey: 'bodyfat' }
 } as const;
 
 type MeasurementType = keyof typeof MEASUREMENT_TYPES;
@@ -71,7 +71,7 @@ function validateAwsConfig() {
 // Validate measurement value based on type
 function isValidMeasurement(type: MeasurementType, value: number): boolean {
   switch (type) {
-    case 'bodyFat':
+    case 'bodyfat':
       return value >= 0 && value <= 100;
     case 'weight':
       return value > 0 && value < 500; // Reasonable weight range in kg
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
       hrv: { added: 0, total: 0 },
       vo2max: { added: 0, total: 0 },
       weight: { added: 0, total: 0 },
-      bodyFat: { added: 0, total: 0 }
+      bodyfat: { added: 0, total: 0 }
     };
 
     // Process each measurement type
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
       console.log(`iOS health data: Received ${validMeasurements.length} valid ${type} measurements`);
 
       // Define the S3 key for this measurement type
-      const s3Key = `data/${HARDCODED_USER_ID}/${type}.json`;
+      const s3Key = `data/${HARDCODED_USER_ID}/${config.fileKey}.json`;
 
       // Get existing data
       let existingData: HealthMeasurement[] = [];
