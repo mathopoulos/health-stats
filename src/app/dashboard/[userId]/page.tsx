@@ -2553,8 +2553,8 @@ export default function Home() {
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
           <a 
-            href="https://revly.com" 
-            target="_blank" 
+            href="https://www.revly.health"
+            target="_blank"
             rel="noopener noreferrer"
             className="flex items-center w-0 overflow-hidden group-hover:w-auto transition-all duration-300 ease-in-out whitespace-nowrap font-semibold"
           >
