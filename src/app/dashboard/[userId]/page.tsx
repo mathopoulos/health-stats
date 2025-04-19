@@ -250,6 +250,24 @@ interface UserData {
   profileImage?: string;
 }
 
+interface ActivityFeedItem {
+  id: string;
+  type: 'sleep' | 'workout' | 'meal';
+  startTime: string;
+  endTime?: string;
+  title: string;
+  subtitle?: string;
+  metrics: {
+    [key: string]: string;
+  };
+  sleepStages?: {
+    [key: string]: {
+      percentage: number;
+      duration: string;
+    };
+  };
+}
+
 export default function Home() {
   const { data: session, status } = useSession();
   const params = useParams<{ userId: string }>();
@@ -308,9 +326,55 @@ export default function Home() {
     start: Date | null;
     end: Date | null;
   }>({ start: null, end: null });
-  const [activeTab, setActiveTab] = useState<'metrics' | 'blood'>('metrics');
+  const [activeTab, setActiveTab] = useState<'home' | 'metrics' | 'blood'>('home');
   const [isAddResultsModalOpen, setIsAddResultsModalOpen] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [activityFeed] = useState<ActivityFeedItem[]>([
+    {
+      id: '1',
+      type: 'sleep',
+      startTime: '2024-03-20T23:00:00',
+      endTime: '2024-03-21T06:45:00',
+      title: '8h 15m',
+      subtitle: 'Time asleep',
+      metrics: {
+        'Sleep score': '100%',
+        'RHR': '42',
+        'HRV': '117'
+      },
+      sleepStages: {
+        deep: { percentage: 30, duration: '3h 15m' },
+        rem: { percentage: 20, duration: '2h' },
+        core: { percentage: 25, duration: '2h 30m' },
+        light: { percentage: 25, duration: '2h 30m' }
+      }
+    },
+    {
+      id: '2',
+      type: 'workout',
+      startTime: '2024-03-20T10:52:00',
+      endTime: '2024-03-20T11:44:00',
+      title: 'Strength Training',
+      subtitle: 'Upper Body Focus',
+      metrics: {
+        'duration': '45m',
+        'calories': '420',
+        'intensity': 'High'
+      }
+    },
+    {
+      id: '3',
+      type: 'meal',
+      startTime: '2024-03-20T12:30:00',
+      title: 'Lunch',
+      metrics: {
+        'calories': '650',
+        'protein': '35g',
+        'carbs': '45g',
+        'fat': '25g'
+      }
+    }
+  ]);
 
   // Add useEffect for title update
   useEffect(() => {
@@ -1313,6 +1377,16 @@ export default function Home() {
             <div>
               <nav className="flex space-x-8 px-6" aria-label="Tabs">
                 <button
+                  onClick={() => setActiveTab('home')}
+                  className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm ${
+                    activeTab === 'home'
+                      ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
+                  }`}
+                >
+                  Home
+                </button>
+                <button
                   onClick={() => setActiveTab('metrics')}
                   className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm ${
                     activeTab === 'metrics'
@@ -1336,7 +1410,208 @@ export default function Home() {
             </div>
           </div>
 
-          {activeTab === 'metrics' ? (
+          {activeTab === 'home' ? (
+            <div className="space-y-6">
+              {/* Bio Age Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">Biological Age</h3>
+                    <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">23.5</span>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">Age Speed</h3>
+                    <span className="text-2xl font-bold text-green-600 dark:text-green-400">—</span>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">VO2 Max</h3>
+                    <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {data.loading ? "..." : data.vo2max.length > 0 
+                        ? `${Math.round(
+                            data.vo2max
+                              .slice(-30)
+                              .reduce((sum, item) => sum + item.value, 0) / 
+                            Math.min(data.vo2max.slice(-30).length, 30)
+                          )}` 
+                        : "—"}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">HRV</h3>
+                    <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                      {data.loading ? "..." : data.hrv.length > 0 
+                        ? `${Math.round(
+                            data.hrv
+                              .slice(-30)
+                              .reduce((sum, item) => sum + item.value, 0) / 
+                            Math.min(data.hrv.slice(-30).length, 30)
+                          )}` 
+                        : "—"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Activity Feed */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl px-10 py-8 shadow-sm">
+                <div className="flex items-center gap-3 mb-10">
+                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Recent activity</h2>
+                  <span className="inline-flex items-center rounded-md bg-yellow-50 dark:bg-yellow-900/30 px-2 py-1 text-xs font-medium text-yellow-800 dark:text-yellow-300 ring-1 ring-inset ring-yellow-600/20">
+                    Coming soon - placeholder data
+                  </span>
+                </div>
+                <div className="space-y-12 relative px-2">
+                  {/* Timeline vertical line */}
+                  <div className="absolute left-[7px] top-2 bottom-2 w-[2px] bg-gray-200 dark:bg-gray-700" />
+                  
+                  {activityFeed.map((item, index) => (
+                    <div key={item.id} className="relative pl-10">
+                      {/* Timeline dot */}
+                      <div className={`absolute left-0 top-2 w-4 h-4 rounded-full z-10 ${
+                        item.type === 'sleep' ? 'bg-blue-100 ring-4 ring-blue-500' :
+                        item.type === 'workout' ? 'bg-green-100 ring-4 ring-green-500' :
+                        'bg-orange-100 ring-4 ring-orange-500'
+                      }`} />
+                      
+                      {/* Activity content */}
+                      <div className="mb-8">
+                        {/* Time range */}
+                        <div className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+                          {item.startTime && (
+                            item.endTime 
+                              ? `${new Date(item.startTime).toLocaleString('en-US', { 
+                                  hour: 'numeric', 
+                                  minute: '2-digit',
+                                  hour12: true 
+                                })} until ${new Date(item.endTime).toLocaleString('en-US', { 
+                                  hour: 'numeric', 
+                                  minute: '2-digit',
+                                  hour12: true 
+                                })}`
+                              : new Date(item.startTime).toLocaleString('en-US', { 
+                                  hour: 'numeric', 
+                                  minute: '2-digit',
+                                  hour12: true 
+                                })
+                          )}
+                        </div>
+
+                        {/* Activity card */}
+                        <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-8">
+                          {item.type === 'sleep' && (
+                            <>
+                              {/* Top metrics grid */}
+                              <div className="grid grid-cols-3 gap-8 mb-12">
+                                <div>
+                                  <div className="text-4xl font-semibold text-gray-900 dark:text-white">
+                                    {item.metrics['Sleep score']}
+                                  </div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                    sleep score
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-4xl font-semibold text-gray-900 dark:text-white">
+                                    {item.metrics['RHR']}
+                                  </div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                    rhr
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-4xl font-semibold text-gray-900 dark:text-white">
+                                    {item.metrics['HRV']}
+                                  </div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                    hrv
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Time asleep */}
+                              <div className="mb-12">
+                                <div className="text-2xl font-semibold text-gray-900 dark:text-white">
+                                  {item.title}
+                                </div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                  Time asleep
+                                </div>
+                              </div>
+
+                              {/* Sleep stages */}
+                              {item.sleepStages && (
+                                <div className="grid grid-cols-4 gap-4">
+                                  {Object.entries(item.sleepStages).map(([stage, data]) => (
+                                    <div key={stage} className="flex flex-col">
+                                      <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden mb-3">
+                                        <div
+                                          className={`h-full ${
+                                            stage === 'deep' ? 'bg-blue-600' :
+                                            stage === 'rem' ? 'bg-blue-400' :
+                                            stage === 'core' ? 'bg-blue-500' :
+                                            'bg-red-400'
+                                          }`}
+                                          style={{ height: `${data.percentage}%` }}
+                                        />
+                                      </div>
+                                      <div className="flex items-center justify-center mb-1">
+                                        <div className={`w-2 h-2 rounded-full ${
+                                          stage === 'deep' ? 'bg-blue-600' :
+                                          stage === 'rem' ? 'bg-blue-400' :
+                                          stage === 'core' ? 'bg-blue-500' :
+                                          'bg-red-400'
+                                        }`} />
+                                      </div>
+                                      <div className="text-center">
+                                        <div className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                                          {stage}
+                                        </div>
+                                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                                          {data.duration}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )}
+
+                          {item.type === 'workout' && (
+                            <div className="flex items-center gap-2 mt-4">
+                              <span className="text-lg text-gray-900 dark:text-white">{item.title}</span>
+                              {item.subtitle && <span className="text-gray-600 dark:text-gray-400">{item.subtitle}</span>}
+                            </div>
+                          )}
+
+                          {item.type === 'meal' && item.metrics && (
+                            <div className="mt-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-lg text-gray-900 dark:text-white">{item.title}</span>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {Object.entries(item.metrics).map(([food, amount]) => (
+                                  <span key={food} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+                                    {food} ({amount})
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : activeTab === 'metrics' ? (
             <>
               {/* Summary Stats */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -1422,7 +1697,7 @@ export default function Home() {
                     </div>
                     <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">Last 30 days</span>
                   </div>
-                </div>
+                        </div>
 
                 <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
                   <div className="flex flex-col">
@@ -1441,7 +1716,7 @@ export default function Home() {
                         ) : (
                           "No data"
                         )}
-                      </span>
+                              </span>
                       {!data.loading && data.weight.length > 30 && (
                         <div className="flex items-center">
                           {(() => {
@@ -1464,7 +1739,7 @@ export default function Home() {
                     </div>
                     <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">Last 30 days</span>
                   </div>
-                </div>
+                          </div>
 
                 <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
                   <div className="flex flex-col">
@@ -1512,13 +1787,13 @@ export default function Home() {
                             }
                             return null;
                           })()}
-                        </div>
+                                </div>
                       )}
-                    </div>
+                                </div>
                     <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">Last 30 days</span>
-                  </div>
+                              </div>
                 </div>
-              </div>
+                          </div>
 
               {/* HRV Chart */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
@@ -2364,7 +2639,7 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
                   <div className="flex flex-col gap-3">
                     <div className={`text-sm font-medium ${getStatusColor(getStatusInfo(data[0].value))}`}>
                       {getStatusInfo(data[0].value)}
-                    </div>
+                                    </div>
                     <div className="space-y-2 text-xs">
                       <div className="flex items-center justify-between">
                         <span className="text-red-500 font-medium">Abnormal</span>
@@ -2400,7 +2675,7 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
           {data.length > 0 ?
            `${data[0].value} ${data[0].unit}` :
            "No data"}
-        </span>
+                                      </span>
       </div>
     </div>
   );
