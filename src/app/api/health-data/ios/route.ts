@@ -6,7 +6,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 const MEASUREMENT_TYPES = {
   hrv: { unit: 'ms', source: 'iOS App', fileKey: 'hrv' },
   vo2max: { unit: 'mL/kg/min', source: 'iOS App', fileKey: 'vo2max' },
-  weight: { unit: 'kg', source: 'iOS App', fileKey: 'weight' },
+  weight: { unit: 'lb', source: 'iOS App', fileKey: 'weight' },
   bodyfat: { unit: '%', source: 'iOS App', fileKey: 'bodyfat' }
 } as const;
 
@@ -68,13 +68,18 @@ function validateAwsConfig() {
   return true;
 }
 
+// Convert kg to lbs
+function convertKgToLbs(kg: number): number {
+  return Math.round(kg * 2.20462 * 100) / 100; // Convert to lbs and round to 2 decimal places
+}
+
 // Validate measurement value based on type
 function isValidMeasurement(type: MeasurementType, value: number): boolean {
   switch (type) {
     case 'bodyfat':
       return value >= 0 && value <= 100;
     case 'weight':
-      return value > 0 && value < 500; // Reasonable weight range in kg
+      return value > 0 && value < 1100; // Reasonable weight range in lbs (500kg * 2.20462)
     case 'vo2max':
       return value > 0 && value < 100; // Reasonable VO2 max range
     case 'hrv':
@@ -168,7 +173,7 @@ export async function POST(request: NextRequest) {
       // Convert to standard format
       const normalizedMeasurements: HealthMeasurement[] = validMeasurements.map((item: RawMeasurement) => ({
         date: item.timestamp?.endsWith('Z') ? item.timestamp : `${item.timestamp || ''}Z`,
-        value: item.value,
+        value: measurementType === 'weight' ? convertKgToLbs(item.value) : item.value,
         source: config.source,
         unit: config.unit,
         metadata: {
