@@ -4,23 +4,22 @@ import ThemeToggle from './components/ThemeToggle';
 
 function LifetimeOfferBanner() {
   return (
-    <div className="relative z-50 bg-gradient-to-r from-indigo-500/90 via-purple-500/90 to-indigo-500/90 dark:from-indigo-500/80 dark:via-purple-500/80 dark:to-indigo-500/80 dark:bg-opacity-90 backdrop-blur-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-        <div className="flex items-center justify-center gap-4 flex-wrap">
-          <div className="text-white/95 dark:text-white/90 text-sm sm:text-base font-medium flex items-center flex-wrap">
-            <span className="mr-2">🎉</span>
-            <span className="font-bold">Limited Beta Offer:</span>
-            <span className="ml-2">Lifetime membership</span>
+    <button
+      onClick={() => window.location.href = '/auth/checkout'}
+      className="relative z-50 w-full group cursor-pointer"
+    >
+      <div className="bg-indigo-600/5 dark:bg-indigo-600/10 border-b border-indigo-600/5 dark:border-indigo-400/5 hover:bg-indigo-600/10 dark:hover:bg-indigo-600/15 transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <p className="text-indigo-600 dark:text-indigo-300 text-sm font-medium flex items-center flex-wrap gap-1.5">
+              <span>🔥</span>
+              <span className="font-semibold">Limited-Time Beta Pricing</span>
+              <span className="text-purple-500 dark:text-purple-300 font-medium">Ending Soon!</span>
+            </p>
           </div>
-          <button
-            onClick={() => window.location.href = '/auth/checkout'}
-            className="relative z-50 inline-flex items-center px-4 py-2 border border-white/80 dark:border-white/70 rounded-full text-sm font-medium text-white/95 dark:text-white/90 hover:bg-white/20 dark:hover:bg-white/10 transition-colors cursor-pointer select-none"
-          >
-            Get it now →
-          </button>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 
