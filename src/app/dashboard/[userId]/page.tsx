@@ -260,12 +260,42 @@ interface ActivityFeedItem {
   metrics: {
     [key: string]: string;
   };
-  sleepStages?: {
-    [key: string]: {
-      percentage: number;
-      duration: string;
-    };
+  sleepStages?: Record<string, {
+    percentage: number;
+    duration: string;
+  }>;
+}
+
+// Add this component definition before your main component
+function SleepStagesBar({ stages }: { 
+  stages: Record<string, { percentage: number; duration: string }> 
+}) {
+  const stageColors = {
+    deep: 'bg-indigo-600 dark:bg-indigo-500',
+    light: 'bg-blue-400 dark:bg-blue-300',
+    rem: 'bg-purple-500 dark:bg-purple-400',
+    awake: 'bg-gray-300 dark:bg-gray-600'
   };
+
+  return (
+    <div className="space-y-4">
+      {/* Sleep stage bars */}
+      {Object.entries(stages).map(([stage, { percentage, duration }]) => (
+        <div key={stage} className="space-y-1">
+          <div className="flex justify-between text-sm">
+            <span className="capitalize text-gray-700 dark:text-gray-300">{stage}</span>
+            <span className="text-gray-500 dark:text-gray-400">{duration} ({percentage}%)</span>
+          </div>
+          <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+            <div 
+              className={`h-full ${stageColors[stage as keyof typeof stageColors]} transition-all`}
+              style={{ width: `${percentage}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function Home() {
@@ -329,52 +359,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'home' | 'metrics' | 'blood'>('home');
   const [isAddResultsModalOpen, setIsAddResultsModalOpen] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [activityFeed] = useState<ActivityFeedItem[]>([
-    {
-      id: '1',
-      type: 'sleep',
-      startTime: '2024-03-20T23:00:00',
-      endTime: '2024-03-21T06:45:00',
-      title: '8h 15m',
-      subtitle: 'Time asleep',
-      metrics: {
-        'Sleep score': '100%',
-        'RHR': '42',
-        'HRV': '117'
-      },
-      sleepStages: {
-        deep: { percentage: 30, duration: '3h 15m' },
-        rem: { percentage: 20, duration: '2h' },
-        core: { percentage: 25, duration: '2h 30m' },
-        light: { percentage: 25, duration: '2h 30m' }
-      }
-    },
-    {
-      id: '2',
-      type: 'workout',
-      startTime: '2024-03-20T10:52:00',
-      endTime: '2024-03-20T11:44:00',
-      title: 'Strength Training',
-      subtitle: 'Upper Body Focus',
-      metrics: {
-        'duration': '45m',
-        'calories': '420',
-        'intensity': 'High'
-      }
-    },
-    {
-      id: '3',
-      type: 'meal',
-      startTime: '2024-03-20T12:30:00',
-      title: 'Lunch',
-      metrics: {
-        'calories': '650',
-        'protein': '35g',
-        'carbs': '45g',
-        'fat': '25g'
-      }
-    }
-  ]);
+  const [activityFeed, setActivityFeed] = useState<ActivityFeedItem[]>([]);
 
   // Add useEffect for title update
   useEffect(() => {
@@ -418,7 +403,7 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-        setError(null);
+      setError(null);
       if (!userId) {
         console.error('No userId available');
         setError('User ID is required to view health data');
@@ -455,6 +440,7 @@ export default function Home() {
       // Add timestamp to each request to prevent caching
       const timestamp = Date.now();
       
+      // Fetch health data
       const [heartRateRes, weightRes, bodyFatRes, hrvRes, vo2maxRes, bloodMarkersRes] = await Promise.all([
         fetch(`/api/health-data?type=heartRate&userId=${userId}&t=${timestamp}`, {
           headers: {
@@ -491,7 +477,7 @@ export default function Home() {
             'Expires': '0'
           }
         }),
-        fetch(`/api/blood-markers?userId=${userId}&t=${timestamp}`, {
+        fetch(`/api/health-data?type=bloodMarkers&userId=${userId}&t=${timestamp}`, {
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
@@ -500,9 +486,28 @@ export default function Home() {
         })
       ]);
 
+      // Fetch sleep data separately
+      const sleepRes = await fetch(`/api/health-data?type=sleep&userId=${userId}&t=${timestamp}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+
       // Check if any request failed
-      if (!heartRateRes.ok || !weightRes.ok || !bodyFatRes.ok || !hrvRes.ok || !vo2maxRes.ok || !bloodMarkersRes.ok) {
-        throw new Error('Failed to fetch some health data');
+      const failedRequests = [];
+      if (!heartRateRes.ok) failedRequests.push('heartRate');
+      if (!weightRes.ok) failedRequests.push('weight');
+      if (!bodyFatRes.ok) failedRequests.push('bodyFat');
+      if (!hrvRes.ok) failedRequests.push('hrv');
+      if (!vo2maxRes.ok) failedRequests.push('vo2max');
+      if (!bloodMarkersRes.ok) failedRequests.push('bloodMarkers');
+      if (!sleepRes.ok) failedRequests.push('sleep');
+
+      if (failedRequests.length > 0) {
+        console.error('Failed requests:', failedRequests);
+        throw new Error(`Failed to fetch: ${failedRequests.join(', ')}`);
       }
 
       const responses = await Promise.all([
@@ -511,14 +516,24 @@ export default function Home() {
         bodyFatRes.json(),
         hrvRes.json(),
         vo2maxRes.json(),
-        bloodMarkersRes.json()
+        bloodMarkersRes.json(),
+        sleepRes.json()
       ]);
 
-      const [heartRateData, weightData, bodyFatData, hrvData, vo2maxData, bloodMarkersData] = responses;
+      const [heartRateData, weightData, bodyFatData, hrvData, vo2maxData, bloodMarkersData, sleepResponse] = responses;
 
-      if (!heartRateData.success || !weightData.success || !bodyFatData.success || !hrvData.success || !vo2maxData.success || !bloodMarkersData.success) {
-        console.error('One or more data fetches failed:', responses);
-        throw new Error('Failed to fetch some data');
+      const failedData = [];
+      if (!heartRateData.success) failedData.push('heartRate');
+      if (!weightData.success) failedData.push('weight');
+      if (!bodyFatData.success) failedData.push('bodyFat');
+      if (!hrvData.success) failedData.push('hrv');
+      if (!vo2maxData.success) failedData.push('vo2max');
+      if (!bloodMarkersData.success) failedData.push('bloodMarkers');
+      if (!sleepResponse.success) failedData.push('sleep');
+
+      if (failedData.length > 0) {
+        console.error('Failed data:', failedData);
+        throw new Error(`Failed to process: ${failedData.join(', ')}`);
       }
 
       // Process blood markers data
@@ -741,13 +756,79 @@ export default function Home() {
         setVo2maxTimeRange('last1year');
       }
 
+      // Process sleep data with debug logs
+      console.log('Sleep response:', sleepResponse);
+      if (sleepResponse.success && sleepResponse.data) {
+        console.log('Raw sleep data:', sleepResponse.data);
+        const sleepEntries = sleepResponse.data.map((entry: any) => {
+          console.log('Processing sleep entry:', entry);
+          const startDate = new Date(entry.data.startDate);
+          const endDate = new Date(entry.data.endDate);
+          
+          // Ensure stageDurations exists with default values
+          const stageDurations = entry.data.stageDurations || {
+            deep: 0,
+            light: 0,
+            rem: 0,
+            awake: 0
+          };
+          
+          // Calculate total sleep time (excluding awake time)
+          const totalSleepMinutes = 
+            (stageDurations.deep || 0) +
+            (stageDurations.light || 0) +
+            (stageDurations.rem || 0);
+          
+          const totalSleepHours = totalSleepMinutes / 60;
+          
+          // Calculate percentages for each stage
+          const totalTime = totalSleepMinutes + (stageDurations.awake || 0);
+          const sleepStages = Object.entries(stageDurations).reduce((acc, [stage, duration]) => {
+            const hours = Math.floor((duration as number) / 60);
+            const minutes = Math.round((duration as number) % 60);
+            const percentage = totalTime > 0 ? Math.round(((duration as number) / totalTime) * 100) : 0;
+            
+            acc[stage] = {
+              percentage,
+              duration: `${hours}h ${minutes}m`
+            };
+            return acc;
+          }, {} as Record<string, { percentage: number; duration: string }>);
+
+          const sleepEntry = {
+            id: entry.timestamp || new Date(entry.data.startDate).toISOString(),
+            type: 'sleep' as const,
+            startTime: entry.data.startDate,
+            endTime: entry.data.endDate,
+            title: `${Math.floor(totalSleepHours)}h ${Math.round((totalSleepHours % 1) * 60)}m`,
+            subtitle: 'Time asleep',
+            metrics: {
+              'Deep sleep': sleepStages.deep.duration,
+              'Light sleep': sleepStages.light.duration,
+              'REM sleep': sleepStages.rem.duration,
+              'Awake': sleepStages.awake.duration
+            },
+            sleepStages
+          };
+          
+          console.log('Processed sleep entry:', sleepEntry);
+          return sleepEntry;
+        });
+
+        console.log('Final sleep entries:', sleepEntries);
+        setActivityFeed(sleepEntries);
+      } else {
+        console.log('No sleep data available or failed to fetch');
+      }
+
       return {
         heartRate: heartRateData.data || [],
         weight: weightData.data || [],
         bodyFat: bodyFatData.data || [],
         hrv: hrvData.data || [],
         vo2max: vo2maxData.data || [],
-        bloodMarkers: processedBloodMarkers
+        bloodMarkers: processedBloodMarkers,
+        loading: false
       };
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -1574,38 +1655,8 @@ export default function Home() {
 
                               {/* Sleep stages */}
                               {item.sleepStages && (
-                                <div className="grid grid-cols-4 gap-4">
-                                  {Object.entries(item.sleepStages).map(([stage, data]) => (
-                                    <div key={stage} className="flex flex-col">
-                                      <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden mb-3">
-                                        <div
-                                          className={`h-full ${
-                                            stage === 'deep' ? 'bg-blue-600' :
-                                            stage === 'rem' ? 'bg-blue-400' :
-                                            stage === 'core' ? 'bg-blue-500' :
-                                            'bg-red-400'
-                                          }`}
-                                          style={{ height: `${data.percentage}%` }}
-                                        />
-                                      </div>
-                                      <div className="flex items-center justify-center mb-1">
-                                        <div className={`w-2 h-2 rounded-full ${
-                                          stage === 'deep' ? 'bg-blue-600' :
-                                          stage === 'rem' ? 'bg-blue-400' :
-                                          stage === 'core' ? 'bg-blue-500' :
-                                          'bg-red-400'
-                                        }`} />
-                                      </div>
-                                      <div className="text-center">
-                                        <div className="text-sm font-medium text-gray-900 dark:text-white capitalize">
-                                          {stage}
-                                        </div>
-                                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                                          {data.duration}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
+                                <div className="mt-4">
+                                  <SleepStagesBar stages={item.sleepStages} />
                                 </div>
                               )}
                             </>

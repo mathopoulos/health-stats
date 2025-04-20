@@ -281,6 +281,13 @@ export async function fetchAllHealthData(type: HealthDataType, userId: string): 
     try {
       try {
         const data = await fetchDataFile(key);
+        
+        // Handle sleep data which is stored as a single object
+        if (type === 'sleep' && !Array.isArray(data)) {
+          return data ? [data] : [];
+        }
+        
+        // Handle array data for other types
         return Array.isArray(data) ? data : [];
       } catch (error) {
         // If we're looking for bodyFat but couldn't find it, try the lowercase variant
@@ -292,6 +299,7 @@ export async function fetchAllHealthData(type: HealthDataType, userId: string): 
         throw error; // Re-throw for other data types
       }
     } catch (error) {
+      console.log(`No data found for ${type}:`, error);
       return [];
     }
   } catch (error) {
