@@ -2140,7 +2140,7 @@ export default function Home() {
                           
                           // Previous period (older half of the data)
                           const previousPeriodData = rangeData.slice(-periodLength, -halfPeriod);
-                          const prevAvg = previousPeriodData.length > 0
+                          const previousAvg = previousPeriodData.length > 0
                             ? previousPeriodData.reduce((sum, item) => sum + item.value, 0) / previousPeriodData.length
                             : 0;
                           
@@ -2150,7 +2150,7 @@ export default function Home() {
                             return (
                               <TrendIndicator 
                                 current={currentAvg} 
-                                previous={prevAvg} 
+                                previous={previousAvg} 
                                 isFitnessMetric={true}
                                 showTimeRange={true}
                                 timeRangeLabel={getTimeRangeLabel(weightTimeRange)}
@@ -2280,27 +2280,27 @@ export default function Home() {
                           
                           // Previous period (older half of the data)
                           const previousPeriodData = rangeData.slice(-periodLength, -halfPeriod);
-                          const prevAvg = previousPeriodData.length > 0
+                          const previousAvg = previousPeriodData.length > 0
                             ? previousPeriodData.reduce((sum, item) => sum + item.value, 0) / previousPeriodData.length
                             : 0;
                           
                           // Only show if we have enough data
-                          if (currentPeriodData.length > 0 && previousPeriodData.length > 0 && prevAvg > 0) {
+                          if (currentPeriodData.length > 0 && previousPeriodData.length > 0 && previousAvg > 0) {
                             // For body fat, a decrease is typically considered positive
-                            const isPositiveTrend = currentAvg < prevAvg;
+                            const isPositiveTrend = currentAvg < previousAvg;
                             
                             return (
                               <TrendIndicator 
                                 current={currentAvg} 
-                                previous={prevAvg} 
+                                previous={previousAvg} 
                                 isFitnessMetric={true}
                                 isBodyFat={true}
                                 showTimeRange={true}
                                 timeRangeLabel={getTimeRangeLabel(bodyFatTimeRange)}
                                 customColors={{
-                                  bgColor: 'bg-amber-50 dark:bg-amber-900/20',
-                                  textColor: 'text-amber-600 dark:text-amber-400',
-                                  iconColor: 'text-amber-500'
+                                  bgColor: 'bg-green-50 dark:bg-green-900/20',
+                                  textColor: 'text-green-600 dark:text-green-400',
+                                  iconColor: 'text-green-500'
                                 }}
                                 className="ml-0 sm:ml-3"
                               />
