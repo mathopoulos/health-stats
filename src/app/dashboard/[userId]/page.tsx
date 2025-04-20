@@ -927,27 +927,27 @@ export default function Home() {
       case 'last30days':
         startDate = new Date(now);
         startDate.setDate(startDate.getDate() - 30);
-        aggregationType = 'daily'; // Show every data point
+        aggregationType = 'daily';
         break;
       case 'last3months':
         startDate = new Date(now);
         startDate.setMonth(startDate.getMonth() - 3);
-        aggregationType = 'weekly'; // Aggregate by week
+        aggregationType = 'weekly';
         break;
       case 'last6months':
         startDate = new Date(now);
         startDate.setMonth(startDate.getMonth() - 6);
-        aggregationType = 'weekly'; // Aggregate by week
+        aggregationType = 'weekly';
         break;
       case 'last1year':
         startDate = new Date(now);
         startDate.setFullYear(startDate.getFullYear() - 1);
-        aggregationType = 'monthly'; // Aggregate by month
+        aggregationType = 'monthly';
         break;
       case 'last3years':
         startDate = new Date(now);
         startDate.setFullYear(startDate.getFullYear() - 3);
-        aggregationType = 'monthly'; // Aggregate by month
+        aggregationType = 'monthly';
         break;
       default:
         startDate = new Date(now);
@@ -961,12 +961,36 @@ export default function Home() {
     // If no data points in the range, return empty array
     if (filteredData.length === 0) return [];
     
-    // Return raw data for daily view
+    // For daily view (30 days), return the raw data points
     if (aggregationType === 'daily') {
-      return filteredData;
+      // Ensure we have at most one data point per day
+      const dailyData = new Map<string, { data: HealthData; count: number }>();
+      
+      filteredData.forEach(item => {
+        const dateKey = new Date(item.date).toISOString().split('T')[0];
+        if (!dailyData.has(dateKey)) {
+          dailyData.set(dateKey, { 
+            data: { ...item, value: Number(item.value.toFixed(2)) }, 
+            count: 1 
+          });
+        } else {
+          const existing = dailyData.get(dateKey)!;
+          // Average the values and round to 2 decimal places
+          const newValue = (existing.data.value * existing.count + item.value) / (existing.count + 1);
+          existing.data.value = Number(newValue.toFixed(2));
+          existing.count += 1;
+        }
+      });
+      
+      return Array.from(dailyData.entries()).map(([date, { data, count }]) => ({
+        ...data,
+        meta: {
+          pointCount: count
+        }
+      })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     }
     
-    // Aggregate data based on the aggregation type
+    // For weekly or monthly views, use aggregation
     return aggregateData(filteredData, aggregationType);
   };
   
@@ -1123,7 +1147,8 @@ export default function Home() {
       
       // Show aggregation info if present
       const aggregationInfo = data.meta?.aggregationType ? 
-        `(${data.meta.aggregationType === 'weekly' ? 'Weekly' : 'Monthly'} average of ${data.meta.pointCount} readings)` : '';
+        `(${data.meta.aggregationType === 'weekly' ? 'Weekly' : 'Monthly'} average of ${data.meta.pointCount} readings)` :
+        data.meta?.pointCount ? `(Daily average of ${data.meta.pointCount} readings)` : '';
       
       return (
         <div className="bg-white dark:bg-gray-800 p-3 rounded shadow-md border border-gray-200 dark:border-gray-700">
