@@ -272,28 +272,40 @@ function SleepStagesBar({ stages }: {
 }) {
   const stageColors = {
     deep: 'bg-indigo-600 dark:bg-indigo-500',
-    light: 'bg-blue-400 dark:bg-blue-300',
+    core: 'bg-blue-500 dark:bg-blue-400',
     rem: 'bg-purple-500 dark:bg-purple-400',
     awake: 'bg-gray-300 dark:bg-gray-600'
   };
 
+  // Define the order we want to display the stages
+  const stageOrder = ['deep', 'core', 'rem', 'awake'];
+
   return (
     <div className="space-y-4">
       {/* Sleep stage bars */}
-      {Object.entries(stages).map(([stage, { percentage, duration }]) => (
-        <div key={stage} className="space-y-1">
-          <div className="flex justify-between text-sm">
-            <span className="capitalize text-gray-700 dark:text-gray-300">{stage}</span>
-            <span className="text-gray-500 dark:text-gray-400">{duration} ({percentage}%)</span>
+      {stageOrder.map((stage) => {
+        const stageData = stages[stage];
+        if (!stageData) return null;
+
+        return (
+          <div key={stage} className="space-y-1">
+            <div className="flex justify-between text-sm">
+              <span className="capitalize text-gray-700 dark:text-gray-300">
+                {stage === 'rem' ? 'REM' : stage.charAt(0).toUpperCase() + stage.slice(1)}
+              </span>
+              <span className="text-gray-500 dark:text-gray-400">
+                {stageData.duration} ({stageData.percentage}%)
+              </span>
+            </div>
+            <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+              <div 
+                className={`h-full ${stageColors[stage as keyof typeof stageColors]} transition-all`}
+                style={{ width: `${stageData.percentage}%` }}
+              />
+            </div>
           </div>
-          <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-            <div 
-              className={`h-full ${stageColors[stage as keyof typeof stageColors]} transition-all`}
-              style={{ width: `${percentage}%` }}
-            />
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -768,7 +780,7 @@ export default function Home() {
           // Ensure stageDurations exists with default values
           const stageDurations = entry.data.stageDurations || {
             deep: 0,
-            light: 0,
+            core: 0,
             rem: 0,
             awake: 0
           };
@@ -776,7 +788,7 @@ export default function Home() {
           // Calculate total sleep time (excluding awake time)
           const totalSleepMinutes = 
             (stageDurations.deep || 0) +
-            (stageDurations.light || 0) +
+            (stageDurations.core || 0) +
             (stageDurations.rem || 0);
           
           const totalSleepHours = totalSleepMinutes / 60;
@@ -804,7 +816,7 @@ export default function Home() {
             subtitle: 'Time asleep',
             metrics: {
               'Deep sleep': sleepStages.deep.duration,
-              'Light sleep': sleepStages.light.duration,
+              'Core sleep': sleepStages.core.duration,
               'REM sleep': sleepStages.rem.duration,
               'Awake': sleepStages.awake.duration
             },

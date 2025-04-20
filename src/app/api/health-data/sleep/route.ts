@@ -7,7 +7,7 @@ const IOS_USER_ID = '100492380040453908509';
 // Define the schema for sleep stage durations
 const StageDurationsSchema = z.object({
   deep: z.number().min(0),
-  light: z.number().min(0),
+  core: z.number().min(0),
   rem: z.number().min(0),
   awake: z.number().min(0)
 });
