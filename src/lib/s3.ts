@@ -357,27 +357,37 @@ export async function saveHealthData(healthData: HealthData): Promise<void> {
         const existingData = await fetchDataFile(key);
         let sleepArray = Array.isArray(existingData) ? existingData : (existingData ? [existingData] : []);
         
-        // Check if this sleep session already exists
-        const isDuplicate = sleepArray.some(session => {
-          return session.data.startDate === healthData.data.startDate &&
-                 session.data.endDate === healthData.data.endDate;
-        });
-
-        if (!isDuplicate) {
-          // Add the new sleep session only if it's not a duplicate
-          sleepArray.push(healthData);
+        // Handle both single sleep entry and array of sleep entries
+        const newSleepData = Array.isArray(healthData.data) ? healthData.data : [healthData.data];
+        
+        // Process each sleep entry
+        for (const sleepEntry of newSleepData) {
+          const newEntry = {
+            ...healthData,
+            data: sleepEntry
+          };
           
-          // Sort by startDate in descending order (most recent first)
-          sleepArray.sort((a, b) => {
-            const dateA = new Date(a.data.startDate);
-            const dateB = new Date(b.data.startDate);
-            return dateB.getTime() - dateA.getTime();
+          // Check if this sleep session already exists
+          const isDuplicate = sleepArray.some(session => {
+            return session.data.startDate === sleepEntry.startDate &&
+                   session.data.endDate === sleepEntry.endDate;
           });
-          
-          console.log(`Adding new sleep session: ${healthData.data.startDate} to ${healthData.data.endDate}`);
-        } else {
-          console.log(`Skipping duplicate sleep session: ${healthData.data.startDate} to ${healthData.data.endDate}`);
+
+          if (!isDuplicate) {
+            // Add the new sleep session only if it's not a duplicate
+            sleepArray.push(newEntry);
+            console.log(`Adding new sleep session: ${sleepEntry.startDate} to ${sleepEntry.endDate}`);
+          } else {
+            console.log(`Skipping duplicate sleep session: ${sleepEntry.startDate} to ${sleepEntry.endDate}`);
+          }
         }
+        
+        // Sort by startDate in descending order (most recent first)
+        sleepArray.sort((a, b) => {
+          const dateA = new Date(a.data.startDate);
+          const dateB = new Date(b.data.startDate);
+          return dateB.getTime() - dateA.getTime();
+        });
         
         // Save the updated array
         const command = new PutObjectCommand({
@@ -390,14 +400,19 @@ export async function saveHealthData(healthData: HealthData): Promise<void> {
         console.log(`Saved ${sleepArray.length} sleep sessions to ${key}`);
       } catch (error) {
         // If no existing file or other error, create new array with this session
+        const dataToSave = Array.isArray(healthData.data) 
+          ? healthData.data.map(entry => ({ ...healthData, data: entry }))
+          : [healthData];
+          
         const command = new PutObjectCommand({
           Bucket: BUCKET_NAME,
           Key: key,
-          Body: JSON.stringify([healthData]),
+          Body: JSON.stringify(dataToSave),
           ContentType: 'application/json',
         });
         await s3Client.send(command);
-        console.log(`Created new sleep.json with 1 session: ${healthData.data.startDate} to ${healthData.data.endDate}`);
+        const sessionCount = Array.isArray(healthData.data) ? healthData.data.length : 1;
+        console.log(`Created new sleep.json with ${sessionCount} session(s)`);
       }
     } else {
       // For other data types, save as is
