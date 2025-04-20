@@ -1583,9 +1583,6 @@ export default function Home() {
               <div className="bg-white dark:bg-gray-800 rounded-2xl px-10 py-8 shadow-sm">
                 <div className="flex items-center gap-3 mb-10">
                   <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Recent activity</h2>
-                  <span className="inline-flex items-center rounded-md bg-yellow-50 dark:bg-yellow-900/30 px-2 py-1 text-xs font-medium text-yellow-800 dark:text-yellow-300 ring-1 ring-inset ring-yellow-600/20">
-                    Coming soon - placeholder data
-                  </span>
                 </div>
                 <div className="space-y-12 relative px-2">
                   {/* Timeline vertical line */}
