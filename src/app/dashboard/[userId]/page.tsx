@@ -1597,21 +1597,24 @@ export default function Home() {
                 <div className="flex items-center gap-3 mb-10">
                   <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Recent activity</h2>
                 </div>
+                {/* Timeline container */}
                 <div className="space-y-12 relative px-2">
                   {/* Timeline vertical line */}
-                  <div className="absolute left-[7px] top-2 bottom-2 w-[2px] bg-gray-200 dark:bg-gray-700" />
+                  <div className="absolute left-[7px] inset-y-0 w-[2px] bg-gray-200 dark:bg-gray-700" />
                   
                   {activityFeed.map((item, index) => (
-                    <div key={item.id} className="relative pl-10">
-                      {/* Timeline dot */}
-                      <div className={`absolute left-0 top-2 w-4 h-4 rounded-full z-10 ${
-                        item.type === 'sleep' ? 'bg-blue-100 ring-4 ring-blue-500' :
-                        item.type === 'workout' ? 'bg-green-100 ring-4 ring-green-500' :
-                        'bg-orange-100 ring-4 ring-orange-500'
-                      }`} />
+                    <div key={item.id} className="flex">
+                      {/* Timeline dot container */}
+                      <div className="relative flex-shrink-0 w-4 mr-6">
+                        <div className={`absolute -left-[5px] w-4 h-4 rounded-full z-10 ${
+                          item.type === 'sleep' ? 'bg-blue-100 ring-4 ring-blue-500' :
+                          item.type === 'workout' ? 'bg-green-100 ring-4 ring-green-500' :
+                          'bg-orange-100 ring-4 ring-orange-500'
+                        }`} />
+                      </div>
                       
                       {/* Activity content */}
-                      <div className="mb-8">
+                      <div className="flex-grow mb-8">
                         {/* Date and Time range */}
                         <div className="text-gray-600 dark:text-gray-400 text-sm mb-4">
                           {item.startTime && (
