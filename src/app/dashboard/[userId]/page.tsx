@@ -276,9 +276,9 @@ interface SleepStagesBarProps {
 }
 
 const SLEEP_STAGE_TARGETS = {
-  deep: { target: 0.20, color: 'bg-indigo-600', label: 'Deep Sleep' },
-  core: { target: 0.55, color: 'bg-blue-500', label: 'Core Sleep' },
-  rem: { target: 0.25, color: 'bg-purple-500', label: 'REM Sleep' }
+  deep: { target: 90, color: 'bg-indigo-600', label: 'Deep Sleep' }, // 1.5 hours
+  core: { target: 240, color: 'bg-blue-500', label: 'Core Sleep' }, // 4 hours
+  rem: { target: 120, color: 'bg-purple-500', label: 'REM Sleep' }  // 2 hours
 } as const;
 
 function SleepStagesBar({ stageDurations }: SleepStagesBarProps) {
@@ -286,13 +286,19 @@ function SleepStagesBar({ stageDurations }: SleepStagesBarProps) {
     return <div className="text-sm text-gray-500">No sleep data available</div>;
   }
 
+  // Helper function to convert duration string (e.g., "1h 30m") to minutes
+  const durationToMinutes = (duration: string): number => {
+    const hours = duration.match(/(\d+)h/)?.[1] || '0';
+    const minutes = duration.match(/(\d+)m/)?.[1] || '0';
+    return parseInt(hours) * 60 + parseInt(minutes);
+  };
+
   return (
     <div className="space-y-4">
       {Object.entries(SLEEP_STAGE_TARGETS).map(([stage, { target, color, label }]) => {
         const stageData = stageDurations[stage];
-        const actualPercentage = stageData?.percentage ?? 0;
-        const targetPercentage = Number((target * 100).toFixed(1));
-        const percentageOfTarget = Math.min(100, (actualPercentage / targetPercentage) * 100);
+        const durationMinutes = stageData ? durationToMinutes(stageData.duration) : 0;
+        const percentageOfTarget = Math.min(100, (durationMinutes / target) * 100);
         
         return (
           <div key={stage} className="space-y-2">
@@ -304,10 +310,10 @@ function SleepStagesBar({ stageDurations }: SleepStagesBarProps) {
                 </span>
               </div>
               <div className="text-xs">
-                <span className={`font-medium ${actualPercentage >= targetPercentage ? 'text-green-500' : 'text-gray-500'}`}>
-                  {actualPercentage.toFixed(1)}%
+                <span className={`font-medium ${durationMinutes >= target ? 'text-green-500' : 'text-gray-500'}`}>
+                  {durationMinutes}min
                 </span>
-                <span className="text-gray-400 dark:text-gray-500"> / {targetPercentage}% target</span>
+                <span className="text-gray-400 dark:text-gray-500"> / {target}min target</span>
               </div>
             </div>
             <div className="relative h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
