@@ -1590,24 +1590,30 @@ export default function Home() {
                       
                       {/* Activity content */}
                       <div className="mb-8">
-                        {/* Time range */}
+                        {/* Date and Time range */}
                         <div className="text-gray-600 dark:text-gray-400 text-sm mb-4">
                           {item.startTime && (
-                            item.endTime 
-                              ? `${new Date(item.startTime).toLocaleString('en-US', { 
-                                  hour: 'numeric', 
-                                  minute: '2-digit',
-                                  hour12: true 
-                                })} until ${new Date(item.endTime).toLocaleString('en-US', { 
-                                  hour: 'numeric', 
-                                  minute: '2-digit',
-                                  hour12: true 
-                                })}`
-                              : new Date(item.startTime).toLocaleString('en-US', { 
-                                  hour: 'numeric', 
-                                  minute: '2-digit',
-                                  hour12: true 
-                                })
+                            <>
+                              <div className="font-medium mb-1">
+                                {new Date(item.startTime).toLocaleDateString('en-US', {
+                                  weekday: 'long',
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
+                              </div>
+                              <div>
+                                {new Date(item.startTime).toLocaleString('en-US', { 
+                                    hour: 'numeric', 
+                                    minute: '2-digit',
+                                    hour12: true 
+                                  })} until {new Date(item.endTime || item.startTime).toLocaleString('en-US', { 
+                                    hour: 'numeric', 
+                                    minute: '2-digit',
+                                    hour12: true 
+                                  })}
+                              </div>
+                            </>
                           )}
                         </div>
 
@@ -1615,36 +1621,8 @@ export default function Home() {
                         <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-8">
                           {item.type === 'sleep' && (
                             <>
-                              {/* Top metrics grid */}
-                              <div className="grid grid-cols-3 gap-8 mb-12">
-                                <div>
-                                  <div className="text-4xl font-semibold text-gray-900 dark:text-white">
-                                    {item.metrics['Sleep score']}
-                                  </div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                    sleep score
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-4xl font-semibold text-gray-900 dark:text-white">
-                                    {item.metrics['RHR']}
-                                  </div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                    rhr
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-4xl font-semibold text-gray-900 dark:text-white">
-                                    {item.metrics['HRV']}
-                                  </div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                    hrv
-                                  </div>
-                                </div>
-                              </div>
-
                               {/* Time asleep */}
-                              <div className="mb-12">
+                              <div className="mb-8">
                                 <div className="text-2xl font-semibold text-gray-900 dark:text-white">
                                   {item.title}
                                 </div>
@@ -1655,7 +1633,7 @@ export default function Home() {
 
                               {/* Sleep stages */}
                               {item.sleepStages && (
-                                <div className="mt-4">
+                                <div>
                                   <SleepStagesBar stages={item.sleepStages} />
                                 </div>
                               )}
