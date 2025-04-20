@@ -266,41 +266,54 @@ interface ActivityFeedItem {
   }>;
 }
 
-// Add this component definition before your main component
-function SleepStagesBar({ stages }: { 
-  stages: Record<string, { percentage: number; duration: string }> 
-}) {
-  const stageColors = {
-    deep: 'bg-indigo-600 dark:bg-indigo-500',
-    core: 'bg-blue-500 dark:bg-blue-400',
-    rem: 'bg-purple-500 dark:bg-purple-400',
-    awake: 'bg-gray-300 dark:bg-gray-600'
-  };
+interface SleepStage {
+  percentage: number;
+  duration: string;
+}
 
-  // Define the order we want to display the stages
-  const stageOrder = ['deep', 'core', 'rem', 'awake'];
+interface SleepStagesBarProps {
+  stageDurations: Record<string, SleepStage>;
+}
+
+const SLEEP_STAGE_TARGETS = {
+  deep: { target: 0.20, color: 'bg-indigo-600', label: 'Deep Sleep' },
+  core: { target: 0.55, color: 'bg-blue-500', label: 'Core Sleep' },
+  rem: { target: 0.25, color: 'bg-purple-500', label: 'REM Sleep' }
+} as const;
+
+function SleepStagesBar({ stageDurations }: SleepStagesBarProps) {
+  if (!stageDurations) {
+    return <div className="text-sm text-gray-500">No sleep data available</div>;
+  }
 
   return (
     <div className="space-y-4">
-      {/* Sleep stage bars */}
-      {stageOrder.map((stage) => {
-        const stageData = stages[stage];
-        if (!stageData) return null;
-
+      {Object.entries(SLEEP_STAGE_TARGETS).map(([stage, { target, color, label }]) => {
+        const stageData = stageDurations[stage];
+        const actualPercentage = stageData?.percentage ?? 0;
+        const targetPercentage = Number((target * 100).toFixed(1));
+        const percentageOfTarget = Math.min(100, (actualPercentage / targetPercentage) * 100);
+        
         return (
-          <div key={stage} className="space-y-1">
-            <div className="flex justify-between text-sm">
-              <span className="capitalize text-gray-700 dark:text-gray-300">
-                {stage === 'rem' ? 'REM' : stage.charAt(0).toUpperCase() + stage.slice(1)}
-              </span>
-              <span className="text-gray-500 dark:text-gray-400">
-                {stageData.duration} ({stageData.percentage}%)
-              </span>
+          <div key={stage} className="space-y-2">
+            <div className="flex justify-between items-center">
+              <div>
+                <span className="text-sm font-medium">{label}</span>
+                <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                  {stageData?.duration || '0min'}
+                </span>
+              </div>
+              <div className="text-xs">
+                <span className={`font-medium ${actualPercentage >= targetPercentage ? 'text-green-500' : 'text-gray-500'}`}>
+                  {actualPercentage.toFixed(1)}%
+                </span>
+                <span className="text-gray-400 dark:text-gray-500"> / {targetPercentage}% target</span>
+              </div>
             </div>
-            <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+            <div className="relative h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
               <div 
-                className={`h-full ${stageColors[stage as keyof typeof stageColors]} transition-all`}
-                style={{ width: `${stageData.percentage}%` }}
+                className={`absolute left-0 top-0 h-full ${color} transition-all duration-500 ease-out`}
+                style={{ width: `${percentageOfTarget}%` }}
               />
             </div>
           </div>
@@ -1643,7 +1656,7 @@ export default function Home() {
                               {/* Sleep stages */}
                               {item.sleepStages && (
                                 <div>
-                                  <SleepStagesBar stages={item.sleepStages} />
+                                  <SleepStagesBar stageDurations={item.sleepStages} />
                                 </div>
                               )}
                             </>
