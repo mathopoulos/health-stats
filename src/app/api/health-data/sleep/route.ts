@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import { saveHealthData } from '@/lib/s3';
 import { z } from 'zod';
 
+const IOS_USER_ID = '100492380040453908509';
+
 const sleepDataSchema = z.object({
-  userId: z.string(),
   startDate: z.string().datetime(),
   endDate: z.string().datetime(),
   sleepStages: z.array(z.object({
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
 
     const sleepData = {
       type: 'sleep' as const,
-      userId: validatedData.userId,
+      userId: IOS_USER_ID,
       data: validatedData,
       timestamp: new Date().toISOString(),
     };
