@@ -2,7 +2,7 @@ import { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command, Del
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { XMLParser } from 'fast-xml-parser/src/fxp';
 
-export type HealthDataType = 'heartRate' | 'weight' | 'bodyFat' | 'hrv' | 'vo2max';
+export type HealthDataType = 'heartRate' | 'weight' | 'bodyFat' | 'hrv' | 'vo2max' | 'sleep';
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || 'us-east-1',
@@ -327,6 +327,30 @@ export async function deleteOldXmlFiles(userId: string): Promise<void> {
     console.log(`Deleted ${xmlFiles.length} old XML files for user ${userId}`);
   } catch (error) {
     console.error('Error deleting old XML files:', error);
+    throw error;
+  }
+}
+
+export interface HealthData {
+  type: HealthDataType;
+  data: any;
+  timestamp: string;
+}
+
+export async function saveHealthData(healthData: HealthData): Promise<void> {
+  const key = `data/${healthData.type}/${Date.now()}.json`;
+  const command = new PutObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: key,
+    Body: JSON.stringify(healthData),
+    ContentType: 'application/json',
+  });
+
+  try {
+    await s3Client.send(command);
+    console.log(`Saved ${healthData.type} data to ${key}`);
+  } catch (error) {
+    console.error(`Error saving ${healthData.type} data:`, error);
     throw error;
   }
 } 
