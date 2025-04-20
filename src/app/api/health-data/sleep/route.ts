@@ -3,6 +3,7 @@ import { saveHealthData } from '@/lib/s3';
 import { z } from 'zod';
 
 const sleepDataSchema = z.object({
+  userId: z.string(),
   startDate: z.string().datetime(),
   endDate: z.string().datetime(),
   sleepStages: z.array(z.object({
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
 
     const sleepData = {
       type: 'sleep' as const,
+      userId: validatedData.userId,
       data: validatedData,
       timestamp: new Date().toISOString(),
     };

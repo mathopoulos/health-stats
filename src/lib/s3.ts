@@ -335,10 +335,11 @@ export interface HealthData {
   type: HealthDataType;
   data: any;
   timestamp: string;
+  userId: string;
 }
 
 export async function saveHealthData(healthData: HealthData): Promise<void> {
-  const key = `data/${healthData.type}/${Date.now()}.json`;
+  const key = `data/${healthData.userId}/${healthData.type}.json`;
   const command = new PutObjectCommand({
     Bucket: BUCKET_NAME,
     Key: key,
