@@ -348,83 +348,67 @@ export interface HealthData {
 
 export async function saveHealthData(healthData: HealthData): Promise<void> {
   const key = `data/${healthData.userId}/${healthData.type}.json`;
-  
+
   try {
-    // For sleep data, we need to maintain an array of sessions
+    // For sleep data, we need to merge with existing data
     if (healthData.type === 'sleep') {
       try {
-        // Try to fetch existing sleep data
+        // Try to get existing data
         const existingData = await fetchDataFile(key);
-        let sleepArray = Array.isArray(existingData) ? existingData : (existingData ? [existingData] : []);
-        
-        // Handle both single sleep entry and array of sleep entries
-        const newSleepData = Array.isArray(healthData.data) ? healthData.data : [healthData.data];
-        
-        // Process each sleep entry
-        for (const sleepEntry of newSleepData) {
-          const newEntry = {
-            ...healthData,
-            data: sleepEntry
-          };
-          
-          // Check if this sleep session already exists
-          const isDuplicate = sleepArray.some(session => {
-            return session.data.startDate === sleepEntry.startDate &&
-                   session.data.endDate === sleepEntry.endDate;
-          });
+        let sleepDataArray = Array.isArray(existingData) ? existingData : existingData ? [existingData] : [];
 
-          if (!isDuplicate) {
-            // Add the new sleep session only if it's not a duplicate
-            sleepArray.push(newEntry);
-            console.log(`Adding new sleep session: ${sleepEntry.startDate} to ${sleepEntry.endDate}`);
-          } else {
-            console.log(`Skipping duplicate sleep session: ${sleepEntry.startDate} to ${sleepEntry.endDate}`);
-          }
+        // Add new data
+        const newEntry = {
+          type: healthData.type,
+          userId: healthData.userId,
+          data: healthData.data,
+          timestamp: healthData.timestamp
+        };
+
+        // Check if we already have this sleep session (based on startDate)
+        const existingIndex = sleepDataArray.findIndex(
+          (entry: any) => entry.data.startDate === healthData.data.startDate
+        );
+
+        if (existingIndex >= 0) {
+          // Update existing entry
+          sleepDataArray[existingIndex] = newEntry;
+        } else {
+          // Add new entry
+          sleepDataArray.push(newEntry);
         }
-        
-        // Sort by startDate in descending order (most recent first)
-        sleepArray.sort((a, b) => {
-          const dateA = new Date(a.data.startDate);
-          const dateB = new Date(b.data.startDate);
-          return dateB.getTime() - dateA.getTime();
-        });
-        
-        // Save the updated array
+
+        // Sort by startDate in descending order (newest first)
+        sleepDataArray.sort((a: any, b: any) => 
+          new Date(b.data.startDate).getTime() - new Date(a.data.startDate).getTime()
+        );
+
+        // Save the merged array
         const command = new PutObjectCommand({
           Bucket: BUCKET_NAME,
           Key: key,
-          Body: JSON.stringify(sleepArray),
+          Body: JSON.stringify(sleepDataArray),
           ContentType: 'application/json',
         });
+
         await s3Client.send(command);
-        console.log(`Saved ${sleepArray.length} sleep sessions to ${key}`);
+        console.log(`Saved merged sleep data to ${key}, total entries: ${sleepDataArray.length}`);
+        return;
       } catch (error) {
-        // If no existing file or other error, create new array with this session
-        const dataToSave = Array.isArray(healthData.data) 
-          ? healthData.data.map(entry => ({ ...healthData, data: entry }))
-          : [healthData];
-          
-        const command = new PutObjectCommand({
-          Bucket: BUCKET_NAME,
-          Key: key,
-          Body: JSON.stringify(dataToSave),
-          ContentType: 'application/json',
-        });
-        await s3Client.send(command);
-        const sessionCount = Array.isArray(healthData.data) ? healthData.data.length : 1;
-        console.log(`Created new sleep.json with ${sessionCount} session(s)`);
+        console.log('No existing sleep data found, creating new file');
       }
-    } else {
-      // For other data types, save as is
-      const command = new PutObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: key,
-        Body: JSON.stringify(healthData),
-        ContentType: 'application/json',
-      });
-      await s3Client.send(command);
-      console.log(`Saved ${healthData.type} data to ${key}`);
     }
+
+    // For non-sleep data or if no existing sleep data
+    const command = new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+      Body: JSON.stringify(healthData),
+      ContentType: 'application/json',
+    });
+
+    await s3Client.send(command);
+    console.log(`Saved ${healthData.type} data to ${key}`);
   } catch (error) {
     console.error(`Error saving ${healthData.type} data:`, error);
     throw error;
