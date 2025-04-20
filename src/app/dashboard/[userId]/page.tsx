@@ -979,11 +979,14 @@ export default function Home() {
       let key: string;
       
       if (aggregationType === 'weekly') {
-        // Get the week start date (Sunday) as key
-        const dayOfWeek = date.getDay();
-        const weekStart = new Date(date);
-        weekStart.setDate(date.getDate() - dayOfWeek);
-        key = weekStart.toISOString().split('T')[0]; // YYYY-MM-DD format
+        // Convert to UTC to avoid timezone issues
+        const utcDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+        // Get the week start date (Sunday) in UTC
+        const dayOfWeek = utcDate.getUTCDay();
+        const weekStart = new Date(utcDate);
+        weekStart.setUTCDate(utcDate.getUTCDate() - dayOfWeek);
+        // Use UTC date string for consistent grouping
+        key = weekStart.toISOString().split('T')[0];
       } else {
         // Monthly aggregation - use YYYY-MM as key
         key = date.toISOString().slice(0, 7); // YYYY-MM format
