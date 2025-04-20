@@ -348,15 +348,54 @@ export interface HealthData {
 
 export async function saveHealthData(healthData: HealthData): Promise<void> {
   const key = `data/${healthData.userId}/${healthData.type}.json`;
-  const command = new PutObjectCommand({
-    Bucket: BUCKET_NAME,
-    Key: key,
-    Body: JSON.stringify(healthData),
-    ContentType: 'application/json',
-  });
-
+  
   try {
-    await s3Client.send(command);
+    // For sleep data, we need to maintain an array of sessions
+    if (healthData.type === 'sleep') {
+      try {
+        // Try to fetch existing sleep data
+        const existingData = await fetchDataFile(key);
+        let sleepArray = Array.isArray(existingData) ? existingData : (existingData ? [existingData] : []);
+        
+        // Add the new sleep session
+        sleepArray.push(healthData);
+        
+        // Sort by startDate in descending order (most recent first)
+        sleepArray.sort((a, b) => {
+          const dateA = new Date(a.data.startDate);
+          const dateB = new Date(b.data.startDate);
+          return dateB.getTime() - dateA.getTime();
+        });
+        
+        // Save the updated array
+        const command = new PutObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: key,
+          Body: JSON.stringify(sleepArray),
+          ContentType: 'application/json',
+        });
+        await s3Client.send(command);
+      } catch (error) {
+        // If no existing file or other error, create new array with this session
+        const command = new PutObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: key,
+          Body: JSON.stringify([healthData]),
+          ContentType: 'application/json',
+        });
+        await s3Client.send(command);
+      }
+    } else {
+      // For other data types, save as is
+      const command = new PutObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key,
+        Body: JSON.stringify(healthData),
+        ContentType: 'application/json',
+      });
+      await s3Client.send(command);
+    }
+    
     console.log(`Saved ${healthData.type} data to ${key}`);
   } catch (error) {
     console.error(`Error saving ${healthData.type} data:`, error);
