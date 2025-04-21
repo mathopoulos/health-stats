@@ -278,7 +278,7 @@ interface SleepStagesBarProps {
 const SLEEP_STAGE_TARGETS = {
   deep: { target: 90, color: 'bg-indigo-600', label: 'Deep Sleep' }, // 1.5 hours
   core: { target: 240, color: 'bg-blue-500', label: 'Core Sleep' }, // 4 hours
-  rem: { target: 120, color: 'bg-purple-500', label: 'REM Sleep' }  // 2 hours
+  rem: { target: 90, color: 'bg-purple-500', label: 'REM Sleep' }  // 1.5 hours
 } as const;
 
 function SleepStagesBar({ stageDurations }: SleepStagesBarProps) {
