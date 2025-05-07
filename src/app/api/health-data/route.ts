@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchAllHealthData, type HealthDataType } from '@/lib/s3';
+import { fetchAllHealthData, type HealthDataType, generatePresignedUploadUrl } from '@/lib/s3';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { processS3XmlFile, generatePresignedUploadUrl } from '@/lib/s3';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -38,16 +37,75 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    let data: Array<{ date: string; value: number }> = [];
-    try {
-      data = await fetchAllHealthData(type as HealthDataType, userId);
-    } catch (error) {
+    let data: Array<any> = [];
+    let success = true;
+    let errorMsg: string | null = null;
+
+    if (type === 'bloodMarkers') {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+        const bloodMarkersUrl = new URL(`/api/blood-markers?userId=${userId}`, baseUrl);
+        
+        if (forceRefresh) {
+          bloodMarkersUrl.searchParams.append('forceRefresh', 'true');
+        }
+
+        const bloodMarkersResponse = await fetch(bloodMarkersUrl.toString(), {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+        
+        if (!bloodMarkersResponse.ok) {
+          const errorData = await bloodMarkersResponse.json().catch(() => ({ error: 'Failed to fetch blood markers and parse error response' }));
+          throw new Error(errorData.error || `Failed to fetch blood markers: ${bloodMarkersResponse.statusText}`);
+        }
+        
+        const bloodMarkersData = await bloodMarkersResponse.json();
+        if (bloodMarkersData.success) {
+          data = bloodMarkersData.data;
+        } else {
+          success = false;
+          errorMsg = bloodMarkersData.error || 'Fetching blood markers was not successful.';
+          data = [];
+        }
+      } catch (e) {
+        console.error('Error fetching blood markers from internal API:', e);
+        success = false;
+        errorMsg = e instanceof Error ? e.message : 'Failed to fetch blood markers due to an unexpected error.';
+        data = [];
+      }
+    } else {
+      try {
+        data = await fetchAllHealthData(type as HealthDataType, userId);
+      } catch (e) {
+        console.error(`Error fetching ${type} data from S3:`, e);
+        return NextResponse.json({
+          success: true,
+          data: [],
+          count: 0,
+          lastUpdated: new Date().toISOString()
+        }, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+      }
+    }
+    
+    if (!success) {
       return NextResponse.json({
-        success: true,
+        success: false,
         data: [],
         count: 0,
+        error: errorMsg || 'Failed to fetch data for the specified type.',
         lastUpdated: new Date().toISOString()
-      }, {
+      }, { 
+        status: 500,
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
@@ -55,7 +113,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         }
       });
     }
-    
+
     return NextResponse.json({
       success: true,
       data,
