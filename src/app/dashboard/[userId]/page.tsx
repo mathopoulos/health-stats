@@ -304,7 +304,7 @@ function SleepStagesBar({ stageDurations }: SleepStagesBarProps) {
           <div key={stage} className="space-y-2">
             <div className="flex justify-between items-center">
               <div>
-                <span className="text-sm font-medium">{label}</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">{label}</span>
                 <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
                   {stageData?.duration || '0min'}
                 </span>
