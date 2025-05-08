@@ -1265,7 +1265,7 @@ export default function Home() {
       return (
         <div className="bg-white dark:bg-gray-800 p-3 rounded shadow-md border border-gray-200 dark:border-gray-700">
           <p className="text-gray-600 dark:text-gray-300 mb-1">{formattedDate}</p>
-          <p className="font-medium">
+          <p className="font-medium text-gray-900 dark:text-white">
             {payload[0].value} {payload[0].unit || ''}
           </p>
           {aggregationInfo && (
