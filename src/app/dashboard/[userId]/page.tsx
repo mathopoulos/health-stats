@@ -13,6 +13,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import ThemeToggle from '@/app/components/ThemeToggle';
 import { useTheme } from '@/app/context/ThemeContext';
 import TrendIndicator from '@/components/TrendIndicator';
+import React from 'react';
 
 interface HealthData {
   date: string;
@@ -2013,7 +2014,21 @@ export default function Home() {
                           dataKey="value" 
                           stroke={isDarkMode ? "#818cf8" : "#4f46e5"} 
                           activeDot={{ r: 6, stroke: isDarkMode ? "#818cf8" : "#4f46e5", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
-                          dot={{ r: 0 }}
+                          dot={(props: any) => { 
+                            const { cx, cy, index } = props; 
+                            const lineColor = isDarkMode ? "#818cf8" : "#4f46e5";
+                            const bgColor = isDarkMode ? "#1f2937" : "#ffffff";
+                            if (index === currentHRVData.length - 1 && currentHRVData.length > 0) { 
+                              return (
+                                <g>
+                                  <circle cx={cx} cy={cy} r={12} fill={lineColor} fillOpacity={0.15} stroke="none" />
+                                  <circle cx={cx} cy={cy} r={8} fill={lineColor} fillOpacity={0.3} stroke="none" />
+                                  <circle cx={cx} cy={cy} r={4} fill={lineColor} stroke={bgColor} strokeWidth={2} />
+                                </g>
+                              );
+                            } 
+                            return <React.Fragment key={index} />; 
+                          }}
                           strokeWidth={2}
                           unit="ms"
                         />
@@ -2155,7 +2170,21 @@ export default function Home() {
                           dataKey="value" 
                           stroke={isDarkMode ? "#f87171" : "#dc2626"} 
                           activeDot={{ r: 6, stroke: isDarkMode ? "#f87171" : "#dc2626", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
-                          dot={{ r: 0 }}
+                          dot={(props: any) => { 
+                            const { cx, cy, index } = props; 
+                            const lineColor = isDarkMode ? "#f87171" : "#dc2626";
+                            const bgColor = isDarkMode ? "#1f2937" : "#ffffff";
+                            if (index === currentVO2MaxData.length - 1 && currentVO2MaxData.length > 0) { 
+                              return (
+                                <g>
+                                  <circle cx={cx} cy={cy} r={12} fill={lineColor} fillOpacity={0.15} stroke="none" />
+                                  <circle cx={cx} cy={cy} r={8} fill={lineColor} fillOpacity={0.3} stroke="none" />
+                                  <circle cx={cx} cy={cy} r={4} fill={lineColor} stroke={bgColor} strokeWidth={2} />
+                                </g>
+                              );
+                            } 
+                            return <React.Fragment key={index} />; 
+                          }}
                           strokeWidth={2}
                           unit="ml/kg/min"
                         />
@@ -2295,7 +2324,21 @@ export default function Home() {
                           dataKey="value" 
                           stroke={isDarkMode ? "#34d399" : "#10b981"} 
                           activeDot={{ r: 6, stroke: isDarkMode ? "#34d399" : "#10b981", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
-                          dot={{ r: 0 }}
+                          dot={(props: any) => { 
+                            const { cx, cy, index } = props; 
+                            const lineColor = isDarkMode ? "#34d399" : "#10b981";
+                            const bgColor = isDarkMode ? "#1f2937" : "#ffffff";
+                            if (index === currentWeightData.length - 1 && currentWeightData.length > 0) { 
+                              return (
+                                <g>
+                                  <circle cx={cx} cy={cy} r={12} fill={lineColor} fillOpacity={0.15} stroke="none" />
+                                  <circle cx={cx} cy={cy} r={8} fill={lineColor} fillOpacity={0.3} stroke="none" />
+                                  <circle cx={cx} cy={cy} r={4} fill={lineColor} stroke={bgColor} strokeWidth={2} />
+                                </g>
+                              );
+                            } 
+                            return <React.Fragment key={index} />; 
+                          }}
                           strokeWidth={2}
                           unit=""
                         />
@@ -2438,7 +2481,21 @@ export default function Home() {
                           dataKey="value" 
                           stroke={isDarkMode ? "#fbbf24" : "#d97706"} 
                           activeDot={{ r: 6, stroke: isDarkMode ? "#fbbf24" : "#d97706", strokeWidth: 1, fill: isDarkMode ? "#1f2937" : "#ffffff" }} 
-                          dot={{ r: 0 }}
+                          dot={(props: any) => { 
+                            const { cx, cy, index } = props; 
+                            const lineColor = isDarkMode ? "#fbbf24" : "#d97706";
+                            const bgColor = isDarkMode ? "#1f2937" : "#ffffff";
+                            if (index === currentBodyFatData.length - 1 && currentBodyFatData.length > 0) { 
+                              return (
+                                <g>
+                                  <circle cx={cx} cy={cy} r={12} fill={lineColor} fillOpacity={0.15} stroke="none" />
+                                  <circle cx={cx} cy={cy} r={8} fill={lineColor} fillOpacity={0.3} stroke="none" />
+                                  <circle cx={cx} cy={cy} r={4} fill={lineColor} stroke={bgColor} strokeWidth={2} />
+                                </g>
+                              );
+                            } 
+                            return <React.Fragment key={index} />; 
+                          }}
                           strokeWidth={2}
                           unit="%"
                         />
