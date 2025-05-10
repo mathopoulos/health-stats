@@ -1904,8 +1904,8 @@ export default function Home() {
 
                           {item.type === 'workout' && (
                             <div>
-                              <div className="mb-6">
-                                <div className="text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                              <div className="mb-5">
+                                <div className="flex items-center gap-3">
                                   {(() => {
                                     // Render emoji based on activity type
                                     const activityType = item.activityType || 'default';
@@ -1919,7 +1919,7 @@ export default function Home() {
                                       'yoga': '🧘',
                                       'pilates': '🤸',
                                       'dance': '💃',
-                                      'elliptical': '⚙️', // Using a generic gear for elliptical
+                                      'elliptical': '⚙️',
                                       'rowing': '🚣',
                                       'stair_climbing': '🧗',
                                       'hiking': '🥾',
@@ -1929,24 +1929,28 @@ export default function Home() {
                                       'golf': '🏌️',
                                       'default': '💪'
                                     };
-                                    return <span className="text-2xl">{emojiMap[activityType] || emojiMap.default}</span>;
+                                    return <span className="text-5xl mr-2">{emojiMap[activityType] || emojiMap.default}</span>;
                                   })()}
-                                  {item.title}
-                                </div>
-                                {item.subtitle && (
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 ml-8">
-                                    {item.subtitle}
+                                  <div>
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">
+                                      {item.title}
+                                    </h3>
+                                    {item.subtitle && (
+                                      <div className="text-base font-medium text-gray-700 dark:text-gray-300 mt-1">
+                                        {item.subtitle}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
+                                </div>
                               </div>
                               
                               {/* Workout details */}
-                              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-5">
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-4">
+                              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                                   {Object.entries(item.metrics).map(([key, value]) => (
                                     <div key={key} className="flex flex-col">
-                                      <div className="text-xs text-gray-500 dark:text-gray-400">{key}</div>
-                                      <div className="text-base font-medium text-gray-800 dark:text-gray-200">{value}</div>
+                                      <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">{key}</div>
+                                      <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{value}</div>
                                     </div>
                                   ))}
                                 </div>
