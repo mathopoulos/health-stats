@@ -141,6 +141,111 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
+      // Special handling for workout data which has a different structure
+      if (type === 'workout') {
+        console.log(`iOS health data: Processing ${measurements.length} workout entries`);
+        
+        // Define the S3 key for workouts
+        const s3Key = `data/${HARDCODED_USER_ID}/${config.fileKey}.json`;
+        
+        // Get existing workout data
+        let existingWorkouts: any[] = [];
+        try {
+          const getObjectCommand = new GetObjectCommand({
+            Bucket: requiredEnvVars.AWS_BUCKET_NAME,
+            Key: s3Key
+          });
+          
+          const response = await s3Client.send(getObjectCommand);
+          const responseBody = await response.Body?.transformToString();
+          
+          if (responseBody) {
+            existingWorkouts = JSON.parse(responseBody);
+            console.log(`iOS health data: Found ${existingWorkouts.length} existing workout records`);
+          }
+        } catch (error) {
+          console.log(`iOS health data: No existing workout data found or error reading data:`, error);
+        }
+        
+        // Filter valid workout entries
+        const validWorkouts = measurements.filter((workout: any) => 
+          workout && 
+          typeof workout.timestamp === 'string' &&
+          typeof workout.startDate === 'string' &&
+          typeof workout.endDate === 'string' &&
+          typeof workout.activityType === 'string' &&
+          typeof workout.duration === 'number'
+        );
+        
+        console.log(`iOS health data: Found ${validWorkouts.length} valid workout entries`);
+        
+        // Format workout data for storage
+        const workoutEntries = validWorkouts.map((workout: any) => ({
+          type: 'workout',
+          userId: HARDCODED_USER_ID,
+          data: {
+            startDate: workout.startDate,
+            endDate: workout.endDate,
+            activityType: workout.activityType,
+            metrics: {
+              duration: workout.duration,
+              ...(workout.distance !== undefined && { distance: workout.distance }),
+              ...(workout.energyBurned !== undefined && { energyBurned: workout.energyBurned }),
+              ...(workout.avgHeartRate !== undefined && { avgHeartRate: workout.avgHeartRate }),
+              ...(workout.maxHeartRate !== undefined && { maxHeartRate: workout.maxHeartRate }),
+              ...(workout.avgCadence !== undefined && { avgCadence: workout.avgCadence }),
+              ...(workout.avgPace !== undefined && { avgPace: workout.avgPace })
+            },
+            source: workout.source || 'iOS App'
+          },
+          timestamp: workout.timestamp
+        }));
+        
+        // Check for duplicates based on startDate
+        const startDateMap = new Map(existingWorkouts.map(entry => 
+          [entry.data?.startDate, true]
+        ));
+        
+        const newWorkoutEntries = workoutEntries.filter(entry => 
+          !startDateMap.has(entry.data.startDate)
+        );
+        
+        console.log(`iOS health data: ${newWorkoutEntries.length} new workout entries to add`);
+        
+        // Combine with existing data
+        const combinedWorkouts = [...existingWorkouts, ...newWorkoutEntries];
+        
+        // Sort by startDate in descending order (newest first)
+        combinedWorkouts.sort((a, b) => 
+          new Date(b.data.startDate).getTime() - new Date(a.data.startDate).getTime()
+        );
+        
+        // Save to S3
+        try {
+          const putObjectCommand = new PutObjectCommand({
+            Bucket: requiredEnvVars.AWS_BUCKET_NAME,
+            Key: s3Key,
+            Body: JSON.stringify(combinedWorkouts),
+            ContentType: 'application/json'
+          });
+          
+          await s3Client.send(putObjectCommand);
+          
+          results.workout = {
+            added: newWorkoutEntries.length,
+            total: combinedWorkouts.length
+          };
+          
+          console.log(`iOS health data: Successfully saved ${combinedWorkouts.length} workout records to S3, added ${newWorkoutEntries.length} new entries`);
+        } catch (saveError) {
+          console.error(`Error saving workout data to S3:`, saveError);
+        }
+        
+        // Skip standard processing for workouts
+        continue;
+      }
+
+      // Standard processing for other measurement types
       // Validate and filter measurements
       const validMeasurements = measurements.filter((m: any) => {
         return m && 
