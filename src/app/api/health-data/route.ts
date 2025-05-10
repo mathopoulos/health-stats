@@ -13,11 +13,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const userId = searchParams.get('userId');
     const forceRefresh = searchParams.get('forceRefresh') === 'true';
 
-    if (!type || !['heartRate', 'weight', 'bodyFat', 'hrv', 'vo2max', 'sleep', 'bloodMarkers'].includes(type)) {
+    if (!type || !['heartRate', 'weight', 'bodyFat', 'hrv', 'vo2max', 'sleep', 'bloodMarkers', 'workout'].includes(type)) {
       return NextResponse.json(
         { 
           success: false,
-          error: 'Invalid type parameter. Must be one of: heartRate, weight, bodyFat, hrv, vo2max, sleep, bloodMarkers',
+          error: 'Invalid type parameter. Must be one of: heartRate, weight, bodyFat, hrv, vo2max, sleep, bloodMarkers, workout',
           data: [],
           count: 0
         },

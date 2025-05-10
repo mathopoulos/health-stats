@@ -7,7 +7,8 @@ const MEASUREMENT_TYPES = {
   hrv: { unit: 'ms', source: 'iOS App', fileKey: 'hrv' },
   vo2max: { unit: 'mL/kg/min', source: 'iOS App', fileKey: 'vo2max' },
   weight: { unit: 'lb', source: 'iOS App', fileKey: 'weight' },
-  bodyfat: { unit: '%', source: 'iOS App', fileKey: 'bodyfat' }
+  bodyfat: { unit: '%', source: 'iOS App', fileKey: 'bodyfat' },
+  workout: { unit: '', source: 'iOS App', fileKey: 'workout' }
 } as const;
 
 type MeasurementType = keyof typeof MEASUREMENT_TYPES;
@@ -84,6 +85,8 @@ function isValidMeasurement(type: MeasurementType, value: number): boolean {
       return value > 0 && value < 100; // Reasonable VO2 max range
     case 'hrv':
       return value > 0 && value < 300; // Reasonable HRV range
+    case 'workout':
+      return true; // For workout, validation is handled differently as it's an object
     default:
       return false;
   }
@@ -124,7 +127,8 @@ export async function POST(request: NextRequest) {
       hrv: { added: 0, total: 0 },
       vo2max: { added: 0, total: 0 },
       weight: { added: 0, total: 0 },
-      bodyfat: { added: 0, total: 0 }
+      bodyfat: { added: 0, total: 0 },
+      workout: { added: 0, total: 0 }
     };
 
     // Process each measurement type

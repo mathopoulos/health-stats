@@ -2,7 +2,7 @@ import { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command, Del
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { XMLParser } from 'fast-xml-parser/src/fxp';
 
-export type HealthDataType = 'heartRate' | 'weight' | 'bodyFat' | 'hrv' | 'vo2max' | 'sleep';
+export type HealthDataType = 'heartRate' | 'weight' | 'bodyFat' | 'hrv' | 'vo2max' | 'sleep' | 'workout';
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || 'us-east-1',
@@ -282,8 +282,8 @@ export async function fetchAllHealthData(type: HealthDataType, userId: string): 
       try {
         const data = await fetchDataFile(key);
         
-        // Handle sleep data which is stored as a single object
-        if (type === 'sleep' && !Array.isArray(data)) {
+        // Handle sleep and workout data which are stored as arrays of objects
+        if ((type === 'sleep' || type === 'workout') && !Array.isArray(data)) {
           return data ? [data] : [];
         }
         
@@ -350,16 +350,16 @@ export async function saveHealthData(healthData: HealthData): Promise<void> {
   const key = `data/${healthData.userId}/${healthData.type}.json`;
 
   try {
-    // For sleep data, always store as array
-    if (healthData.type === 'sleep') {
-      let sleepDataArray: any[] = [];
+    // For sleep and workout data, always store as array
+    if (healthData.type === 'sleep' || healthData.type === 'workout') {
+      let dataArray: any[] = [];
       
       try {
         // Try to get existing data
         const existingData = await fetchDataFile(key);
-        sleepDataArray = Array.isArray(existingData) ? existingData : existingData ? [existingData] : [];
+        dataArray = Array.isArray(existingData) ? existingData : existingData ? [existingData] : [];
       } catch (error) {
-        console.log('No existing sleep data found, starting with empty array');
+        console.log(`No existing ${healthData.type} data found, starting with empty array`);
       }
 
       // Add new data
@@ -370,21 +370,21 @@ export async function saveHealthData(healthData: HealthData): Promise<void> {
         timestamp: healthData.timestamp
       };
 
-      // Check if we already have this sleep session (based on startDate)
-      const existingIndex = sleepDataArray.findIndex(
+      // Check if we already have this session (based on startDate)
+      const existingIndex = dataArray.findIndex(
         (entry: any) => entry.data.startDate === healthData.data.startDate
       );
 
       if (existingIndex >= 0) {
         // Update existing entry
-        sleepDataArray[existingIndex] = newEntry;
+        dataArray[existingIndex] = newEntry;
       } else {
         // Add new entry
-        sleepDataArray.push(newEntry);
+        dataArray.push(newEntry);
       }
 
       // Sort by startDate in descending order (newest first)
-      sleepDataArray.sort((a: any, b: any) => 
+      dataArray.sort((a: any, b: any) => 
         new Date(b.data.startDate).getTime() - new Date(a.data.startDate).getTime()
       );
 
@@ -392,16 +392,16 @@ export async function saveHealthData(healthData: HealthData): Promise<void> {
       const command = new PutObjectCommand({
         Bucket: BUCKET_NAME,
         Key: key,
-        Body: JSON.stringify(sleepDataArray),
+        Body: JSON.stringify(dataArray),
         ContentType: 'application/json',
       });
 
       await s3Client.send(command);
-      console.log(`Saved sleep data to ${key}, total entries: ${sleepDataArray.length}`);
+      console.log(`Saved ${healthData.type} data to ${key}, total entries: ${dataArray.length}`);
       return;
     }
 
-    // For non-sleep data
+    // For non-sleep/workout data
     const command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,
