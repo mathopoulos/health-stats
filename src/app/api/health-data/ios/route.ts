@@ -173,7 +173,11 @@ export async function POST(request: NextRequest) {
       // Convert to standard format
       const normalizedMeasurements: HealthMeasurement[] = validMeasurements.map((item: RawMeasurement) => ({
         date: item.timestamp?.endsWith('Z') ? item.timestamp : `${item.timestamp || ''}Z`,
-        value: measurementType === 'weight' ? convertKgToLbs(item.value) : item.value,
+        value: measurementType === 'weight'
+                 ? convertKgToLbs(item.value)
+                 : (measurementType === 'bodyfat'
+                    ? Math.round(item.value * 100 * 100) / 100 // Multiply by 100 and round to 2 decimal places
+                    : item.value),
         source: config.source,
         unit: config.unit,
         metadata: {
