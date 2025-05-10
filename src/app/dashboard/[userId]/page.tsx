@@ -1907,18 +1907,29 @@ export default function Home() {
                               <div className="mb-6">
                                 <div className="text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                                   {(() => {
-                                    // Render icon based on activity type
+                                    // Render emoji based on activity type
                                     const activityType = item.activityType || 'default';
-                                    const iconMap: Record<string, React.ReactNode> = {
-                                      'running': <RunIcon className="h-6 w-6 text-green-500" />,
-                                      'walking': <WalkIcon className="h-6 w-6 text-green-500" />,
-                                      'cycling': <BicycleIcon className="h-6 w-6 text-green-500" />,
-                                      'strength_training': <DumbbellIcon className="h-6 w-6 text-green-500" />,
-                                      'swimming': <SwimIcon className="h-6 w-6 text-green-500" />,
-                                      'hiit': <ActivityIcon className="h-6 w-6 text-green-500" />,
-                                      'default': <ActivityIcon className="h-6 w-6 text-green-500" />
+                                    const emojiMap: Record<string, string> = {
+                                      'running': '🏃',
+                                      'walking': '🚶',
+                                      'cycling': '🚴',
+                                      'strength_training': '🏋️',
+                                      'swimming': '🏊',
+                                      'hiit': '🔥',
+                                      'yoga': '🧘',
+                                      'pilates': '🤸',
+                                      'dance': '💃',
+                                      'elliptical': '⚙️', // Using a generic gear for elliptical
+                                      'rowing': '🚣',
+                                      'stair_climbing': '🧗',
+                                      'hiking': '🥾',
+                                      'basketball': '🏀',
+                                      'soccer': '⚽',
+                                      'tennis': '🎾',
+                                      'golf': '🏌️',
+                                      'default': '💪'
                                     };
-                                    return iconMap[activityType] || iconMap.default;
+                                    return <span className="text-2xl">{emojiMap[activityType] || emojiMap.default}</span>;
                                   })()}
                                   {item.title}
                                 </div>
