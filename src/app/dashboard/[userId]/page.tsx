@@ -265,6 +265,7 @@ interface ActivityFeedItem {
     percentage: number;
     duration: string;
   }>;
+  activityType?: string; // Add this for workout type
 }
 
 interface SleepStage {
@@ -276,11 +277,131 @@ interface SleepStagesBarProps {
   stageDurations: Record<string, SleepStage>;
 }
 
+// Component to display workout metrics with icons
+interface WorkoutMetricsProps {
+  metrics: {
+    [key: string]: string;
+  };
+  activityType: string;
+}
+
+function WorkoutMetrics({ metrics, activityType }: WorkoutMetricsProps) {
+  const activityIcons: Record<string, React.ReactNode> = {
+    'running': <RunIcon className="h-5 w-5 text-green-500" />,
+    'walking': <WalkIcon className="h-5 w-5 text-green-500" />,
+    'cycling': <BicycleIcon className="h-5 w-5 text-green-500" />,
+    'strength_training': <DumbbellIcon className="h-5 w-5 text-green-500" />,
+    'swimming': <SwimIcon className="h-5 w-5 text-green-500" />,
+    'hiit': <ActivityIcon className="h-5 w-5 text-green-500" />,
+    'default': <ActivityIcon className="h-5 w-5 text-green-500" />
+  };
+
+  // Get the appropriate icon or default
+  const icon = activityIcons[activityType] || activityIcons.default;
+  
+  // Order metrics in a specific way
+  const orderedMetricKeys = ['Duration', 'Distance', 'Pace', 'Calories', 'Heart Rate'];
+  const orderedMetrics = orderedMetricKeys
+    .filter(key => metrics[key])
+    .map(key => ({ key, value: metrics[key] }));
+  
+  // Add any remaining metrics that aren't in our predefined order
+  Object.entries(metrics)
+    .filter(([key]) => !orderedMetricKeys.includes(key))
+    .forEach(([key, value]) => orderedMetrics.push({ key, value }));
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center space-x-2 mb-2">
+        {icon}
+        <span className="text-gray-700 dark:text-gray-300 font-medium capitalize">
+          {activityType.replace(/_/g, ' ')}
+        </span>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+        {orderedMetrics.map(({ key, value }) => (
+          <div key={key} className="flex flex-col">
+            <div className="text-xs text-gray-500 dark:text-gray-400">{key}</div>
+            <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{value}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const SLEEP_STAGE_TARGETS = {
   deep: { target: 90, color: 'bg-indigo-600', label: 'Deep Sleep' }, // 1.5 hours
   core: { target: 240, color: 'bg-blue-500', label: 'Core Sleep' }, // 4 hours
   rem: { target: 90, color: 'bg-purple-500', label: 'REM Sleep' }  // 1.5 hours
 } as const;
+
+// SVG icons for workout types
+function ActivityIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+    </svg>
+  );
+}
+
+function RunIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="17" cy="5" r="3"></circle>
+      <path d="M10 17l2-4 4-1 3 3-4 4"></path>
+      <path d="M7 20l.9-2.8c.3-.8.8-1.5 1.5-1.9l2.6-1.3"></path>
+      <path d="M13 9l-1.8-1.8c-.6-.6-1.5-1-2.4-.8L5 7"></path>
+    </svg>
+  );
+}
+
+function WalkIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="13" cy="4" r="2"></circle>
+      <path d="M15 7v11"></path>
+      <path d="M9 7v11"></path>
+      <path d="M9 11h6"></path>
+      <path d="M9 18h6"></path>
+    </svg>
+  );
+}
+
+function BicycleIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="5.5" cy="17.5" r="3.5"></circle>
+      <circle cx="18.5" cy="17.5" r="3.5"></circle>
+      <path d="M15 6a1 1 0 100-2 1 1 0 000 2z"></path>
+      <path d="M12 17.5V14l-3-3 4-3 2 3h2"></path>
+    </svg>
+  );
+}
+
+function SwimIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M2 12h20"></path>
+      <path d="M5 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"></path>
+      <path d="M3 16c.8.8 2.2 1 3 1 1.8 0 3.2-1 5-1 1.8 0 3.2 1 5 1 1.8 0 3.2-1 5-1"></path>
+      <path d="M3 20c.8.8 2.2 1 3 1 1.8 0 3.2-1 5-1 1.8 0 3.2 1 5 1 1.8 0 3.2-1 5-1"></path>
+    </svg>
+  );
+}
+
+function DumbbellIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M6 6h12v12H6z"></path>
+      <path d="M3 9h3"></path>
+      <path d="M3 15h3"></path>
+      <path d="M18 9h3"></path>
+      <path d="M18 15h3"></path>
+    </svg>
+  );
+}
 
 function SleepStagesBar({ stageDurations }: SleepStagesBarProps) {
   if (!stageDurations) {
@@ -329,6 +450,18 @@ function SleepStagesBar({ stageDurations }: SleepStagesBarProps) {
     </div>
   );
 }
+
+// Helper function to format pace (time per mile)
+const formatPace = (paceInSecondsPerKm: number): string => {
+  if (!paceInSecondsPerKm || isNaN(paceInSecondsPerKm)) return '';
+  
+  // Convert seconds per km to seconds per mile (1 mile = 1.60934 km)
+  const paceInSecondsPerMile = paceInSecondsPerKm * 1.60934;
+  
+  const minutes = Math.floor(paceInSecondsPerMile / 60);
+  const seconds = Math.floor(paceInSecondsPerMile % 60);
+  return `${minutes}:${seconds.toString().padStart(2, '0')}/mi`;
+};
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -473,7 +606,14 @@ export default function Home() {
       const timestamp = Date.now();
       
       // Fetch health data
-      const [heartRateRes, weightRes, bodyFatRes, hrvRes, vo2maxRes, bloodMarkersRes] = await Promise.all([
+      const [
+        heartRateRes,
+        weightRes,
+        bodyFatRes,
+        hrvRes,
+        vo2maxRes,
+        bloodMarkersRes
+      ] = await Promise.all([
         fetch(`/api/health-data?type=heartRate&userId=${userId}&t=${timestamp}`, {
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -526,6 +666,15 @@ export default function Home() {
           'Expires': '0'
         }
       });
+      
+      // Fetch workout data separately
+      const workoutRes = await fetch(`/api/health-data?type=workout&userId=${userId}&t=${timestamp}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
 
       // Check if any request failed
       const failedRequests = [];
@@ -536,6 +685,7 @@ export default function Home() {
       if (!vo2maxRes.ok) failedRequests.push('vo2max');
       if (!bloodMarkersRes.ok) failedRequests.push('bloodMarkers');
       if (!sleepRes.ok) failedRequests.push('sleep');
+      if (!workoutRes.ok) failedRequests.push('workout');
 
       if (failedRequests.length > 0) {
         console.error('Failed requests:', failedRequests);
@@ -549,10 +699,11 @@ export default function Home() {
         hrvRes.json(),
         vo2maxRes.json(),
         bloodMarkersRes.json(),
-        sleepRes.json()
+        sleepRes.json(),
+        workoutRes.json()
       ]);
 
-      const [heartRateData, weightData, bodyFatData, hrvData, vo2maxData, bloodMarkersData, sleepResponse] = responses;
+      const [heartRateData, weightData, bodyFatData, hrvData, vo2maxData, bloodMarkersData, sleepResponse, workoutResponse] = responses;
 
       const failedData = [];
       if (!heartRateData.success) failedData.push('heartRate');
@@ -562,6 +713,7 @@ export default function Home() {
       if (!vo2maxData.success) failedData.push('vo2max');
       if (!bloodMarkersData.success) failedData.push('bloodMarkers');
       if (!sleepResponse.success) failedData.push('sleep');
+      if (!workoutResponse.success) failedData.push('workout');
 
       if (failedData.length > 0) {
         console.error('Failed data:', failedData);
@@ -788,14 +940,17 @@ export default function Home() {
         setVo2maxTimeRange('last1year');
       }
 
-      // Process sleep data with debug logs
+      // Process sleep and workout data for activity feed
       console.log('Sleep response:', sleepResponse);
+      console.log('Workout response:', workoutResponse);
+      
+      let activityFeedItems: ActivityFeedItem[] = [];
+      
+      // Process sleep data if available
       if (sleepResponse.success && sleepResponse.data) {
         console.log('Raw sleep data:', sleepResponse.data);
         const sleepEntries = sleepResponse.data.map((entry: any) => {
           console.log('Processing sleep entry:', entry);
-          const startDate = new Date(entry.data.startDate);
-          const endDate = new Date(entry.data.endDate);
           
           // Ensure stageDurations exists with default values
           const stageDurations = entry.data.stageDurations || {
@@ -843,15 +998,90 @@ export default function Home() {
             sleepStages
           };
           
-          console.log('Processed sleep entry:', sleepEntry);
           return sleepEntry;
         });
-
-        console.log('Final sleep entries:', sleepEntries);
-        setActivityFeed(sleepEntries);
+        
+        activityFeedItems = [...sleepEntries];
       } else {
         console.log('No sleep data available or failed to fetch');
       }
+      
+      // Add workout entries if available
+      if (workoutResponse.success && workoutResponse.data) {
+        console.log('Raw workout data:', workoutResponse.data);
+        
+        const workoutEntries = workoutResponse.data.map((entry: any) => {
+          console.log('Processing workout entry:', entry);
+          
+          // Format duration in minutes
+          const durationInSeconds = entry.data.metrics?.duration || 0;
+          const durationInMinutes = Math.floor(durationInSeconds / 60);
+          const hours = Math.floor(durationInMinutes / 60);
+          const minutes = durationInMinutes % 60;
+          const formattedDuration = hours > 0 
+            ? `${hours}h ${minutes}m`
+            : `${minutes}m`;
+            
+          // Format distance in miles with 1 decimal place
+          const distanceInKm = entry.data.metrics?.distance;
+          const distanceInMiles = distanceInKm 
+            ? `${(distanceInKm * 0.621371).toFixed(1)} mi`
+            : undefined;
+            
+          // Format energy burned
+          const energyBurned = entry.data.metrics?.energyBurned
+            ? `${Math.round(entry.data.metrics.energyBurned)} cal`
+            : undefined;
+            
+          // Format heart rate
+          const avgHeartRate = entry.data.metrics?.avgHeartRate
+            ? `${Math.round(entry.data.metrics.avgHeartRate)} bpm`
+            : undefined;
+            
+          // Format pace if available
+          const avgPace = entry.data.metrics?.avgPace
+            ? formatPace(entry.data.metrics.avgPace)
+            : undefined;
+            
+          // Format activity type for title
+          const activityName = entry.data.activityType
+            .replace(/_/g, ' ')
+            .split(' ')
+            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+
+          // Collect metrics
+          const metrics: Record<string, string> = {};
+          if (formattedDuration) metrics['Duration'] = formattedDuration;
+          if (distanceInMiles) metrics['Distance'] = distanceInMiles;
+          if (energyBurned) metrics['Calories'] = energyBurned;
+          if (avgHeartRate) metrics['Heart Rate'] = avgHeartRate;
+          if (avgPace) metrics['Pace'] = avgPace;
+
+          // Create workout activity feed item
+          const workoutEntry: ActivityFeedItem = {
+            id: entry.timestamp || new Date(entry.data.startDate).toISOString(),
+            type: 'workout',
+            startTime: entry.data.startDate,
+            endTime: entry.data.endDate,
+            title: activityName,
+            subtitle: formattedDuration,
+            metrics,
+            activityType: entry.data.activityType
+          };
+          
+          return workoutEntry;
+        });
+        
+        activityFeedItems = [...activityFeedItems, ...workoutEntries];
+      }
+      
+      // Sort all activity feed items by date (newest first)
+      activityFeedItems.sort((a, b) => 
+        new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+      );
+      
+      setActivityFeed(activityFeedItems);
 
       return {
         heartRate: heartRateData.data || [],
@@ -1673,9 +1903,43 @@ export default function Home() {
                           )}
 
                           {item.type === 'workout' && (
-                            <div className="flex items-center gap-2 mt-4">
-                              <span className="text-lg text-gray-900 dark:text-white">{item.title}</span>
-                              {item.subtitle && <span className="text-gray-600 dark:text-gray-400">{item.subtitle}</span>}
+                            <div>
+                              <div className="mb-6">
+                                <div className="text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                  {(() => {
+                                    // Render icon based on activity type
+                                    const activityType = item.activityType || 'default';
+                                    const iconMap: Record<string, React.ReactNode> = {
+                                      'running': <RunIcon className="h-6 w-6 text-green-500" />,
+                                      'walking': <WalkIcon className="h-6 w-6 text-green-500" />,
+                                      'cycling': <BicycleIcon className="h-6 w-6 text-green-500" />,
+                                      'strength_training': <DumbbellIcon className="h-6 w-6 text-green-500" />,
+                                      'swimming': <SwimIcon className="h-6 w-6 text-green-500" />,
+                                      'hiit': <ActivityIcon className="h-6 w-6 text-green-500" />,
+                                      'default': <ActivityIcon className="h-6 w-6 text-green-500" />
+                                    };
+                                    return iconMap[activityType] || iconMap.default;
+                                  })()}
+                                  {item.title}
+                                </div>
+                                {item.subtitle && (
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 ml-8">
+                                    {item.subtitle}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Workout details */}
+                              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-5">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-4">
+                                  {Object.entries(item.metrics).map(([key, value]) => (
+                                    <div key={key} className="flex flex-col">
+                                      <div className="text-xs text-gray-500 dark:text-gray-400">{key}</div>
+                                      <div className="text-base font-medium text-gray-800 dark:text-gray-200">{value}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
                             </div>
                           )}
 
