@@ -1035,9 +1035,17 @@ export default function UploadPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-gray-600 dark:text-gray-300">
                       Get automatic syncing with our iOS app 
-                      <span className="inline-flex items-center ml-2 px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full shadow-sm">
-                        Coming Soon
-                      </span>
+                      <a 
+                        href="https://testflight.apple.com/join/P3P1dtH6" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center ml-2 px-2.5 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-800/40 border border-indigo-200 dark:border-indigo-700 rounded-md transition-colors"
+                      >
+                        Download Beta
+                        <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                        </svg>
+                      </a>
                     </p>
                   </div>
                 </div>
