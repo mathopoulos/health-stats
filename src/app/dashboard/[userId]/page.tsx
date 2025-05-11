@@ -300,7 +300,7 @@ function WorkoutMetrics({ metrics, activityType }: WorkoutMetricsProps) {
   const icon = activityIcons[activityType] || activityIcons.default;
   
   // Order metrics in a specific way
-  const orderedMetricKeys = ['Duration', 'Distance', 'Pace', 'Calories', 'Heart Rate'];
+  const orderedMetricKeys = ['Duration', 'Distance', 'Pace', 'Calories', 'Avg Heart Rate'];
   const orderedMetrics = orderedMetricKeys
     .filter(key => metrics[key])
     .map(key => ({ key, value: metrics[key] }));
@@ -1055,7 +1055,7 @@ export default function Home() {
           if (formattedDuration) metrics['Duration'] = formattedDuration;
           if (distanceInMiles) metrics['Distance'] = distanceInMiles;
           if (energyBurned) metrics['Calories'] = energyBurned;
-          if (avgHeartRate) metrics['Heart Rate'] = avgHeartRate;
+          if (avgHeartRate) metrics['Avg Heart Rate'] = avgHeartRate;
           if (avgPace) metrics['Pace'] = avgPace;
 
           // Create workout activity feed item
