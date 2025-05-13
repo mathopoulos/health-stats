@@ -4,57 +4,42 @@ import { encode } from 'next-auth/jwt';
 import { markUserAsAuthenticated, isUserPaid, markUserAsPaid } from '@/lib/auth'; // Assuming these are exported from your auth.ts
 
 const GOOGLE_IOS_CLIENT_ID = process.env.GOOGLE_IOS_CLIENT_ID;
-const GOOGLE_IOS_CLIENT_SECRET = process.env.GOOGLE_IOS_CLIENT_SECRET; // Needed for server-side code exchange
+// const GOOGLE_IOS_CLIENT_SECRET = process.env.GOOGLE_IOS_CLIENT_SECRET; // No longer needed for ID token verification
 const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET;
 
 if (!GOOGLE_IOS_CLIENT_ID) {
   console.warn('GOOGLE_IOS_CLIENT_ID is not set. iOS Google Sign-In will not work.');
 }
-if (!GOOGLE_IOS_CLIENT_SECRET) {
-  console.warn('GOOGLE_IOS_CLIENT_SECRET is not set. iOS Google Sign-In code exchange will not work.');
-}
+// if (!GOOGLE_IOS_CLIENT_SECRET) { // No longer needed
+//   console.warn('GOOGLE_IOS_CLIENT_SECRET is not set. iOS Google Sign-In code exchange will not work.');
+// }
 if (!NEXTAUTH_SECRET) {
   throw new Error('NEXTAUTH_SECRET is not set. Cannot encode JWT.');
 }
 
-const oauth2Client = new OAuth2Client(
-  GOOGLE_IOS_CLIENT_ID,
-  GOOGLE_IOS_CLIENT_SECRET
-  // No redirect_uri is typically needed here for code exchange from mobile if done correctly
-);
+const oauth2Client = new OAuth2Client(GOOGLE_IOS_CLIENT_ID);
 
 export async function POST(request: NextRequest) {
-  if (!GOOGLE_IOS_CLIENT_ID || !GOOGLE_IOS_CLIENT_SECRET || !NEXTAUTH_SECRET) {
+  if (!GOOGLE_IOS_CLIENT_ID || !NEXTAUTH_SECRET) { // Removed GOOGLE_IOS_CLIENT_SECRET check
     return NextResponse.json(
-      { error: 'Server configuration error: Missing Google iOS client credentials or JWT secret.' },
+      { error: 'Server configuration error: Missing Google iOS client ID or JWT secret.' },
       { status: 500 }
     );
   }
 
   try {
-    const { serverAuthCode } = await request.json();
+    const { idToken } = await request.json(); // Expect idToken instead of serverAuthCode
 
-    if (!serverAuthCode || typeof serverAuthCode !== 'string') {
+    if (!idToken || typeof idToken !== 'string') {
       return NextResponse.json(
-        { error: 'Invalid request: serverAuthCode is required.' },
+        { error: 'Invalid request: idToken is required.' },
         { status: 400 }
       );
     }
 
-    // Exchange the authorization code for tokens
-    const { tokens } = await oauth2Client.getToken(serverAuthCode);
-    
-    if (!tokens.id_token) {
-      return NextResponse.json(
-        { error: 'Failed to retrieve ID token from Google.' },
-        { status: 500 }
-      );
-    }
-
-    // Verify the ID token and get user info
-    // The `verifyIdToken` method can also be used if you directly receive an ID token
+    // Verify the ID token directly
     const ticket = await oauth2Client.verifyIdToken({
-      idToken: tokens.id_token,
+      idToken: idToken,
       audience: GOOGLE_IOS_CLIENT_ID, 
     });
 
@@ -102,7 +87,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'User authenticated successfully via iOS Google Sign-In.',
+      message: 'User authenticated successfully via iOS Google Sign-In (ID Token).',
       sessionToken: appToken,
       user: {
         id: googleUserId,
@@ -112,7 +97,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('iOS Google Sign-In Error:', error);
+    console.error('iOS Google Sign-In (ID Token) Error:', error);
     let errorMessage = 'Authentication failed.';
     if (error.response?.data?.error_description) {
       errorMessage = error.response.data.error_description;
