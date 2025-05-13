@@ -388,4 +388,29 @@ export function markUserAsPaid(email: string) {
 // This function checks if a user has paid
 export function hasUserPaid(email: string) {
   return paidUsers.has(email);
-} 
+}
+
+// Exported helper function to mark a user as authenticated (adds to the demo set)
+export function markUserAsAuthenticated(email: string): void {
+  if (email) {
+    authenticatedUsers.add(email);
+    console.log(`Demo Auth: Marked ${email} as authenticated.`);
+  }
+}
+
+// Exported helper function to check if a user is marked as paid (checks the demo set)
+export function isUserPaid(email: string): boolean {
+  if (!email) return false;
+  // In a real app, check Stripe/database status here
+  const paid = paidUsers.has(email);
+  console.log(`Demo Auth: Checking paid status for ${email}: ${paid}`);
+  return paid;
+}
+
+// Exported helper function to mark a user as paid (adds to the demo set)
+// export function markUserAsPaid(email: string): void {
+//   if (email) {
+//     paidUsers.add(email);
+//     console.log(`Demo Auth: Marked ${email} as paid.`);
+//   }
+// } 
