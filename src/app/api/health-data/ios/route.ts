@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { decode } from 'next-auth/jwt'; // Import decode for JWT validation
 
 // Define measurement types and their units
 const MEASUREMENT_TYPES = {
@@ -50,11 +51,7 @@ const s3Client = new S3Client({
   }
 });
 
-// Hardcoded user ID for all iOS submissions
-const HARDCODED_USER_ID = '100492380040453908509';
-
-// Simple API key for basic security
-const IOS_API_KEY = process.env.IOS_API_KEY || 'ios-test-key-change-me';
+const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET;
 
 // Check if AWS credentials are properly configured
 function validateAwsConfig() {
@@ -92,15 +89,46 @@ function isValidMeasurement(type: MeasurementType, value: number): boolean {
   }
 }
 
+// Helper function to extract Bearer token
+function extractBearerToken(header: string | null): string | null {
+  if (!header) return null;
+  const parts = header.split(' ');
+  if (parts.length === 2 && parts[0] === 'Bearer') {
+    return parts[1];
+  }
+  return null;
+}
+
 // Process health data from iOS
 export async function POST(request: NextRequest) {
+  if (!NEXTAUTH_SECRET) {
+    console.error('Server configuration error: NEXTAUTH_SECRET is not set.');
+    return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+  }
+
   try {
-    // Simple API key verification instead of token-based auth
-    const apiKey = request.headers.get('x-api-key');
-    if (!apiKey || apiKey !== IOS_API_KEY) {
-      console.log('iOS health data: Invalid or missing API key');
-      return NextResponse.json({ error: 'Unauthorized: Invalid API key' }, { status: 401 });
+    // --- JWT Authentication ---
+    const authorizationHeader = request.headers.get('Authorization');
+    const tokenString = extractBearerToken(authorizationHeader);
+
+    if (!tokenString) {
+      return NextResponse.json({ error: 'Unauthorized: Missing or invalid Authorization header' }, { status: 401 });
     }
+
+    const token = await decode({
+      token: tokenString,
+      secret: NEXTAUTH_SECRET,
+    });
+
+    if (!token || !token.sub) { // Check for valid token and subject (user ID)
+      console.error('iOS health data: Invalid or expired token', { token });
+      return NextResponse.json({ error: 'Unauthorized: Invalid or expired token' }, { status: 401 });
+    }
+
+    // Get user ID from validated token
+    const userId = token.sub; 
+    console.log(`iOS health data: Processing request for user ID: ${userId}`);
+    // --- End JWT Authentication ---
 
     // Validate AWS configuration
     if (!validateAwsConfig()) {
@@ -110,43 +138,33 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Use the hardcoded user ID for all iOS submissions
-    const userId = HARDCODED_USER_ID;
-    console.log(`iOS health data: Using hardcoded user ID: ${userId}`);
-
     // Parse the request body
     const requestData = await request.json();
     
     // Validate basic structure
     if (!requestData?.measurements || typeof requestData.measurements !== 'object') {
-      console.log('iOS health data: Invalid data format');
+      console.log('iOS health data: Invalid data format for user:', userId);
       return NextResponse.json({ error: 'Invalid data format' }, { status: 400 });
     }
 
-    const results: Record<MeasurementType, { added: number; total: number }> = {
-      hrv: { added: 0, total: 0 },
-      vo2max: { added: 0, total: 0 },
-      weight: { added: 0, total: 0 },
-      bodyfat: { added: 0, total: 0 },
-      workout: { added: 0, total: 0 }
-    };
+    const results: Record<string, { added: number; total: number }> = {};
 
-    // Process each measurement type
+    // Process each measurement type (Restored loop structure)
     for (const [type, config] of Object.entries(MEASUREMENT_TYPES)) {
       const measurementType = type as MeasurementType;
       const measurements = requestData.measurements[type] || [];
 
       if (!Array.isArray(measurements)) {
-        console.log(`iOS health data: Invalid ${type} data format`);
+        console.log(`iOS health data: Invalid ${type} data format for user ${userId}`);
         continue;
       }
 
-      // Special handling for workout data which has a different structure
+      // Special handling for workout data which has a different structure (Restored logic)
       if (type === 'workout') {
-        console.log(`iOS health data: Processing ${measurements.length} workout entries`);
+        console.log(`iOS health data: Processing ${measurements.length} workout entries for user ${userId}`);
         
-        // Define the S3 key for workouts
-        const s3Key = `data/${HARDCODED_USER_ID}/${config.fileKey}.json`;
+        // Define the S3 key for workouts using dynamic userId
+        const s3Key = `data/${userId}/${config.fileKey}.json`;
         
         // Get existing workout data
         let existingWorkouts: any[] = [];
@@ -155,19 +173,20 @@ export async function POST(request: NextRequest) {
             Bucket: requiredEnvVars.AWS_BUCKET_NAME,
             Key: s3Key
           });
-          
           const response = await s3Client.send(getObjectCommand);
           const responseBody = await response.Body?.transformToString();
-          
           if (responseBody) {
             existingWorkouts = JSON.parse(responseBody);
-            console.log(`iOS health data: Found ${existingWorkouts.length} existing workout records`);
+            console.log(`iOS health data: Found ${existingWorkouts.length} existing workout records for user ${userId}`);
           }
-        } catch (error) {
-          console.log(`iOS health data: No existing workout data found or error reading data:`, error);
+        } catch (error: any) {
+           if (error.name !== 'NoSuchKey') {
+             console.error(`iOS health data: Error reading existing workout S3 data for user ${userId}:`, error);
+           }
+           console.log(`iOS health data: No existing workout data found for user ${userId}`);
         }
         
-        // Filter valid workout entries
+        // Filter valid workout entries (Restored logic)
         const validWorkouts = measurements.filter((workout: any) => 
           workout && 
           typeof workout.timestamp === 'string' &&
@@ -177,12 +196,12 @@ export async function POST(request: NextRequest) {
           typeof workout.duration === 'number'
         );
         
-        console.log(`iOS health data: Found ${validWorkouts.length} valid workout entries`);
+        console.log(`iOS health data: Found ${validWorkouts.length} valid workout entries for user ${userId}`);
         
-        // Format workout data for storage
+        // Format workout data for storage using dynamic userId (Restored logic)
         const workoutEntries = validWorkouts.map((workout: any) => ({
           type: 'workout',
-          userId: HARDCODED_USER_ID,
+          userId: userId, // Use dynamic userId
           data: {
             startDate: workout.startDate,
             endDate: workout.endDate,
@@ -201,26 +220,23 @@ export async function POST(request: NextRequest) {
           timestamp: workout.timestamp
         }));
         
-        // Check for duplicates based on startDate
+        // Check for duplicates based on startDate (Restored logic)
         const startDateMap = new Map(existingWorkouts.map(entry => 
           [entry.data?.startDate, true]
         ));
-        
         const newWorkoutEntries = workoutEntries.filter(entry => 
           !startDateMap.has(entry.data.startDate)
         );
         
-        console.log(`iOS health data: ${newWorkoutEntries.length} new workout entries to add`);
+        console.log(`iOS health data: ${newWorkoutEntries.length} new workout entries to add for user ${userId}`);
         
-        // Combine with existing data
+        // Combine with existing data (Restored logic)
         const combinedWorkouts = [...existingWorkouts, ...newWorkoutEntries];
-        
-        // Sort by startDate in descending order (newest first)
         combinedWorkouts.sort((a, b) => 
           new Date(b.data.startDate).getTime() - new Date(a.data.startDate).getTime()
         );
         
-        // Save to S3
+        // Save to S3 (Restored logic)
         try {
           const putObjectCommand = new PutObjectCommand({
             Bucket: requiredEnvVars.AWS_BUCKET_NAME,
@@ -228,25 +244,20 @@ export async function POST(request: NextRequest) {
             Body: JSON.stringify(combinedWorkouts),
             ContentType: 'application/json'
           });
-          
           await s3Client.send(putObjectCommand);
-          
           results.workout = {
             added: newWorkoutEntries.length,
             total: combinedWorkouts.length
           };
-          
-          console.log(`iOS health data: Successfully saved ${combinedWorkouts.length} workout records to S3, added ${newWorkoutEntries.length} new entries`);
+          console.log(`iOS health data: Successfully saved ${combinedWorkouts.length} workout records to S3 for user ${userId}, added ${newWorkoutEntries.length} new entries`);
         } catch (saveError) {
-          console.error(`Error saving workout data to S3:`, saveError);
+          console.error(`Error saving workout data to S3 for user ${userId}:`, saveError);
         }
         
-        // Skip standard processing for workouts
-        continue;
+        continue; // Skip standard processing for workouts
       }
 
-      // Standard processing for other measurement types
-      // Validate and filter measurements
+      // Standard processing for other measurement types (Restored logic)
       const validMeasurements = measurements.filter((m: any) => {
         return m && 
                typeof m.timestamp === 'string' && 
@@ -255,46 +266,49 @@ export async function POST(request: NextRequest) {
                isValidMeasurement(measurementType, m.value);
       });
 
-      console.log(`iOS health data: Received ${validMeasurements.length} valid ${type} measurements`);
+      if (validMeasurements.length === 0) {
+        console.log(`iOS health data: No valid ${type} measurements received for user ${userId}`);
+        continue;
+      }
+      console.log(`iOS health data: Received ${validMeasurements.length} valid ${type} measurements for user ${userId}`);
 
-      // Define the S3 key for this measurement type
-      const s3Key = `data/${HARDCODED_USER_ID}/${config.fileKey}.json`;
+      // Define the S3 key using dynamic userId
+      const s3Key = `data/${userId}/${config.fileKey}.json`;
 
-      // Get existing data
+      // Get existing data (Restored logic)
       let existingData: HealthMeasurement[] = [];
       try {
         const getObjectCommand = new GetObjectCommand({
           Bucket: requiredEnvVars.AWS_BUCKET_NAME,
           Key: s3Key
         });
-        
         const response = await s3Client.send(getObjectCommand);
         const responseBody = await response.Body?.transformToString();
-        
         if (responseBody) {
           existingData = JSON.parse(responseBody);
-          console.log(`iOS health data: Found ${existingData.length} existing ${type} records`);
+          console.log(`iOS health data: Found ${existingData.length} existing ${type} records for user ${userId}`);
         }
-      } catch (error) {
-        console.log(`iOS health data: No existing ${type} data found or error reading data:`, error);
+      } catch (error: any) {
+         if (error.name !== 'NoSuchKey') {
+           console.error(`iOS health data: Error reading existing S3 data for user ${userId}, type ${type}:`, error);
+         }
+         console.log(`iOS health data: No existing ${type} data found for user ${userId}`);
       }
 
-      // Convert to standard format
+      // Convert to standard format (Restored logic)
       const normalizedMeasurements: HealthMeasurement[] = validMeasurements.map((item: RawMeasurement) => ({
         date: item.timestamp?.endsWith('Z') ? item.timestamp : `${item.timestamp || ''}Z`,
         value: measurementType === 'weight'
                  ? convertKgToLbs(item.value)
                  : (measurementType === 'bodyfat'
-                    ? Math.round(item.value * 100 * 100) / 100 // Multiply by 100 and round to 2 decimal places
+                    ? Math.round(item.value * 100 * 100) / 100
                     : item.value),
         source: config.source,
         unit: config.unit,
         metadata: {
-          HKAlgorithmVersion: 2
+          HKAlgorithmVersion: 2 // Assuming default metadata
         }
       }));
-
-      // Normalize existing data
       const normalizedExistingData = existingData.map(item => ({
         ...item,
         date: item.date || (item.timestamp?.endsWith('Z') ? item.timestamp : `${item.timestamp}Z`),
@@ -303,44 +317,44 @@ export async function POST(request: NextRequest) {
         metadata: item.metadata || { HKAlgorithmVersion: 2 }
       }));
 
-      // Remove duplicates
-      const existingDates = new Set(normalizedExistingData
-        .filter(item => typeof item.date === 'string' && item.date)
-        .map(item => item.date.replace(/\.\d{3}Z$/, 'Z'))
+      // Remove duplicates (Restored logic)
+      const existingDates = new Set(
+        normalizedExistingData
+          .filter(item => typeof item.date === 'string' && item.date)
+          .map(item => item.date.replace(/\.\d{3}Z$/, 'Z'))
       );
-
       const newMeasurements = normalizedMeasurements
         .filter(item => typeof item.date === 'string' && item.date)
         .filter(item => !existingDates.has(item.date.replace(/\.\d{3}Z$/, 'Z')));
 
+      if (newMeasurements.length === 0) {
+        console.log(`iOS health data: No new unique ${type} measurements to add for user ${userId}`);
+        results[measurementType] = {
+          added: 0,
+          total: existingData.length,
+        };
+        continue;
+      }
+      
       const combinedData = [...normalizedExistingData, ...newMeasurements];
+      combinedData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // Sort descending
 
-      // Sort by date
-      combinedData.sort((a, b) => {
-        const dateA = a.date ? new Date(a.date).getTime() : 0;
-        const dateB = b.date ? new Date(b.date).getTime() : 0;
-        return dateA - dateB;
-      });
-
-      // Save to S3
+      // Save to S3 (Restored logic)
       try {
         const putObjectCommand = new PutObjectCommand({
           Bucket: requiredEnvVars.AWS_BUCKET_NAME,
           Key: s3Key,
-          Body: JSON.stringify(combinedData),
+          Body: JSON.stringify(combinedData, null, 2), // Pretty print JSON
           ContentType: 'application/json'
         });
-
         await s3Client.send(putObjectCommand);
-        
         results[measurementType] = {
           added: newMeasurements.length,
           total: combinedData.length
         };
-
-        console.log(`iOS health data: Successfully saved ${combinedData.length} ${type} records to S3`);
+        console.log(`iOS health data: Successfully uploaded ${newMeasurements.length} new ${type} records for user ${userId}. Total: ${combinedData.length}`);
       } catch (saveError) {
-        console.error(`Error saving ${type} data to S3:`, saveError);
+        console.error(`Error saving ${type} data to S3 for user ${userId}:`, saveError);
       }
     }
 
@@ -351,10 +365,15 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error processing iOS health data:', error);
+    console.error('iOS health data: General error in POST handler:', error);
     return NextResponse.json({ 
       error: 'Server error processing data',
-      errorDetail: (error as Error).message 
+      errorDetail: (error instanceof Error) ? error.message : String(error) 
     }, { status: 500 });
   }
+}
+
+// Existing GET function remains unchanged
+export async function GET(request: NextRequest) {
+  // ... existing GET logic ...
 } 
