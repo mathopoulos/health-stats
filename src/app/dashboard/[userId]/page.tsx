@@ -13,6 +13,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import ThemeToggle from '@/app/components/ThemeToggle';
 import { useTheme } from '@/app/context/ThemeContext';
 import TrendIndicator from '@/components/TrendIndicator';
+import WorkoutHeatMap from '@/app/components/WorkoutHeatMap';
 import React from 'react';
 
 interface HealthData {
@@ -1829,6 +1830,27 @@ export default function Home() {
               </div>
 
               {/* Activity Feed */}
+              {/* Workout Heat Map */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl px-10 py-8 shadow-sm mb-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Workout Activity</h2>
+                </div>
+                <WorkoutHeatMap workouts={activityFeed
+                  .filter(item => item.type === 'workout')
+                  .map(item => ({
+                    data: {
+                      startDate: item.startTime,
+                      activityType: item.activityType || 'other',
+                      metrics: {
+                        duration: parseInt(item.metrics.Duration?.replace(/[^0-9]/g, '') || '0') * 60, // Convert to seconds
+                        energyBurned: parseInt(item.metrics['Calories']?.replace(/[^0-9]/g, '') || '0')
+                      }
+                    }
+                  }))}
+                />
+              </div>
+
+              {/* Recent Activity */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl px-10 py-8 shadow-sm">
                 <div className="flex items-center gap-3 mb-10">
                   <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Recent activity</h2>
