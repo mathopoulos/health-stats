@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import CalendarHeatmap from 'react-calendar-heatmap';
 import type { ReactCalendarHeatmapValue } from 'react-calendar-heatmap';
 import 'react-calendar-heatmap/dist/styles.css';
-import ReactTooltip from 'react-tooltip';
+import { Tooltip } from 'react-tooltip';
+import 'react-tooltip/dist/react-tooltip.css';
 import { subYears, format, parseISO } from 'date-fns';
 
 interface WorkoutData {
@@ -38,11 +39,6 @@ interface HeatmapValue extends ReactCalendarHeatmapValue<string> {
 export default function WorkoutHeatMap({ workouts }: WorkoutHeatMapProps) {
   const today = new Date();
   const startDate = subYears(today, 1); // Show last 1 year of data
-
-  // Effect to rebuild tooltip when data changes
-  useEffect(() => {
-    ReactTooltip.rebuild();
-  }, [workouts]);
 
   // Process workout data for the heatmap
   const workoutsByDate = workouts.reduce<Record<string, HeatmapValue>>((acc, workout) => {
@@ -109,20 +105,26 @@ export default function WorkoutHeatMap({ workouts }: WorkoutHeatMapProps) {
     const totalDuration = formatTotalDuration(value.totalMinutes);
 
     return (
-      <div className="p-2 max-w-xs">
-        <div className="font-semibold mb-1">{date}</div>
-        <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-          Total: {totalDuration} ({value.totalMinutes} minutes)
+      <div className="min-w-[200px] max-w-[300px]">
+        <div className="border-b border-gray-200 dark:border-gray-700 pb-2 mb-2">
+          <div className="font-medium text-base">{date}</div>
+          <div className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+            {totalDuration} total
+          </div>
         </div>
-        <div className="text-sm">
+        <div className="space-y-2">
           {workouts.map((workout, idx) => (
-            <div key={idx} className="flex flex-col gap-1">
-              <div className="capitalize">{workout.type}</div>
-              <div className="text-gray-600 dark:text-gray-400 text-xs">
-                Duration: {workout.duration}
-                {workout.calories && ` • ${workout.calories}`}
+            <div key={idx} className="flex flex-col">
+              <div className="text-sm font-medium capitalize">{workout.type}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                <span>{workout.duration}</span>
+                {workout.calories && (
+                  <>
+                    <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+                    <span>{workout.calories}</span>
+                  </>
+                )}
               </div>
-              {idx < workouts.length - 1 && <hr className="my-1 border-gray-200 dark:border-gray-700" />}
             </div>
           ))}
         </div>
@@ -181,8 +183,8 @@ export default function WorkoutHeatMap({ workouts }: WorkoutHeatMapProps) {
             return `${val.totalMinutes} minutes of exercise`;
           }}
           tooltipDataAttrs={(value) => ({
-            'data-tip': value ? value.date : '',
-            'data-for': 'workout-tooltip'
+            'data-tooltip-id': 'workout-tooltip',
+            'data-tooltip-content': value && 'totalMinutes' in value ? value.date : ''
           } as any)}
           showWeekdayLabels={true}
           weekdayLabels={['', 'Mon', '', 'Wed', '', 'Fri', '']}
@@ -203,17 +205,17 @@ export default function WorkoutHeatMap({ workouts }: WorkoutHeatMapProps) {
           </div>
         </div>
       </div>
-      <ReactTooltip
+      <Tooltip
         id="workout-tooltip"
-        effect="solid"
-        type="light"
-        place="top"
-        delayHide={200}
-        className="!bg-white dark:!bg-gray-800 !text-gray-900 dark:!text-white !shadow-lg !rounded-lg !border !border-gray-200 dark:!border-gray-700"
-        getContent={(dataTip) => {
-          const currentValue = values.find(v => v.date === dataTip);
+        render={({ content }) => {
+          const currentValue = values.find(v => v.date === content);
           return getTooltipContent(currentValue || null);
         }}
+        className="!bg-white dark:!bg-gray-800 !text-gray-900 dark:!text-white !shadow-xl !rounded-lg !border !border-gray-200 dark:!border-gray-700 !p-3"
+        place="top"
+        offset={8}
+        delayHide={100}
+        float
       />
     </div>
   );
