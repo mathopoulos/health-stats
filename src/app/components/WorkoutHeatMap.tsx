@@ -81,10 +81,10 @@ export default function WorkoutHeatMap({ workouts }: WorkoutHeatMapProps) {
   // Scale: 0-30min, 30-60min, 60-90min, 90+ min
   const getDurationColor = (minutes: number) => {
     if (!minutes) return 'color-empty';
-    if (minutes <= 30) return 'color-scale-1';
-    if (minutes <= 60) return 'color-scale-2';
-    if (minutes <= 90) return 'color-scale-3';
-    return 'color-scale-4';
+    if (minutes <= 30) return 'color-scale-4'; // Darkest for least workout
+    if (minutes <= 60) return 'color-scale-3';
+    if (minutes <= 90) return 'color-scale-2';
+    return 'color-scale-1'; // Lightest for most workout
   };
 
   // Format duration for tooltip
@@ -196,10 +196,10 @@ export default function WorkoutHeatMap({ workouts }: WorkoutHeatMapProps) {
             <span>Less</span>
             <div className="flex gap-1">
               <div className="w-3 h-3 rounded bg-[#ebedf0] dark:bg-[#2D333B]" />
-              <div className="w-3 h-3 rounded bg-[#39D353]" title="0-30 min" />
-              <div className="w-3 h-3 rounded bg-[#26A641]" title="30-60 min" />
-              <div className="w-3 h-3 rounded bg-[#006D32]" title="60-90 min" />
-              <div className="w-3 h-3 rounded bg-[#0E4429]" title="90+ min" />
+              <div className="w-3 h-3 rounded bg-[#0E4429]" title="0-30 min" />
+              <div className="w-3 h-3 rounded bg-[#006D32]" title="30-60 min" />
+              <div className="w-3 h-3 rounded bg-[#26A641]" title="60-90 min" />
+              <div className="w-3 h-3 rounded bg-[#39D353]" title="90+ min" />
             </div>
             <span>More</span>
           </div>
