@@ -469,7 +469,7 @@ function WeeklyWorkoutCount() {
   const { workoutCount } = useWeeklyWorkout();
   
   return (
-    <div className="flex items-center bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full">
+    <div className="flex items-center bg-emerald-50 dark:bg-emerald-900/20 px-4 py-1.5 rounded-full">
       <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
         {workoutCount}/7 days this week
       </span>
@@ -1846,7 +1846,7 @@ export default function Home() {
               {/* Workout Heat Map */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl px-10 py-8 shadow-sm mb-8">
                 <WeeklyWorkoutProvider>
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center justify-between mb-8">
                     <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Workout Activity</h2>
                     <WeeklyWorkoutCount />
                   </div>
@@ -1857,7 +1857,7 @@ export default function Home() {
                         startDate: item.startTime,
                         activityType: item.activityType || 'other',
                         metrics: {
-                          duration: parseInt(item.metrics.Duration?.replace(/[^0-9]/g, '') || '0') * 60, // Convert to seconds
+                          duration: parseInt(item.metrics.Duration?.replace(/[^0-9]/g, '') || '0') * 60,
                           energyBurned: parseInt(item.metrics['Calories']?.replace(/[^0-9]/g, '') || '0')
                         }
                       }

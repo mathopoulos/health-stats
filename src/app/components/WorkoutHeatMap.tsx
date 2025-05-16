@@ -185,7 +185,7 @@ export default function WorkoutHeatMap({ workouts }: WorkoutHeatMapProps) {
         .dark .react-calendar-heatmap .color-scale-3 { fill: #006D32; }
         .dark .react-calendar-heatmap .color-scale-4 { fill: #0E4429; }
       `}</style>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4">
         <CalendarHeatmap<string>
           startDate={startDate}
           endDate={today}
@@ -208,8 +208,8 @@ export default function WorkoutHeatMap({ workouts }: WorkoutHeatMapProps) {
           monthLabels={['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']}
           gutterSize={4}
         />
-        <div className="flex justify-end mt-1">
-          <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+        <div className="flex justify-end">
+          <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
             <span>Less</span>
             <div className="flex gap-1">
               <div className="w-3 h-3 rounded bg-[#ebedf0] dark:bg-[#2D333B]" />
