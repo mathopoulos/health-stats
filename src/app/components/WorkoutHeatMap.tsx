@@ -6,7 +6,8 @@ import type { ReactCalendarHeatmapValue } from 'react-calendar-heatmap';
 import 'react-calendar-heatmap/dist/styles.css';
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
-import { subYears, format, parseISO } from 'date-fns';
+import { subYears, format, parseISO, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
+import { useWeeklyWorkout } from '../context/WeeklyWorkoutContext';
 
 interface WorkoutData {
   data: {
@@ -37,6 +38,7 @@ interface HeatmapValue extends ReactCalendarHeatmapValue<string> {
 }
 
 export default function WorkoutHeatMap({ workouts }: WorkoutHeatMapProps) {
+  const { setWorkoutCount } = useWeeklyWorkout();
   const today = new Date();
   const startDate = subYears(today, 1); // Show last 1 year of data
 
@@ -76,6 +78,21 @@ export default function WorkoutHeatMap({ workouts }: WorkoutHeatMapProps) {
 
   // Convert to array format required by react-calendar-heatmap
   const values = Object.values(workoutsByDate);
+
+  // Calculate workout days for current week
+  const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 }); // Week starts on Monday
+  const currentWeekEnd = endOfWeek(today, { weekStartsOn: 1 });
+  const currentWeekDates = eachDayOfInterval({ start: currentWeekStart, end: currentWeekEnd });
+  
+  const workoutDaysThisWeek = currentWeekDates.filter(date => {
+    const dateString = format(date, 'yyyy-MM-dd');
+    return workoutsByDate[dateString] !== undefined;
+  }).length;
+
+  // Update context with weekly count
+  React.useEffect(() => {
+    setWorkoutCount(workoutDaysThisWeek);
+  }, [workoutDaysThisWeek, setWorkoutCount]);
 
   // Calculate duration thresholds for color scale
   // Scale: 0-30min, 30-60min, 60-90min, 90+ min

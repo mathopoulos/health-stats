@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Image from 'next/image';
 import AddResultsModal from '@/app/components/AddResultsModal';
@@ -14,7 +14,7 @@ import ThemeToggle from '@/app/components/ThemeToggle';
 import { useTheme } from '@/app/context/ThemeContext';
 import TrendIndicator from '@/components/TrendIndicator';
 import WorkoutHeatMap from '@/app/components/WorkoutHeatMap';
-import React from 'react';
+import { WeeklyWorkoutProvider, useWeeklyWorkout } from '@/app/context/WeeklyWorkoutContext';
 
 interface HealthData {
   date: string;
@@ -463,6 +463,19 @@ const formatPace = (paceInSecondsPerKm: number): string => {
   const seconds = Math.floor(paceInSecondsPerMile % 60);
   return `${minutes}:${seconds.toString().padStart(2, '0')}/mi`;
 };
+
+// Add this component before the main Home component
+function WeeklyWorkoutCount() {
+  const { workoutCount } = useWeeklyWorkout();
+  
+  return (
+    <div className="flex items-center bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full">
+      <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+        {workoutCount}/7 days this week
+      </span>
+    </div>
+  );
+}
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -1832,22 +1845,25 @@ export default function Home() {
               {/* Activity Feed */}
               {/* Workout Heat Map */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl px-10 py-8 shadow-sm mb-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Workout Activity</h2>
-                </div>
-                <WorkoutHeatMap workouts={activityFeed
-                  .filter(item => item.type === 'workout')
-                  .map(item => ({
-                    data: {
-                      startDate: item.startTime,
-                      activityType: item.activityType || 'other',
-                      metrics: {
-                        duration: parseInt(item.metrics.Duration?.replace(/[^0-9]/g, '') || '0') * 60, // Convert to seconds
-                        energyBurned: parseInt(item.metrics['Calories']?.replace(/[^0-9]/g, '') || '0')
+                <WeeklyWorkoutProvider>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Workout Activity</h2>
+                    <WeeklyWorkoutCount />
+                  </div>
+                  <WorkoutHeatMap workouts={activityFeed
+                    .filter(item => item.type === 'workout')
+                    .map(item => ({
+                      data: {
+                        startDate: item.startTime,
+                        activityType: item.activityType || 'other',
+                        metrics: {
+                          duration: parseInt(item.metrics.Duration?.replace(/[^0-9]/g, '') || '0') * 60, // Convert to seconds
+                          energyBurned: parseInt(item.metrics['Calories']?.replace(/[^0-9]/g, '') || '0')
+                        }
                       }
-                    }
-                  }))}
-                />
+                    }))}
+                  />
+                </WeeklyWorkoutProvider>
               </div>
 
               {/* Recent Activity */}
