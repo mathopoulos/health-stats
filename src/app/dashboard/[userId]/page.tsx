@@ -1650,14 +1650,14 @@ export default function Home() {
         <title>{userData?.name ? `${userData.name}'s Health Stats` : 'Health Stats'}</title>
       </Head>
       <Toaster position="bottom-left" />
-      <main className="min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
+      <main className="min-h-screen px-4 sm:px-8 py-8 bg-gray-50 dark:bg-gray-900">
         {/* Theme Toggle */}
         <div className="fixed bottom-4 right-4 z-[100]">
           <ThemeToggle />
         </div>
         
         <div className="max-w-6xl mx-auto space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-6 py-6 shadow-sm">
             <div className="flex flex-wrap items-center gap-4">
               {userId === session?.user?.id ? (
                 <>
@@ -1759,7 +1759,7 @@ export default function Home() {
           {/* Tab Navigation */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm">
             <div>
-              <nav className="flex space-x-8 px-6" aria-label="Tabs">
+              <nav className="flex space-x-4 sm:space-x-8 px-4 sm:px-6" aria-label="Tabs">
                 <button
                   onClick={() => setActiveTab('home')}
                   className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm ${
@@ -1844,7 +1844,7 @@ export default function Home() {
 
               {/* Activity Feed */}
               {/* Workout Heat Map */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl px-10 py-8 shadow-sm mb-8">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-10 py-8 shadow-sm mb-8">
                 <WeeklyWorkoutProvider>
                   <div className="flex items-center justify-between mb-8">
                     <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Workout Activity</h2>
@@ -2822,14 +2822,14 @@ export default function Home() {
           </div>
             </>
           ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-6 py-6 shadow-sm">
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">Blood Markers & Longevity</h2>
             </div>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Lipid Panel */}
-                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Lipid Panel</h3>
                   <div className="space-y-6">
                     <MarkerRow label="Total Cholesterol" data={data.bloodMarkers.totalCholesterol} />
@@ -2843,7 +2843,7 @@ export default function Home() {
                 </div>
 
                 {/* Complete Blood Count */}
-                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Complete Blood Count</h3>
                   <div className="space-y-6">
                     <MarkerRow label="White Blood Cells" data={data.bloodMarkers.whiteBloodCells} />
@@ -2856,7 +2856,7 @@ export default function Home() {
                 </div>
 
                 {/* Glucose Markers */}
-                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Glucose Markers</h3>
                   <div className="space-y-6">
                     <MarkerRow label="HbA1c" data={data.bloodMarkers.hba1c} />
@@ -2867,7 +2867,7 @@ export default function Home() {
                 </div>
 
                 {/* Liver Markers */}
-                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Liver Markers</h3>
                   <div className="space-y-6">
                     <MarkerRow label="ALT" data={data.bloodMarkers.alt} />
@@ -2878,7 +2878,7 @@ export default function Home() {
                 </div>
 
                 {/* Kidney Markers */}
-                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Kidney Markers</h3>
                   <div className="space-y-6">
                     <MarkerRow label="eGFR" data={data.bloodMarkers.egfr} />
@@ -2891,7 +2891,7 @@ export default function Home() {
                 </div>
 
                 {/* Sex Hormones */}
-                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Sex Hormones</h3>
                   <div className="space-y-6">
                     <MarkerRow label="Testosterone" data={data.bloodMarkers.testosterone} />
@@ -2903,7 +2903,7 @@ export default function Home() {
                 </div>
 
                 {/* Thyroid Markers */}
-                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Thyroid Markers</h3>
                   <div className="space-y-6">
                     <MarkerRow label="T3" data={data.bloodMarkers.t3} />
@@ -2914,7 +2914,7 @@ export default function Home() {
                 </div>
 
                 {/* Vitamins & Inflammation */}
-                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Vitamins & Inflammation</h3>
                   <div className="space-y-6">
                     <MarkerRow label="Vitamin D3" data={data.bloodMarkers.vitaminD} />
@@ -2926,7 +2926,7 @@ export default function Home() {
                 </div>
 
                 {/* Iron Panel */}
-                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Iron Panel</h3>
                   <div className="space-y-6">
                     <MarkerRow label="Ferritin" data={data.bloodMarkers.ferritin} />
@@ -2938,7 +2938,7 @@ export default function Home() {
                 </div>
 
                 {/* Electrolytes */}
-                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Electrolytes</h3>
                   <div className="space-y-6">
                     <MarkerRow label="Sodium" data={data.bloodMarkers.sodium} />
@@ -2952,7 +2952,7 @@ export default function Home() {
                 </div>
 
                 {/* CBC Differentials */}
-                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">White Blood Cell Differentials</h3>
                   <div className="space-y-6">
                     <MarkerRow label="Neutrophil Count" data={data.bloodMarkers.neutrophilCount} />
@@ -2970,7 +2970,7 @@ export default function Home() {
                 </div>
                 
                 {/* Red Blood Cell Indices */}
-                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Red Blood Cell Indices</h3>
                   <div className="space-y-6">
                     <MarkerRow label="MCV" data={data.bloodMarkers.mcv} />
@@ -2983,7 +2983,7 @@ export default function Home() {
                 </div>
 
                 {/* Vitamins & Minerals */}
-                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Vitamins & Minerals</h3>
                   <div className="space-y-6">
                     <MarkerRow label="Vitamin D" data={data.bloodMarkers.vitaminD} />
@@ -2997,7 +2997,7 @@ export default function Home() {
                 </div>
 
                 {/* Additional Markers */}
-                <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Additional Markers</h3>
                   <div className="space-y-6">
                     <MarkerRow label="Creatine Kinase" data={data.bloodMarkers.creatineKinase} />
