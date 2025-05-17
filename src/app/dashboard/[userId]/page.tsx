@@ -2017,11 +2017,11 @@ export default function Home() {
                               
                               {/* Workout details */}
                               <div className="mt-4">
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4">
                                   {Object.entries(item.metrics).map(([key, value]) => (
-                                    <div key={key} className="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-gray-600">
-                                      <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">{key}</div>
-                                      <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{value}</div>
+                                    <div key={key} className="bg-white dark:bg-gray-700 rounded-lg p-3 sm:p-4 shadow-sm border border-gray-100 dark:border-gray-600">
+                                      <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-1 truncate">{key}</div>
+                                      <div className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">{value}</div>
                                     </div>
                                   ))}
                                 </div>
