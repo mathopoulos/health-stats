@@ -1797,23 +1797,23 @@ export default function Home() {
           {activeTab === 'home' ? (
             <div className="space-y-6">
               {/* Bio Age Metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">Biological Age</h3>
-                    <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">23.5</span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-6 py-4 sm:py-6 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                    <h3 className="text-sm sm:text-lg font-medium text-gray-900 dark:text-white">Biological Age</h3>
+                    <span className="text-xl sm:text-2xl font-bold text-indigo-600 dark:text-indigo-400">23.5</span>
                   </div>
                 </div>
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">Age Speed</h3>
-                    <span className="text-2xl font-bold text-green-600 dark:text-green-400">—</span>
+                <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-6 py-4 sm:py-6 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                    <h3 className="text-sm sm:text-lg font-medium text-gray-900 dark:text-white">Age Speed</h3>
+                    <span className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">—</span>
                   </div>
                 </div>
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">VO2 Max</h3>
-                    <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-6 py-4 sm:py-6 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                    <h3 className="text-sm sm:text-lg font-medium text-gray-900 dark:text-white">VO2 Max</h3>
+                    <span className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
                       {data.loading ? "..." : data.vo2max.length > 0 
                         ? `${Math.round(
                             data.vo2max
@@ -1825,10 +1825,10 @@ export default function Home() {
                     </span>
                   </div>
                 </div>
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">HRV</h3>
-                    <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-6 py-4 sm:py-6 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                    <h3 className="text-sm sm:text-lg font-medium text-gray-900 dark:text-white">HRV</h3>
+                    <span className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400">
                       {data.loading ? "..." : data.hrv.length > 0 
                         ? `${Math.round(
                             data.hrv
