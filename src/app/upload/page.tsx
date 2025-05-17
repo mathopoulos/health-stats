@@ -1587,7 +1587,8 @@ export default function UploadPage() {
                 </div>
               </div>
               
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+              {/* About Section - Only visible on desktop */}
+              <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow-sm">
                 <div className="p-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">About</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
