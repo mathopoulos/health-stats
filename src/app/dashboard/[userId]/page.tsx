@@ -333,9 +333,21 @@ function WorkoutMetrics({ metrics, activityType }: WorkoutMetricsProps) {
 }
 
 const SLEEP_STAGE_TARGETS = {
-  deep: { target: 90, color: 'bg-indigo-600', label: 'Deep Sleep' }, // 1.5 hours
-  core: { target: 240, color: 'bg-blue-500', label: 'Core Sleep' }, // 4 hours
-  rem: { target: 90, color: 'bg-purple-500', label: 'REM Sleep' }  // 1.5 hours
+  deep: { 
+    target: 90, 
+    color: 'bg-indigo-500 dark:bg-indigo-400', 
+    label: 'Deep Sleep'
+  },
+  core: { 
+    target: 240, 
+    color: 'bg-blue-500 dark:bg-blue-400', 
+    label: 'Core Sleep'
+  },
+  rem: { 
+    target: 90, 
+    color: 'bg-purple-500 dark:bg-purple-400', 
+    label: 'REM Sleep'
+  }
 } as const;
 
 // SVG icons for workout types
@@ -409,7 +421,6 @@ function SleepStagesBar({ stageDurations }: SleepStagesBarProps) {
     return <div className="text-sm text-gray-500">No sleep data available</div>;
   }
 
-  // Helper function to convert duration string (e.g., "1h 30m") to minutes
   const durationToMinutes = (duration: string): number => {
     const hours = duration.match(/(\d+)h/)?.[1] || '0';
     const minutes = duration.match(/(\d+)m/)?.[1] || '0';
@@ -422,28 +433,35 @@ function SleepStagesBar({ stageDurations }: SleepStagesBarProps) {
         const stageData = stageDurations[stage];
         const durationMinutes = stageData ? durationToMinutes(stageData.duration) : 0;
         const percentageOfTarget = Math.min(100, (durationMinutes / target) * 100);
+        const isOverTarget = durationMinutes >= target;
         
         return (
-          <div key={stage} className="space-y-2">
-            <div className="flex justify-between items-center">
-              <div>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">{label}</span>
-                <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+          <div key={stage} className="relative">
+            {/* Stage Label and Duration */}
+            <div className="flex justify-between items-baseline mb-1.5">
+              <span className="text-base font-medium text-gray-900 dark:text-white">
+                {label}
+              </span>
+              <div className="text-sm">
+                <span className={`font-semibold ${isOverTarget ? 'text-green-500' : 'text-gray-600 dark:text-gray-300'}`}>
                   {stageData?.duration || '0min'}
                 </span>
               </div>
-              <div className="text-xs">
-                <span className={`font-medium ${durationMinutes >= target ? 'text-green-500' : 'text-gray-500'}`}>
-                  {durationMinutes}min
-                </span>
-                <span className="text-gray-400 dark:text-gray-500"> / {target}min target</span>
-              </div>
             </div>
-            <div className="relative h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+            
+            {/* Progress Bar */}
+            <div className="relative h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
               <div 
                 className={`absolute left-0 top-0 h-full ${color} transition-all duration-500 ease-out`}
                 style={{ width: `${percentageOfTarget}%` }}
               />
+            </div>
+            
+            {/* Target Info */}
+            <div className="flex justify-end mt-1">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                Target: {target}min
+              </span>
             </div>
           </div>
         );
@@ -1921,18 +1939,22 @@ export default function Home() {
                           {item.type === 'sleep' && (
                             <>
                               {/* Time asleep */}
-                              <div className="mb-8">
-                                <div className="text-2xl font-semibold text-gray-900 dark:text-white">
-                                  {item.title}
-                                </div>
-                                <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                  Time asleep
+                              <div className="mb-6">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                  <div>
+                                    <div className="text-3xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+                                      {item.title}
+                                    </div>
+                                    <div className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                                      Time asleep
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
 
                               {/* Sleep stages */}
                               {item.sleepStages && (
-                                <div>
+                                <div className="space-y-6">
                                   <SleepStagesBar stageDurations={item.sleepStages} />
                                 </div>
                               )}
