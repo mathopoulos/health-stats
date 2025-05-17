@@ -1864,10 +1864,15 @@ export default function Home() {
               {/* Workout Heat Map */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-10 py-8 shadow-sm mb-8">
                 <WeeklyWorkoutProvider>
-                  <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Workout Activity</h2>
-                    <WeeklyWorkoutCount />
+                  {/* Fixed header */}
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-baseline gap-2">
+                      <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Workout Activity</h2>
+                      <WeeklyWorkoutCount />
+                    </div>
                   </div>
+                  
+                  {/* Heat map container */}
                   <WorkoutHeatMap workouts={activityFeed
                     .filter(item => item.type === 'workout')
                     .map(item => ({

@@ -154,6 +154,13 @@ export default function WorkoutHeatMap({ workouts }: WorkoutHeatMapProps) {
       <style jsx global>{`
         .react-calendar-heatmap {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none; /* Firefox */
+          -ms-overflow-style: none; /* IE and Edge */
+        }
+        .react-calendar-heatmap::-webkit-scrollbar {
+          display: none; /* Chrome, Safari, Opera */
         }
         .react-calendar-heatmap text {
           font-size: 10px;
@@ -184,31 +191,48 @@ export default function WorkoutHeatMap({ workouts }: WorkoutHeatMapProps) {
         .dark .react-calendar-heatmap .color-scale-2 { fill: #26A641; }
         .dark .react-calendar-heatmap .color-scale-3 { fill: #006D32; }
         .dark .react-calendar-heatmap .color-scale-4 { fill: #0E4429; }
+
+        @media (max-width: 640px) {
+          .react-calendar-heatmap {
+            min-width: 800px; /* Ensure enough width for scrolling */
+          }
+          .react-calendar-heatmap rect {
+            width: 12px; /* Slightly larger squares on mobile */
+            height: 12px;
+          }
+        }
       `}</style>
       <div className="flex flex-col gap-4">
-        <CalendarHeatmap<string>
-          startDate={startDate}
-          endDate={today}
-          values={values}
-          classForValue={(value: ReactCalendarHeatmapValue<string> | undefined) => {
-            if (!value || !('totalMinutes' in value)) return 'color-empty';
-            return getDurationColor((value as HeatmapValue).totalMinutes);
-          }}
-          titleForValue={(value) => {
-            if (!value || !('totalMinutes' in value)) return 'No workouts';
-            const val = value as HeatmapValue;
-            return `${val.totalMinutes} minutes of exercise`;
-          }}
-          tooltipDataAttrs={(value) => ({
-            'data-tooltip-id': 'workout-tooltip',
-            'data-tooltip-content': value && 'totalMinutes' in value ? value.date : ''
-          } as any)}
-          showWeekdayLabels={true}
-          weekdayLabels={['', 'Mon', '', 'Wed', '', 'Fri', '']}
-          monthLabels={['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']}
-          gutterSize={4}
-        />
-        <div className="flex justify-end">
+        {/* Heatmap container with horizontal scroll */}
+        <div className="overflow-x-auto pb-4 -mx-4 sm:mx-0">
+          <div className="min-w-[800px] sm:min-w-0 px-4 sm:px-0">
+            <CalendarHeatmap<string>
+              startDate={startDate}
+              endDate={today}
+              values={values}
+              classForValue={(value: ReactCalendarHeatmapValue<string> | undefined) => {
+                if (!value || !('totalMinutes' in value)) return 'color-empty';
+                return getDurationColor((value as HeatmapValue).totalMinutes);
+              }}
+              titleForValue={(value) => {
+                if (!value || !('totalMinutes' in value)) return 'No workouts';
+                const val = value as HeatmapValue;
+                return `${val.totalMinutes} minutes of exercise`;
+              }}
+              tooltipDataAttrs={(value) => ({
+                'data-tooltip-id': 'workout-tooltip',
+                'data-tooltip-content': value && 'totalMinutes' in value ? value.date : ''
+              } as any)}
+              showWeekdayLabels={true}
+              weekdayLabels={['', 'Mon', '', 'Wed', '', 'Fri', '']}
+              monthLabels={['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']}
+              gutterSize={4}
+            />
+          </div>
+        </div>
+
+        {/* Scale legend - fixed position */}
+        <div className="flex justify-end px-4 sm:px-0">
           <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
             <span>Less</span>
             <div className="flex gap-1">
