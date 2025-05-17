@@ -487,11 +487,10 @@ function WeeklyWorkoutCount() {
   const { workoutCount } = useWeeklyWorkout();
   
   return (
-    <div className="flex items-center bg-emerald-50 dark:bg-emerald-900/20 px-4 py-1.5 rounded-full">
-      <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-        {workoutCount}/7 days this week
-      </span>
-    </div>
+    <>
+      <span className="hidden sm:inline">{workoutCount}/7 days this week</span>
+      <span className="sm:hidden">{workoutCount}/7 days</span>
+    </>
   );
 }
 
@@ -1862,30 +1861,36 @@ export default function Home() {
 
               {/* Activity Feed */}
               {/* Workout Heat Map */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-10 py-8 shadow-sm mb-8">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-6 py-6 sm:py-8 shadow-sm mb-8">
                 <WeeklyWorkoutProvider>
-                  {/* Fixed header */}
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-baseline gap-2">
-                      <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Workout Activity</h2>
-                      <WeeklyWorkoutCount />
+                  {/* Header: Title and Workout Count Pill - always in a row */}
+                  <div className="flex flex-row items-center justify-between gap-4 mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white whitespace-nowrap">Workout Activity</h2>
+                    <div className="flex-shrink-0">
+                      <div className="flex items-center px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 rounded-full">
+                        <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                          <WeeklyWorkoutCount />
+                        </span>
+                      </div>
                     </div>
                   </div>
                   
                   {/* Heat map container */}
-                  <WorkoutHeatMap workouts={activityFeed
-                    .filter(item => item.type === 'workout')
-                    .map(item => ({
-                      data: {
-                        startDate: item.startTime,
-                        activityType: item.activityType || 'other',
-                        metrics: {
-                          duration: parseInt(item.metrics.Duration?.replace(/[^0-9]/g, '') || '0') * 60,
-                          energyBurned: parseInt(item.metrics['Calories']?.replace(/[^0-9]/g, '') || '0')
+                  <div className="pt-2">
+                    <WorkoutHeatMap workouts={activityFeed
+                      .filter(item => item.type === 'workout')
+                      .map(item => ({
+                        data: {
+                          startDate: item.startTime,
+                          activityType: item.activityType || 'other',
+                          metrics: {
+                            duration: parseInt(item.metrics.Duration?.replace(/[^0-9]/g, '') || '0') * 60,
+                            energyBurned: parseInt(item.metrics['Calories']?.replace(/[^0-9]/g, '') || '0')
+                          }
                         }
-                      }
-                    }))}
-                  />
+                      }))}
+                    />
+                  </div>
                 </WeeklyWorkoutProvider>
               </div>
 
