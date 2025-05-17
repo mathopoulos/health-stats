@@ -147,16 +147,16 @@ export default function UploadPage() {
   const [isAddResultsModalOpen, setIsAddResultsModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [name, setName] = useState('');
-  const [age, setAge] = useState<number | ''>('');
-  const [sex, setSex] = useState<'male' | 'female' | 'other' | ''>('');
-  const [isSavingName, setIsSavingName] = useState(false);
-  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [name, setName] = useState<string>('');
   const [nameError, setNameError] = useState<string | null>(null);
+  const [age, setAge] = useState<number | ''>('');
   const [ageError, setAgeError] = useState<string | null>(null);
+  const [sex, setSex] = useState<'male' | 'female' | 'other' | ''>('');
+  const [sexError, setSexError] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(() => {
@@ -1035,7 +1035,7 @@ export default function UploadPage() {
                   
                   <div className="space-y-6">
                     {/* Age and Sex Inputs Side by Side with Update Button */}
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                       {/* Age Input */}
                       <div className="md:col-span-5">
                         <label htmlFor="age" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1049,11 +1049,11 @@ export default function UploadPage() {
                           onChange={(e) => setAge(e.target.value === '' ? '' : Number(e.target.value))}
                           min="0"
                           max="120"
-                          className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-[38px] px-3 text-gray-900"
+                          className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700/50 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-12 px-4 text-gray-900"
                           placeholder="Enter your age"
                         />
                         {ageError && (
-                          <p className="mt-1 text-sm text-red-500 dark:text-red-400">{ageError}</p>
+                          <p className="mt-2 text-sm text-red-500 dark:text-red-400">{ageError}</p>
                         )}
                       </div>
                       
@@ -1067,48 +1067,50 @@ export default function UploadPage() {
                           id="sex"
                           value={sex}
                           onChange={(e) => setSex(e.target.value as 'male' | 'female' | 'other' | '')}
-                          className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-[38px] px-3 pr-10 appearance-none bg-no-repeat bg-[right_0.5rem_center] text-gray-900"
-                          style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")", backgroundSize: "1.5em 1.5em" }}
+                          className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700/50 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-12 px-4 text-gray-900 appearance-none bg-no-repeat"
+                          style={{
+                            backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                            backgroundPosition: `right 0.5rem center`,
+                            backgroundSize: `1.5em 1.5em`
+                          }}
                         >
-                          <option value="">Select your biological sex</option>
+                          <option value="">Select sex</option>
                           <option value="male">Male</option>
                           <option value="female">Female</option>
                           <option value="other">Other</option>
                         </select>
+                        {sexError && (
+                          <p className="mt-2 text-sm text-red-500 dark:text-red-400">{sexError}</p>
+                        )}
                       </div>
 
                       {/* Update Button */}
-                      <div className="md:col-span-2 flex justify-center">
+                      <div className="md:col-span-2 flex items-end">
                         <button
                           onClick={handleUpdateProfile}
                           disabled={isSavingProfile}
-                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 h-[38px]"
+                          className="w-full h-12 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors"
                         >
                           {isSavingProfile ? (
-                            <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                             </svg>
-                          ) : ''}
-                          Update
+                          ) : (
+                            'Update'
+                          )}
                         </button>
                       </div>
                     </div>
-                    
-                    {/* Privacy Notice */}
-                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md mt-6">
-                      <div className="flex items-start">
-                        <div className="flex-shrink-0">
-                          <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                        <div className="ml-3">
-                          <p className="text-sm text-blue-700 dark:text-blue-300">
-                            Your age and sex information is used only to provide more accurate health insights and will not be shared publicly.
-                          </p>
-                        </div>
-                      </div>
+
+                    {/* Information Notice */}
+                    <div className="mt-6 flex items-start space-x-3 text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                      <svg className="w-5 h-5 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p>
+                        Your age and sex information is used only to provide more accurate health insights and will not be shared publicly.
+                      </p>
                     </div>
                   </div>
                 </div>

@@ -787,82 +787,80 @@ export default function BloodMarkerHistory() {
 
   return (
     <div className="mt-8">
-      {/* Filters Section */}
-      <div className="mb-4">
-        <div className="flex items-center gap-3">
-          {/* Biomarker Name Filter */}
-          <div className="relative w-48">
-            <select
-              id="nameFilter"
-              value={nameFilter}
-              onChange={(e) => setNameFilter(e.target.value)}
-              className="w-full pl-8 pr-9 py-1.5 text-sm font-medium border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 dark:text-white bg-white/90 dark:bg-gray-800/90 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800 appearance-none"
-              style={{
-                backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M4.94 5.72a.75.75 0 0 0-1.06 1.06l3.83 3.83a.75.75 0 0 0 1.06 0l3.83-3.83a.75.75 0 0 0-1.06-1.06L8 9.28 4.94 5.72z' fill='%236b7280'/%3e%3c/svg%3e")`,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 0.5rem center',
-                backgroundSize: '1.5em 1.5em'
-              }}
-            >
-              <option value="">All Biomarkers</option>
-              {uniqueBiomarkerNames.map(name => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </select>
-            <svg className="absolute left-2 top-2 w-4 h-4 text-gray-400 dark:text-gray-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          
-          {/* Category Filter */}
-          <div className="w-48">
-            <select
-              id="categoryFilter"
-              value={categoryFilter}
-              onChange={(e) => setcategoryFilter(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm font-medium border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 dark:text-white bg-white/90 dark:bg-gray-800/90 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800 appearance-none"
-              style={{
-                backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M4.94 5.72a.75.75 0 0 0-1.06 1.06l3.83 3.83a.75.75 0 0 0 1.06 0l3.83-3.83a.75.75 0 0 0-1.06-1.06L8 9.28 4.94 5.72z' fill='%236b7280'/%3e%3c/svg%3e")`,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 0.5rem center',
-                backgroundSize: '1.5em 1.5em'
-              }}
-            >
-              <option value="">All Categories</option>
-              {uniqueCategories.map(category => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </div>
-          
-          {/* Date Filter */}
-          <div className="w-48">
-            <DatePicker
-              id="dateFilter"
-              selected={dateFilter}
-              onChange={(date: Date | null) => setDateFilter(date)}
-              className="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white bg-transparent"
-              placeholderText="Filter by date"
-              dateFormat="MMM d, yyyy"
-              isClearable
-            />
-          </div>
-          
-          {/* Clear Filters Button - Only shown when filters are applied */}
-          {(nameFilter || categoryFilter || dateFilter) && (
-            <div className="ml-auto">
-              <button 
-                onClick={clearFilters}
-                className="flex items-center gap-1.5 text-indigo-400 hover:text-indigo-300 focus:outline-none transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                Clear filters
-              </button>
-            </div>
-          )}
+      {/* Filters Section - Mobile Optimized */}
+      <div className="mb-4 space-y-3 md:space-y-0 md:flex md:items-center md:gap-3">
+        {/* Biomarker Name Filter */}
+        <div className="relative">
+          <select
+            id="nameFilter"
+            value={nameFilter}
+            onChange={(e) => setNameFilter(e.target.value)}
+            className="w-full pl-8 pr-9 py-2.5 text-sm font-medium border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 dark:text-white bg-white/90 dark:bg-gray-800/90 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800 appearance-none"
+            style={{
+              backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M4.94 5.72a.75.75 0 0 0-1.06 1.06l3.83 3.83a.75.75 0 0 0 1.06 0l3.83-3.83a.75.75 0 0 0-1.06-1.06L8 9.28 4.94 5.72z' fill='%236b7280'/%3e%3c/svg%3e")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 0.75rem center',
+              backgroundSize: '1.5em 1.5em'
+            }}
+          >
+            <option value="">All Biomarkers</option>
+            {uniqueBiomarkerNames.map(name => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
+          <svg className="absolute left-2.5 top-3 w-4 h-4 text-gray-400 dark:text-gray-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </div>
+        
+        {/* Category Filter */}
+        <div>
+          <select
+            id="categoryFilter"
+            value={categoryFilter}
+            onChange={(e) => setcategoryFilter(e.target.value)}
+            className="w-full px-4 py-2.5 text-sm font-medium border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 dark:text-white bg-white/90 dark:bg-gray-800/90 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800 appearance-none"
+            style={{
+              backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M4.94 5.72a.75.75 0 0 0-1.06 1.06l3.83 3.83a.75.75 0 0 0 1.06 0l3.83-3.83a.75.75 0 0 0-1.06-1.06L8 9.28 4.94 5.72z' fill='%236b7280'/%3e%3c/svg%3e")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 0.75rem center',
+              backgroundSize: '1.5em 1.5em'
+            }}
+          >
+            <option value="">All Categories</option>
+            {uniqueCategories.map(category => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+        </div>
+        
+        {/* Date Filter */}
+        <div>
+          <DatePicker
+            id="dateFilter"
+            selected={dateFilter}
+            onChange={(date: Date | null) => setDateFilter(date)}
+            className="w-full px-4 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 dark:text-white bg-white/90 dark:bg-gray-800/90 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800"
+            placeholderText="Filter by date"
+            dateFormat="MMM d, yyyy"
+            isClearable
+          />
+        </div>
+        
+        {/* Clear Filters Button - Only shown when filters are applied */}
+        {(nameFilter || categoryFilter || dateFilter) && (
+          <div className="md:ml-auto">
+            <button 
+              onClick={clearFilters}
+              className="w-full md:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Clear filters
+            </button>
+          </div>
+        )}
       </div>
       
       {/* Bulk Actions Bar - Only shown when items are selected */}
@@ -881,164 +879,164 @@ export default function BloodMarkerHistory() {
       )}
       
       {/* Table View */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-        <table className="w-full divide-y divide-gray-200 dark:divide-gray-700 table-fixed">
-          <thead className="bg-gray-50 dark:bg-gray-700">
-            <tr>
-              {/* Checkbox column for select all */}
-              <th scope="col" className="w-[5%] px-2 py-3">
-                <div className="flex items-center justify-center">
-                  <input
-                    type="checkbox"
-                    className="h-3.5 w-3.5 text-indigo-500 focus:ring-indigo-400 focus:ring-opacity-50 focus:ring-offset-0 border-gray-300 dark:border-gray-600 rounded cursor-pointer"
-                    checked={filteredData.length > 0 && 
-                      filteredData.every(item => 
-                        selectedBiomarkers.has(`${item.entryId}-${item.name}`)
-                      )
-                    }
-                    onChange={toggleSelectAll}
-                    disabled={filteredData.length === 0}
-                    aria-label="Select all visible biomarkers"
-                  />
-                </div>
-              </th>
-              <th 
-                scope="col" 
-                className="w-[22%] sticky left-0 z-10 bg-gray-50 dark:bg-gray-700 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider group cursor-pointer"
-                onClick={() => handleSort('name')}
-              >
-                <div className="flex items-center">
-                  Biomarker
-                  {renderSortIndicator('name')}
-                </div>
-              </th>
-              <th 
-                scope="col" 
-                className="w-[22%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider group cursor-pointer"
-                onClick={() => handleSort('category')}
-              >
-                <div className="flex items-center">
-                  Category
-                  {renderSortIndicator('category')}
-                </div>
-              </th>
-              <th 
-                scope="col" 
-                className="w-[10%] px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider group cursor-pointer"
-                onClick={() => handleSort('unit')}
-              >
-                <div className="flex items-center justify-center">
-                  Unit
-                  {renderSortIndicator('unit')}
-                </div>
-              </th>
-              <th 
-                scope="col" 
-                className="w-[15%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider group cursor-pointer"
-                onClick={() => handleSort('date')}
-              >
-                <div className="flex items-center">
-                  Date
-                  {renderSortIndicator('date')}
-                </div>
-              </th>
-              <th 
-                scope="col" 
-                className="w-[13%] px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider group cursor-pointer"
-                onClick={() => handleSort('value')}
-              >
-                <div className="flex items-center justify-center">
-                  Value
-                  {renderSortIndicator('value')}
-                </div>
-              </th>
-              <th scope="col" className="w-[13%] px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Act
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {filteredData.length > 0 ? (
-              filteredData.map((item, idx) => {
-                // Check if the row has the same background as its index would suggest
-                const rowBgClass = idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/30';
-                // Add selection highlight if selected
-                const selectionClass = isSelected(item) ? 'bg-indigo-50 dark:bg-indigo-900/20' : '';
-                
-                return (
-                  <tr 
-                    key={`${item.name}-${item.date}-${idx}`} 
-                    className={`${selectionClass} hover:bg-gray-100 dark:hover:bg-gray-700/50`}
-                  >
-                    {/* Checkbox for row selection */}
-                    <td className={`px-2 py-4 ${rowBgClass}`}>
-                      <div className="flex items-center justify-center">
-                        <input
-                          type="checkbox"
-                          className="h-3.5 w-3.5 text-indigo-500 focus:ring-indigo-400 focus:ring-opacity-50 focus:ring-offset-0 border-gray-300 dark:border-gray-600 rounded cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
-                          checked={isSelected(item)}
-                          onChange={() => toggleSelection(item)}
-                        />
-                      </div>
-                    </td>
-                    <td className={`sticky left-0 z-10 px-3 py-4 text-sm font-medium text-gray-900 dark:text-white truncate ${rowBgClass}`}>
-                      {item.name}
-                    </td>
-                    <td className={`px-3 py-4 text-sm text-gray-900 dark:text-white truncate ${rowBgClass}`}>
-                      {item.category}
-                    </td>
-                    <td className={`px-3 py-4 text-sm text-gray-900 dark:text-white text-center ${rowBgClass}`}>
-                      {item.unit}
-                    </td>
-                    <td className={`px-3 py-4 text-sm text-gray-900 dark:text-white ${rowBgClass}`}>
-                      {formatDate(item.date)}
-                    </td>
-                    <td className={`px-3 py-4 text-sm text-gray-900 dark:text-white text-center ${rowBgClass}`}>
-                      {item.value}
-                    </td>
-                    <td className={`px-3 py-4 text-sm ${rowBgClass}`}>
-                      <div className="flex justify-end space-x-2">
-                        <button 
-                          onClick={() => {
-                            const entry = entries.find(e => e._id === item.entryId);
-                            if (entry) handleEditEntry(entry);
-                          }}
-                          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
-                          aria-label="Edit"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteSingleMarker(item.entryId, item.name)}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                          aria-label="Delete"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            ) : (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                  No blood markers match your filter criteria.
-                  <button 
-                    onClick={clearFilters}
-                    className="ml-2 text-indigo-500 dark:text-indigo-400 hover:underline"
-                  >
-                    Clear filters
-                  </button>
-                </td>
+                {/* Checkbox column for select all */}
+                <th scope="col" className="w-12 px-2 py-3 whitespace-nowrap">
+                  <div className="flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      className="h-3.5 w-3.5 text-indigo-500 focus:ring-indigo-400 focus:ring-opacity-50 focus:ring-offset-0 border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+                      checked={filteredData.length > 0 && 
+                        filteredData.every(item => 
+                          selectedBiomarkers.has(`${item.entryId}-${item.name}`)
+                        )
+                      }
+                      onChange={toggleSelectAll}
+                      disabled={filteredData.length === 0}
+                      aria-label="Select all visible biomarkers"
+                    />
+                  </div>
+                </th>
+                <th 
+                  scope="col" 
+                  className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-700 min-w-[140px] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider group cursor-pointer whitespace-nowrap"
+                  onClick={() => handleSort('name')}
+                >
+                  <div className="flex items-center">
+                    Biomarker
+                    {renderSortIndicator('name')}
+                  </div>
+                </th>
+                <th 
+                  scope="col" 
+                  className="min-w-[120px] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider group cursor-pointer whitespace-nowrap"
+                  onClick={() => handleSort('category')}
+                >
+                  <div className="flex items-center">
+                    Category
+                    {renderSortIndicator('category')}
+                  </div>
+                </th>
+                <th 
+                  scope="col" 
+                  className="w-20 px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider group cursor-pointer whitespace-nowrap"
+                  onClick={() => handleSort('unit')}
+                >
+                  <div className="flex items-center justify-center">
+                    Unit
+                    {renderSortIndicator('unit')}
+                  </div>
+                </th>
+                <th 
+                  scope="col" 
+                  className="min-w-[100px] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider group cursor-pointer whitespace-nowrap"
+                  onClick={() => handleSort('date')}
+                >
+                  <div className="flex items-center">
+                    Date
+                    {renderSortIndicator('date')}
+                  </div>
+                </th>
+                <th 
+                  scope="col" 
+                  className="w-24 px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider group cursor-pointer whitespace-nowrap"
+                  onClick={() => handleSort('value')}
+                >
+                  <div className="flex items-center justify-center">
+                    Value
+                    {renderSortIndicator('value')}
+                  </div>
+                </th>
+                <th scope="col" className="w-20 px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap">
+                  Act
+                </th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {filteredData.length > 0 ? (
+                filteredData.map((item, idx) => {
+                  const rowBgClass = idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/30';
+                  const selectionClass = isSelected(item) ? 'bg-indigo-50 dark:bg-indigo-900/20' : '';
+                  
+                  return (
+                    <tr 
+                      key={`${item.name}-${item.date}-${idx}`} 
+                      className={`${selectionClass} hover:bg-gray-100 dark:hover:bg-gray-700/50`}
+                    >
+                      {/* Checkbox for row selection */}
+                      <td className={`w-12 px-2 py-4 ${rowBgClass} whitespace-nowrap`}>
+                        <div className="flex items-center justify-center">
+                          <input
+                            type="checkbox"
+                            className="h-3.5 w-3.5 text-indigo-500 focus:ring-indigo-400 focus:ring-opacity-50 focus:ring-offset-0 border-gray-300 dark:border-gray-600 rounded cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
+                            checked={isSelected(item)}
+                            onChange={() => toggleSelection(item)}
+                          />
+                        </div>
+                      </td>
+                      <td className={`sticky left-0 z-10 px-3 py-4 text-sm font-medium text-gray-900 dark:text-white ${rowBgClass} whitespace-nowrap`}>
+                        {item.name}
+                      </td>
+                      <td className={`px-3 py-4 text-sm text-gray-900 dark:text-white ${rowBgClass} whitespace-nowrap`}>
+                        {item.category}
+                      </td>
+                      <td className={`px-3 py-4 text-sm text-gray-900 dark:text-white text-center ${rowBgClass} whitespace-nowrap`}>
+                        {item.unit}
+                      </td>
+                      <td className={`px-3 py-4 text-sm text-gray-900 dark:text-white ${rowBgClass} whitespace-nowrap`}>
+                        {formatDate(item.date)}
+                      </td>
+                      <td className={`px-3 py-4 text-sm text-gray-900 dark:text-white text-center ${rowBgClass} whitespace-nowrap`}>
+                        {item.value}
+                      </td>
+                      <td className={`px-3 py-4 text-sm ${rowBgClass} whitespace-nowrap`}>
+                        <div className="flex justify-end space-x-3">
+                          <button 
+                            onClick={() => {
+                              const entry = entries.find(e => e._id === item.entryId);
+                              if (entry) handleEditEntry(entry);
+                            }}
+                            className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                            aria-label="Edit"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteSingleMarker(item.entryId, item.name)}
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            aria-label="Delete"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                    No blood markers match your filter criteria.
+                    <button 
+                      onClick={clearFilters}
+                      className="ml-2 text-indigo-500 dark:text-indigo-400 hover:underline"
+                    >
+                      Clear filters
+                    </button>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
       
       {/* Edit Modal */}
