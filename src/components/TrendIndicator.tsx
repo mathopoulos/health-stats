@@ -55,9 +55,9 @@ export const TrendIndicator = ({
       const iconColor = customColors.iconColor || color;
 
       return (
-        <div className={`flex items-center ${bgColor} ${showTimeRange ? 'rounded-full px-3 py-1' : ''} ${className}`}>
+        <div className={`flex items-center ${bgColor} ${showTimeRange ? 'rounded-full px-2 md:px-3 py-0.5 md:py-1' : ''} ${className}`}>
           <svg 
-            className={`w-${showTimeRange ? '3.5' : '4'} h-${showTimeRange ? '3.5' : '4'} ${iconColor} ${showTimeRange ? 'mr-1.5' : ''}`}
+            className={`w-3 h-3 md:w-3.5 md:h-3.5 ${iconColor} ${showTimeRange ? 'mr-1 md:mr-1.5' : ''}`}
             viewBox="0 0 24 24" 
             fill="none" 
             stroke="currentColor"
@@ -74,10 +74,10 @@ export const TrendIndicator = ({
               } 
             />
           </svg>
-          <span className={`${showTimeRange ? 'text-sm font-medium' : 'text-sm'} ${textColor}`}>
+          <span className={`text-xs md:text-sm font-medium ${textColor}`}>
             {isIncrease ? '+' : '-'}{absPercentChange}%
             {showTimeRange && timeRangeLabel && (
-              <span className="text-sm font-normal opacity-75"> over {timeRangeLabel.toLowerCase()}</span>
+              <span className="text-xs md:text-sm font-normal opacity-75"> over {timeRangeLabel.toLowerCase()}</span>
             )}
           </span>
         </div>
@@ -86,21 +86,21 @@ export const TrendIndicator = ({
 
     // Original compact styling for small indicators
     return (
-      <span className={`text-sm flex items-center ${color} ${className}`}>
+      <span className={`text-xs md:text-sm flex items-center ${color} ${className}`}>
         {isZeroChange ? (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
           </svg>
         ) : isIncrease ? (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
           </svg>
         ) : (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
           </svg>
         )}
-        <span className="ml-1">{absPercentChange}%</span>
+        <span className="ml-0.5 md:ml-1">{absPercentChange}%</span>
       </span>
     );
   }
@@ -135,17 +135,17 @@ export const TrendIndicator = ({
   }
 
   return (
-    <span className={`text-sm flex items-center ${color} ${className}`}>
+    <span className={`text-xs md:text-sm flex items-center ${color} ${className}`}>
       {isIncrease ? (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
         </svg>
       ) : (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
         </svg>
       )}
-      <span className="ml-1">{absPercentChange}%</span>
+      <span className="ml-0.5 md:ml-1">{absPercentChange}%</span>
     </span>
   );
 };

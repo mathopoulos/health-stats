@@ -2053,12 +2053,12 @@ export default function Home() {
           ) : activeTab === 'metrics' ? (
             <>
               {/* Summary Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 shadow-sm">
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Heart Rate Variability</span>
-                    <div className="mt-2 flex items-baseline space-x-2">
-                      <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Heart Rate Variability</span>
+                    <div className="mt-1.5 md:mt-2 flex flex-col md:flex-row md:items-baseline gap-1 md:gap-2">
+                      <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                         {data.loading ? (
                           "..."
                         ) : data.hrv.length > 0 ? (
@@ -2083,8 +2083,6 @@ export default function Home() {
                               .slice(-60, -30)
                               .reduce((sum, item) => sum + item.value, 0) / 
                               Math.min(data.hrv.slice(-60, -30).length, 30);
-                            const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
-                            const isIncrease = percentChange > 0;
                             return (
                               <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
                             );
@@ -2092,15 +2090,15 @@ export default function Home() {
                         </div>
                       )}
                     </div>
-                    <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">Last 30 days</span>
+                    <span className="mt-1 text-[10px] md:text-xs text-gray-500 dark:text-gray-400">Last 30 days</span>
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 shadow-sm">
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg VO2 Max</span>
-                    <div className="mt-2 flex items-baseline space-x-2">
-                      <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">VO2 Max</span>
+                    <div className="mt-1.5 md:mt-2 flex flex-col md:flex-row md:items-baseline gap-1 md:gap-2">
+                      <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                         {data.loading ? (
                           "..."
                         ) : data.vo2max.length > 0 ? (
@@ -2109,14 +2107,15 @@ export default function Home() {
                               .slice(-30)
                               .reduce((sum, item) => sum + item.value, 0) / 
                             Math.min(data.vo2max.slice(-30).length, 30)
-                          )} mL/kg·min`
+                          )}`
                         ) : (
                           "No data"
                         )}
                       </span>
-                      {!data.loading && data.vo2max.length > 30 && (
+                      {!data.loading && data.vo2max.length > 0 && (
                         <div className="flex items-center">
-                          {(() => {
+                          <span className="text-xs text-gray-500 dark:text-gray-400 mr-2">mL/kg·min</span>
+                          {data.vo2max.length > 30 && (() => {
                             const currentAvg = data.vo2max
                               .slice(-30)
                               .reduce((sum, item) => sum + item.value, 0) / 
@@ -2125,24 +2124,22 @@ export default function Home() {
                               .slice(-60, -30)
                               .reduce((sum, item) => sum + item.value, 0) / 
                               Math.min(data.vo2max.slice(-60, -30).length, 30);
-                            const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
-                            const isIncrease = percentChange > 0;
-                              return (
+                            return (
                               <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
                             );
                           })()}
                         </div>
                       )}
                     </div>
-                    <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">Last 30 days</span>
+                    <span className="mt-1 text-[10px] md:text-xs text-gray-500 dark:text-gray-400">Last 30 days</span>
                   </div>
-                        </div>
+                </div>
 
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 shadow-sm">
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Weight</span>
-                    <div className="mt-2 flex items-baseline space-x-2">
-                      <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Weight</span>
+                    <div className="mt-1.5 md:mt-2 flex flex-col md:flex-row md:items-baseline gap-1 md:gap-2">
+                      <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                         {data.loading ? (
                           "..."
                         ) : data.weight.length > 0 ? (
@@ -2151,14 +2148,15 @@ export default function Home() {
                               .slice(-30)
                               .reduce((sum, item) => sum + item.value, 0) / 
                             Math.min(data.weight.slice(-30).length, 30)
-                          ).toFixed(1)} lb`
+                          ).toFixed(1)}`
                         ) : (
                           "No data"
                         )}
-                              </span>
-                      {!data.loading && data.weight.length > 30 && (
+                      </span>
+                      {!data.loading && data.weight.length > 0 && (
                         <div className="flex items-center">
-                          {(() => {
+                          <span className="text-xs text-gray-500 dark:text-gray-400 mr-2">lb</span>
+                          {data.weight.length > 30 && (() => {
                             const currentAvg = data.weight
                               .slice(-30)
                               .reduce((sum, item) => sum + item.value, 0) / 
@@ -2167,8 +2165,6 @@ export default function Home() {
                               .slice(-60, -30)
                               .reduce((sum, item) => sum + item.value, 0) / 
                               Math.min(data.weight.slice(-60, -30).length, 30);
-                            const percentChange = ((currentAvg - prevAvg) / prevAvg) * 100;
-                            const isIncrease = percentChange > 0;
                             return (
                               <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
                             );
@@ -2176,15 +2172,15 @@ export default function Home() {
                         </div>
                       )}
                     </div>
-                    <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">Last 30 days</span>
+                    <span className="mt-1 text-[10px] md:text-xs text-gray-500 dark:text-gray-400">Last 30 days</span>
                   </div>
-                          </div>
+                </div>
 
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 shadow-sm">
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Body Fat</span>
-                    <div className="mt-2 flex items-baseline space-x-2">
-                      <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Body Fat</span>
+                    <div className="mt-1.5 md:mt-2 flex flex-col md:flex-row md:items-baseline gap-1 md:gap-2">
+                      <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                         {data.loading ? (
                           "..."
                         ) : data.bodyFat.length > 0 ? (
@@ -2193,14 +2189,15 @@ export default function Home() {
                               .slice(-30)
                               .reduce((sum, item) => sum + item.value, 0) / 
                             Math.min(data.bodyFat.slice(-30).length, 30)
-                          ).toFixed(1)}%`
+                          ).toFixed(1)}`
                         ) : (
                           "No data"
                         )}
                       </span>
-                      {!data.loading && data.bodyFat.length > 30 && (
+                      {!data.loading && data.bodyFat.length > 0 && (
                         <div className="flex items-center">
-                          {(() => {
+                          <span className="text-xs text-gray-500 dark:text-gray-400 mr-2">%</span>
+                          {data.bodyFat.length > 30 && (() => {
                             const currentAvg = data.bodyFat
                               .slice(-30)
                               .reduce((sum, item) => sum + item.value, 0) / 
@@ -2209,9 +2206,6 @@ export default function Home() {
                               .slice(-60, -30)
                               .reduce((sum, item) => sum + item.value, 0) / 
                               Math.min(data.bodyFat.slice(-60, -30).length, 30);
-                            const percentChange = prevAvg > 0
-                              ? ((currentAvg - prevAvg) / prevAvg) * 100
-                              : 0;
                             
                             // Only show if we have enough data
                             if (currentAvg > 0 && prevAvg > 0) {
@@ -2226,13 +2220,13 @@ export default function Home() {
                             }
                             return null;
                           })()}
-                                </div>
+                        </div>
                       )}
-                                </div>
-                    <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">Last 30 days</span>
-                              </div>
+                    </div>
+                    <span className="mt-1 text-[10px] md:text-xs text-gray-500 dark:text-gray-400">Last 30 days</span>
+                  </div>
                 </div>
-                          </div>
+              </div>
 
               {/* HRV Chart */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
