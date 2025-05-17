@@ -162,7 +162,7 @@ export default function UploadPage() {
   const [activeTab, setActiveTab] = useState(() => {
     // Initialize from URL query param if available, otherwise default to 'profile'
     const tab = searchParams?.get('tab');
-    return tab && ['profile', 'fitness', 'blood'].includes(tab) ? tab : 'profile';
+    return tab && ['profile', 'fitness', 'blood', 'more'].includes(tab) ? tab : 'profile';
   });
   const profileImageRef = useRef<HTMLInputElement>(null);
   const [isFileLoading, setIsFileLoading] = useState(false);
@@ -703,10 +703,65 @@ export default function UploadPage() {
     );
   }
 
+  // Mobile Navigation Tabs Component
+  const MobileNavigation = () => (
+    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50">
+      <div className="flex justify-around items-center h-16">
+        <button
+          onClick={() => handleTabChange('profile')}
+          className={`flex flex-1 flex-col items-center justify-center h-full ${
+            activeTab === 'profile' ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-400'
+          }`}
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          <span className="text-xs mt-1">Profile</span>
+        </button>
+
+        <button
+          onClick={() => handleTabChange('fitness')}
+          className={`flex flex-1 flex-col items-center justify-center h-full ${
+            activeTab === 'fitness' ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-400'
+          }`}
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          <span className="text-xs mt-1">Fitness</span>
+        </button>
+
+        <button
+          onClick={() => handleTabChange('blood')}
+          className={`flex flex-1 flex-col items-center justify-center h-full ${
+            activeTab === 'blood' ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-400'
+          }`}
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+          </svg>
+          <span className="text-xs mt-1">Blood</span>
+        </button>
+
+        <button
+          onClick={() => handleTabChange('more')}
+          className={`flex flex-1 flex-col items-center justify-center h-full ${
+            activeTab === 'more' ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-400'
+          }`}
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+          <span className="text-xs mt-1">More</span>
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Left Navigation */}
-      <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+      {/* Left Navigation - Hidden on mobile */}
+      <div className="hidden md:block w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
         <div className="p-4">
           <Link href="/" className="flex items-center space-x-2 mb-8">
             <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 via-purple-500 to-indigo-600 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400 text-transparent bg-clip-text">
@@ -759,14 +814,14 @@ export default function UploadPage() {
           </nav>
         </div>
 
-        {/* User Profile Section with Dashboard Button above it */}
+        {/* User Profile Section with Sign out and Theme toggle */}
         <div className="absolute bottom-0 left-0 w-64">
-          {/* Dashboard Button */}
+          {/* Dashboard Button - Desktop Version */}
           {session?.user?.id && (
-            <div className="px-4 pb-3">
+            <div className="px-4 pb-2">
               <Link
                 href={`/dashboard/userId=${session.user.id}`}
-                className="group flex items-center justify-between w-full px-4 py-2 text-sm font-medium rounded-lg transition-all bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border border-indigo-100 dark:border-indigo-800"
+                className="group flex items-center justify-between w-full px-4 py-3 text-sm font-medium rounded-lg transition-all bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border border-indigo-100 dark:border-indigo-800"
               >
                 <div className="flex items-center">
                   <svg className="w-5 h-5 mr-2 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -780,8 +835,7 @@ export default function UploadPage() {
               </Link>
             </div>
           )}
-
-          {/* User Profile Section */}
+          
           <div className="p-4 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-3">
               {profileImage ? (
@@ -816,13 +870,53 @@ export default function UploadPage() {
         </div>
       </div>
 
+      {/* Mobile Header - Only visible on mobile */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-20 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <Link href="/" className="flex items-center space-x-2">
+            <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-purple-500 to-indigo-600 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400 text-transparent bg-clip-text">
+              revly
+            </span>
+          </Link>
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+            {activeTab === 'profile' ? 'Profile' : 
+             activeTab === 'fitness' ? 'Fitness Metrics' : 
+             activeTab === 'blood' ? 'Blood Markers' : 
+             'More'}
+          </h1>
+          <div className="w-6"></div> {/* Empty div for flex spacing */}
+        </div>
+      </div>
+
       {/* Main Content Area */}
       <div className="flex-1 overflow-auto">
-        <div className="max-w-4xl mx-auto p-8">
+        <div className="max-w-4xl mx-auto p-8 md:p-8 pt-16 md:pt-8 pb-24 md:pb-8">
+          
           {/* Profile Tab Content */}
           {activeTab === 'profile' && (
             <div className="space-y-6">
+              {/* View Dashboard Button - Moved to top for mobile */}
+              {session?.user?.id && (
+                <div className="block md:hidden">
+                  <Link
+                    href={`/dashboard/userId=${session.user.id}`}
+                    className="group flex items-center justify-between w-full px-4 py-3 text-sm font-medium rounded-lg transition-all bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border border-indigo-100 dark:border-indigo-800"
+                  >
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 mr-2 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                      <span>View Dashboard</span>
+                    </div>
+                    <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
+              )}
+              
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Profile</h2>
+              
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm divide-y divide-gray-200 dark:divide-gray-700">
                 {/* Profile Photo & Name Section */}
                 <div className="pt-10 px-6 pb-6">
@@ -972,13 +1066,14 @@ export default function UploadPage() {
                           name="sex"
                           id="sex"
                           value={sex}
-                          onChange={(e) => setSex(e.target.value as 'male' | 'female' | '')}
+                          onChange={(e) => setSex(e.target.value as 'male' | 'female' | 'other' | '')}
                           className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-[38px] px-3 pr-10 appearance-none bg-no-repeat bg-[right_0.5rem_center] text-gray-900"
                           style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")", backgroundSize: "1.5em 1.5em" }}
                         >
                           <option value="">Select your biological sex</option>
                           <option value="male">Male</option>
                           <option value="female">Female</option>
+                          <option value="other">Other</option>
                         </select>
                       </div>
 
@@ -1021,7 +1116,7 @@ export default function UploadPage() {
             </div>
           )}
 
-          {/* Fitness Metrics Tab Content */}
+          {/* Fitness Tab Content */}
           {activeTab === 'fitness' && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Fitness Metrics</h2>
@@ -1399,7 +1494,7 @@ export default function UploadPage() {
             </div>
           )}
 
-          {/* Blood Markers Tab Content */}
+          {/* Blood Tab Content */}
           {activeTab === 'blood' && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Blood Markers</h2>
@@ -1435,16 +1530,92 @@ export default function UploadPage() {
             </div>
           )}
           
-          {/* Add the modal inside the main component structure */}
-          {isAddResultsModalOpen && (
-            <AddResultsModal
-              isOpen={isAddResultsModalOpen}
-              onClose={() => setIsAddResultsModalOpen(false)}
-              prefilledResults={null}
-            />
+          {/* More Tab - Mobile Only */}
+          {activeTab === 'more' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h2>
+              
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+                <div className="p-6 space-y-6">
+                  {/* User Profile Section */}
+                  <div className="flex items-center space-x-4">
+                    {profileImage ? (
+                      <Image
+                        src={profileImage}
+                        alt="Profile"
+                        width={48}
+                        height={48}
+                        className="rounded-full"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                        <span className="text-gray-500 dark:text-gray-400 text-base font-medium">
+                          {name?.charAt(0)?.toUpperCase() || '?'}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-base font-medium text-gray-900 dark:text-white">
+                        {name || 'Anonymous User'}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{session?.user?.email}</p>
+                    </div>
+                  </div>
+                  
+                  {/* Theme Toggle */}
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex items-center space-x-3">
+                      <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                      </svg>
+                      <span className="text-base text-gray-800 dark:text-gray-200">Dark Mode</span>
+                    </div>
+                    <ThemeToggle />
+                  </div>
+                  
+                  {/* Sign Out Button */}
+                  <button
+                    onClick={() => signOut()}
+                    className="w-full flex items-center justify-between py-3 text-base text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      <span>Sign Out</span>
+                    </div>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+                <div className="p-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">About</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Health Stats App v1.0.0<br />
+                    Track and monitor your health metrics in one place.
+                  </p>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileNavigation />
+
+      {/* Add the modal inside the main component structure */}
+      {isAddResultsModalOpen && (
+        <AddResultsModal
+          isOpen={isAddResultsModalOpen}
+          onClose={() => setIsAddResultsModalOpen(false)}
+          prefilledResults={null}
+        />
+      )}
     </div>
   );
 } 
