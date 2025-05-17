@@ -871,19 +871,13 @@ export default function UploadPage() {
       </div>
 
       {/* Mobile Header - Only visible on mobile */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-20 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+      <div className="md:hidden fixed top-0 left-0 right-0 z-20 bg-gray-50 dark:bg-gray-900 border-b border-gray-200/50 dark:border-gray-800 px-4 py-3">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
             <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-purple-500 to-indigo-600 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400 text-transparent bg-clip-text">
               revly
             </span>
           </Link>
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {activeTab === 'profile' ? 'Profile' : 
-             activeTab === 'fitness' ? 'Fitness Metrics' : 
-             activeTab === 'blood' ? 'Blood Markers' : 
-             'More'}
-          </h1>
           <div className="w-6"></div> {/* Empty div for flex spacing */}
         </div>
       </div>
@@ -915,7 +909,7 @@ export default function UploadPage() {
                 </div>
               )}
               
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Profile</h2>
+              <h2 className="hidden md:block text-2xl font-bold text-gray-900 dark:text-white">Profile</h2>
               
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm divide-y divide-gray-200 dark:divide-gray-700">
                 {/* Profile Photo & Name Section */}
@@ -1121,7 +1115,7 @@ export default function UploadPage() {
           {/* Fitness Tab Content */}
           {activeTab === 'fitness' && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Fitness Metrics</h2>
+              <h2 className="hidden md:block text-2xl font-bold text-gray-900 dark:text-white">Fitness Metrics</h2>
 
               {/* iOS App Sync Section - Simplified */}
               <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
@@ -1499,7 +1493,7 @@ export default function UploadPage() {
           {/* Blood Tab Content */}
           {activeTab === 'blood' && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Blood Markers</h2>
+              <h2 className="hidden md:block text-2xl font-bold text-gray-900 dark:text-white">Blood Markers</h2>
               
               {/* PDF Upload Section */}
               <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
@@ -1535,7 +1529,7 @@ export default function UploadPage() {
           {/* More Tab - Mobile Only */}
           {activeTab === 'more' && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h2>
+              <h2 className="hidden md:block text-2xl font-bold text-gray-900 dark:text-white">Settings</h2>
               
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
                 <div className="p-6 space-y-6">
