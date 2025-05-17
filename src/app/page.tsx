@@ -37,7 +37,7 @@ export default function Home() {
 
         {/* Navigation */}
         <nav className="relative z-40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4">
             <div className="flex justify-between items-center">
               <a href="/" className="text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-indigo-600 via-purple-500 to-indigo-600 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400 text-transparent bg-clip-text bg-animate hover:scale-105 transition-all duration-300">
                 revly
@@ -45,7 +45,7 @@ export default function Home() {
               <div className="flex items-center space-x-4">
                 <a
                   href="/auth/signin"
-                  className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  className="px-3 sm:px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
                 >
                   Log in
                 </a>
@@ -65,30 +65,30 @@ export default function Home() {
         </div>
 
         {/* Enhanced Main Title with Animation */}
-        <h1 className="text-center animate-fade-in">
-          <span className="block text-5xl md:text-6xl font-bold mb-4 hover:scale-105 transition-transform">
+        <h1 className="text-center animate-fade-in px-3 sm:px-0">
+          <span className="block text-4xl sm:text-5xl md:text-6xl font-bold mb-4 hover:scale-105 transition-transform">
             Track Your Health in One Place
           </span>
-          <span className="block text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 text-transparent bg-clip-text bg-animate hover:scale-105 transition-transform">
+          <span className="block text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 text-transparent bg-clip-text bg-animate hover:scale-105 transition-transform">
             Analyze • Improve • Share
           </span>
         </h1>
 
         {/* Enhanced Subtitle */}
-        <p className="mt-8 text-xl text-center text-gray-600 dark:text-gray-300 max-w-3xl mx-auto animate-fade-in-up">
+        <p className="mt-6 sm:mt-8 text-lg sm:text-xl text-center text-gray-600 dark:text-gray-300 max-w-3xl mx-auto animate-fade-in-up px-3 sm:px-0">
           Revly syncs with your devices to show what matters most for better sleep, fitness, and longevity.
         </p>
 
         {/* Enhanced CTA Buttons */}
-        <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4 animate-fade-in-up delay-200">
+        <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 animate-fade-in-up delay-200 px-3 sm:px-0">
           <a href="/auth/checkout" 
-             className="group inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/25">
+             className="group inline-flex items-center justify-center px-6 sm:px-8 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/25 w-full sm:w-auto">
             <span>Get Access (Beta)</span>
             <span className="ml-2 transform translate-x-0 group-hover:translate-x-1 transition-transform">→</span>
           </a>
           <button
             onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })}
-            className="group inline-flex items-center justify-center px-8 py-3 border border-gray-300 dark:border-gray-700 text-base font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-600 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-gray-800/25">
+            className="group inline-flex items-center justify-center px-6 sm:px-8 py-3 border border-gray-300 dark:border-gray-700 text-base font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-600 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-gray-800/25 w-full sm:w-auto">
             Explore
             <svg className="ml-2 w-4 h-4 transform group-hover:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -97,7 +97,7 @@ export default function Home() {
         </div>
 
         {/* Enhanced Demo Section */}
-        <div className="mt-16 sm:mt-24 animate-fade-in-up delay-300 px-2 sm:px-4">
+        <div className="mt-16 sm:mt-24 animate-fade-in-up delay-300 px-3 sm:px-4">
           <div className="group relative bg-white/50 dark:bg-gray-900/50 backdrop-blur-lg rounded-2xl p-4 sm:p-6 border border-gray-200 dark:border-gray-800 hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10">
             {/* Dashboard Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 space-y-2 sm:space-y-0">
@@ -134,7 +134,7 @@ export default function Home() {
         </div>
 
         {/* Enhanced Features Grid */}
-        <div className="mt-16 sm:mt-24 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 animate-fade-in-up delay-400 px-2 sm:px-4">
+        <div className="mt-16 sm:mt-24 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8 animate-fade-in-up delay-400 px-3 sm:px-4">
           {/* Enhanced Feature 1 */}
           <div className="group bg-white/30 dark:bg-gray-900/30 backdrop-blur rounded-xl p-6 border border-gray-200/50 dark:border-gray-800/50 hover:border-indigo-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/10">
             <div className="w-12 h-12 bg-indigo-500/20 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -172,8 +172,8 @@ export default function Home() {
 
       {/* Enhanced Footer */}
       <footer className="border-t border-gray-200 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-8 sm:py-12">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-6">
             <p className="text-gray-600 dark:text-gray-400">© 2025 revly. All rights reserved.</p>
             <div className="flex items-center space-x-4">
               <a href="https://x.com/lex_build" target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300 transition-colors">
