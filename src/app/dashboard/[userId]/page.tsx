@@ -3181,6 +3181,7 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
                 <div className="w-2 h-2 bg-white dark:bg-gray-800 border-r border-b border-gray-100 dark:border-gray-700 absolute -bottom-1 left-1/2 -translate-x-1/2 transform rotate-45"></div>
               </div>
             </div>
+            {/* The TrendIndicator component rendering has been removed from here. Previously it was:
             {data.length > 1 && (
               <TrendIndicator 
                 current={data[0].value}
@@ -3191,6 +3192,7 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
                 className="min-w-[60px] justify-end"
               />
             )}
+            */}
           </>
         )}
         <span className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white whitespace-nowrap">
