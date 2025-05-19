@@ -1738,7 +1738,7 @@ export default function Home() {
                       {userData?.name || ''}
                     </h1>
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">Viewing user data</p>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">Health Dashboard</p>
                       <button
                         onClick={() => {
                           const url = window.location.href;
