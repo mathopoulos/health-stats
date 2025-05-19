@@ -2166,32 +2166,41 @@ export default function Home() {
                       <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                         {data.loading ? (
                           "..."
-                        ) : data.weight.length > 0 ? (
-                          `${(
-                            data.weight
-                              .slice(-30)
-                              .reduce((sum, item) => sum + item.value, 0) / 
-                            Math.min(data.weight.slice(-30).length, 30)
-                          ).toFixed(1)}`
-                        ) : (
-                          "No data"
-                        )}
+                        ) : (() => {
+                          const last30DaysData = getTimeRangeData(data.weight, 'last30days');
+                          return last30DaysData.length > 0 ? (
+                            `${(
+                              last30DaysData.reduce((sum, item) => sum + item.value, 0) /
+                              last30DaysData.length
+                            ).toFixed(1)}`
+                          ) : (
+                            "No data"
+                          );
+                        })()}
                       </span>
-                      {!data.loading && data.weight.length > 0 && (
+                      {!data.loading && getTimeRangeData(data.weight, 'last30days').length > 0 && (
                         <div className="flex items-center">
                           <span className="text-xs text-gray-500 dark:text-gray-400 mr-2">lb</span>
-                          {data.weight.length > 30 && (() => {
-                            const currentAvg = data.weight
-                              .slice(-30)
-                              .reduce((sum, item) => sum + item.value, 0) / 
-                              Math.min(data.weight.slice(-30).length, 30);
-                            const prevAvg = data.weight
-                              .slice(-60, -30)
-                              .reduce((sum, item) => sum + item.value, 0) / 
-                              Math.min(data.weight.slice(-60, -30).length, 30);
-                            return (
-                              <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
-                            );
+                          {(() => {
+                            const currentPeriodData = getTimeRangeData(data.weight, 'last30days');
+                            const previousPeriodStartDate = new Date();
+                            previousPeriodStartDate.setDate(previousPeriodStartDate.getDate() - 60);
+                            const previousPeriodEndDate = new Date();
+                            previousPeriodEndDate.setDate(previousPeriodEndDate.getDate() - 30);
+
+                            const previousPeriodData = data.weight.filter(item => {
+                              const itemDate = new Date(item.date);
+                              return itemDate >= previousPeriodStartDate && itemDate < previousPeriodEndDate;
+                            });
+
+                            if (currentPeriodData.length > 0 && previousPeriodData.length > 0) {
+                              const currentAvg = currentPeriodData.reduce((sum, item) => sum + item.value, 0) / currentPeriodData.length;
+                              const prevAvg = previousPeriodData.reduce((sum, item) => sum + item.value, 0) / previousPeriodData.length;
+                              return (
+                                <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
+                              );
+                            }
+                            return <></>;
                           })()}
                         </div>
                       )}
@@ -2207,42 +2216,52 @@ export default function Home() {
                       <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                         {data.loading ? (
                           "..."
-                        ) : data.bodyFat.length > 0 ? (
-                          `${(
-                            data.bodyFat
-                              .slice(-30)
-                              .reduce((sum, item) => sum + item.value, 0) / 
-                            Math.min(data.bodyFat.slice(-30).length, 30)
-                          ).toFixed(1)}`
-                        ) : (
-                          "No data"
-                        )}
+                        ) : (() => {
+                          const last30DaysData = getTimeRangeData(data.bodyFat, 'last30days');
+                          return last30DaysData.length > 0 ? (
+                            `${(
+                              last30DaysData.reduce((sum, item) => sum + item.value, 0) /
+                              last30DaysData.length
+                            ).toFixed(1)}`
+                          ) : (
+                            "No data"
+                          );
+                        })()}
                       </span>
-                      {!data.loading && data.bodyFat.length > 0 && (
+                      {!data.loading && getTimeRangeData(data.bodyFat, 'last30days').length > 0 && (
                         <div className="flex items-center">
                           <span className="text-xs text-gray-500 dark:text-gray-400 mr-2">%</span>
-                          {data.bodyFat.length > 30 && (() => {
-                            const currentAvg = data.bodyFat
-                              .slice(-30)
-                              .reduce((sum, item) => sum + item.value, 0) / 
-                              Math.min(data.bodyFat.slice(-30).length, 30);
-                            const prevAvg = data.bodyFat
-                              .slice(-60, -30)
-                              .reduce((sum, item) => sum + item.value, 0) / 
-                              Math.min(data.bodyFat.slice(-60, -30).length, 30);
-                            
-                            // Only show if we have enough data
-                            if (currentAvg > 0 && prevAvg > 0) {
-                              return (
-                                <TrendIndicator 
-                                  current={currentAvg} 
-                                  previous={prevAvg} 
-                                  isFitnessMetric={true}
-                                  isBodyFat={true}
-                                />
-                              );
+                          {(() => {
+                            const currentPeriodData = getTimeRangeData(data.bodyFat, 'last30days');
+                            const previousPeriodStartDate = new Date();
+                            previousPeriodStartDate.setDate(previousPeriodStartDate.getDate() - 60);
+                            const previousPeriodEndDate = new Date();
+                            previousPeriodEndDate.setDate(previousPeriodEndDate.getDate() - 30);
+
+                            const previousPeriodData = data.bodyFat.filter(item => {
+                              const itemDate = new Date(item.date);
+                              return itemDate >= previousPeriodStartDate && itemDate < previousPeriodEndDate;
+                            });
+
+                            if (currentPeriodData.length > 0 && previousPeriodData.length > 0) {
+                              const currentAvg = currentPeriodData.reduce((sum, item) => sum + item.value, 0) / currentPeriodData.length;
+                              const prevAvg = previousPeriodData.reduce((sum, item) => sum + item.value, 0) / previousPeriodData.length;
+                              
+                              // Only show if we have enough data and positive averages (specific to BodyFat)
+                              if (currentAvg > 0 && prevAvg > 0) {
+                                return (
+                                  <TrendIndicator
+                                    current={currentAvg}
+                                    previous={prevAvg}
+                                    isFitnessMetric={true}
+                                    isBodyFat={true}
+                                  />
+                                );
+                              } else {
+                                return <></>; // Add explicit return for the inner 'else' case
+                              }
                             }
-                            return <></>; // Changed from return null
+                            return <></>; // This is for the outer 'if' case
                           })()}
                         </div>
                       )}
