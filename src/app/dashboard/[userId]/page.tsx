@@ -2894,9 +2894,11 @@ export default function Home() {
             </>
           ) : (
           <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-6 py-6 shadow-sm">
+              {/* Title removed from here
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">Blood Markers & Longevity</h2>
-            </div>
+              </div>
+              */}
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Lipid Panel */}
