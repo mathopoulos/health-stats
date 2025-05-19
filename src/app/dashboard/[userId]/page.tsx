@@ -3130,22 +3130,12 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusPillClasses = (status: string) => {
     switch (status) {
-      case 'Abnormal': return 'text-red-500';
-      case 'Normal': return 'text-yellow-500';
-      case 'Optimal': return 'text-green-500';
-      default: return 'text-gray-500';
-    }
-  };
-
-  const getDotColor = (value: number) => {
-    const status = getStatusInfo(value);
-    switch (status) {
-      case 'Abnormal': return 'bg-red-500';
-      case 'Normal': return 'bg-yellow-500';
-      case 'Optimal': return 'bg-green-500';
-      default: return 'bg-gray-500';
+      case 'Abnormal': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+      case 'Normal': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
+      case 'Optimal': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+      default: return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
     }
   };
 
@@ -3161,17 +3151,17 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
         {data.length > 0 && (
           <>
             <div className="group relative">
+              {/* Updated Pill */}
               <div 
-                className={`w-2 h-2 rounded-full transition-transform duration-200 group-hover:scale-125 ${
-                  getDotColor(data[0].value)
+                className={`px-2.5 py-1 text-xs font-medium rounded-md transition-transform duration-200 group-hover:scale-105 ${
+                  getStatusPillClasses(getStatusInfo(data[0].value))
                 }`}
-              />
+              >
+                {getStatusInfo(data[0].value)}
+              </div>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
                 <div className="bg-white dark:bg-gray-800 rounded-lg py-3 px-4 shadow-sm border border-gray-100 dark:border-gray-700 w-[200px] sm:w-[250px]">
                   <div className="flex flex-col gap-3">
-                    <div className={`text-sm font-medium ${getStatusColor(getStatusInfo(data[0].value))}`}>
-                      {getStatusInfo(data[0].value)}
-                                    </div>
                     <div className="space-y-2 text-xs">
                       <div className="flex items-center justify-between">
                         <span className="text-red-500 font-medium">Abnormal</span>
