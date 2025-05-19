@@ -1847,14 +1847,15 @@ export default function Home() {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
                     <h3 className="text-sm sm:text-lg font-medium text-gray-900 dark:text-white">HRV</h3>
                     <span className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400">
-                      {data.loading ? "..." : data.hrv.length > 0 
-                        ? `${Math.round(
-                            data.hrv
-                              .slice(-30)
-                              .reduce((sum, item) => sum + item.value, 0) / 
-                            Math.min(data.hrv.slice(-30).length, 30)
-                          )}` 
-                        : "—"}
+                      {data.loading ? "..." : (() => {
+                        const last30DaysData = getTimeRangeData(data.hrv, 'last30days');
+                        return last30DaysData.length > 0
+                          ? `${Math.round(
+                              last30DaysData.reduce((sum, item) => sum + item.value, 0) /
+                              last30DaysData.length
+                            )} ms`
+                          : "—";
+                      })()}
                     </span>
                   </div>
                 </div>
@@ -2062,31 +2063,40 @@ export default function Home() {
                       <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                         {data.loading ? (
                           "..."
-                        ) : data.hrv.length > 0 ? (
-                          `${Math.round(
-                            data.hrv
-                              .slice(-30)
-                              .reduce((sum, item) => sum + item.value, 0) / 
-                            Math.min(data.hrv.slice(-30).length, 30)
-                          )} ms`
-                        ) : (
-                          "No data"
-                        )}
+                        ) : (() => {
+                          const last30DaysData = getTimeRangeData(data.hrv, 'last30days');
+                          return last30DaysData.length > 0 ? (
+                            `${Math.round(
+                              last30DaysData.reduce((sum, item) => sum + item.value, 0) /
+                              last30DaysData.length
+                            )} ms`
+                          ) : (
+                            "No data"
+                          );
+                        })()}
                       </span>
-                      {!data.loading && data.hrv.length > 30 && (
+                      {!data.loading && getTimeRangeData(data.hrv, 'last30days').length > 0 && (
                         <div className="flex items-center">
                           {(() => {
-                            const currentAvg = data.hrv
-                              .slice(-30)
-                              .reduce((sum, item) => sum + item.value, 0) / 
-                              Math.min(data.hrv.slice(-30).length, 30);
-                            const prevAvg = data.hrv
-                              .slice(-60, -30)
-                              .reduce((sum, item) => sum + item.value, 0) / 
-                              Math.min(data.hrv.slice(-60, -30).length, 30);
-                            return (
-                              <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
-                            );
+                            const currentPeriodData = getTimeRangeData(data.hrv, 'last30days');
+                            const previousPeriodStartDate = new Date();
+                            previousPeriodStartDate.setDate(previousPeriodStartDate.getDate() - 60);
+                            const previousPeriodEndDate = new Date();
+                            previousPeriodEndDate.setDate(previousPeriodEndDate.getDate() - 30);
+
+                            const previousPeriodData = data.hrv.filter(item => {
+                              const itemDate = new Date(item.date);
+                              return itemDate >= previousPeriodStartDate && itemDate < previousPeriodEndDate;
+                            });
+
+                            if (currentPeriodData.length > 0 && previousPeriodData.length > 0) {
+                              const currentAvg = currentPeriodData.reduce((sum, item) => sum + item.value, 0) / currentPeriodData.length;
+                              const prevAvg = previousPeriodData.reduce((sum, item) => sum + item.value, 0) / previousPeriodData.length;
+                              return (
+                                <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
+                              );
+                            }
+                            return <></>; // Changed from return null
                           })()}
                         </div>
                       )}
@@ -2140,7 +2150,7 @@ export default function Home() {
                                 <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
                               );
                             }
-                            return null;
+                            return <></>; // Changed from return null
                           })()}
                         </div>
                       )}
@@ -2232,7 +2242,7 @@ export default function Home() {
                                 />
                               );
                             }
-                            return null;
+                            return <></>; // Changed from return null
                           })()}
                         </div>
                       )}
@@ -2300,7 +2310,7 @@ export default function Home() {
                               />
                             );
                           }
-                          return null;
+                          return <></>; // Changed from return null
                         })()}
                       </>
                     )}
@@ -2456,7 +2466,7 @@ export default function Home() {
                               />
                             );
                           }
-                          return null;
+                          return <></>; // Changed from return null
                         })()}
                       </>
                     )}
@@ -2610,7 +2620,7 @@ export default function Home() {
                               />
                             );
                           }
-                          return null;
+                          return <></>; // Changed from return null
                         })()}
                       </>
                     )}
@@ -2767,7 +2777,7 @@ export default function Home() {
                               />
                             );
                           }
-                          return null;
+                          return <></>; // Changed from return null
                         })()}
                       </>
                     )}
