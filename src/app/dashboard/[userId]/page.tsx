@@ -1831,14 +1831,15 @@ export default function Home() {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
                     <h3 className="text-sm sm:text-lg font-medium text-gray-900 dark:text-white">VO2 Max</h3>
                     <span className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
-                      {data.loading ? "..." : data.vo2max.length > 0 
-                        ? `${Math.round(
-                            data.vo2max
-                              .slice(-30)
-                              .reduce((sum, item) => sum + item.value, 0) / 
-                            Math.min(data.vo2max.slice(-30).length, 30)
-                          )}` 
-                        : "—"}
+                      {data.loading ? "..." : (() => {
+                        const last30DaysData = getTimeRangeData(data.vo2max, 'last30days');
+                        return last30DaysData.length > 0
+                          ? `${Math.round(
+                              last30DaysData.reduce((sum, item) => sum + item.value, 0) /
+                              last30DaysData.length
+                            )}`
+                          : "—";
+                      })()}
                     </span>
                   </div>
                 </div>
@@ -2101,32 +2102,45 @@ export default function Home() {
                       <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                         {data.loading ? (
                           "..."
-                        ) : data.vo2max.length > 0 ? (
-                          `${Math.round(
-                            data.vo2max
-                              .slice(-30)
-                              .reduce((sum, item) => sum + item.value, 0) / 
-                            Math.min(data.vo2max.slice(-30).length, 30)
-                          )}`
-                        ) : (
-                          "No data"
-                        )}
+                        ) : (() => {
+                          const last30DaysData = getTimeRangeData(data.vo2max, 'last30days');
+                          return last30DaysData.length > 0 ? (
+                            `${Math.round(
+                              last30DaysData.reduce((sum, item) => sum + item.value, 0) /
+                              last30DaysData.length
+                            )}`
+                          ) : (
+                            "No data"
+                          );
+                        })()}
                       </span>
-                      {!data.loading && data.vo2max.length > 0 && (
+                      {!data.loading && getTimeRangeData(data.vo2max, 'last30days').length > 0 && (
                         <div className="flex items-center">
                           <span className="text-xs text-gray-500 dark:text-gray-400 mr-2">mL/kg·min</span>
-                          {data.vo2max.length > 30 && (() => {
-                            const currentAvg = data.vo2max
-                              .slice(-30)
-                              .reduce((sum, item) => sum + item.value, 0) / 
-                              Math.min(data.vo2max.slice(-30).length, 30);
-                            const prevAvg = data.vo2max
-                              .slice(-60, -30)
-                              .reduce((sum, item) => sum + item.value, 0) / 
-                              Math.min(data.vo2max.slice(-60, -30).length, 30);
-                            return (
-                              <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
-                            );
+                          {(() => {
+                            // Trend indicator logic might need adjustment if it also relied on slice(-30) vs slice(-60, -30)
+                            // For now, this part focuses on the average display.
+                            // The trend indicator below might show trend for all data if not also updated.
+                            // To make trend also based on true 30-day periods:
+                            const currentPeriodData = getTimeRangeData(data.vo2max, 'last30days');
+                            const previousPeriodStartDate = new Date();
+                            previousPeriodStartDate.setDate(previousPeriodStartDate.getDate() - 60);
+                            const previousPeriodEndDate = new Date();
+                            previousPeriodEndDate.setDate(previousPeriodEndDate.getDate() - 30);
+                            
+                            const previousPeriodData = data.vo2max.filter(item => {
+                              const itemDate = new Date(item.date);
+                              return itemDate >= previousPeriodStartDate && itemDate < previousPeriodEndDate;
+                            });
+
+                            if (currentPeriodData.length > 0 && previousPeriodData.length > 0) {
+                              const currentAvg = currentPeriodData.reduce((sum, item) => sum + item.value, 0) / currentPeriodData.length;
+                              const prevAvg = previousPeriodData.reduce((sum, item) => sum + item.value, 0) / previousPeriodData.length;
+                              return (
+                                <TrendIndicator current={currentAvg} previous={prevAvg} isFitnessMetric={true} />
+                              );
+                            }
+                            return null;
                           })()}
                         </div>
                       )}
