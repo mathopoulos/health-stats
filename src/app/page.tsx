@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
 import ThemeToggle from './components/ThemeToggle';
+import { useTheme } from './context/ThemeContext';
 
 function LifetimeOfferBanner() {
   return (
@@ -24,7 +26,71 @@ function LifetimeOfferBanner() {
 }
 
 export default function Home() {
-    return (
+  const { theme, toggleTheme } = useTheme();
+
+  // Listen for theme changes from iframe
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'IFRAME_THEME_CHANGE' && event.data.theme) {
+        // Only update if the theme is different to avoid infinite loops
+        if (event.data.theme !== theme) {
+          toggleTheme();
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [theme, toggleTheme]);
+
+  // Sync theme with iframe when component mounts or theme changes
+  useEffect(() => {
+    const syncIframeTheme = () => {
+      const iframe = document.getElementById('dashboard-iframe') as HTMLIFrameElement;
+      if (iframe && iframe.contentWindow) {
+        try {
+          iframe.contentWindow.postMessage(
+            { type: 'THEME_CHANGE', theme }, 
+            '*'
+          );
+        } catch (error) {
+          // Iframe may not be fully loaded yet, retry after a short delay
+          setTimeout(() => {
+            try {
+              iframe.contentWindow?.postMessage(
+                { type: 'THEME_CHANGE', theme }, 
+                '*'
+              );
+            } catch (retryError) {
+              console.log('Theme sync with iframe failed:', retryError);
+            }
+          }, 100);
+        }
+      }
+    };
+
+    // Sync with a slight delay to ensure iframe is ready
+    const timeoutId = setTimeout(syncIframeTheme, 200);
+
+    // Also sync when iframe loads
+    const iframe = document.getElementById('dashboard-iframe') as HTMLIFrameElement;
+    if (iframe) {
+      const handleLoad = () => {
+        // Additional delay after load to ensure iframe is fully ready
+        setTimeout(syncIframeTheme, 100);
+      };
+      iframe.addEventListener('load', handleLoad);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        iframe.removeEventListener('load', handleLoad);
+      };
+    }
+
+    return () => clearTimeout(timeoutId);
+  }, [theme]);
+
+  return (
     <main className="min-h-screen bg-primary dark:bg-primary-dark-dark text-gray-900 dark:text-white overflow-hidden">
       {/* Background Effects */}
       <div className="fixed inset-0 bg-gradient-to-b from-indigo-500/10 via-purple-500/5 to-transparent dark:from-indigo-500/20 dark:via-purple-500/10 pointer-events-none" />
@@ -120,6 +186,7 @@ export default function Home() {
               min-h-[500px] sm:min-h-[400px] md:min-h-0">
               <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none z-10" />
               <iframe
+                id="dashboard-iframe"
                 src="/dashboard/userId=100492380040453908509"
                 className="w-full h-full transform hover:scale-[1.02] transition-transform duration-300"
                 style={{
