@@ -162,7 +162,7 @@ export default function UploadPage() {
   const [activeTab, setActiveTab] = useState(() => {
     // Initialize from URL query param if available, otherwise default to 'profile'
     const tab = searchParams?.get('tab');
-    return tab && ['profile', 'fitness', 'blood', 'more'].includes(tab) ? tab : 'profile';
+    return tab && ['profile', 'protocols', 'fitness', 'blood', 'more'].includes(tab) ? tab : 'profile';
   });
   const profileImageRef = useRef<HTMLInputElement>(null);
   const [isFileLoading, setIsFileLoading] = useState(false);
@@ -720,6 +720,18 @@ export default function UploadPage() {
         </button>
 
         <button
+          onClick={() => handleTabChange('protocols')}
+          className={`flex flex-1 flex-col items-center justify-center h-full ${
+            activeTab === 'protocols' ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-400'
+          }`}
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span className="text-xs mt-1">Protocols</span>
+        </button>
+
+        <button
           onClick={() => handleTabChange('fitness')}
           className={`flex flex-1 flex-col items-center justify-center h-full ${
             activeTab === 'fitness' ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-400'
@@ -782,6 +794,20 @@ export default function UploadPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
               <span>Profile</span>
+            </button>
+
+            <button
+              onClick={() => handleTabChange('protocols')}
+              className={`w-full flex items-center space-x-2 px-4 py-2 text-sm rounded-lg transition-colors ${
+                activeTab === 'protocols'
+                  ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Protocols</span>
             </button>
 
             <button
@@ -1107,6 +1133,26 @@ export default function UploadPage() {
                       </p>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Protocols Tab Content */}
+          {activeTab === 'protocols' && (
+            <div className="space-y-6">
+              <h2 className="hidden md:block text-2xl font-bold text-gray-900 dark:text-white">Health Protocols</h2>
+              
+              {/* Placeholder content for now */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Document Your Health Protocols & Experiments</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  Track your health protocols (like ketogenic diet) and experiments (like consuming 5 eggs weekly) to monitor their impact on your health metrics.
+                </p>
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
+                  <p className="text-center text-gray-500 dark:text-gray-400">
+                    Protocol and experiment tracking features coming soon...
+                  </p>
                 </div>
               </div>
             </div>
