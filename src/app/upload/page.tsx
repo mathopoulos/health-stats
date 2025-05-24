@@ -182,6 +182,7 @@ export default function UploadPage() {
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [isHelpExpanded, setIsHelpExpanded] = useState(false);
+  const [isAddProtocolModalOpen, setIsAddProtocolModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -807,7 +808,7 @@ export default function UploadPage() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <span>Protocols</span>
+              <span>Protocols & Experiments</span>
             </button>
 
             <button
@@ -1138,21 +1139,77 @@ export default function UploadPage() {
             </div>
           )}
 
-          {/* Protocols Tab Content */}
+          {/* Protocols & Experiments Tab Content */}
           {activeTab === 'protocols' && (
             <div className="space-y-6">
-              <h2 className="hidden md:block text-2xl font-bold text-gray-900 dark:text-white">Health Protocols</h2>
+              <h2 className="hidden md:block text-2xl font-bold text-gray-900 dark:text-white">Protocols & Experiments</h2>
               
-              {/* Placeholder content for now */}
+              {/* Current Protocols */}
               <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Document Your Health Protocols & Experiments</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  Track your health protocols (like ketogenic diet) and experiments (like consuming 5 eggs weekly) to monitor their impact on your health metrics.
-                </p>
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
-                  <p className="text-center text-gray-500 dark:text-gray-400">
-                    Protocol and experiment tracking features coming soon...
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Your Protocols & Experiments</h3>
+                  <button
+                    onClick={() => setIsAddProtocolModalOpen(true)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add Protocol
+                  </button>
+                </div>
+                
+                {/* Empty State */}
+                <div className="text-center py-8">
+                  <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
+                    No protocols or experiments added yet.
                   </p>
+                  <button
+                    onClick={() => setIsAddProtocolModalOpen(true)}
+                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 font-medium text-sm"
+                  >
+                    Add your first protocol or experiment to start tracking
+                  </button>
+                </div>
+
+                {/* Example of what protocols will look like when added */}
+                <div className="hidden">
+                  <div className="space-y-3">
+                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                            <h4 className="font-medium text-gray-900 dark:text-white">Ketogenic Diet</h4>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                              Active
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            Started Jan 15, 2024 • 45 days
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
+                            Tracking ketones and energy levels. Goal: Improve metabolic flexibility.
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                          </button>
+                          <button className="text-red-400 hover:text-red-600">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1658,6 +1715,127 @@ export default function UploadPage() {
           onClose={() => setIsAddResultsModalOpen(false)}
           prefilledResults={null}
         />
+      )}
+
+      {/* Add Protocol Modal */}
+      {isAddProtocolModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Add Dietary Protocol</h3>
+              <button
+                onClick={() => setIsAddProtocolModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Track your dietary approach to monitor its impact on your health metrics.
+              </p>
+              
+              <form className="space-y-4">
+                {/* Diet Type Selection */}
+                <div>
+                  <label htmlFor="dietType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Diet Type
+                  </label>
+                  <select
+                    name="dietType"
+                    id="dietType"
+                    className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700/50 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-12 px-4 text-gray-900 appearance-none bg-no-repeat"
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                      backgroundPosition: `right 0.5rem center`,
+                      backgroundSize: `1.5em 1.5em`
+                    }}
+                  >
+                    <option value="">Select a diet type</option>
+                    <option value="ketogenic">Ketogenic Diet</option>
+                    <option value="intermittent-fasting">Intermittent Fasting</option>
+                    <option value="carnivore">Carnivore Diet</option>
+                    <option value="mediterranean">Mediterranean Diet</option>
+                    <option value="paleo">Paleo Diet</option>
+                    <option value="vegan">Vegan Diet</option>
+                    <option value="vegetarian">Vegetarian Diet</option>
+                    <option value="whole30">Whole30</option>
+                    <option value="low-carb">Low Carb Diet</option>
+                    <option value="elimination">Elimination Diet</option>
+                    <option value="time-restricted">Time-Restricted Eating</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                {/* Start Date */}
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      name="startDate"
+                      id="startDate"
+                      className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700/50 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-12 px-4 text-gray-900"
+                    />
+                  </div>
+
+                  {/* End Date (Optional) */}
+                  <div>
+                    <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      End Date <span className="text-gray-500">(Optional)</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="endDate"
+                      id="endDate"
+                      className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700/50 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-12 px-4 text-gray-900"
+                    />
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Notes <span className="text-gray-500">(Optional)</span>
+                  </label>
+                  <textarea
+                    name="notes"
+                    id="notes"
+                    rows={3}
+                    className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700/50 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-3 text-gray-900"
+                    placeholder="Add any details about your diet approach, goals, or observations..."
+                  />
+                </div>
+              </form>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setIsAddProtocolModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Add Protocol
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
