@@ -45,14 +45,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('theme', theme);
       document.documentElement.classList.toggle('dark', theme === 'dark');
       
-      // Notify all iframes about theme change
+      // Notify all iframes about theme change immediately
       const iframes = document.querySelectorAll('iframe');
       iframes.forEach(iframe => {
         if (iframe.contentWindow) {
-          iframe.contentWindow.postMessage(
-            { type: 'THEME_CHANGE', theme }, 
-            '*'
-          );
+          try {
+            iframe.contentWindow.postMessage(
+              { type: 'THEME_CHANGE', theme }, 
+              '*'
+            );
+          } catch (error) {
+            // Silently handle cases where iframe might not be ready
+            console.log('Failed to notify iframe of theme change:', error);
+          }
         }
       });
     }

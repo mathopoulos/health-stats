@@ -54,40 +54,27 @@ export default function Home() {
             '*'
           );
         } catch (error) {
-          // Iframe may not be fully loaded yet, retry after a short delay
-          setTimeout(() => {
-            try {
-              iframe.contentWindow?.postMessage(
-                { type: 'THEME_CHANGE', theme }, 
-                '*'
-              );
-            } catch (retryError) {
-              console.log('Theme sync with iframe failed:', retryError);
-            }
-          }, 100);
+          // Silently handle cases where iframe might not be ready
+          console.log('Theme sync with iframe failed:', error);
         }
       }
     };
 
-    // Sync with a slight delay to ensure iframe is ready
-    const timeoutId = setTimeout(syncIframeTheme, 200);
+    // Sync immediately - no delay needed for theme changes
+    syncIframeTheme();
 
-    // Also sync when iframe loads
+    // Also sync when iframe loads (for initial setup)
     const iframe = document.getElementById('dashboard-iframe') as HTMLIFrameElement;
     if (iframe) {
       const handleLoad = () => {
-        // Additional delay after load to ensure iframe is fully ready
-        setTimeout(syncIframeTheme, 100);
+        syncIframeTheme();
       };
       iframe.addEventListener('load', handleLoad);
       
       return () => {
-        clearTimeout(timeoutId);
         iframe.removeEventListener('load', handleLoad);
       };
     }
-
-    return () => clearTimeout(timeoutId);
   }, [theme]);
 
   return (
