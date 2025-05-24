@@ -183,6 +183,7 @@ export default function UploadPage() {
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [isHelpExpanded, setIsHelpExpanded] = useState(false);
   const [currentDiet, setCurrentDiet] = useState<string>('');
+  const [isSavingProtocol, setIsSavingProtocol] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -204,7 +205,24 @@ export default function UploadPage() {
       }
     };
 
+    const fetchCurrentDiet = async () => {
+      if (sessionStatus === 'loading' || !session?.user?.id) return;
+      
+      try {
+        const response = await fetch('/api/health-protocols?protocolType=diet&activeOnly=true');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data && data.data.length > 0) {
+            setCurrentDiet(data.data[0].protocol || '');
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching current diet:', error);
+      }
+    };
+
     fetchUserData();
+    fetchCurrentDiet();
   }, [session?.user?.id, sessionStatus]);
 
   const handleUpdateProfile = async () => {
@@ -247,6 +265,44 @@ export default function UploadPage() {
       setNameError(error instanceof Error ? error.message : 'Failed to update profile');
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const handleDietChange = async (newDiet: string) => {
+    if (newDiet === currentDiet) return;
+    
+    setIsSavingProtocol(true);
+    
+    try {
+      if (newDiet) {
+        const response = await fetch('/api/health-protocols', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            protocolType: 'diet',
+            protocol: newDiet,
+            startDate: new Date().toISOString()
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to save diet protocol');
+        }
+
+        setStatus('Diet protocol updated successfully');
+        setTimeout(() => setStatus(''), 3000);
+      }
+      
+      setCurrentDiet(newDiet);
+    } catch (error) {
+      console.error('Error updating diet protocol:', error);
+      setStatus(error instanceof Error ? error.message : 'Failed to update diet protocol');
+      setTimeout(() => setStatus(''), 3000);
+    } finally {
+      setIsSavingProtocol(false);
     }
   };
 
@@ -1151,13 +1207,14 @@ export default function UploadPage() {
                   Select your current dietary approach to track its impact on your health metrics.
                 </p>
                 
-                <div className="max-w-md">
+                <div className="max-w-md relative">
                   <select
                     name="currentDiet"
                     id="currentDiet"
                     value={currentDiet}
-                    onChange={(e) => setCurrentDiet(e.target.value)}
-                    className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700/50 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-12 px-4 text-gray-900 appearance-none bg-no-repeat"
+                    onChange={(e) => handleDietChange(e.target.value)}
+                    disabled={isSavingProtocol}
+                    className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700/50 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-12 px-4 text-gray-900 appearance-none bg-no-repeat disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
                       backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
                       backgroundPosition: `right 0.5rem center`,
@@ -1179,6 +1236,14 @@ export default function UploadPage() {
                     <option value="standard">Standard Diet</option>
                     <option value="other">Other</option>
                   </select>
+                  {isSavingProtocol && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <svg className="animate-spin h-4 w-4 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
