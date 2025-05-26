@@ -68,6 +68,7 @@ export async function POST(req: Request) {
         },
       ],
       mode: 'payment',
+      allow_promotion_codes: true, // Enable promotion codes
       success_url: `${BASE_URL}/auth/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${BASE_URL}/auth/checkout`,
       metadata: {
