@@ -1817,11 +1817,11 @@ export default function Home() {
 
           {/* Tab Navigation */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm">
-            <div>
-              <nav className="flex space-x-4 sm:space-x-8 px-4 sm:px-6" aria-label="Tabs">
+            <div className="overflow-x-auto">
+              <nav className="flex space-x-4 sm:space-x-8 px-4 sm:px-6 min-w-max" aria-label="Tabs">
                 <button
                   onClick={() => setActiveTab('home')}
-                  className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm ${
+                  className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm whitespace-nowrap ${
                     activeTab === 'home'
                       ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
                       : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
@@ -1831,7 +1831,7 @@ export default function Home() {
                 </button>
                 <button
                   onClick={() => setActiveTab('metrics')}
-                  className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm ${
+                  className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm whitespace-nowrap ${
                     activeTab === 'metrics'
                       ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
                       : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
@@ -1841,7 +1841,7 @@ export default function Home() {
                 </button>
                 <button
                   onClick={() => setActiveTab('blood')}
-                  className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm ${
+                  className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm whitespace-nowrap ${
                     activeTab === 'blood'
                       ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
                       : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
@@ -1851,7 +1851,7 @@ export default function Home() {
                 </button>
                 <button
                   onClick={() => setActiveTab('protocols')}
-                  className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm ${
+                  className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm whitespace-nowrap ${
                     activeTab === 'protocols'
                       ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
                       : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
