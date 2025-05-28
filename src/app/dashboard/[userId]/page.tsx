@@ -2952,16 +2952,56 @@ export default function Home() {
           </div>
             </>
           ) : activeTab === 'protocols' ? (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-6 py-6 shadow-sm">
-              <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6">Current Diet Protocol</h2>
-              {/* Placeholder for diet protocol content */}
-              <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
-                <p className="text-gray-700 dark:text-gray-300">
-                  {data.loading ? "Loading diet protocol..." :
-                   currentDietProtocol ? 
-                     `Your current diet protocol is: ${currentDietProtocol.protocol}. Started on ${new Date(currentDietProtocol.startDate).toLocaleDateString()}` :
-                     "No active diet protocol found."}
-                </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+              {/* Diet Protocol */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 shadow-sm">
+                <div className="flex flex-col">
+                  <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Diet Protocol</span>
+                  <div className="mt-1.5 md:mt-2 flex flex-col md:flex-row md:items-baseline gap-1 md:gap-2">
+                    <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                      {data.loading ? (
+                        "..."
+                      ) : currentDietProtocol ? (
+                        currentDietProtocol.protocol.replace(/-/g, ' ').split(' ').map(word => 
+                          word.charAt(0).toUpperCase() + word.slice(1)
+                        ).join(' ')
+                      ) : (
+                        "None"
+                      )}
+                    </span>
+                  </div>
+                  {currentDietProtocol && (
+                    <span className="mt-1 text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                      Started {new Date(currentDietProtocol.startDate).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Workout Protocol */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 shadow-sm">
+                <div className="flex flex-col">
+                  <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Workout Protocol</span>
+                  <div className="mt-1.5 md:mt-2 flex flex-col md:flex-row md:items-baseline gap-1 md:gap-2">
+                    <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                      Coming Soon
+                    </span>
+                  </div>
+                  <span className="mt-1 text-[10px] md:text-xs text-gray-500 dark:text-gray-400">Not set</span>
+                </div>
+              </div>
+
+              {/* Supplement Protocol */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 shadow-sm">
+                <div className="flex flex-col">
+                  <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Supplement Protocol</span>
+                  <div className="mt-1.5 md:mt-2 flex flex-col md:flex-row md:items-baseline gap-1 md:gap-2">
+                    <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                      Coming Soon
+                    </span>
+                  </div>
+                  <span className="mt-1 text-[10px] md:text-xs text-gray-500 dark:text-gray-400">Not set</span>
+                </div>
               </div>
             </div>
           ) : (
