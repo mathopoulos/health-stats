@@ -497,6 +497,18 @@ function WeeklyWorkoutCount() {
   );
 }
 
+interface HealthProtocol {
+  _id?: string; // Assuming ObjectId is stringified
+  userId: string;
+  protocolType: 'diet' | 'supplement' | 'exercise' | 'sleep' | 'meditation' | 'cold-therapy' | 'sauna';
+  protocol: string;
+  startDate: string; // Dates are often stringified in API responses
+  endDate?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function Home() {
   const { data: session, status } = useSession();
   const params = useParams<{ userId: string }>();
@@ -556,10 +568,11 @@ export default function Home() {
     start: Date | null;
     end: Date | null;
   }>({ start: null, end: null });
-  const [activeTab, setActiveTab] = useState<'home' | 'metrics' | 'blood'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'metrics' | 'blood' | 'protocols'>('home');
   const [isAddResultsModalOpen, setIsAddResultsModalOpen] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [activityFeed, setActivityFeed] = useState<ActivityFeedItem[]>([]);
+  const [currentDietProtocol, setCurrentDietProtocol] = useState<HealthProtocol | null>(null);
 
   // Add useEffect for title update
   useEffect(() => {
@@ -712,6 +725,15 @@ export default function Home() {
         }
       });
 
+      // Fetch current diet protocol
+      const dietProtocolRes = await fetch(`/api/health-protocols?protocolType=diet&activeOnly=true&userId=${userId}&t=${timestamp}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+
       // Check if any request failed
       const failedRequests = [];
       if (!heartRateRes.ok) failedRequests.push('heartRate');
@@ -722,6 +744,7 @@ export default function Home() {
       if (!bloodMarkersRes.ok) failedRequests.push('bloodMarkers');
       if (!sleepRes.ok) failedRequests.push('sleep');
       if (!workoutRes.ok) failedRequests.push('workout');
+      if (!dietProtocolRes.ok) failedRequests.push('dietProtocol');
 
       if (failedRequests.length > 0) {
         console.error('Failed requests:', failedRequests);
@@ -741,6 +764,9 @@ export default function Home() {
 
       const [heartRateData, weightData, bodyFatData, hrvData, vo2maxData, bloodMarkersData, sleepResponse, workoutResponse] = responses;
 
+      // Parse diet protocol response
+      const dietProtocolResponse = await dietProtocolRes.json();
+
       const failedData = [];
       if (!heartRateData.success) failedData.push('heartRate');
       if (!weightData.success) failedData.push('weight');
@@ -750,6 +776,7 @@ export default function Home() {
       if (!bloodMarkersData.success) failedData.push('bloodMarkers');
       if (!sleepResponse.success) failedData.push('sleep');
       if (!workoutResponse.success) failedData.push('workout');
+      if (!dietProtocolResponse.success) failedData.push('dietProtocol');
 
       if (failedData.length > 0) {
         console.error('Failed data:', failedData);
@@ -1121,6 +1148,7 @@ export default function Home() {
       );
       
       setActivityFeed(activityFeedItems);
+      setCurrentDietProtocol(dietProtocolResponse.data && dietProtocolResponse.data.length > 0 ? dietProtocolResponse.data[0] : null);
 
       return {
         heartRate: heartRateData.data || [],
@@ -1820,6 +1848,16 @@ export default function Home() {
                   }`}
                 >
                   Blood Markers
+                </button>
+                <button
+                  onClick={() => setActiveTab('protocols')}
+                  className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm ${
+                    activeTab === 'protocols'
+                      ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
+                  }`}
+                >
+                  Protocols & Experiments
                 </button>
               </nav>
             </div>
@@ -2913,6 +2951,19 @@ export default function Home() {
             </div>
           </div>
             </>
+          ) : activeTab === 'protocols' ? (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-6 py-6 shadow-sm">
+              <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6">Current Diet Protocol</h2>
+              {/* Placeholder for diet protocol content */}
+              <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-6">
+                <p className="text-gray-700 dark:text-gray-300">
+                  {data.loading ? "Loading diet protocol..." :
+                   currentDietProtocol ? 
+                     `Your current diet protocol is: ${currentDietProtocol.protocol}. Started on ${new Date(currentDietProtocol.startDate).toLocaleDateString()}` :
+                     "No active diet protocol found."}
+                </p>
+              </div>
+            </div>
           ) : (
           <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-6 py-6 shadow-sm">
               {/* Title removed from here
