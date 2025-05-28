@@ -136,6 +136,9 @@ interface ChartData {
     // Additional markers
     creatineKinase: BloodMarker[];
     cortisol: BloodMarker[];
+    
+    // Longevity Markers
+    biologicalAge: BloodMarker[];
   };
   loading: boolean;
 }
@@ -539,7 +542,8 @@ export default function Home() {
       ferritin: [], serumIron: [], tibc: [], transferrinSaturation: [],
       sodium: [], potassium: [], calcium: [], phosphorus: [],
       bicarbonate: [], chloride: [],
-      creatineKinase: [], cortisol: []
+      creatineKinase: [], cortisol: [],
+      biologicalAge: []
     },
     loading: true
   });
@@ -771,7 +775,8 @@ export default function Home() {
         ferritin: [], serumIron: [], tibc: [], transferrinSaturation: [],
         sodium: [], potassium: [], calcium: [], phosphorus: [],
         bicarbonate: [], chloride: [],
-        creatineKinase: [], cortisol: []
+        creatineKinase: [], cortisol: [],
+        biologicalAge: []
       };
 
       // Map marker names from API to chart data keys
@@ -912,7 +917,10 @@ export default function Home() {
         'Creatine Kinase': 'creatineKinase',
         'Creatine kinase': 'creatineKinase',
         'CK': 'creatineKinase',
-        'Cortisol': 'cortisol'
+        'Cortisol': 'cortisol',
+        
+        // Longevity Markers
+        'Biological Age': 'biologicalAge'
       };
 
       // Process each blood marker entry
@@ -1149,7 +1157,8 @@ export default function Home() {
           ferritin: [], serumIron: [], tibc: [], transferrinSaturation: [],
           sodium: [], potassium: [], calcium: [], phosphorus: [],
           bicarbonate: [], chloride: [],
-          creatineKinase: [], cortisol: []
+          creatineKinase: [], cortisol: [],
+          biologicalAge: []
         }
       };
     }
@@ -1191,7 +1200,8 @@ export default function Home() {
           ferritin: [], serumIron: [], tibc: [], transferrinSaturation: [],
           sodium: [], potassium: [], calcium: [], phosphorus: [],
           bicarbonate: [], chloride: [],
-          creatineKinase: [], cortisol: []
+          creatineKinase: [], cortisol: [],
+          biologicalAge: []
         }
       }));
     }
@@ -1818,7 +1828,14 @@ export default function Home() {
                 <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-6 py-4 sm:py-6 shadow-sm">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
                     <h3 className="text-sm sm:text-lg font-medium text-gray-900 dark:text-white">Biological Age</h3>
-                    <span className="text-xl sm:text-2xl font-bold text-indigo-600 dark:text-indigo-400">23.5</span>
+                    <span className="text-xl sm:text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                      {data.loading ? "..." : (() => {
+                        const bioAgeData = data.bloodMarkers.biologicalAge;
+                        return bioAgeData && bioAgeData.length > 0
+                          ? `${bioAgeData[0].value}`
+                          : "—";
+                      })()}
+                    </span>
                   </div>
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-6 py-4 sm:py-6 shadow-sm">

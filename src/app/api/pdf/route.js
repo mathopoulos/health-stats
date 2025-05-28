@@ -166,6 +166,16 @@ const SUPPORTED_MARKERS = [
   // Growth Factors
   { name: 'IGF-1', unit: 'ng/mL', category: 'Growth Factors' },
   
+  // Biological Age & Longevity
+  { name: 'Biological Age', unit: 'years', category: 'Longevity Markers' },
+  { name: 'Epigenetic Age (DNAm)', unit: 'years', category: 'Longevity Markers' },
+  { name: 'Phenotypic Age', unit: 'years', category: 'Longevity Markers' },
+  { name: 'GrimAge', unit: 'years', category: 'Longevity Markers' },
+  { name: 'PhenoAge', unit: 'years', category: 'Longevity Markers' },
+  { name: 'Horvath Age', unit: 'years', category: 'Longevity Markers' },
+  { name: 'Hannum Age', unit: 'years', category: 'Longevity Markers' },
+  { name: 'Telomere Length', unit: 'kb', category: 'Longevity Markers' },
+  
   // Iron Panel
   { name: 'Ferritin', unit: 'ng/mL', category: 'Iron Panel' },
   { name: 'Serum Iron', unit: 'µg/dL', category: 'Iron Panel' },
@@ -380,6 +390,24 @@ const MARKER_NORMALIZATION_MAP = {
   'FREE TESTOSTERONE DIRECT': 'Free Testosterone',
   'BIOAVAILABLE TESTOSTERONE': 'Free Testosterone',
   'FREE T': 'Free Testosterone',
+  
+  // Biological Age & Longevity Markers
+  'BIO AGE': 'Biological Age',
+  'BIOAGE': 'Biological Age',
+  'BIOLOGICAL AGE': 'Biological Age',
+  'EPIGENETIC AGE': 'Epigenetic Age (DNAm)',
+  'DNAM AGE': 'Epigenetic Age (DNAm)',
+  'DNA METHYLATION AGE': 'Epigenetic Age (DNAm)',
+  'PHENOAGE': 'Phenotypic Age',
+  'PHENO AGE': 'Phenotypic Age',
+  'PHENOTYPIC AGE': 'Phenotypic Age',
+  'GRIM AGE': 'GrimAge',
+  'GRIMM AGE': 'GrimAge',
+  'HORVATH AGE': 'Horvath Age',
+  'HANNUM AGE': 'Hannum Age',
+  'TELOMERE LENGTH': 'Telomere Length',
+  'TELOMERES': 'Telomere Length',
+  'TL': 'Telomere Length',
   
   // Common unit normalizations
   'mg/dl': 'mg/dL',

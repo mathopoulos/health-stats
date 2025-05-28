@@ -63,7 +63,17 @@ const allMarkers = [
   { name: 'Phosphorus', category: 'Electrolytes', unit: 'mg/dL' },
   { name: 'Magnesium', category: 'Electrolytes', unit: 'mg/dL' },
   { name: 'Bicarbonate', category: 'Electrolytes', unit: 'mEq/L' },
-  { name: 'Chloride', category: 'Electrolytes', unit: 'mEq/L' }
+  { name: 'Chloride', category: 'Electrolytes', unit: 'mEq/L' },
+  
+  // Biological Age & Longevity
+  { name: 'Biological Age', category: 'Longevity Markers', unit: 'years' },
+  { name: 'Epigenetic Age (DNAm)', category: 'Longevity Markers', unit: 'years' },
+  { name: 'Phenotypic Age', category: 'Longevity Markers', unit: 'years' },
+  { name: 'GrimAge', category: 'Longevity Markers', unit: 'years' },
+  { name: 'PhenoAge', category: 'Longevity Markers', unit: 'years' },
+  { name: 'Horvath Age', category: 'Longevity Markers', unit: 'years' },
+  { name: 'Hannum Age', category: 'Longevity Markers', unit: 'years' },
+  { name: 'Telomere Length', category: 'Longevity Markers', unit: 'kb' }
 ];
 
 export default function AddResultsModal({ isOpen, onClose, prefilledResults }: AddResultsModalProps) {
