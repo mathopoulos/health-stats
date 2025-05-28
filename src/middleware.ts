@@ -8,6 +8,7 @@ const PUBLIC_API_ROUTES = [
   '/api/blood-markers',
   '/api/users',
   '/api/validate-invite',
+  '/api/health-protocols',
   // Payment routes
   '/api/payment/check-purchase',
   '/api/payment/create-checkout',
