@@ -23,7 +23,6 @@ export interface CreateHealthProtocol {
 // Diet-specific types for future expansion
 export type DietType = 
   | 'ketogenic'
-  | 'intermittent-fasting'
   | 'carnivore'
   | 'mediterranean'
   | 'paleo'
@@ -31,9 +30,7 @@ export type DietType =
   | 'vegetarian'
   | 'whole30'
   | 'low-carb'
-  | 'elimination'
-  | 'time-restricted'
-  | 'standard'
+  | 'variable-no-particular'
   | 'other';
 
 export interface DietProtocol extends Omit<HealthProtocol, 'protocol'> {

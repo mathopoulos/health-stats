@@ -1223,7 +1223,6 @@ export default function UploadPage() {
                   >
                     <option value="">Select your current diet</option>
                     <option value="ketogenic">Ketogenic Diet</option>
-                    <option value="intermittent-fasting">Intermittent Fasting</option>
                     <option value="carnivore">Carnivore Diet</option>
                     <option value="mediterranean">Mediterranean Diet</option>
                     <option value="paleo">Paleo Diet</option>
@@ -1231,9 +1230,7 @@ export default function UploadPage() {
                     <option value="vegetarian">Vegetarian Diet</option>
                     <option value="whole30">Whole30</option>
                     <option value="low-carb">Low Carb Diet</option>
-                    <option value="elimination">Elimination Diet</option>
-                    <option value="time-restricted">Time-Restricted Eating</option>
-                    <option value="standard">Standard Diet</option>
+                    <option value="variable-no-particular">Variable - No Particular Diet</option>
                     <option value="other">Other</option>
                   </select>
                   {isSavingProtocol && (
