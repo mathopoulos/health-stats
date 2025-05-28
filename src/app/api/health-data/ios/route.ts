@@ -9,7 +9,8 @@ const MEASUREMENT_TYPES = {
   vo2max: { unit: 'mL/kg/min', source: 'iOS App', fileKey: 'vo2max' },
   weight: { unit: 'lb', source: 'iOS App', fileKey: 'weight' },
   bodyfat: { unit: '%', source: 'iOS App', fileKey: 'bodyfat' },
-  workout: { unit: '', source: 'iOS App', fileKey: 'workout' }
+  workout: { unit: '', source: 'iOS App', fileKey: 'workout' },
+  sleep: { unit: 'minutes', source: 'iOS App', fileKey: 'sleep' }
 } as const;
 
 type MeasurementType = keyof typeof MEASUREMENT_TYPES;
@@ -84,6 +85,8 @@ function isValidMeasurement(type: MeasurementType, value: number): boolean {
       return value > 0 && value < 300; // Reasonable HRV range
     case 'workout':
       return true; // For workout, validation is handled differently as it's an object
+    case 'sleep':
+      return true; // For sleep, validation is handled differently as it's an object with stage durations
     default:
       return false;
   }
@@ -255,6 +258,100 @@ export async function POST(request: NextRequest) {
         }
         
         continue; // Skip standard processing for workouts
+      }
+
+      // Special handling for sleep data which has a different structure
+      if (type === 'sleep') {
+        console.log(`iOS health data: Processing ${measurements.length} sleep entries for user ${userId}`);
+        
+        // Define the S3 key for sleep using dynamic userId
+        const s3Key = `data/${userId}/${config.fileKey}.json`;
+        
+        // Get existing sleep data
+        let existingSleep: any[] = [];
+        try {
+          const getObjectCommand = new GetObjectCommand({
+            Bucket: requiredEnvVars.AWS_BUCKET_NAME,
+            Key: s3Key
+          });
+          const response = await s3Client.send(getObjectCommand);
+          const responseBody = await response.Body?.transformToString();
+          if (responseBody) {
+            existingSleep = JSON.parse(responseBody);
+            console.log(`iOS health data: Found ${existingSleep.length} existing sleep records for user ${userId}`);
+          }
+        } catch (error: any) {
+           if (error.name !== 'NoSuchKey') {
+             console.error(`iOS health data: Error reading existing sleep S3 data for user ${userId}:`, error);
+           }
+           console.log(`iOS health data: No existing sleep data found for user ${userId}`);
+        }
+        
+        // Filter valid sleep entries
+        const validSleep = measurements.filter((sleep: any) => 
+          sleep && 
+          typeof sleep.timestamp === 'string' &&
+          typeof sleep.startDate === 'string' &&
+          typeof sleep.endDate === 'string' &&
+          typeof sleep.stageDurations === 'object' &&
+          sleep.stageDurations !== null
+        );
+        
+        console.log(`iOS health data: Found ${validSleep.length} valid sleep entries for user ${userId}`);
+        
+        // Format sleep data for storage using dynamic userId
+        const sleepEntries = validSleep.map((sleep: any) => ({
+          type: 'sleep',
+          userId: userId,
+          data: {
+            startDate: sleep.startDate,
+            endDate: sleep.endDate,
+            stageDurations: {
+              deep: sleep.stageDurations.deep || 0,
+              core: sleep.stageDurations.core || 0,
+              rem: sleep.stageDurations.rem || 0,
+              awake: sleep.stageDurations.awake || 0
+            },
+            source: sleep.source || 'iOS App'
+          },
+          timestamp: sleep.timestamp
+        }));
+        
+        // Check for duplicates based on startDate
+        const startDateMap = new Map(existingSleep.map(entry => 
+          [entry.data?.startDate, true]
+        ));
+        const newSleepEntries = sleepEntries.filter(entry => 
+          !startDateMap.has(entry.data.startDate)
+        );
+        
+        console.log(`iOS health data: ${newSleepEntries.length} new sleep entries to add for user ${userId}`);
+        
+        // Combine with existing data
+        const combinedSleep = [...existingSleep, ...newSleepEntries];
+        combinedSleep.sort((a, b) => 
+          new Date(b.data.startDate).getTime() - new Date(a.data.startDate).getTime()
+        );
+        
+        // Save to S3
+        try {
+          const putObjectCommand = new PutObjectCommand({
+            Bucket: requiredEnvVars.AWS_BUCKET_NAME,
+            Key: s3Key,
+            Body: JSON.stringify(combinedSleep),
+            ContentType: 'application/json'
+          });
+          await s3Client.send(putObjectCommand);
+          results.sleep = {
+            added: newSleepEntries.length,
+            total: combinedSleep.length
+          };
+          console.log(`iOS health data: Successfully saved ${combinedSleep.length} sleep records to S3 for user ${userId}, added ${newSleepEntries.length} new entries`);
+        } catch (saveError) {
+          console.error(`Error saving sleep data to S3 for user ${userId}:`, saveError);
+        }
+        
+        continue; // Skip standard processing for sleep
       }
 
       // Standard processing for other measurement types (Restored logic)
