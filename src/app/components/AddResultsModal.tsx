@@ -131,7 +131,7 @@ export default function AddResultsModal({ isOpen, onClose, prefilledResults }: A
       // Convert values to numbers
       const markers = selectedMarkers.map(marker => ({
         name: marker.name,
-        value: parseFloat(marker.value),
+        value: results[marker.name] || 0,
         unit: marker.unit,
         category: marker.category
       }));

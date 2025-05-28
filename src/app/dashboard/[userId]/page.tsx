@@ -632,7 +632,8 @@ export default function Home() {
             ferritin: [], serumIron: [], tibc: [], transferrinSaturation: [],
             sodium: [], potassium: [], calcium: [], phosphorus: [],
             bicarbonate: [], chloride: [],
-            creatineKinase: [], cortisol: []
+            creatineKinase: [], cortisol: [],
+            biologicalAge: []
           }
         };
       }
@@ -1127,7 +1128,10 @@ export default function Home() {
         bodyFat: bodyFatData.data || [],
         hrv: hrvData.data || [],
         vo2max: vo2maxData.data || [],
-        bloodMarkers: processedBloodMarkers,
+        bloodMarkers: {
+          ...processedBloodMarkers,
+          biologicalAge: processedBloodMarkers.biologicalAge || []
+        },
         loading: false
       };
     } catch (error) {
