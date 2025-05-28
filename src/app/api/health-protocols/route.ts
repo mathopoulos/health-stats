@@ -75,20 +75,25 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const protocolType = searchParams.get('protocolType');
     const activeOnly = searchParams.get('activeOnly') === 'true';
+    const userId = searchParams.get('userId');
+
+    // Validate userId parameter
+    if (!userId) {
+      return NextResponse.json({
+        success: false,
+        error: 'User ID is required',
+        data: []
+      }, { status: 400 });
+    }
 
     const client = await clientPromise;
     const db = client.db("health-stats");
 
     // Build query
-    const query: any = { userId: session.user.id };
+    const query: any = { userId: userId };
     if (protocolType) {
       query.protocolType = protocolType;
     }
@@ -107,9 +112,10 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('Error fetching health protocols:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch health protocols' },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to fetch health protocols',
+      data: []
+    }, { status: 500 });
   }
 } 
