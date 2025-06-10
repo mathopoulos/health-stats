@@ -161,7 +161,7 @@ const BLOOD_MARKER_CONFIG = {
   // Complete Blood Count
   whitebloodcells: { min: 3.8, max: 10.8, decreaseIsGood: null },
   redbloodcells: { min: 4.5, max: 5.9, decreaseIsGood: null },
-  hematocrit: { min: 41, max: 50, decreaseIsGood: null },
+  hematocrit: { min: 38, max: 50, decreaseIsGood: null },
   hemoglobin: { min: 13.5, max: 17.5, decreaseIsGood: null },
   platelets: { min: 150, max: 450, decreaseIsGood: null },
   
@@ -3298,6 +3298,15 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
       }
     }
     
+    // Special case for hematocrit with custom ranges (only optimal and abnormal)
+    if (configKey === 'hematocrit') {
+      if (value >= 38 && value <= 50) {
+        return 'Optimal';
+      } else {
+        return 'Abnormal';
+      }
+    }
+    
     // Default logic for other markers
     const range = config.max - config.min;
     const optimalMin = config.min + (range * 0.25);
@@ -3372,6 +3381,14 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     abnormalText = '<3.8 or >10.8';
     normalText = '6.9-10.8';
     optimalText = '3.8-6.9';
+  } else if (configKey === 'hematocrit') {
+    optimalMin = 38;
+    optimalMax = 50;
+    normalMin = null;
+    normalMax = null;
+    abnormalText = '<38 or >50';
+    normalText = null;
+    optimalText = '38.0-50.0';
   } else {
     // Default logic for other markers
     const range = config.max - config.min;
@@ -3407,10 +3424,12 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
                         <span className="text-red-500 font-medium">Abnormal</span>
                         <span className="text-gray-600 dark:text-gray-400">{abnormalText}</span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-yellow-500 font-medium">Normal</span>
-                        <span className="text-gray-600 dark:text-gray-400">{normalText}</span>
-                      </div>
+                      {normalText && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-yellow-500 font-medium">Normal</span>
+                          <span className="text-gray-600 dark:text-gray-400">{normalText}</span>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between">
                         <span className="text-green-500 font-medium">Optimal</span>
                         <span className="text-gray-600 dark:text-gray-400">{optimalText}</span>
