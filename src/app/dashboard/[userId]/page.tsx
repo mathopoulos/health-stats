@@ -3241,6 +3241,17 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
       }
     }
     
+    // Special case for LDL cholesterol with custom ranges
+    if (configKey === 'ldlc') {
+      if (value >= 0 && value <= 82) {
+        return 'Optimal';
+      } else if (value > 82 && value <= 100) {
+        return 'Normal';
+      } else {
+        return 'Abnormal';
+      }
+    }
+    
     // Default logic for other markers
     const range = config.max - config.min;
     const optimalMin = config.min + (range * 0.25);
@@ -3264,7 +3275,7 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     }
   };
 
-  // Define optimal range - special case for total cholesterol
+  // Define optimal range - special cases for cholesterol markers
   let optimalMin, optimalMax, normalMin, normalMax, abnormalText;
   
   if (configKey === 'totalcholesterol') {
@@ -3273,6 +3284,12 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     normalMin = 173;
     normalMax = 200;
     abnormalText = '<125 or >200';
+  } else if (configKey === 'ldlc') {
+    optimalMin = 0;
+    optimalMax = 82;
+    normalMin = 82;
+    normalMax = 100;
+    abnormalText = '>100';
   } else {
     // Default logic for other markers
     const range = config.max - config.min;
