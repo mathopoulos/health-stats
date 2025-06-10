@@ -186,7 +186,7 @@ const BLOOD_MARKER_CONFIG = {
   
   // Glucose Markers
   hba1c: { min: 3, max: 5.7, decreaseIsGood: true },
-  fastingInsulin: { min: 2.6, max: 5.0, decreaseIsGood: true },
+  fastinginsulin: { min: 2.6, max: 18.4, decreaseIsGood: true },
   glucose: { min: 70, max: 90, decreaseIsGood: true },
   
   // Liver Markers
@@ -3340,6 +3340,19 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
       }
     }
     
+    // Special case for fasting insulin with custom ranges
+    if (configKey === 'fastinginsulin') {
+      if (value > 18.4) {
+        return 'Abnormal';
+      } else if (value >= 3.57 && value <= 10.18) {
+        return 'Optimal';
+      } else if (value < 3.57 || (value > 10.18 && value <= 18.4)) {
+        return 'Normal';
+      } else {
+        return 'Abnormal';
+      }
+    }
+    
     // Default logic for other markers
     const range = config.max - config.min;
     const optimalMin = config.min + (range * 0.25);
@@ -3446,6 +3459,14 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     abnormalText = '<3 or >5.7';
     normalText = '5.1-5.7';
     optimalText = '3.0-5.1';
+  } else if (configKey === 'fastinginsulin') {
+    optimalMin = 3.57;
+    optimalMax = 10.18;
+    normalMin = null; // Complex range: <3.57 OR 10.18-18.4
+    normalMax = null;
+    abnormalText = '>18.4';
+    normalText = '<3.57, 10.18-18.4';
+    optimalText = '3.57-10.18';
   } else {
     // Default logic for other markers
     const range = config.max - config.min;
