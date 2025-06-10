@@ -163,7 +163,7 @@ const BLOOD_MARKER_CONFIG = {
   redbloodcells: { min: 4.5, max: 5.9, decreaseIsGood: null },
   hematocrit: { min: 38, max: 50, decreaseIsGood: null },
   hemoglobin: { min: 13.2, max: 17.1, decreaseIsGood: null },
-  platelets: { min: 150, max: 450, decreaseIsGood: null },
+  platelets: { min: 140, max: 400, decreaseIsGood: null },
   
   // CBC Differentials
   neutrophilcount: { min: 1500, max: 7800, decreaseIsGood: null },
@@ -3320,6 +3320,15 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
       }
     }
     
+    // Special case for platelets with custom ranges (only optimal and abnormal)
+    if (configKey === 'platelets') {
+      if (value >= 140 && value <= 400) {
+        return 'Optimal';
+      } else {
+        return 'Abnormal';
+      }
+    }
+    
     // Default logic for other markers
     const range = config.max - config.min;
     const optimalMin = config.min + (range * 0.25);
@@ -3410,6 +3419,14 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     abnormalText = '<13.2 or >17.1';
     normalText = '13.2-14.9';
     optimalText = '14.9-17.1';
+  } else if (configKey === 'platelets') {
+    optimalMin = 140;
+    optimalMax = 400;
+    normalMin = null;
+    normalMax = null;
+    abnormalText = '<140 or >400';
+    normalText = null;
+    optimalText = '140.0-400.0';
   } else {
     // Default logic for other markers
     const range = config.max - config.min;
