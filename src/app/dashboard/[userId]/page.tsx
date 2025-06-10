@@ -159,7 +159,7 @@ const BLOOD_MARKER_CONFIG = {
   lpa: { min: 0, max: 50, decreaseIsGood: true },
   
   // Complete Blood Count
-  whitebloodcells: { min: 4.5, max: 11.0, decreaseIsGood: null },
+  whitebloodcells: { min: 3.8, max: 10.8, decreaseIsGood: null },
   redbloodcells: { min: 4.5, max: 5.9, decreaseIsGood: null },
   hematocrit: { min: 41, max: 50, decreaseIsGood: null },
   hemoglobin: { min: 13.5, max: 17.5, decreaseIsGood: null },
@@ -3287,6 +3287,17 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
       }
     }
     
+    // Special case for white blood cells with custom ranges
+    if (configKey === 'whitebloodcells') {
+      if (value >= 3.8 && value <= 6.9) {
+        return 'Optimal';
+      } else if (value > 6.9 && value <= 10.8) {
+        return 'Normal';
+      } else {
+        return 'Abnormal';
+      }
+    }
+    
     // Default logic for other markers
     const range = config.max - config.min;
     const optimalMin = config.min + (range * 0.25);
@@ -3353,6 +3364,14 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     abnormalText = '>119';
     normalText = '90-119';
     optimalText = '0.0-90.0';
+  } else if (configKey === 'whitebloodcells') {
+    optimalMin = 3.8;
+    optimalMax = 6.9;
+    normalMin = 6.9;
+    normalMax = 10.8;
+    abnormalText = '<3.8 or >10.8';
+    normalText = '6.9-10.8';
+    optimalText = '3.8-6.9';
   } else {
     // Default logic for other markers
     const range = config.max - config.min;
