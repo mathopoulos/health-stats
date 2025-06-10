@@ -242,7 +242,7 @@ const BLOOD_MARKER_CONFIG = {
   chloride: { min: 97, max: 107, decreaseIsGood: null },
   
   // Additional markers
-  creatineKinase: { min: 44, max: 1083, decreaseIsGood: null },
+  creatinekinase: { min: 44, max: 1083, decreaseIsGood: null },
   cortisol: { min: 4, max: 22, decreaseIsGood: null }
 };
 
@@ -3405,6 +3405,19 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
       }
     }
     
+    // Special case for creatine kinase with custom ranges
+    if (configKey === 'creatinekinase') {
+      if (value < 44 || value > 1083) {
+        return 'Abnormal';
+      } else if (value >= 44 && value <= 196) {
+        return 'Optimal';
+      } else if (value > 196 && value <= 1083) {
+        return 'Normal';
+      } else {
+        return 'Abnormal';
+      }
+    }
+    
     // Default logic for other markers
     const range = config.max - config.min;
     const optimalMin = config.min + (range * 0.25);
@@ -3551,6 +3564,14 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     abnormalText = '<3 or >70';
     normalText = '21-70';
     optimalText = '3.0-21.0';
+  } else if (configKey === 'creatinekinase') {
+    optimalMin = 44;
+    optimalMax = 196;
+    normalMin = 196;
+    normalMax = 1083;
+    abnormalText = '<44 or >1083';
+    normalText = '196-1083';
+    optimalText = '44.0-196.0';
   } else {
     // Default logic for other markers
     const range = config.max - config.min;
