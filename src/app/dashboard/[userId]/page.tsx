@@ -190,7 +190,7 @@ const BLOOD_MARKER_CONFIG = {
   glucose: { min: 65, max: 99, decreaseIsGood: true },
   
   // Liver Markers
-  alt: { min: 0, max: 30, decreaseIsGood: true },
+  alt: { min: 9, max: 46, decreaseIsGood: true },
   ast: { min: 5, max: 30, decreaseIsGood: true },
   ggt: { min: 9, max: 40, decreaseIsGood: true },
   
@@ -3366,6 +3366,19 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
       }
     }
     
+    // Special case for ALT with custom ranges
+    if (configKey === 'alt') {
+      if (value < 9 || value > 46) {
+        return 'Abnormal';
+      } else if (value >= 9 && value <= 22) {
+        return 'Optimal';
+      } else if (value > 22 && value <= 46) {
+        return 'Normal';
+      } else {
+        return 'Abnormal';
+      }
+    }
+    
     // Default logic for other markers
     const range = config.max - config.min;
     const optimalMin = config.min + (range * 0.25);
@@ -3488,6 +3501,14 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     abnormalText = '<65 or >99';
     normalText = '86-99';
     optimalText = '65.0-86.0';
+  } else if (configKey === 'alt') {
+    optimalMin = 9;
+    optimalMax = 22;
+    normalMin = 22;
+    normalMax = 46;
+    abnormalText = '<9 or >46';
+    normalText = '22-46';
+    optimalText = '9.0-22.0';
   } else {
     // Default logic for other markers
     const range = config.max - config.min;
