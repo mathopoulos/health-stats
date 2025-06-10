@@ -185,7 +185,7 @@ const BLOOD_MARKER_CONFIG = {
   mpv: { min: 7.5, max: 12.5, decreaseIsGood: null },
   
   // Glucose Markers
-  hba1c: { min: 4.0, max: 5.6, decreaseIsGood: true },
+  hba1c: { min: 3, max: 5.7, decreaseIsGood: true },
   fastingInsulin: { min: 2.6, max: 5.0, decreaseIsGood: true },
   glucose: { min: 70, max: 90, decreaseIsGood: true },
   
@@ -3329,6 +3329,17 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
       }
     }
     
+    // Special case for HbA1c with custom ranges
+    if (configKey === 'hba1c') {
+      if (value >= 3 && value <= 5.1) {
+        return 'Optimal';
+      } else if (value > 5.1 && value <= 5.7) {
+        return 'Normal';
+      } else {
+        return 'Abnormal';
+      }
+    }
+    
     // Default logic for other markers
     const range = config.max - config.min;
     const optimalMin = config.min + (range * 0.25);
@@ -3427,6 +3438,14 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     abnormalText = '<140 or >400';
     normalText = null;
     optimalText = '140.0-400.0';
+  } else if (configKey === 'hba1c') {
+    optimalMin = 3;
+    optimalMax = 5.1;
+    normalMin = 5.1;
+    normalMax = 5.7;
+    abnormalText = '<3 or >5.7';
+    normalText = '5.1-5.7';
+    optimalText = '3.0-5.1';
   } else {
     // Default logic for other markers
     const range = config.max - config.min;
