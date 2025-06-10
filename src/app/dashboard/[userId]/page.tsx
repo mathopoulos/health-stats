@@ -153,7 +153,7 @@ const BLOOD_MARKER_CONFIG = {
   // Lipid Panel
   totalcholesterol: { min: 125, max: 200, decreaseIsGood: true },
   ldlc: { min: 0, max: 100, decreaseIsGood: true },
-  hdlc: { min: 40, max: 90, decreaseIsGood: false },
+  hdlc: { min: 40, max: 200, decreaseIsGood: false },
   triglycerides: { min: 0, max: 150, decreaseIsGood: true },
   apob: { min: 40, max: 100, decreaseIsGood: true },
   lpa: { min: 0, max: 50, decreaseIsGood: true },
@@ -3252,6 +3252,30 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
       }
     }
     
+    // Special case for HDL cholesterol with custom ranges
+    if (configKey === 'hdlc') {
+      if (value < 40 || value > 200) {
+        return 'Abnormal';
+      } else if (value >= 54 && value <= 77) {
+        return 'Optimal';
+      } else if ((value >= 40 && value < 54) || value > 77) {
+        return 'Normal';
+      } else {
+        return 'Abnormal';
+      }
+    }
+    
+    // Special case for triglycerides with custom ranges
+    if (configKey === 'triglycerides') {
+      if (value >= 0 && value <= 79) {
+        return 'Optimal';
+      } else if (value > 79 && value <= 150) {
+        return 'Normal';
+      } else {
+        return 'Abnormal';
+      }
+    }
+    
     // Default logic for other markers
     const range = config.max - config.min;
     const optimalMin = config.min + (range * 0.25);
@@ -3276,7 +3300,7 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
   };
 
   // Define optimal range - special cases for cholesterol markers
-  let optimalMin, optimalMax, normalMin, normalMax, abnormalText;
+  let optimalMin, optimalMax, normalMin, normalMax, abnormalText, normalText, optimalText;
   
   if (configKey === 'totalcholesterol') {
     optimalMin = 125;
@@ -3284,12 +3308,32 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     normalMin = 173;
     normalMax = 200;
     abnormalText = '<125 or >200';
+    normalText = '173-200';
+    optimalText = '125.0-173.0';
   } else if (configKey === 'ldlc') {
     optimalMin = 0;
     optimalMax = 82;
     normalMin = 82;
     normalMax = 100;
     abnormalText = '>100';
+    normalText = '82-100';
+    optimalText = '0.0-82.0';
+  } else if (configKey === 'hdlc') {
+    optimalMin = 54;
+    optimalMax = 77;
+    normalMin = 40;
+    normalMax = 200;
+    abnormalText = '<40 or >200';
+    normalText = '40-54, 77-200';
+    optimalText = '54.0-77.0';
+  } else if (configKey === 'triglycerides') {
+    optimalMin = 0;
+    optimalMax = 79;
+    normalMin = 79;
+    normalMax = 150;
+    abnormalText = '>150';
+    normalText = '79-150';
+    optimalText = '0.0-79.0';
   } else {
     // Default logic for other markers
     const range = config.max - config.min;
@@ -3298,6 +3342,8 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     normalMin = config.min;
     normalMax = config.max;
     abnormalText = `<${config.min} or >${config.max}`;
+    normalText = `${normalMin}-${normalMax}`;
+    optimalText = `${optimalMin.toFixed(1)}-${optimalMax.toFixed(1)}`;
   }
 
   return (
@@ -3325,11 +3371,11 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-yellow-500 font-medium">Normal</span>
-                        <span className="text-gray-600 dark:text-gray-400">{normalMin}-{normalMax}</span>
+                        <span className="text-gray-600 dark:text-gray-400">{normalText}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-green-500 font-medium">Optimal</span>
-                        <span className="text-gray-600 dark:text-gray-400">{optimalMin.toFixed(1)}-{optimalMax.toFixed(1)}</span>
+                        <span className="text-gray-600 dark:text-gray-400">{optimalText}</span>
                       </div>
                     </div>
                   </div>
