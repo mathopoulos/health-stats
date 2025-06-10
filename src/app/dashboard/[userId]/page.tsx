@@ -3230,7 +3230,18 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
   };
 
   const getStatusInfo = (value: number) => {
-    // Define optimal range as middle 50% of normal range
+    // Special case for total cholesterol with custom ranges
+    if (configKey === 'totalcholesterol') {
+      if (value >= 125 && value <= 173) {
+        return 'Optimal';
+      } else if (value > 173 && value <= 200) {
+        return 'Normal';
+      } else {
+        return 'Abnormal';
+      }
+    }
+    
+    // Default logic for other markers
     const range = config.max - config.min;
     const optimalMin = config.min + (range * 0.25);
     const optimalMax = config.max - (range * 0.25);
@@ -3253,10 +3264,24 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     }
   };
 
-  // Define optimal range as middle 50% of normal range
-  const range = config.max - config.min;
-  const optimalMin = config.min + (range * 0.25);
-  const optimalMax = config.max - (range * 0.25);
+  // Define optimal range - special case for total cholesterol
+  let optimalMin, optimalMax, normalMin, normalMax, abnormalText;
+  
+  if (configKey === 'totalcholesterol') {
+    optimalMin = 125;
+    optimalMax = 173;
+    normalMin = 173;
+    normalMax = 200;
+    abnormalText = '<125 or >200';
+  } else {
+    // Default logic for other markers
+    const range = config.max - config.min;
+    optimalMin = config.min + (range * 0.25);
+    optimalMax = config.max - (range * 0.25);
+    normalMin = config.min;
+    normalMax = config.max;
+    abnormalText = `<${config.min} or >${config.max}`;
+  }
 
   return (
     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 border-b border-gray-100 dark:border-gray-700 pb-4">
@@ -3279,11 +3304,11 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
                     <div className="space-y-2 text-xs">
                       <div className="flex items-center justify-between">
                         <span className="text-red-500 font-medium">Abnormal</span>
-                        <span className="text-gray-600 dark:text-gray-400">&lt;{config.min} or &gt;{config.max}</span>
+                        <span className="text-gray-600 dark:text-gray-400">{abnormalText}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-yellow-500 font-medium">Normal</span>
-                        <span className="text-gray-600 dark:text-gray-400">{config.min}-{config.max}</span>
+                        <span className="text-gray-600 dark:text-gray-400">{normalMin}-{normalMax}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-green-500 font-medium">Optimal</span>
