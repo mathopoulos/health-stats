@@ -192,7 +192,7 @@ const BLOOD_MARKER_CONFIG = {
   // Liver Markers
   alt: { min: 9, max: 46, decreaseIsGood: true },
   ast: { min: 10, max: 40, decreaseIsGood: true },
-  ggt: { min: 9, max: 40, decreaseIsGood: true },
+  ggt: { min: 3, max: 70, decreaseIsGood: true },
   
   // Kidney Markers
   egfr: { min: 90, max: 120, decreaseIsGood: false },
@@ -3392,6 +3392,19 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
       }
     }
     
+    // Special case for GGT with custom ranges
+    if (configKey === 'ggt') {
+      if (value < 3 || value > 70) {
+        return 'Abnormal';
+      } else if (value >= 3 && value <= 21) {
+        return 'Optimal';
+      } else if (value > 21 && value <= 70) {
+        return 'Normal';
+      } else {
+        return 'Abnormal';
+      }
+    }
+    
     // Default logic for other markers
     const range = config.max - config.min;
     const optimalMin = config.min + (range * 0.25);
@@ -3530,6 +3543,14 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     abnormalText = '<10 or >40';
     normalText = '25-40';
     optimalText = '10.0-25.0';
+  } else if (configKey === 'ggt') {
+    optimalMin = 3;
+    optimalMax = 21;
+    normalMin = 21;
+    normalMax = 70;
+    abnormalText = '<3 or >70';
+    normalText = '21-70';
+    optimalText = '3.0-21.0';
   } else {
     // Default logic for other markers
     const range = config.max - config.min;
