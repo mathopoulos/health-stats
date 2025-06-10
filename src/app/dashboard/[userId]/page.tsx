@@ -199,7 +199,7 @@ const BLOOD_MARKER_CONFIG = {
   cystatinC: { min: 0.5, max: 1.0, decreaseIsGood: true },
   bun: { min: 7, max: 20, decreaseIsGood: true },
   creatinine: { min: 0.7, max: 1.3, decreaseIsGood: true },
-  albumin: { min: 3.8, max: 5.0, decreaseIsGood: null },
+  albumin: { min: 3.6, max: 5.1, decreaseIsGood: null },
   
   // Sex Hormones
   testosterone: { min: 300, max: 1000, decreaseIsGood: null },
@@ -3418,6 +3418,15 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
       }
     }
     
+    // Special case for albumin with custom ranges (only optimal and abnormal)
+    if (configKey === 'albumin') {
+      if (value >= 3.6 && value <= 5.1) {
+        return 'Optimal';
+      } else {
+        return 'Abnormal';
+      }
+    }
+    
     // Default logic for other markers
     const range = config.max - config.min;
     const optimalMin = config.min + (range * 0.25);
@@ -3572,6 +3581,14 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     abnormalText = '<44 or >1083';
     normalText = '196-1083';
     optimalText = '44.0-196.0';
+  } else if (configKey === 'albumin') {
+    optimalMin = 3.6;
+    optimalMax = 5.1;
+    normalMin = null;
+    normalMax = null;
+    abnormalText = '<3.6 or >5.1';
+    normalText = null;
+    optimalText = '3.6-5.1';
   } else {
     // Default logic for other markers
     const range = config.max - config.min;
