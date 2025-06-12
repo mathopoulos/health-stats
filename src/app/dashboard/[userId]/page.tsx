@@ -151,9 +151,9 @@ type TimeRange = 'last30days' | 'last3months' | 'last6months' | 'last1year' | 'l
 // Add this before the component definitions
 const BLOOD_MARKER_CONFIG = {
   // Lipid Panel
-  totalcholesterol: { min: 125, max: 200, decreaseIsGood: true },
-  ldlc: { min: 0, max: 100, decreaseIsGood: true },
-  hdlc: { min: 40, max: 200, decreaseIsGood: false },
+  totalcholesterol: { min: 125, max: 199, decreaseIsGood: true },
+  ldlcholesterol: { min: 1, max: 100, decreaseIsGood: true },
+  hdlcholesterol: { min: 46, max: 100, decreaseIsGood: false },
   triglycerides: { min: 0, max: 150, decreaseIsGood: true },
   apob: { min: 0, max: 119, decreaseIsGood: true },
   lpa: { min: 0, max: 50, decreaseIsGood: true },
@@ -3232,9 +3232,9 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
   const getStatusInfo = (value: number) => {
     // Special case for total cholesterol with custom ranges
     if (configKey === 'totalcholesterol') {
-      if (value >= 125 && value <= 173) {
+      if (value >= 160 && value <= 199) {
         return 'Optimal';
-      } else if (value > 173 && value <= 200) {
+      } else if (value >= 125 && value < 160) {
         return 'Normal';
       } else {
         return 'Abnormal';
@@ -3242,10 +3242,10 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     }
     
     // Special case for LDL cholesterol with custom ranges
-    if (configKey === 'ldlc') {
-      if (value >= 0 && value <= 82) {
+    if (configKey === 'ldlcholesterol') {
+      if (value >= 80 && value <= 100) {
         return 'Optimal';
-      } else if (value > 82 && value <= 100) {
+      } else if (value >= 1 && value < 80) {
         return 'Normal';
       } else {
         return 'Abnormal';
@@ -3253,12 +3253,10 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     }
     
     // Special case for HDL cholesterol with custom ranges
-    if (configKey === 'hdlc') {
-      if (value < 40 || value > 200) {
-        return 'Abnormal';
-      } else if (value >= 54 && value <= 77) {
+    if (configKey === 'hdlcholesterol') {
+      if (value >= 55 && value <= 93) {
         return 'Optimal';
-      } else if ((value >= 40 && value < 54) || value > 77) {
+      } else if (value >= 46 && value < 55) {
         return 'Normal';
       } else {
         return 'Abnormal';
@@ -3454,29 +3452,29 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
   let optimalMin, optimalMax, normalMin, normalMax, abnormalText, normalText, optimalText;
   
   if (configKey === 'totalcholesterol') {
-    optimalMin = 125;
-    optimalMax = 173;
-    normalMin = 173;
-    normalMax = 200;
-    abnormalText = '<125 or >200';
-    normalText = '173-200';
-    optimalText = '125.0-173.0';
-  } else if (configKey === 'ldlc') {
-    optimalMin = 0;
-    optimalMax = 82;
-    normalMin = 82;
-    normalMax = 100;
-    abnormalText = '>100';
-    normalText = '82-100';
-    optimalText = '0.0-82.0';
-  } else if (configKey === 'hdlc') {
-    optimalMin = 54;
-    optimalMax = 77;
-    normalMin = 40;
-    normalMax = 200;
-    abnormalText = '<40 or >200';
-    normalText = '40-54, 77-200';
-    optimalText = '54.0-77.0';
+    optimalMin = 160;
+    optimalMax = 199;
+    normalMin = 125;
+    normalMax = 159;
+    abnormalText = '<125 or >199';
+    normalText = '125-159';
+    optimalText = '160.0-199.0';
+  } else if (configKey === 'ldlcholesterol') {
+    optimalMin = 80;
+    optimalMax = 100;
+    normalMin = 1;
+    normalMax = 79;
+    abnormalText = '<1 or >100';
+    normalText = '1-79';
+    optimalText = '80.0-100.0';
+  } else if (configKey === 'hdlcholesterol') {
+    optimalMin = 55;
+    optimalMax = 93;
+    normalMin = 46;
+    normalMax = 54;
+    abnormalText = '<46 or >100';
+    normalText = '46-54';
+    optimalText = '55.0-93.0';
   } else if (configKey === 'triglycerides') {
     optimalMin = 0;
     optimalMax = 79;
