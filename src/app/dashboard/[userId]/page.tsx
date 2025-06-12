@@ -3296,9 +3296,9 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     
     // Special case for white blood cells with custom ranges
     if (configKey === 'whitebloodcells') {
-      if (value >= 3.8 && value <= 6.9) {
+      if (value >= 3.8 && value <= 6) {
         return 'Optimal';
-      } else if (value > 6.9 && value <= 10.8) {
+      } else if (value > 6 && value <= 10.8) {
         return 'Normal';
       } else {
         return 'Abnormal';
@@ -3510,12 +3510,12 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     optimalText = '0.0-18.0';
   } else if (configKey === 'whitebloodcells') {
     optimalMin = 3.8;
-    optimalMax = 6.9;
-    normalMin = 6.9;
+    optimalMax = 6;
+    normalMin = 6;
     normalMax = 10.8;
     abnormalText = '<3.8 or >10.8';
-    normalText = '6.9-10.8';
-    optimalText = '3.8-6.9';
+    normalText = '6-10.8';
+    optimalText = '3.8-6.0';
   } else if (configKey === 'hematocrit') {
     optimalMin = 38;
     optimalMax = 50;
