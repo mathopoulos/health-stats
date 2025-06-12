@@ -156,7 +156,7 @@ const BLOOD_MARKER_CONFIG = {
   hdlcholesterol: { min: 46, max: 100, decreaseIsGood: false },
   triglycerides: { min: 0, max: 150, decreaseIsGood: true },
   apob: { min: 0, max: 119, decreaseIsGood: true },
-  lpa: { min: 0, max: 50, decreaseIsGood: true },
+  lpa: { min: 0, max: 75, decreaseIsGood: true },
   
   // Complete Blood Count
   whitebloodcells: { min: 3.8, max: 10.8, decreaseIsGood: null },
@@ -3276,9 +3276,18 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     
     // Special case for ApoB with custom ranges
     if (configKey === 'apob') {
-      if (value >= 0 && value <= 90) {
+      if (value >= 52 && value <= 80) {
         return 'Optimal';
-      } else if (value > 90 && value <= 119) {
+      } else {
+        return 'Abnormal';
+      }
+    }
+    
+    // Special case for Lp(a) with custom ranges
+    if (configKey === 'lpa') {
+      if (value >= 0 && value <= 18) {
+        return 'Optimal';
+      } else if (value > 18 && value <= 75) {
         return 'Normal';
       } else {
         return 'Abnormal';
@@ -3484,13 +3493,21 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     normalText = '0-70, 80-150';
     optimalText = '70.0-80.0';
   } else if (configKey === 'apob') {
+    optimalMin = 52;
+    optimalMax = 80;
+    normalMin = null;
+    normalMax = null;
+    abnormalText = '<52 or >80';
+    normalText = null;
+    optimalText = '52.0-80.0';
+  } else if (configKey === 'lpa') {
     optimalMin = 0;
-    optimalMax = 90;
-    normalMin = 90;
-    normalMax = 119;
-    abnormalText = '>119';
-    normalText = '90-119';
-    optimalText = '0.0-90.0';
+    optimalMax = 18;
+    normalMin = 18;
+    normalMax = 75;
+    abnormalText = '>75';
+    normalText = '18-75';
+    optimalText = '0.0-18.0';
   } else if (configKey === 'whitebloodcells') {
     optimalMin = 3.8;
     optimalMax = 6.9;
