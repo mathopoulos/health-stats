@@ -160,7 +160,7 @@ const BLOOD_MARKER_CONFIG = {
   
   // Complete Blood Count
   whitebloodcells: { min: 3.8, max: 10.8, decreaseIsGood: null },
-  redbloodcells: { min: 4.5, max: 5.9, decreaseIsGood: null },
+  redbloodcells: { min: 3.8, max: 5.8, decreaseIsGood: null },
   hematocrit: { min: 38, max: 50, decreaseIsGood: null },
   hemoglobin: { min: 13.2, max: 17.1, decreaseIsGood: null },
   platelets: { min: 140, max: 400, decreaseIsGood: null },
@@ -253,6 +253,8 @@ interface UserData {
   email: string;
   userId: string;
   profileImage?: string;
+  age?: number;
+  sex?: 'male' | 'female' | 'other';
 }
 
 interface ActivityFeedItem {
@@ -3017,12 +3019,12 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Lipid Panel</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="Total Cholesterol" data={data.bloodMarkers.totalCholesterol} />
-                    <MarkerRow label="LDL Cholesterol" data={data.bloodMarkers.ldl} />
-                    <MarkerRow label="HDL Cholesterol" data={data.bloodMarkers.hdl} />
-                    <MarkerRow label="Triglycerides" data={data.bloodMarkers.triglycerides} />
-                    <MarkerRow label="ApoB" data={data.bloodMarkers.apoB} />
-                    <MarkerRow label="Lp(a)" data={data.bloodMarkers.lpA} />
+                    <MarkerRow label="Total Cholesterol" data={data.bloodMarkers.totalCholesterol} userData={userData} />
+                    <MarkerRow label="LDL Cholesterol" data={data.bloodMarkers.ldl} userData={userData} />
+                    <MarkerRow label="HDL Cholesterol" data={data.bloodMarkers.hdl} userData={userData} />
+                    <MarkerRow label="Triglycerides" data={data.bloodMarkers.triglycerides} userData={userData} />
+                    <MarkerRow label="ApoB" data={data.bloodMarkers.apoB} userData={userData} />
+                    <MarkerRow label="Lp(a)" data={data.bloodMarkers.lpA} userData={userData} />
           </div>
                   <LastTestedDate data={data.bloodMarkers.totalCholesterol} />
                 </div>
@@ -3031,11 +3033,11 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Complete Blood Count</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="White Blood Cells" data={data.bloodMarkers.whiteBloodCells} />
-                    <MarkerRow label="Red Blood Cells" data={data.bloodMarkers.redBloodCells} />
-                    <MarkerRow label="Hematocrit" data={data.bloodMarkers.hematocrit} />
-                    <MarkerRow label="Hemoglobin" data={data.bloodMarkers.hemoglobin} />
-                    <MarkerRow label="Platelets" data={data.bloodMarkers.platelets} />
+                    <MarkerRow label="White Blood Cells" data={data.bloodMarkers.whiteBloodCells} userData={userData} />
+                    <MarkerRow label="Red Blood Cells" data={data.bloodMarkers.redBloodCells} userData={userData} />
+                    <MarkerRow label="Hematocrit" data={data.bloodMarkers.hematocrit} userData={userData} />
+                    <MarkerRow label="Hemoglobin" data={data.bloodMarkers.hemoglobin} userData={userData} />
+                    <MarkerRow label="Platelets" data={data.bloodMarkers.platelets} userData={userData} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.whiteBloodCells} />
                 </div>
@@ -3044,9 +3046,9 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Glucose Markers</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="HbA1c" data={data.bloodMarkers.hba1c} />
-                    <MarkerRow label="Fasting Insulin" data={data.bloodMarkers.fastingInsulin} />
-                    <MarkerRow label="Glucose" data={data.bloodMarkers.glucose} />
+                    <MarkerRow label="HbA1c" data={data.bloodMarkers.hba1c} userData={userData} />
+                    <MarkerRow label="Fasting Insulin" data={data.bloodMarkers.fastingInsulin} userData={userData} />
+                    <MarkerRow label="Glucose" data={data.bloodMarkers.glucose} userData={userData} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.glucose} />
                 </div>
@@ -3055,9 +3057,9 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Liver Markers</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="ALT" data={data.bloodMarkers.alt} />
-                    <MarkerRow label="AST" data={data.bloodMarkers.ast} />
-                    <MarkerRow label="GGT" data={data.bloodMarkers.ggt} />
+                    <MarkerRow label="ALT" data={data.bloodMarkers.alt} userData={userData} />
+                    <MarkerRow label="AST" data={data.bloodMarkers.ast} userData={userData} />
+                    <MarkerRow label="GGT" data={data.bloodMarkers.ggt} userData={userData} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.alt} />
                 </div>
@@ -3066,11 +3068,11 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Kidney Markers</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="eGFR" data={data.bloodMarkers.egfr} />
-                    <MarkerRow label="Cystatin C" data={data.bloodMarkers.cystatinC} />
-                    <MarkerRow label="BUN" data={data.bloodMarkers.bun} />
-                    <MarkerRow label="Creatinine" data={data.bloodMarkers.creatinine} />
-                    <MarkerRow label="Albumin" data={data.bloodMarkers.albumin} />
+                    <MarkerRow label="eGFR" data={data.bloodMarkers.egfr} userData={userData} />
+                    <MarkerRow label="Cystatin C" data={data.bloodMarkers.cystatinC} userData={userData} />
+                    <MarkerRow label="BUN" data={data.bloodMarkers.bun} userData={userData} />
+                    <MarkerRow label="Creatinine" data={data.bloodMarkers.creatinine} userData={userData} />
+                    <MarkerRow label="Albumin" data={data.bloodMarkers.albumin} userData={userData} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.egfr} />
                 </div>
@@ -3079,10 +3081,10 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Sex Hormones</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="Testosterone" data={data.bloodMarkers.testosterone} />
-                    <MarkerRow label="Free Testosterone" data={data.bloodMarkers.freeTesto} />
-                    <MarkerRow label="Estradiol" data={data.bloodMarkers.estradiol} />
-                    <MarkerRow label="SHBG" data={data.bloodMarkers.shbg} />
+                    <MarkerRow label="Testosterone" data={data.bloodMarkers.testosterone} userData={userData} />
+                    <MarkerRow label="Free Testosterone" data={data.bloodMarkers.freeTesto} userData={userData} />
+                    <MarkerRow label="Estradiol" data={data.bloodMarkers.estradiol} userData={userData} />
+                    <MarkerRow label="SHBG" data={data.bloodMarkers.shbg} userData={userData} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.testosterone} />
                 </div>
@@ -3091,9 +3093,9 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Thyroid Markers</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="T3" data={data.bloodMarkers.t3} />
-                    <MarkerRow label="T4" data={data.bloodMarkers.t4} />
-                    <MarkerRow label="TSH" data={data.bloodMarkers.tsh} />
+                    <MarkerRow label="T3" data={data.bloodMarkers.t3} userData={userData} />
+                    <MarkerRow label="T4" data={data.bloodMarkers.t4} userData={userData} />
+                    <MarkerRow label="TSH" data={data.bloodMarkers.tsh} userData={userData} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.t3} />
                 </div>
@@ -3102,10 +3104,10 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Vitamins & Inflammation</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="Vitamin D3" data={data.bloodMarkers.vitaminD} />
-                    <MarkerRow label="hs-CRP" data={data.bloodMarkers.crp} />
-                    <MarkerRow label="Homocysteine" data={data.bloodMarkers.homocysteine} />
-                    <MarkerRow label="IGF-1" data={data.bloodMarkers.igf1} />
+                    <MarkerRow label="Vitamin D3" data={data.bloodMarkers.vitaminD} userData={userData} />
+                    <MarkerRow label="hs-CRP" data={data.bloodMarkers.crp} userData={userData} />
+                    <MarkerRow label="Homocysteine" data={data.bloodMarkers.homocysteine} userData={userData} />
+                    <MarkerRow label="IGF-1" data={data.bloodMarkers.igf1} userData={userData} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.vitaminD} />
                 </div>
@@ -3114,10 +3116,10 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Iron Panel</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="Ferritin" data={data.bloodMarkers.ferritin} />
-                    <MarkerRow label="Serum Iron" data={data.bloodMarkers.serumIron} />
-                    <MarkerRow label="TIBC" data={data.bloodMarkers.tibc} />
-                    <MarkerRow label="Transferrin Saturation" data={data.bloodMarkers.transferrinSaturation} />
+                    <MarkerRow label="Ferritin" data={data.bloodMarkers.ferritin} userData={userData} />
+                    <MarkerRow label="Serum Iron" data={data.bloodMarkers.serumIron} userData={userData} />
+                    <MarkerRow label="TIBC" data={data.bloodMarkers.tibc} userData={userData} />
+                    <MarkerRow label="Transferrin Saturation" data={data.bloodMarkers.transferrinSaturation} userData={userData} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.ferritin} />
                 </div>
@@ -3126,12 +3128,12 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Electrolytes</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="Sodium" data={data.bloodMarkers.sodium} />
-                    <MarkerRow label="Potassium" data={data.bloodMarkers.potassium} />
-                    <MarkerRow label="Calcium" data={data.bloodMarkers.calcium} />
-                    <MarkerRow label="Phosphorus" data={data.bloodMarkers.phosphorus} />
-                    <MarkerRow label="Bicarbonate" data={data.bloodMarkers.bicarbonate} />
-                    <MarkerRow label="Chloride" data={data.bloodMarkers.chloride} />
+                    <MarkerRow label="Sodium" data={data.bloodMarkers.sodium} userData={userData} />
+                    <MarkerRow label="Potassium" data={data.bloodMarkers.potassium} userData={userData} />
+                    <MarkerRow label="Calcium" data={data.bloodMarkers.calcium} userData={userData} />
+                    <MarkerRow label="Phosphorus" data={data.bloodMarkers.phosphorus} userData={userData} />
+                    <MarkerRow label="Bicarbonate" data={data.bloodMarkers.bicarbonate} userData={userData} />
+                    <MarkerRow label="Chloride" data={data.bloodMarkers.chloride} userData={userData} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.sodium} />
                 </div>
@@ -3140,16 +3142,16 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">White Blood Cell Differentials</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="Neutrophil Count" data={data.bloodMarkers.neutrophilCount} />
-                    <MarkerRow label="Neutrophil Percentage" data={data.bloodMarkers.neutrophilPercentage} />
-                    <MarkerRow label="Lymphocyte Count" data={data.bloodMarkers.lymphocyteCount} />
-                    <MarkerRow label="Lymphocyte Percentage" data={data.bloodMarkers.lymphocytePercentage} />
-                    <MarkerRow label="Monocyte Count" data={data.bloodMarkers.monocyteCount} />
-                    <MarkerRow label="Monocyte Percentage" data={data.bloodMarkers.monocytePercentage} />
-                    <MarkerRow label="Eosinophil Count" data={data.bloodMarkers.eosinophilCount} />
-                    <MarkerRow label="Eosinophil Percentage" data={data.bloodMarkers.eosinophilPercentage} />
-                    <MarkerRow label="Basophil Count" data={data.bloodMarkers.basophilCount} />
-                    <MarkerRow label="Basophil Percentage" data={data.bloodMarkers.basophilPercentage} />
+                    <MarkerRow label="Neutrophil Count" data={data.bloodMarkers.neutrophilCount} userData={userData} />
+                    <MarkerRow label="Neutrophil Percentage" data={data.bloodMarkers.neutrophilPercentage} userData={userData} />
+                    <MarkerRow label="Lymphocyte Count" data={data.bloodMarkers.lymphocyteCount} userData={userData} />
+                    <MarkerRow label="Lymphocyte Percentage" data={data.bloodMarkers.lymphocytePercentage} userData={userData} />
+                    <MarkerRow label="Monocyte Count" data={data.bloodMarkers.monocyteCount} userData={userData} />
+                    <MarkerRow label="Monocyte Percentage" data={data.bloodMarkers.monocytePercentage} userData={userData} />
+                    <MarkerRow label="Eosinophil Count" data={data.bloodMarkers.eosinophilCount} userData={userData} />
+                    <MarkerRow label="Eosinophil Percentage" data={data.bloodMarkers.eosinophilPercentage} userData={userData} />
+                    <MarkerRow label="Basophil Count" data={data.bloodMarkers.basophilCount} userData={userData} />
+                    <MarkerRow label="Basophil Percentage" data={data.bloodMarkers.basophilPercentage} userData={userData} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.neutrophilCount} />
                 </div>
@@ -3158,11 +3160,11 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Red Blood Cell Indices</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="MCV" data={data.bloodMarkers.mcv} />
-                    <MarkerRow label="MCH" data={data.bloodMarkers.mch} />
-                    <MarkerRow label="MCHC" data={data.bloodMarkers.mchc} />
-                    <MarkerRow label="RDW" data={data.bloodMarkers.rdw} />
-                    <MarkerRow label="MPV" data={data.bloodMarkers.mpv} />
+                    <MarkerRow label="MCV" data={data.bloodMarkers.mcv} userData={userData} />
+                    <MarkerRow label="MCH" data={data.bloodMarkers.mch} userData={userData} />
+                    <MarkerRow label="MCHC" data={data.bloodMarkers.mchc} userData={userData} />
+                    <MarkerRow label="RDW" data={data.bloodMarkers.rdw} userData={userData} />
+                    <MarkerRow label="MPV" data={data.bloodMarkers.mpv} userData={userData} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.mcv} />
                 </div>
@@ -3171,12 +3173,12 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Vitamins & Minerals</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="Vitamin D" data={data.bloodMarkers.vitaminD} />
-                    <MarkerRow label="Vitamin B12" data={data.bloodMarkers.vitaminB12} />
-                    <MarkerRow label="Folate" data={data.bloodMarkers.folate} />
-                    <MarkerRow label="Iron" data={data.bloodMarkers.iron} />
-                    <MarkerRow label="Magnesium" data={data.bloodMarkers.magnesium} />
-                    <MarkerRow label="RBC Magnesium" data={data.bloodMarkers.rbcMagnesium} />
+                    <MarkerRow label="Vitamin D" data={data.bloodMarkers.vitaminD} userData={userData} />
+                    <MarkerRow label="Vitamin B12" data={data.bloodMarkers.vitaminB12} userData={userData} />
+                    <MarkerRow label="Folate" data={data.bloodMarkers.folate} userData={userData} />
+                    <MarkerRow label="Iron" data={data.bloodMarkers.iron} userData={userData} />
+                    <MarkerRow label="Magnesium" data={data.bloodMarkers.magnesium} userData={userData} />
+                    <MarkerRow label="RBC Magnesium" data={data.bloodMarkers.rbcMagnesium} userData={userData} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.vitaminD} />
                 </div>
@@ -3185,8 +3187,8 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Additional Markers</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="Creatine Kinase" data={data.bloodMarkers.creatineKinase} />
-                    <MarkerRow label="Cortisol" data={data.bloodMarkers.cortisol} />
+                    <MarkerRow label="Creatine Kinase" data={data.bloodMarkers.creatineKinase} userData={userData} />
+                    <MarkerRow label="Cortisol" data={data.bloodMarkers.cortisol} userData={userData} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.creatineKinase} />
                 </div>
@@ -3216,7 +3218,7 @@ export default function Home() {
 }
 
 // Helper Components
-const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
+const MarkerRow = ({ label, data, userData }: { label: string, data: BloodMarker[], userData?: UserData | null }) => {
   // Convert label to config key
   const configKey = label.toLowerCase()
     .replace(/-/g, '')
@@ -3302,6 +3304,41 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
         return 'Normal';
       } else {
         return 'Abnormal';
+      }
+    }
+    
+    // Special case for red blood cells with sex-specific ranges
+    if (configKey === 'redbloodcells') {
+      const sex = userData?.sex;
+      
+      if (sex === 'male') {
+        // Male ranges: Optimal 4.8-5.5, Normal 4.2-4.8 & 5.5-5.8, Abnormal <4.2 or >5.8
+        if (value >= 4.8 && value <= 5.5) {
+          return 'Optimal';
+        } else if ((value >= 4.2 && value < 4.8) || (value > 5.5 && value <= 5.8)) {
+          return 'Normal';
+        } else {
+          return 'Abnormal';
+        }
+      } else if (sex === 'female') {
+        // Female ranges: Optimal 4.3-4.8, Normal 3.8-4.3 & 4.8-5.1, Abnormal <3.8 or >5.1
+        if (value >= 4.3 && value <= 4.8) {
+          return 'Optimal';
+        } else if ((value >= 3.8 && value < 4.3) || (value > 4.8 && value <= 5.1)) {
+          return 'Normal';
+        } else {
+          return 'Abnormal';
+        }
+      } else {
+        // Default to combined ranges if sex is not specified or is 'other'
+        // Use broader ranges that accommodate both male and female
+        if (value >= 4.3 && value <= 5.1) {
+          return 'Optimal';
+        } else if ((value >= 3.8 && value < 4.3) || (value > 5.1 && value <= 5.8)) {
+          return 'Normal';
+        } else {
+          return 'Abnormal';
+        }
       }
     }
     
@@ -3516,6 +3553,35 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     abnormalText = '<3.8 or >10.8';
     normalText = '6-10.8';
     optimalText = '3.8-6.0';
+  } else if (configKey === 'redbloodcells') {
+    const sex = userData?.sex;
+    
+    if (sex === 'male') {
+      optimalMin = 4.8;
+      optimalMax = 5.5;
+      normalMin = null; // Complex range: 4.2-4.8 OR 5.5-5.8
+      normalMax = null;
+      abnormalText = '<4.2 or >5.8';
+      normalText = '4.2-4.8, 5.5-5.8';
+      optimalText = '4.8-5.5';
+    } else if (sex === 'female') {
+      optimalMin = 4.3;
+      optimalMax = 4.8;
+      normalMin = null; // Complex range: 3.8-4.3 OR 4.8-5.1
+      normalMax = null;
+      abnormalText = '<3.8 or >5.1';
+      normalText = '3.8-4.3, 4.8-5.1';
+      optimalText = '4.3-4.8';
+    } else {
+      // Default combined ranges
+      optimalMin = 4.3;
+      optimalMax = 5.1;
+      normalMin = null; // Complex range: 3.8-4.3 OR 5.1-5.8
+      normalMax = null;
+      abnormalText = '<3.8 or >5.8';
+      normalText = '3.8-4.3, 5.1-5.8';
+      optimalText = '4.3-5.1';
+    }
   } else if (configKey === 'hematocrit') {
     optimalMin = 38;
     optimalMax = 50;
