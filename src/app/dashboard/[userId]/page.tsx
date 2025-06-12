@@ -3265,9 +3265,9 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     
     // Special case for triglycerides with custom ranges
     if (configKey === 'triglycerides') {
-      if (value >= 0 && value <= 79) {
+      if (value >= 70 && value <= 80) {
         return 'Optimal';
-      } else if (value > 79 && value <= 150) {
+      } else if ((value >= 0 && value < 70) || (value > 80 && value <= 150)) {
         return 'Normal';
       } else {
         return 'Abnormal';
@@ -3476,13 +3476,13 @@ const MarkerRow = ({ label, data }: { label: string, data: BloodMarker[] }) => {
     normalText = '46-54';
     optimalText = '55.0-93.0';
   } else if (configKey === 'triglycerides') {
-    optimalMin = 0;
-    optimalMax = 79;
-    normalMin = 79;
-    normalMax = 150;
+    optimalMin = 70;
+    optimalMax = 80;
+    normalMin = null; // Complex range: 0-70 OR 80-150
+    normalMax = null;
     abnormalText = '>150';
-    normalText = '79-150';
-    optimalText = '0.0-79.0';
+    normalText = '0-70, 80-150';
+    optimalText = '70.0-80.0';
   } else if (configKey === 'apob') {
     optimalMin = 0;
     optimalMax = 90;
