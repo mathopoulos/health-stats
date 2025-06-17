@@ -3,6 +3,7 @@
 import { useState, useRef, DragEvent, useEffect } from 'react';
 import { useSession, signOut } from "next-auth/react";
 import AddResultsModal from '../components/AddResultsModal';
+import AddWorkoutProtocolModal from '../components/AddWorkoutProtocolModal';
 import Image from 'next/image';
 import Link from 'next/link';
 import ThemeToggle from '../components/ThemeToggle';
@@ -184,6 +185,16 @@ export default function UploadPage() {
   const [isHelpExpanded, setIsHelpExpanded] = useState(false);
   const [currentDiet, setCurrentDiet] = useState<string>('');
   const [isSavingProtocol, setIsSavingProtocol] = useState(false);
+  
+  // Workout protocol state
+  const [workoutProtocols, setWorkoutProtocols] = useState<Array<{
+    type: string;
+    frequency: number;
+  }>>([]);
+  const [isSavingWorkoutProtocol, setIsSavingWorkoutProtocol] = useState(false);
+  
+  // Available workout types
+  const [isAddWorkoutProtocolModalOpen, setIsAddWorkoutProtocolModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -221,8 +232,26 @@ export default function UploadPage() {
       }
     };
 
+    const fetchCurrentWorkoutProtocols = async () => {
+      if (sessionStatus === 'loading' || !session?.user?.id) return;
+      
+      try {
+        const response = await fetch('/api/health-protocols?protocolType=exercise&activeOnly=true');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data && data.data.length > 0) {
+            const protocolData = JSON.parse(data.data[0].protocol);
+            setWorkoutProtocols(protocolData.workouts || []);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching current workout protocols:', error);
+      }
+    };
+
     fetchUserData();
     fetchCurrentDiet();
+    fetchCurrentWorkoutProtocols();
   }, [session?.user?.id, sessionStatus]);
 
   const handleUpdateProfile = async () => {
@@ -303,6 +332,70 @@ export default function UploadPage() {
       setTimeout(() => setStatus(''), 3000);
     } finally {
       setIsSavingProtocol(false);
+    }
+  };
+
+  // Workout protocol handlers
+  const addWorkoutProtocol = (type: string) => {
+    // Check if this workout type is already added
+    if (!workoutProtocols.find(w => w.type === type)) {
+      setWorkoutProtocols(prev => [...prev, { type, frequency: 2 }]);
+    }
+  };
+
+  const removeWorkoutProtocol = (type: string) => {
+    setWorkoutProtocols(prev => prev.filter(w => w.type !== type));
+  };
+
+
+
+  const handleSaveWorkoutProtocols = async (newProtocols: Array<{ type: string; frequency: number }>) => {
+    setIsSavingWorkoutProtocol(true);
+    
+    try {
+      // Combine new protocols with existing ones, avoiding duplicates
+      const updatedProtocols = [...workoutProtocols];
+      
+      newProtocols.forEach(newProtocol => {
+        const existingIndex = updatedProtocols.findIndex(p => p.type === newProtocol.type);
+        if (existingIndex >= 0) {
+          // Update existing protocol frequency
+          updatedProtocols[existingIndex] = newProtocol;
+        } else {
+          // Add new protocol
+          updatedProtocols.push(newProtocol);
+        }
+      });
+      
+      // Save to backend
+      const response = await fetch('/api/health-protocols', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          protocolType: 'exercise',
+          protocol: JSON.stringify({ workouts: updatedProtocols }),
+          startDate: new Date().toISOString()
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to save workout protocols');
+      }
+
+      // Update local state
+      setWorkoutProtocols(updatedProtocols);
+      
+      setStatus('Workout protocols updated successfully');
+      setTimeout(() => setStatus(''), 3000);
+    } catch (error) {
+      console.error('Error updating workout protocols:', error);
+      setStatus(error instanceof Error ? error.message : 'Failed to update workout protocols');
+      setTimeout(() => setStatus(''), 3000);
+    } finally {
+      setIsSavingWorkoutProtocol(false);
     }
   };
 
@@ -1243,6 +1336,65 @@ export default function UploadPage() {
                   )}
                 </div>
               </div>
+
+              {/* Current Workout Protocols */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Workout Protocols</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  Track your workout routines and weekly frequency to optimize your fitness protocols.
+                </p>
+                
+                {/* Add Workout Protocol Button */}
+                <button
+                  onClick={() => setIsAddWorkoutProtocolModalOpen(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Add Workout Protocols
+                </button>
+
+                {/* Current Workout Protocols List */}
+                {workoutProtocols.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Your Current Protocols:</h4>
+                    <div className="space-y-3">
+                      {workoutProtocols.map((workout) => (
+                        <div key={workout.type} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              {workout.type.split('-').map(word => 
+                                word.charAt(0).toUpperCase() + word.slice(1)
+                              ).join(' ')}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {workout.frequency}x/week
+                            </span>
+                            
+                            <button
+                              onClick={() => removeWorkoutProtocol(workout.type)}
+                              className="w-8 h-8 flex items-center justify-center rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Total: {workoutProtocols.reduce((sum, w) => sum + w.frequency, 0)} sessions/week
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+
+              </div>
             </div>
           )}
 
@@ -1748,6 +1900,12 @@ export default function UploadPage() {
         />
       )}
 
+      {/* Add Workout Protocol Modal */}
+      <AddWorkoutProtocolModal
+        isOpen={isAddWorkoutProtocolModalOpen}
+        onClose={() => setIsAddWorkoutProtocolModalOpen(false)}
+        onSave={handleSaveWorkoutProtocols}
+      />
 
     </div>
   );

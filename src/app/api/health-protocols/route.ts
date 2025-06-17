@@ -26,12 +26,12 @@ export async function POST(request: Request) {
     const client = await clientPromise;
     const db = client.db("health-stats");
 
-    // For diet protocols, check if there's an active one and set it to inactive
-    if (protocolType === 'diet') {
+    // For diet and exercise protocols, check if there's an active one and set it to inactive
+    if (protocolType === 'diet' || protocolType === 'exercise') {
       await db.collection('health-protocols').updateMany(
         { 
           userId: session.user.id, 
-          protocolType: 'diet',
+          protocolType: protocolType,
           isActive: true 
         },
         { 

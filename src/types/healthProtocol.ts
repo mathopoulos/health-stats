@@ -36,4 +36,17 @@ export type DietType =
 export interface DietProtocol extends Omit<HealthProtocol, 'protocol'> {
   protocolType: 'diet';
   protocol: DietType;
+}
+
+// Workout-specific types
+export interface WorkoutProtocolData {
+  workouts: Array<{
+    type: string;
+    frequency: number;
+  }>;
+}
+
+export interface WorkoutProtocol extends Omit<HealthProtocol, 'protocol'> {
+  protocolType: 'exercise';
+  protocol: string; // JSON stringified WorkoutProtocolData
 } 

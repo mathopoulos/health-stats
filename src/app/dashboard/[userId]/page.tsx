@@ -575,6 +575,7 @@ export default function Home() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [activityFeed, setActivityFeed] = useState<ActivityFeedItem[]>([]);
   const [currentDietProtocol, setCurrentDietProtocol] = useState<HealthProtocol | null>(null);
+  const [currentWorkoutProtocol, setCurrentWorkoutProtocol] = useState<HealthProtocol | null>(null);
 
   // Add useEffect for title update
   useEffect(() => {
@@ -736,6 +737,15 @@ export default function Home() {
         }
       });
 
+      // Fetch current workout protocol
+      const workoutProtocolRes = await fetch(`/api/health-protocols?protocolType=exercise&activeOnly=true&userId=${userId}&t=${timestamp}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+
       // Check if any request failed
       const failedRequests = [];
       if (!heartRateRes.ok) failedRequests.push('heartRate');
@@ -747,6 +757,7 @@ export default function Home() {
       if (!sleepRes.ok) failedRequests.push('sleep');
       if (!workoutRes.ok) failedRequests.push('workout');
       if (!dietProtocolRes.ok) failedRequests.push('dietProtocol');
+      if (!workoutProtocolRes.ok) failedRequests.push('workoutProtocol');
 
       if (failedRequests.length > 0) {
         console.error('Failed requests:', failedRequests);
@@ -769,6 +780,9 @@ export default function Home() {
       // Parse diet protocol response
       const dietProtocolResponse = await dietProtocolRes.json();
 
+      // Parse workout protocol response
+      const workoutProtocolResponse = await workoutProtocolRes.json();
+
       const failedData = [];
       if (!heartRateData.success) failedData.push('heartRate');
       if (!weightData.success) failedData.push('weight');
@@ -779,6 +793,7 @@ export default function Home() {
       if (!sleepResponse.success) failedData.push('sleep');
       if (!workoutResponse.success) failedData.push('workout');
       if (!dietProtocolResponse.success) failedData.push('dietProtocol');
+      if (!workoutProtocolResponse.success) failedData.push('workoutProtocol');
 
       if (failedData.length > 0) {
         console.error('Failed data:', failedData);
@@ -1151,6 +1166,7 @@ export default function Home() {
       
       setActivityFeed(activityFeedItems);
       setCurrentDietProtocol(dietProtocolResponse.data && dietProtocolResponse.data.length > 0 ? dietProtocolResponse.data[0] : null);
+      setCurrentWorkoutProtocol(workoutProtocolResponse.data && workoutProtocolResponse.data.length > 0 ? workoutProtocolResponse.data[0] : null);
 
       return {
         heartRate: heartRateData.data || [],
@@ -2984,12 +3000,74 @@ export default function Home() {
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 shadow-sm">
                 <div className="flex flex-col">
                   <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Workout Protocol</span>
-                  <div className="mt-1.5 md:mt-2 flex flex-col md:flex-row md:items-baseline gap-1 md:gap-2">
-                    <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                      Coming Soon
-                    </span>
-                  </div>
-                  <span className="mt-1 text-[10px] md:text-xs text-gray-500 dark:text-gray-400">Not set</span>
+                  {data.loading ? (
+                    <div className="mt-3">
+                      <div className="animate-pulse">
+                        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-2"></div>
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+                      </div>
+                    </div>
+                  ) : currentWorkoutProtocol ? (
+                    (() => {
+                      try {
+                        const protocolData = JSON.parse(currentWorkoutProtocol.protocol);
+                        const workouts = protocolData.workouts || [];
+                        const totalSessions = workouts.reduce((sum: number, w: any) => sum + w.frequency, 0);
+                        
+                        // Function to format workout type names
+                        const formatWorkoutName = (type: string) => {
+                          return type
+                            .split('-')
+                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                            .join(' ');
+                        };
+                        
+                        return (
+                          <div className="mt-2">
+                            {/* Individual Workouts */}
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              {workouts.map((workout: any, index: number) => (
+                                <div
+                                  key={index}
+                                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 text-sm font-medium rounded-full border border-indigo-200 dark:border-indigo-800"
+                                >
+                                  <span>{formatWorkoutName(workout.type)}</span>
+                                  <span className="text-indigo-500 dark:text-indigo-400 font-semibold">
+                                    {workout.frequency}x
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                            
+                            {/* Start Date */}
+                            <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                              Started {new Date(currentWorkoutProtocol.startDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                        );
+                      } catch {
+                        return (
+                          <div className="mt-2">
+                            <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                              Active
+                            </span>
+                            <span className="mt-1 block text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                              Started {new Date(currentWorkoutProtocol.startDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                        );
+                      }
+                    })()
+                  ) : (
+                    <div className="mt-2">
+                      <span className="text-xl md:text-2xl font-bold text-gray-500 dark:text-gray-400">
+                        None
+                      </span>
+                      <span className="mt-1 block text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                        No workout protocol set
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
