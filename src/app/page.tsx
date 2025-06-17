@@ -112,27 +112,57 @@ export default function Home() {
           <ThemeToggle />
         </div>
 
-        {/* Animated Rocket Icon */}
-        <div className="flex justify-center mb-8">
-          <div className="text-4xl animate-bounce hover:scale-110 transition-transform cursor-pointer">🚀</div>
+        {/* Enhanced Main Title with Animation */}
+        <div className="mt-8 sm:mt-12">
+          <div className="mt-6 sm:mt-8 text-center">
+            <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white leading-tight max-w-7xl mx-auto">
+              <div className="mb-2">It's never been</div>
+              <div>easier to track and improve your health.</div>
+            </div>
+          </div>
         </div>
 
-        {/* Enhanced Main Title with Animation */}
-        <h1 className="text-center animate-fade-in px-3 sm:px-0">
-          <span className="block text-4xl sm:text-5xl md:text-6xl font-bold mb-4 hover:scale-105 transition-transform">
-            Track Your Health in One Place
-          </span>
-          <span className="block text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 text-transparent bg-clip-text bg-animate hover:scale-105 transition-transform">
-            Analyze • Improve • Share
-          </span>
-        </h1>
+        {/* Enhanced Demo Section - Moved up to be above the fold */}
+        <div className="mt-12 sm:mt-16 mb-8 sm:mb-12 animate-fade-in-up delay-300 px-6 sm:px-8 lg:px-12">
+          <div className="max-w-5xl mx-auto">
+            <div className="group relative bg-white/50 dark:bg-gray-900/50 backdrop-blur-lg rounded-2xl p-6 sm:p-8 border border-gray-200 dark:border-gray-800 hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10">
+              {/* Dashboard Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 space-y-2 sm:space-y-0">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-300">Live Dashboard Preview</h3>
+                </div>
+                <a
+                  href="/dashboard/userId=100492380040453908509"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                >
+                  See Full Demo Dashboard →
+                </a>
+              </div>
+              
+              {/* Dashboard Preview */}
+              <div className="relative w-full overflow-hidden rounded-lg 
+                aspect-[4/5] sm:aspect-[16/10] md:aspect-[16/9] 
+                min-h-[400px] sm:min-h-[350px] md:min-h-0">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none z-10" />
+                <iframe
+                  id="dashboard-iframe"
+                  src="/dashboard/userId=100492380040453908509"
+                  className="w-full h-full transform hover:scale-[1.02] transition-transform duration-300"
+                  style={{
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    transform: 'scale(0.9)',
+                    transformOrigin: 'top center',
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
-        {/* Enhanced Subtitle */}
-        <p className="mt-6 sm:mt-8 text-lg sm:text-xl text-center text-gray-600 dark:text-gray-300 max-w-3xl mx-auto animate-fade-in-up px-3 sm:px-0">
-          Revly syncs with your devices to show what matters most for better sleep, fitness, and longevity.
-        </p>
-
-        {/* Enhanced CTA Buttons */}
+        {/* Enhanced CTA Buttons - Moved below dashboard */}
         <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 animate-fade-in-up delay-200 px-3 sm:px-0">
           <a href="/auth/checkout" 
              className="group inline-flex items-center justify-center px-6 sm:px-8 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/25 w-full sm:w-auto">
@@ -147,44 +177,6 @@ export default function Home() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
-        </div>
-
-        {/* Enhanced Demo Section */}
-        <div className="mt-16 sm:mt-24 animate-fade-in-up delay-300 px-3 sm:px-4">
-          <div className="group relative bg-white/50 dark:bg-gray-900/50 backdrop-blur-lg rounded-2xl p-4 sm:p-6 border border-gray-200 dark:border-gray-800 hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10">
-            {/* Dashboard Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 space-y-2 sm:space-y-0">
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-300">Live Dashboard Preview</h3>
-              </div>
-              <a
-                href="/dashboard/userId=100492380040453908509"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
-              >
-                See Full Demo Dashboard →
-              </a>
-            </div>
-            
-            {/* Dashboard Preview */}
-            <div className="relative w-full overflow-hidden rounded-lg 
-              aspect-[4/5] sm:aspect-[16/12] md:aspect-[16/9] 
-              min-h-[500px] sm:min-h-[400px] md:min-h-0">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none z-10" />
-              <iframe
-                id="dashboard-iframe"
-                src="/dashboard/userId=100492380040453908509"
-                className="w-full h-full transform hover:scale-[1.02] transition-transform duration-300"
-                style={{
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  transform: 'scale(0.95)',
-                  transformOrigin: 'top center',
-                }}
-              />
-            </div>
-          </div>
         </div>
 
         {/* Enhanced Features Grid */}
