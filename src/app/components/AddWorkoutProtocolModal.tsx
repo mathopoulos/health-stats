@@ -10,62 +10,32 @@ interface AddWorkoutProtocolModalProps {
   onSave: (protocols: Array<{ type: string; frequency: number }>) => Promise<void>;
 }
 
-// Available workout types with categories for better organization
-const workoutCategories = [
-  {
-    name: 'Strength & Resistance',
-    workouts: [
-      { value: 'strength-training', label: 'Strength Training / Weightlifting' },
-      { value: 'powerlifting', label: 'Powerlifting' },
-      { value: 'bodybuilding', label: 'Bodybuilding' },
-      { value: 'calisthenics', label: 'Calisthenics' },
-      { value: 'bodyweight', label: 'Bodyweight Training' },
-    ]
-  },
-  {
-    name: 'Cardio & Endurance',
-    workouts: [
-      { value: 'running', label: 'Running' },
-      { value: 'cycling', label: 'Cycling' },
-      { value: 'swimming', label: 'Swimming' },
-      { value: 'cardio', label: 'General Cardio' },
-      { value: 'hiking', label: 'Hiking' },
-    ]
-  },
-  {
-    name: 'High Intensity & Functional',
-    workouts: [
-      { value: 'crossfit', label: 'CrossFit' },
-      { value: 'hiit', label: 'HIIT' },
-      { value: 'martial-arts', label: 'Martial Arts' },
-      { value: 'boxing', label: 'Boxing' },
-    ]
-  },
-  {
-    name: 'Flexibility & Mind-Body',
-    workouts: [
-      { value: 'yoga', label: 'Yoga' },
-      { value: 'pilates', label: 'Pilates' },
-      { value: 'stretching', label: 'Stretching' },
-      { value: 'tai-chi', label: 'Tai Chi' },
-    ]
-  },
-  {
-    name: 'Sports & Recreation',
-    workouts: [
-      { value: 'tennis', label: 'Tennis' },
-      { value: 'basketball', label: 'Basketball' },
-      { value: 'soccer', label: 'Soccer' },
-      { value: 'climbing', label: 'Rock Climbing' },
-      { value: 'dance', label: 'Dance' },
-    ]
-  },
-  {
-    name: 'Other',
-    workouts: [
-      { value: 'other', label: 'Other' },
-    ]
-  }
+// Available workout types in a flat list
+const workoutTypes = [
+  { value: 'strength-training', label: 'Strength Training / Weightlifting' },
+  { value: 'powerlifting', label: 'Powerlifting' },
+  { value: 'bodybuilding', label: 'Bodybuilding' },
+  { value: 'calisthenics', label: 'Calisthenics' },
+  { value: 'bodyweight', label: 'Bodyweight Training' },
+  { value: 'running', label: 'Running' },
+  { value: 'cycling', label: 'Cycling' },
+  { value: 'swimming', label: 'Swimming' },
+  { value: 'cardio', label: 'General Cardio' },
+  { value: 'hiking', label: 'Hiking' },
+  { value: 'crossfit', label: 'CrossFit' },
+  { value: 'hiit', label: 'HIIT' },
+  { value: 'martial-arts', label: 'Martial Arts' },
+  { value: 'boxing', label: 'Boxing' },
+  { value: 'yoga', label: 'Yoga' },
+  { value: 'pilates', label: 'Pilates' },
+  { value: 'stretching', label: 'Stretching' },
+  { value: 'tai-chi', label: 'Tai Chi' },
+  { value: 'tennis', label: 'Tennis' },
+  { value: 'basketball', label: 'Basketball' },
+  { value: 'soccer', label: 'Soccer' },
+  { value: 'climbing', label: 'Rock Climbing' },
+  { value: 'dance', label: 'Dance' },
+  { value: 'other', label: 'Other' },
 ];
 
 export default function AddWorkoutProtocolModal({ isOpen, onClose, onSave }: AddWorkoutProtocolModalProps) {
@@ -81,10 +51,6 @@ export default function AddWorkoutProtocolModal({ isOpen, onClose, onSave }: Add
   const [error, setError] = useState<string | null>(null);
 
   const handleWorkoutToggle = (workout: { value: string; label: string }) => {
-    const category = workoutCategories.find(cat => 
-      cat.workouts.some(w => w.value === workout.value)
-    )?.name || 'Other';
-
     setSelectedProtocols(prev => {
       const isSelected = prev.some(p => p.type === workout.value);
       if (isSelected) {
@@ -94,7 +60,7 @@ export default function AddWorkoutProtocolModal({ isOpen, onClose, onSave }: Add
           type: workout.value, 
           label: workout.label, 
           frequency: 2, // Default frequency
-          category 
+          category: 'Workout' // Simple category since we removed categorization
         }];
       }
     });
@@ -152,13 +118,10 @@ export default function AddWorkoutProtocolModal({ isOpen, onClose, onSave }: Add
     );
   };
 
-  // Group workouts by category for display
-  const groupedWorkouts = workoutCategories.map(category => ({
-    ...category,
-    workouts: category.workouts.filter(workout =>
-      workout.label.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  })).filter(category => category.workouts.length > 0);
+  // Filter workouts based on search term
+  const filteredWorkouts = workoutTypes.filter(workout =>
+    workout.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <Dialog open={isOpen} onClose={handleClose} className="relative z-50">
@@ -193,32 +156,25 @@ export default function AddWorkoutProtocolModal({ isOpen, onClose, onSave }: Add
                   />
 
                   <div className="max-h-96 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-md">
-                    {groupedWorkouts.length === 0 ? (
+                    {filteredWorkouts.length === 0 ? (
                       <div className="p-4 text-gray-500 dark:text-gray-400 text-center">
                         No workout types found matching "{searchTerm}"
                       </div>
                     ) : (
-                      groupedWorkouts.map((category) => (
-                        <div key={category.name}>
-                          <div className="bg-gray-50 dark:bg-gray-700/50 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600">
-                            {category.name}
-                          </div>
-                          {category.workouts.map((workout) => (
-                            <div
-                              key={workout.value}
-                              className={`flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer border-b border-gray-200 dark:border-gray-700 last:border-b-0 ${
-                                selectedProtocols.some(p => p.type === workout.value) ? 'bg-indigo-50 dark:bg-indigo-900/50' : ''
-                              }`}
-                              onClick={() => handleWorkoutToggle(workout)}
-                            >
-                              <span className="font-medium text-gray-900 dark:text-white">{workout.label}</span>
-                              {selectedProtocols.some(p => p.type === workout.value) && (
-                                <svg className="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                              )}
-                            </div>
-                          ))}
+                      filteredWorkouts.map((workout) => (
+                        <div
+                          key={workout.value}
+                          className={`flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer border-b border-gray-200 dark:border-gray-700 last:border-b-0 ${
+                            selectedProtocols.some(p => p.type === workout.value) ? 'bg-indigo-50 dark:bg-indigo-900/50' : ''
+                          }`}
+                          onClick={() => handleWorkoutToggle(workout)}
+                        >
+                          <span className="font-medium text-gray-900 dark:text-white">{workout.label}</span>
+                          {selectedProtocols.some(p => p.type === workout.value) && (
+                            <svg className="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
                         </div>
                       ))
                     )}
