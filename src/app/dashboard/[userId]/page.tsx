@@ -3023,26 +3023,122 @@ export default function Home() {
                         };
                         
                         return (
-                          <div className="mt-2">
+                          <div className="mt-3">
                             {/* Individual Workouts */}
-                            <div className="flex flex-wrap gap-2 mb-3">
-                              {workouts.map((workout: any, index: number) => (
-                                <div
-                                  key={index}
-                                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 text-sm font-medium rounded-full border border-indigo-200 dark:border-indigo-800"
-                                >
-                                  <span>{formatWorkoutName(workout.type)}</span>
-                                  <span className="text-indigo-500 dark:text-indigo-400 font-semibold">
-                                    {workout.frequency}x
-                                  </span>
-                                </div>
-                              ))}
+                            <div className="flex flex-wrap gap-3 mb-4">
+                              {workouts.map((workout: any, index: number) => {
+                                // Function to get workout icon and colors
+                                const getWorkoutStyle = (type: string) => {
+                                  const lowerType = type.toLowerCase();
+                                  
+                                  if (lowerType.includes('strength') || lowerType.includes('weight') || lowerType.includes('lifting') || lowerType.includes('resistance')) {
+                                    return {
+                                      icon: (
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                          <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z"/>
+                                        </svg>
+                                      ),
+                                      bg: 'bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20',
+                                      text: 'text-orange-700 dark:text-orange-300',
+                                      freqBg: 'bg-orange-100 dark:bg-orange-800/30',
+                                      freqText: 'text-orange-800 dark:text-orange-200',
+                                      border: 'border-orange-200 dark:border-orange-800'
+                                    };
+                                  } else if (lowerType.includes('run') || lowerType.includes('cardio') || lowerType.includes('endurance')) {
+                                    return {
+                                      icon: (
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                          <path d="M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1l-5.2 2.2v4.7h2v-3.4l1.8-.7-1.6 8.1-4.9-1-.4 2 7 1.4z"/>
+                                        </svg>
+                                      ),
+                                      bg: 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20',
+                                      text: 'text-green-700 dark:text-green-300',
+                                      freqBg: 'bg-green-100 dark:bg-green-800/30',
+                                      freqText: 'text-green-800 dark:text-green-200',
+                                      border: 'border-green-200 dark:border-green-800'
+                                    };
+                                  } else if (lowerType.includes('yoga') || lowerType.includes('pilates') || lowerType.includes('stretch') || lowerType.includes('flexibility')) {
+                                    return {
+                                      icon: (
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                          <path d="M5 17h14v2H5zm4.5-4.2c.3-.7.4-1.5.4-2.3s-.1-1.6-.4-2.3L12 5l2.5 3.2c-.3.7-.4 1.5-.4 2.3s.1 1.6.4 2.3L12 16l-2.5-3.2zM12 1L6.5 9c-.6 1.1-.6 2.5 0 3.6L12 21l5.5-8.4c.6-1.1.6-2.5 0-3.6L12 1z"/>
+                                        </svg>
+                                      ),
+                                      bg: 'bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20',
+                                      text: 'text-purple-700 dark:text-purple-300',
+                                      freqBg: 'bg-purple-100 dark:bg-purple-800/30',
+                                      freqText: 'text-purple-800 dark:text-purple-200',
+                                      border: 'border-purple-200 dark:border-purple-800'
+                                    };
+                                  } else if (lowerType.includes('swim') || lowerType.includes('water')) {
+                                    return {
+                                      icon: (
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                          <path d="M22 21c-1.11 0-1.73-.37-2.18-.64-.37-.22-.6-.36-1.15-.36s-.78.14-1.15.36c-.45.27-1.07.64-2.18.64s-1.73-.37-2.18-.64c-.37-.22-.6-.36-1.15-.36s-.78.14-1.15.36c-.45.27-1.07.64-2.18.64s-1.73-.37-2.18-.64c-.37-.22-.6-.36-1.15-.36s-.78.14-1.15.36c-.45.27-1.07.64-2.18.64v-2c.55 0 .78-.14 1.15-.36.45-.27 1.07-.64 2.18-.64s1.73.37 2.18.64c.37.22.6.36 1.15.36s.78-.14 1.15-.36c.45-.27 1.07-.64 2.18-.64s1.73.37 2.18.64c.37.22.6.36 1.15.36s.78-.14 1.15-.36c.45-.27 1.07-.64 2.18-.64s1.73.37 2.18.64c.37.22.6.36 1.15.36v2zm0-4.5c-1.11 0-1.73-.37-2.18-.64-.37-.22-.6-.36-1.15-.36s-.78.14-1.15.36c-.45.27-1.07.64-2.18.64s-1.73-.37-2.18-.64c-.37-.22-.6-.36-1.15-.36s-.78.14-1.15.36c-.45.27-1.07.64-2.18.64s-1.73-.37-2.18-.64c-.37-.22-.6-.36-1.15-.36s-.78.14-1.15.36c-.45.27-1.07.64-2.18.64v-2c.55 0 .78-.14 1.15-.36.45-.27 1.07-.64 2.18-.64s1.73.37 2.18.64c.37.22.6.36 1.15.36s.78-.14 1.15-.36c.45-.27 1.07-.64 2.18-.64s1.73.37 2.18.64c.37.22.6.36 1.15.36s.78-.14 1.15-.36c.45-.27 1.07-.64 2.18-.64s1.73.37 2.18.64c.37.22.6.36 1.15.36v2zM11 8.5l1.5 2H14l-2-3h-1.5l-.75 1.5H11v-.5zm6.5 2H18l1.5-3H18l-.75 1.5H16l1.5-1.5h-1.5l-1 2z"/>
+                                        </svg>
+                                      ),
+                                      bg: 'bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20',
+                                      text: 'text-blue-700 dark:text-blue-300',
+                                      freqBg: 'bg-blue-100 dark:bg-blue-800/30',
+                                      freqText: 'text-blue-800 dark:text-blue-200',
+                                      border: 'border-blue-200 dark:border-blue-800'
+                                    };
+                                  } else {
+                                    // Default style for other workouts
+                                    return {
+                                      icon: (
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                        </svg>
+                                      ),
+                                      bg: 'bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20',
+                                      text: 'text-indigo-700 dark:text-indigo-300',
+                                      freqBg: 'bg-indigo-100 dark:bg-indigo-800/30',
+                                      freqText: 'text-indigo-800 dark:text-indigo-200',
+                                      border: 'border-indigo-200 dark:border-indigo-800'
+                                    };
+                                  }
+                                };
+                                
+                                const style = getWorkoutStyle(workout.type);
+                                
+                                return (
+                                  <div
+                                    key={index}
+                                    className={`group relative inline-flex items-center gap-3 px-4 py-3 ${style.bg} ${style.text} rounded-xl border ${style.border} shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02]`}
+                                  >
+                                    {/* Workout Icon */}
+                                    <div className="flex-shrink-0">
+                                      {style.icon}
+                                    </div>
+                                    
+                                    {/* Workout Name */}
+                                    <span className="font-medium text-sm">
+                                      {formatWorkoutName(workout.type)}
+                                    </span>
+                                    
+                                    {/* Frequency Badge */}
+                                    <div className={`flex-shrink-0 inline-flex items-center justify-center w-8 h-6 ${style.freqBg} ${style.freqText} text-xs font-bold rounded-full`}>
+                                      {workout.frequency}
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                             
-                            {/* Start Date */}
-                            <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                              Started {new Date(currentWorkoutProtocol.startDate).toLocaleDateString()}
-                            </span>
+                            {/* Start Date with enhanced styling */}
+                            <div className="flex items-center gap-2">
+                              <svg className="w-3 h-3 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                              </svg>
+                              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                Started {new Date(currentWorkoutProtocol.startDate).toLocaleDateString('en-US', { 
+                                  month: 'short', 
+                                  day: 'numeric', 
+                                  year: 'numeric' 
+                                })}
+                              </span>
+                            </div>
                           </div>
                         );
                       } catch {
