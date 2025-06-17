@@ -180,7 +180,7 @@ export default function Home() {
         </div>
 
         {/* Enhanced Features Grid */}
-        <div className="mt-16 sm:mt-24 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8 animate-fade-in-up delay-400 px-3 sm:px-4">
+        <div className="mt-16 sm:mt-24 mb-12 sm:mb-16 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8 animate-fade-in-up delay-400 px-3 sm:px-4">
           {/* Enhanced Feature 1 */}
           <div className="group bg-white/30 dark:bg-gray-900/30 backdrop-blur rounded-xl p-6 border border-gray-200/50 dark:border-gray-800/50 hover:border-indigo-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/10">
             <div className="w-12 h-12 bg-indigo-500/20 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
