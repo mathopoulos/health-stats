@@ -117,7 +117,7 @@ export default function Home() {
           <div className="mt-6 sm:mt-8 text-center">
             <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white leading-tight max-w-7xl mx-auto">
               <div className="mb-2">It's never been</div>
-              <div>easier to track and improve your health.</div>
+              <div>easier to <span className="bg-gradient-to-r from-indigo-600 via-purple-500 to-indigo-600 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400 text-transparent bg-clip-text underline decoration-indigo-500 dark:decoration-indigo-400 decoration-4 underline-offset-4">track and improve</span> your health.</div>
             </div>
           </div>
         </div>
