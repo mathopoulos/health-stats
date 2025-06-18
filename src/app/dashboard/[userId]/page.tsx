@@ -3281,9 +3281,14 @@ export default function Home() {
                                       {formatSupplementName(supplement.type)}
                                     </span>
                                     
-                                    {/* Dosage Info */}
-                                    <div className={`flex-shrink-0 inline-flex items-center justify-center px-3 h-6 ${style.freqBg} ${style.freqText} text-xs font-bold rounded-full`}>
-                                      {supplement.dosage} {supplement.unit}
+                                    {/* Dosage and Frequency Info */}
+                                    <div className="flex-shrink-0 flex items-center gap-2">
+                                      <div className={`inline-flex items-center justify-center px-3 h-6 ${style.freqBg} ${style.freqText} text-xs font-bold rounded-full`}>
+                                        {supplement.dosage} {supplement.unit}
+                                      </div>
+                                      <div className={`inline-flex items-center justify-center px-2 h-6 ${style.freqBg} ${style.freqText} text-xs font-medium rounded-full border ${style.border}`}>
+                                        {supplement.frequency}
+                                      </div>
                                     </div>
                                   </div>
                                 );
