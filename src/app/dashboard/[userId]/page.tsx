@@ -576,6 +576,7 @@ export default function Home() {
   const [activityFeed, setActivityFeed] = useState<ActivityFeedItem[]>([]);
   const [currentDietProtocol, setCurrentDietProtocol] = useState<HealthProtocol | null>(null);
   const [currentWorkoutProtocol, setCurrentWorkoutProtocol] = useState<HealthProtocol | null>(null);
+  const [currentSupplementProtocol, setCurrentSupplementProtocol] = useState<HealthProtocol | null>(null);
 
   // Add useEffect for title update
   useEffect(() => {
@@ -746,6 +747,15 @@ export default function Home() {
         }
       });
 
+      // Fetch current supplement protocol
+      const supplementProtocolRes = await fetch(`/api/health-protocols?protocolType=supplement&activeOnly=true&userId=${userId}&t=${timestamp}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+
       // Check if any request failed
       const failedRequests = [];
       if (!heartRateRes.ok) failedRequests.push('heartRate');
@@ -758,6 +768,7 @@ export default function Home() {
       if (!workoutRes.ok) failedRequests.push('workout');
       if (!dietProtocolRes.ok) failedRequests.push('dietProtocol');
       if (!workoutProtocolRes.ok) failedRequests.push('workoutProtocol');
+      if (!supplementProtocolRes.ok) failedRequests.push('supplementProtocol');
 
       if (failedRequests.length > 0) {
         console.error('Failed requests:', failedRequests);
@@ -783,6 +794,9 @@ export default function Home() {
       // Parse workout protocol response
       const workoutProtocolResponse = await workoutProtocolRes.json();
 
+      // Parse supplement protocol response
+      const supplementProtocolResponse = await supplementProtocolRes.json();
+
       const failedData = [];
       if (!heartRateData.success) failedData.push('heartRate');
       if (!weightData.success) failedData.push('weight');
@@ -794,6 +808,7 @@ export default function Home() {
       if (!workoutResponse.success) failedData.push('workout');
       if (!dietProtocolResponse.success) failedData.push('dietProtocol');
       if (!workoutProtocolResponse.success) failedData.push('workoutProtocol');
+      if (!supplementProtocolResponse.success) failedData.push('supplementProtocol');
 
       if (failedData.length > 0) {
         console.error('Failed data:', failedData);
@@ -1167,6 +1182,7 @@ export default function Home() {
       setActivityFeed(activityFeedItems);
       setCurrentDietProtocol(dietProtocolResponse.data && dietProtocolResponse.data.length > 0 ? dietProtocolResponse.data[0] : null);
       setCurrentWorkoutProtocol(workoutProtocolResponse.data && workoutProtocolResponse.data.length > 0 ? workoutProtocolResponse.data[0] : null);
+      setCurrentSupplementProtocol(supplementProtocolResponse.data && supplementProtocolResponse.data.length > 0 ? supplementProtocolResponse.data[0] : null);
 
       return {
         heartRate: heartRateData.data || [],
@@ -3160,12 +3176,158 @@ export default function Home() {
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 shadow-sm">
                 <div className="flex flex-col">
                   <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Supplement Protocol</span>
-                  <div className="mt-1.5 md:mt-2 flex flex-col md:flex-row md:items-baseline gap-1 md:gap-2">
-                    <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                      Coming Soon
-                    </span>
-                  </div>
-                  <span className="mt-1 text-[10px] md:text-xs text-gray-500 dark:text-gray-400">Not set</span>
+                  {data.loading ? (
+                    <div className="mt-3">
+                      <div className="animate-pulse">
+                        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-2"></div>
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+                      </div>
+                    </div>
+                  ) : currentSupplementProtocol ? (
+                    (() => {
+                      try {
+                        const protocolData = JSON.parse(currentSupplementProtocol.protocol);
+                        const supplements = protocolData.supplements || [];
+                        
+                        // Function to format supplement type names
+                        const formatSupplementName = (type: string) => {
+                          return type
+                            .split('-')
+                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                            .join(' ');
+                        };
+                        
+                        return (
+                          <div className="mt-3">
+                            {/* Individual Supplements */}
+                            <div className="flex flex-wrap gap-3 mb-4">
+                              {supplements.map((supplement: any, index: number) => {
+                                // Function to get supplement icon and unified green styling
+                                const getSupplementStyle = (type: string) => {
+                                  const lowerType = type.toLowerCase();
+                                  
+                                  // Common green styling for all supplement types
+                                  const commonStyle = {
+                                    bg: 'bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20',
+                                    text: 'text-emerald-700 dark:text-emerald-300',
+                                    freqBg: 'bg-emerald-100 dark:bg-emerald-800/30',
+                                    freqText: 'text-emerald-800 dark:text-emerald-200',
+                                    border: 'border-emerald-200 dark:border-emerald-800'
+                                  };
+                                  
+                                  if (lowerType.includes('vitamin') || lowerType.includes('mineral')) {
+                                    return {
+                                      icon: (
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                        </svg>
+                                      ),
+                                      ...commonStyle
+                                    };
+                                  } else if (lowerType.includes('omega') || lowerType.includes('fish') || lowerType.includes('oil')) {
+                                    return {
+                                      icon: (
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                        </svg>
+                                      ),
+                                      ...commonStyle
+                                    };
+                                  } else if (lowerType.includes('probiotic') || lowerType.includes('prebiotic')) {
+                                    return {
+                                      icon: (
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                          <path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.71.71c1.25-1.28 2.01-3.02 2.01-4.94A7.5 7.5 0 0 0 9.5 2S2 2 2 9.5a7.5 7.5 0 0 0 15 0c0-1.92-.76-3.66-2.01-4.94l-.71.71C15.41 6.41 16 7.89 16 9.5 16 13.09 13.09 16 9.5 16S3 13.09 3 9.5 5.91 3 9.5 3z"/>
+                                        </svg>
+                                      ),
+                                      ...commonStyle
+                                    };
+                                  } else if (lowerType.includes('protein') || lowerType.includes('creatine') || lowerType.includes('performance')) {
+                                    return {
+                                      icon: (
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                          <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z"/>
+                                        </svg>
+                                      ),
+                                      ...commonStyle
+                                    };
+                                  } else {
+                                    // Default style for other supplements
+                                    return {
+                                      icon: (
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                                        </svg>
+                                      ),
+                                      ...commonStyle
+                                    };
+                                  }
+                                };
+                                
+                                const style = getSupplementStyle(supplement.type);
+                                
+                                return (
+                                  <div
+                                    key={index}
+                                    className={`group relative inline-flex items-center gap-3 px-4 py-3 ${style.bg} ${style.text} rounded-xl border ${style.border} shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02]`}
+                                  >
+                                    {/* Supplement Icon */}
+                                    <div className="flex-shrink-0">
+                                      {style.icon}
+                                    </div>
+                                    
+                                    {/* Supplement Name */}
+                                    <span className="font-medium text-sm">
+                                      {formatSupplementName(supplement.type)}
+                                    </span>
+                                    
+                                    {/* Dosage Info */}
+                                    <div className={`flex-shrink-0 inline-flex items-center justify-center px-3 h-6 ${style.freqBg} ${style.freqText} text-xs font-bold rounded-full`}>
+                                      {supplement.dosage} {supplement.unit}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            
+                            {/* Start Date with enhanced styling */}
+                            <div className="flex items-center gap-2">
+                              <svg className="w-3 h-3 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                              </svg>
+                              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                Started {new Date(currentSupplementProtocol.startDate).toLocaleDateString('en-US', { 
+                                  month: 'short', 
+                                  day: 'numeric', 
+                                  year: 'numeric' 
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      } catch {
+                        return (
+                          <div className="mt-2">
+                            <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                              Active
+                            </span>
+                            <span className="mt-1 block text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                              Started {new Date(currentSupplementProtocol.startDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                        );
+                      }
+                    })()
+                  ) : (
+                    <div className="mt-2">
+                      <span className="text-xl md:text-2xl font-bold text-gray-500 dark:text-gray-400">
+                        None
+                      </span>
+                      <span className="mt-1 block text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                        No supplement protocol set
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
