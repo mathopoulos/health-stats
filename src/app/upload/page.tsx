@@ -220,7 +220,7 @@ export default function UploadPage() {
       if (sessionStatus === 'loading' || !session?.user?.id) return;
       
       try {
-        const response = await fetch('/api/health-protocols?protocolType=diet&activeOnly=true');
+        const response = await fetch(`/api/health-protocols?protocolType=diet&activeOnly=true&userId=${session.user.id}`);
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.data && data.data.length > 0) {
@@ -236,7 +236,7 @@ export default function UploadPage() {
       if (sessionStatus === 'loading' || !session?.user?.id) return;
       
       try {
-        const response = await fetch('/api/health-protocols?protocolType=exercise&activeOnly=true');
+        const response = await fetch(`/api/health-protocols?protocolType=exercise&activeOnly=true&userId=${session.user.id}`);
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.data && data.data.length > 0) {
