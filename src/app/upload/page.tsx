@@ -195,6 +195,7 @@ export default function UploadPage() {
   
   // Available workout types
   const [isAddWorkoutProtocolModalOpen, setIsAddWorkoutProtocolModalOpen] = useState(false);
+  const [editingWorkoutType, setEditingWorkoutType] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -345,6 +346,58 @@ export default function UploadPage() {
 
   const removeWorkoutProtocol = (type: string) => {
     setWorkoutProtocols(prev => prev.filter(w => w.type !== type));
+  };
+
+  const updateWorkoutProtocolFrequency = async (type: string, newFrequency: number) => {
+    // Capture original frequency for potential revert
+    const originalFrequency = workoutProtocols.find(w => w.type === type)?.frequency || 2;
+    
+    // Update local state immediately for optimistic UI
+    setWorkoutProtocols(prev => 
+      prev.map(w => w.type === type ? { ...w, frequency: newFrequency } : w)
+    );
+    
+    // Exit edit mode
+    setEditingWorkoutType(null);
+    
+    // Save to backend
+    setIsSavingWorkoutProtocol(true);
+    try {
+      const updatedProtocols = workoutProtocols.map(w => 
+        w.type === type ? { ...w, frequency: newFrequency } : w
+      );
+      
+      const response = await fetch('/api/health-protocols', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          protocolType: 'exercise',
+          protocol: JSON.stringify({ workouts: updatedProtocols }),
+          startDate: new Date().toISOString()
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update workout protocol');
+      }
+      
+      setStatus('Workout protocol updated successfully');
+      setTimeout(() => setStatus(''), 3000);
+    } catch (error) {
+      console.error('Error updating workout protocol:', error);
+      setStatus(error instanceof Error ? error.message : 'Failed to update workout protocol');
+      setTimeout(() => setStatus(''), 3000);
+      
+      // Revert local state on error
+      setWorkoutProtocols(prev => 
+        prev.map(w => w.type === type ? { ...w, frequency: originalFrequency } : w)
+      );
+    } finally {
+      setIsSavingWorkoutProtocol(false);
+    }
   };
 
 
@@ -1368,18 +1421,72 @@ export default function UploadPage() {
                           </div>
                           
                           <div className="flex items-center gap-3">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">
-                              {workout.frequency}x/week
-                            </span>
-                            
-                            <button
-                              onClick={() => removeWorkoutProtocol(workout.type)}
-                              className="w-8 h-8 flex items-center justify-center rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
+                            {editingWorkoutType === workout.type ? (
+                              // Edit mode
+                              <div className="flex items-center gap-2">
+                                <select
+                                  value={workout.frequency}
+                                  onChange={(e) => updateWorkoutProtocolFrequency(workout.type, Number(e.target.value))}
+                                  onBlur={() => setEditingWorkoutType(null)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Escape') {
+                                      setEditingWorkoutType(null);
+                                    }
+                                  }}
+                                  className="h-8 rounded-md border border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-600 text-sm px-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
+                                  autoFocus
+                                >
+                                  {Array.from({ length: 7 }, (_, i) => i + 1).map(num => (
+                                    <option key={num} value={num}>{num}x/week</option>
+                                  ))}
+                                </select>
+                                <button
+                                  onClick={() => setEditingWorkoutType(null)}
+                                  className="w-6 h-6 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                                  title="Cancel edit"
+                                >
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            ) : (
+                              // View mode
+                              <>
+                                <button
+                                  onClick={() => setEditingWorkoutType(workout.type)}
+                                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer flex items-center gap-1"
+                                >
+                                  {workout.frequency}x/week
+                                  {isSavingWorkoutProtocol && (
+                                    <svg className="animate-spin h-3 w-3 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    </svg>
+                                  )}
+                                </button>
+                                
+                                <button
+                                  onClick={() => setEditingWorkoutType(workout.type)}
+                                  className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                                  title="Edit frequency"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                                
+                                <button
+                                  onClick={() => removeWorkoutProtocol(workout.type)}
+                                  className="w-8 h-8 flex items-center justify-center rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                  title="Remove protocol"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
                       ))}
