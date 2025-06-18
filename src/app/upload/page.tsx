@@ -4,6 +4,7 @@ import { useState, useRef, DragEvent, useEffect } from 'react';
 import { useSession, signOut } from "next-auth/react";
 import AddResultsModal from '../components/AddResultsModal';
 import AddWorkoutProtocolModal from '../components/AddWorkoutProtocolModal';
+import AddSupplementProtocolModal from '../components/AddSupplementProtocolModal';
 import Image from 'next/image';
 import Link from 'next/link';
 import ThemeToggle from '../components/ThemeToggle';
@@ -197,6 +198,17 @@ export default function UploadPage() {
   const [isAddWorkoutProtocolModalOpen, setIsAddWorkoutProtocolModalOpen] = useState(false);
   const [editingWorkoutType, setEditingWorkoutType] = useState<string | null>(null);
 
+  // Supplement protocol state
+  const [supplementProtocols, setSupplementProtocols] = useState<Array<{
+    type: string;
+    frequency: string;
+    dosage: string;
+    unit: string;
+  }>>([]);
+  const [isSavingSupplementProtocol, setIsSavingSupplementProtocol] = useState(false);
+  const [isAddSupplementProtocolModalOpen, setIsAddSupplementProtocolModalOpen] = useState(false);
+  const [editingSupplementType, setEditingSupplementType] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchUserData = async () => {
       if (sessionStatus === 'loading' || !session?.user?.id) return;
@@ -250,9 +262,27 @@ export default function UploadPage() {
       }
     };
 
+    const fetchCurrentSupplementProtocols = async () => {
+      if (sessionStatus === 'loading' || !session?.user?.id) return;
+      
+      try {
+        const response = await fetch(`/api/health-protocols?protocolType=supplement&activeOnly=true&userId=${session.user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data && data.data.length > 0) {
+            const protocolData = JSON.parse(data.data[0].protocol);
+            setSupplementProtocols(protocolData.supplements || []);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching current supplement protocols:', error);
+      }
+    };
+
     fetchUserData();
     fetchCurrentDiet();
     fetchCurrentWorkoutProtocols();
+    fetchCurrentSupplementProtocols();
   }, [session?.user?.id, sessionStatus]);
 
   const handleUpdateProfile = async () => {
@@ -449,6 +479,121 @@ export default function UploadPage() {
       setTimeout(() => setStatus(''), 3000);
     } finally {
       setIsSavingWorkoutProtocol(false);
+    }
+  };
+
+  // Supplement protocol handlers
+  const addSupplementProtocol = (type: string, frequency: string, dosage: string, unit: string) => {
+    // Check if this supplement type is already added
+    if (!supplementProtocols.find(s => s.type === type)) {
+      setSupplementProtocols(prev => [...prev, { type, frequency, dosage, unit }]);
+    }
+  };
+
+  const removeSupplementProtocol = (type: string) => {
+    setSupplementProtocols(prev => prev.filter(s => s.type !== type));
+  };
+
+  const updateSupplementProtocol = async (type: string, field: string, newValue: string) => {
+    // Capture original value for potential revert
+    const originalProtocol = supplementProtocols.find(s => s.type === type);
+    if (!originalProtocol) return;
+    
+    // Update local state immediately for optimistic UI
+    setSupplementProtocols(prev => 
+      prev.map(s => s.type === type ? { ...s, [field]: newValue } : s)
+    );
+    
+    // Exit edit mode
+    setEditingSupplementType(null);
+    
+    // Save to backend
+    setIsSavingSupplementProtocol(true);
+    try {
+      const updatedProtocols = supplementProtocols.map(s => 
+        s.type === type ? { ...s, [field]: newValue } : s
+      );
+      
+      const response = await fetch('/api/health-protocols', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          protocolType: 'supplement',
+          protocol: JSON.stringify({ supplements: updatedProtocols }),
+          startDate: new Date().toISOString()
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update supplement protocol');
+      }
+      
+      setStatus('Supplement protocol updated successfully');
+      setTimeout(() => setStatus(''), 3000);
+    } catch (error) {
+      console.error('Error updating supplement protocol:', error);
+      setStatus(error instanceof Error ? error.message : 'Failed to update supplement protocol');
+      setTimeout(() => setStatus(''), 3000);
+      
+      // Revert local state on error
+      setSupplementProtocols(prev => 
+        prev.map(s => s.type === type ? originalProtocol : s)
+      );
+    } finally {
+      setIsSavingSupplementProtocol(false);
+    }
+  };
+
+  const handleSaveSupplementProtocols = async (newProtocols: Array<{ type: string; frequency: string; dosage: string; unit: string }>) => {
+    setIsSavingSupplementProtocol(true);
+    
+    try {
+      // Combine new protocols with existing ones, avoiding duplicates
+      const updatedProtocols = [...supplementProtocols];
+      
+      newProtocols.forEach(newProtocol => {
+        const existingIndex = updatedProtocols.findIndex(p => p.type === newProtocol.type);
+        if (existingIndex >= 0) {
+          // Update existing protocol
+          updatedProtocols[existingIndex] = newProtocol;
+        } else {
+          // Add new protocol
+          updatedProtocols.push(newProtocol);
+        }
+      });
+      
+      // Save to backend
+      const response = await fetch('/api/health-protocols', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          protocolType: 'supplement',
+          protocol: JSON.stringify({ supplements: updatedProtocols }),
+          startDate: new Date().toISOString()
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to save supplement protocols');
+      }
+
+      // Update local state
+      setSupplementProtocols(updatedProtocols);
+      
+      setStatus('Supplement protocols updated successfully');
+      setTimeout(() => setStatus(''), 3000);
+    } catch (error) {
+      console.error('Error updating supplement protocols:', error);
+      setStatus(error instanceof Error ? error.message : 'Failed to update supplement protocols');
+      setTimeout(() => setStatus(''), 3000);
+    } finally {
+      setIsSavingSupplementProtocol(false);
     }
   };
 
@@ -1500,6 +1645,100 @@ export default function UploadPage() {
                   </div>
                 )}
 
+              </div>
+
+              {/* Current Supplement Protocols */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Supplement Protocols</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  Track your supplement regimen including dosages, frequency, and timing to optimize your health protocols.
+                </p>
+                
+                {/* Add Supplement Protocol Button */}
+                <button
+                  onClick={() => setIsAddSupplementProtocolModalOpen(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Add Supplement Protocols
+                </button>
+
+                {/* Current Supplement Protocols List */}
+                {supplementProtocols.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Your Current Protocols:</h4>
+                    <div className="space-y-3">
+                      {supplementProtocols.map((supplement) => (
+                        <div key={supplement.type} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              {supplement.type.split('-').map(word => 
+                                word.charAt(0).toUpperCase() + word.slice(1)
+                              ).join(' ')}
+                            </span>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {supplement.dosage} {supplement.unit} • {supplement.frequency.replace('-', ' ')}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-3">
+                            {editingSupplementType === supplement.type ? (
+                              // Edit mode
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => setEditingSupplementType(null)}
+                                  className="w-6 h-6 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                                  title="Cancel edit"
+                                >
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            ) : (
+                              // View mode
+                              <>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                  {isSavingSupplementProtocol && (
+                                    <svg className="animate-spin h-3 w-3 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    </svg>
+                                  )}
+                                </span>
+                                
+                                <button
+                                  onClick={() => setEditingSupplementType(supplement.type)}
+                                  className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                                  title="Edit supplement"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                                
+                                <button
+                                  onClick={() => removeSupplementProtocol(supplement.type)}
+                                  className="w-8 h-8 flex items-center justify-center rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                  title="Remove protocol"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Total: {supplementProtocols.length} supplement{supplementProtocols.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
               </div>
             </div>
@@ -2012,6 +2251,13 @@ export default function UploadPage() {
         isOpen={isAddWorkoutProtocolModalOpen}
         onClose={() => setIsAddWorkoutProtocolModalOpen(false)}
         onSave={handleSaveWorkoutProtocols}
+      />
+
+      {/* Add Supplement Protocol Modal */}
+      <AddSupplementProtocolModal
+        isOpen={isAddSupplementProtocolModalOpen}
+        onClose={() => setIsAddSupplementProtocolModalOpen(false)}
+        onSave={handleSaveSupplementProtocols}
       />
 
     </div>

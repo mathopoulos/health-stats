@@ -49,4 +49,19 @@ export interface WorkoutProtocolData {
 export interface WorkoutProtocol extends Omit<HealthProtocol, 'protocol'> {
   protocolType: 'exercise';
   protocol: string; // JSON stringified WorkoutProtocolData
+}
+
+// Supplement-specific types
+export interface SupplementProtocolData {
+  supplements: Array<{
+    type: string;
+    frequency: string;
+    dosage: string;
+    unit: string;
+  }>;
+}
+
+export interface SupplementProtocol extends Omit<HealthProtocol, 'protocol'> {
+  protocolType: 'supplement';
+  protocol: string; // JSON stringified SupplementProtocolData
 } 
