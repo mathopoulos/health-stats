@@ -214,6 +214,128 @@ export default function Home() {
             <p className="text-gray-400 group-hover:text-gray-300 transition-colors">Share your health journey with friends or the community to stay accountable and inspire others with your progress.</p>
           </div>
         </div>
+
+        {/* Pricing Section */}
+        <div className="mt-16 sm:mt-24 mb-16 sm:mb-24 px-8 sm:px-12 lg:px-20 xl:px-32 py-16 sm:py-20 animate-fade-in-up delay-500">
+          <div className="max-w-7xl mx-auto">
+            {/* Pricing Header */}
+            <div className="text-center mb-12 sm:mb-16">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+                Everything you need to{' '}
+                <span className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 text-transparent bg-clip-text">
+                  optimize your health
+                </span>
+              </h2>
+            </div>
+
+            {/* Pricing Card and Features */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+              {/* Pricing Card */}
+              <div className="group bg-white/40 dark:bg-gray-900/40 backdrop-blur-lg rounded-2xl p-12 sm:p-16 border border-gray-200/50 dark:border-gray-800/50 hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 hover:scale-[1.02]">
+                {/* Logo */}
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-indigo-600 via-purple-500 to-indigo-600 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400 text-transparent bg-clip-text">
+                    revly
+                  </h3>
+                </div>
+
+                <p className="text-lg text-gray-700 dark:text-gray-300 mb-8 font-medium">
+                  It's time you own your health.
+                </p>
+
+                {/* Price */}
+                <div className="mb-8">
+                  <div className="flex items-baseline mb-2">
+                    <span className="text-5xl font-bold text-gray-900 dark:text-white">$29.99</span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    One-time payment • Lifetime access
+                  </p>
+                </div>
+
+                {/* CTA Button */}
+                <a
+                  href="/auth/checkout"
+                  className="w-full inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/25 group"
+                >
+                  Get Beta Access
+                  <span className="ml-2 transform translate-x-0 group-hover:translate-x-1 transition-transform">→</span>
+                </a>
+              </div>
+
+              {/* Features List */}
+              <div className="space-y-6">
+                {/* Feature 1 */}
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center mt-1">
+                    <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      Unified Health Dashboard
+                    </h4>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Track weight, body fat, HRV, VO2 max, sleep, workouts, and 50+ blood biomarkers in one comprehensive dashboard with beautiful charts and trends.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Feature 2 */}
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center mt-1">
+                    <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      Auto-Sync iOS Health Data
+                    </h4>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Seamlessly connect your Apple Health, wearables, and fitness apps. Our iOS app automatically syncs your health data in real-time.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Feature 3 */}
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center mt-1">
+                    <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      Blood Test PDF Processing
+                    </h4>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Upload blood test PDFs and we'll automatically extract and track your biomarkers over time. No more lost lab results or manual data entry.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Feature 4 */}
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center mt-1">
+                    <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      Lifetime Data Ownership
+                    </h4>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Your health data stays with you forever. Export anytime, share with doctors, and build a comprehensive health history you actually own.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Enhanced Footer */}
