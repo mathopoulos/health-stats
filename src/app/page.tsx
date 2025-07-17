@@ -153,7 +153,7 @@ export default function Home() {
                   style={{
                     border: 'none',
                     borderRadius: '0.5rem',
-                    transform: 'scale(0.9)',
+                    transform: 'scale(0.98)',
                     transformOrigin: 'top center',
                   }}
                 />
