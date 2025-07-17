@@ -3230,75 +3230,30 @@ export default function Home() {
                             <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar" style={{ scrollbarWidth: 'thin' }}>
                               <div className="space-y-2">
                                 {supplements.map((supplement: any, index: number) => {
-                                  // Function to get supplement icon and unified green styling
-                                  const getSupplementStyle = (type: string) => {
-                                    const lowerType = type.toLowerCase();
-                                    
-                                    // Common green styling for all supplement types
-                                    const commonStyle = {
-                                      bg: 'bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20',
-                                      text: 'text-emerald-700 dark:text-emerald-300',
-                                      freqBg: 'bg-emerald-100 dark:bg-emerald-800/30',
-                                      freqText: 'text-emerald-800 dark:text-emerald-200',
-                                      border: 'border-emerald-200 dark:border-emerald-800'
-                                    };
-                                    
-                                    if (lowerType.includes('vitamin') || lowerType.includes('mineral')) {
-                                      return {
-                                        icon: (
-                                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                                          </svg>
-                                        ),
-                                        ...commonStyle
-                                      };
-                                    } else if (lowerType.includes('omega') || lowerType.includes('fish') || lowerType.includes('oil')) {
-                                      return {
-                                        icon: (
-                                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                                          </svg>
-                                        ),
-                                        ...commonStyle
-                                      };
-                                    } else if (lowerType.includes('probiotic') || lowerType.includes('prebiotic')) {
-                                      return {
-                                        icon: (
-                                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.71.71c1.25-1.28 2.01-3.02 2.01-4.94A7.5 7.5 0 0 0 9.5 2S2 2 2 9.5a7.5 7.5 0 0 0 15 0c0-1.92-.76-3.66-2.01-4.94l-.71.71C15.41 6.41 16 7.89 16 9.5 16 13.09 13.09 16 9.5 16S3 13.09 3 9.5 5.91 3 9.5 3z"/>
-                                          </svg>
-                                        ),
-                                        ...commonStyle
-                                      };
-                                    } else if (lowerType.includes('protein') || lowerType.includes('creatine') || lowerType.includes('performance')) {
-                                      return {
-                                        icon: (
-                                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z"/>
-                                          </svg>
-                                        ),
-                                        ...commonStyle
-                                      };
-                                    } else {
-                                      // Default style for other supplements
-                                      return {
-                                        icon: (
-                                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-                                          </svg>
-                                        ),
-                                        ...commonStyle
-                                      };
-                                    }
-                                  };
+                                                                     // Function to get supplement icon and unified green styling
+                                   const getSupplementStyle = () => {
+                                     // Common green styling and pill icon for all supplement types
+                                     return {
+                                       icon: (
+                                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                           <path d="M4.22 11.29l6.36-6.36c1.77-1.77 4.64-1.77 6.41 0l.71.71c1.77 1.77 1.77 4.64 0 6.41l-6.36 6.36c-1.77 1.77-4.64 1.77-6.41 0l-.71-.71c-1.77-1.77-1.77-4.64 0-6.41zm.71 5.7l.71.71c1.17 1.17 3.07 1.17 4.24 0l6.36-6.36c1.17-1.17 1.17-3.07 0-4.24l-.71-.71c-1.17-1.17-3.07-1.17-4.24 0l-6.36 6.36c-1.17 1.17-1.17 3.07 0 4.24z"/>
+                                         </svg>
+                                       ),
+                                       bg: 'bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20',
+                                       text: 'text-emerald-700 dark:text-emerald-300',
+                                       freqBg: 'bg-emerald-100 dark:bg-emerald-800/30',
+                                       freqText: 'text-emerald-800 dark:text-emerald-200',
+                                       border: 'border-emerald-200 dark:border-emerald-800'
+                                     };
+                                   };
                                   
-                                  const style = getSupplementStyle(supplement.type);
+                                                                     const style = getSupplementStyle();
                                   
                                   return (
-                                    <div
-                                      key={index}
-                                      className={`group relative flex items-center gap-3 px-3 py-2.5 ${style.bg} ${style.text} rounded-lg border ${style.border} shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01]`}
-                                    >
+                                                                         <div
+                                       key={index}
+                                       className={`group relative flex items-center gap-3 px-3 py-2.5 ${style.bg} ${style.text} rounded-lg border ${style.border} shadow-sm hover:shadow-lg transition-all duration-200 hover:bg-gradient-to-r hover:from-emerald-100 hover:to-green-100 dark:hover:from-emerald-800/40 dark:hover:to-green-800/40`}
+                                     >
                                       {/* Supplement Icon */}
                                       <div className="flex-shrink-0">
                                         {style.icon}
