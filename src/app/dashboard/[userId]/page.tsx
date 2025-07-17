@@ -1652,9 +1652,20 @@ export default function Home() {
   if (status === 'loading' || data.loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading your health data...</p>
+        <div className="text-center max-w-md mx-auto px-6">
+          {/* Loading Spinner */}
+          <div className="mb-8">
+            <div className="w-12 h-12 mx-auto">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-transparent border-t-indigo-500 border-r-indigo-400"></div>
+            </div>
+          </div>
+
+          {/* Loading Text */}
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Loading health data
+            </h2>
+          </div>
         </div>
       </div>
     );
