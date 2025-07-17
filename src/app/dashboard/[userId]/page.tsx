@@ -1662,8 +1662,8 @@ export default function Home() {
 
           {/* Loading Text */}
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Loading health data
+            <h2 className="text-xl font-medium text-gray-900 dark:text-white">
+              Loading health data...
             </h2>
           </div>
         </div>
