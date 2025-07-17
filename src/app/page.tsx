@@ -123,9 +123,9 @@ export default function Home() {
         </div>
 
         {/* Enhanced Demo Section - Moved up to be above the fold */}
-        <div className="mt-12 sm:mt-16 mb-8 sm:mb-12 animate-fade-in-up delay-300 px-6 sm:px-8 lg:px-12">
+        <div className="mt-12 sm:mt-16 mb-8 sm:mb-12 animate-fade-in-up delay-300 px-3 sm:px-4 lg:px-6">
           <div className="max-w-5xl mx-auto">
-            <div className="group relative bg-white/50 dark:bg-gray-900/50 backdrop-blur-lg rounded-2xl p-6 sm:p-8 border border-gray-200 dark:border-gray-800 hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10">
+            <div className="group relative bg-white/50 dark:bg-gray-900/50 backdrop-blur-lg rounded-2xl p-4 sm:p-6 border border-gray-200 dark:border-gray-800 hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10">
               {/* Dashboard Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 space-y-2 sm:space-y-0">
                 <div>
