@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import ThemeToggle from './components/ThemeToggle';
 import { useTheme } from './context/ThemeContext';
 
@@ -27,6 +27,36 @@ function LifetimeOfferBanner() {
 
 export default function Home() {
   const { theme, toggleTheme } = useTheme();
+  const [visibleSections, setVisibleSections] = useState<Set<number>>(new Set());
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Intersection Observer for scroll animations
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const sectionIndex = parseInt(entry.target.getAttribute('data-section') || '0');
+          if (entry.isIntersecting) {
+            setVisibleSections(prev => new Set([...prev, sectionIndex]));
+          }
+        });
+      },
+      {
+        threshold: 0.3,
+        rootMargin: '-10% 0px -10% 0px'
+      }
+    );
+
+    sectionRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => {
+      sectionRefs.current.forEach((ref) => {
+        if (ref) observer.unobserve(ref);
+      });
+    };
+  }, []);
 
   // Listen for theme changes from iframe
   useEffect(() => {
@@ -170,7 +200,12 @@ export default function Home() {
             <span className="ml-2 transform translate-x-0 group-hover:translate-x-1 transition-transform">→</span>
           </a>
           <button
-            onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })}
+            onClick={() => {
+              const howItWorksSection = document.getElementById('how-it-works-section');
+              if (howItWorksSection) {
+                howItWorksSection.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
             className="group inline-flex items-center justify-center px-6 sm:px-8 py-3 border border-gray-300 dark:border-gray-700 text-base font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-600 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-gray-800/25 w-full sm:w-auto">
             Explore
             <svg className="ml-2 w-4 h-4 transform group-hover:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -179,44 +214,174 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Enhanced Features Grid */}
-        <div className="mt-16 sm:mt-24 mb-12 sm:mb-16 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8 animate-fade-in-up delay-400 px-3 sm:px-4">
-          {/* Enhanced Feature 1 */}
-          <div className="group bg-white/30 dark:bg-gray-900/30 backdrop-blur rounded-xl p-6 border border-gray-200/50 dark:border-gray-800/50 hover:border-indigo-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/10">
-            <div className="w-12 h-12 bg-indigo-500/20 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold mb-2 group-hover:text-indigo-400 transition-colors">Centralize Your Health Data</h3>
-            <p className="text-gray-400 group-hover:text-gray-300 transition-colors">Automatically connect wearables and lab results to track sleep quality, activity levels, HRV, and biomarkers in one unified dashboard.</p>
-          </div>
 
-          {/* Enhanced Feature 2 */}
-          <div className="group bg-white/30 dark:bg-gray-900/30 backdrop-blur rounded-xl p-6 border border-gray-200/50 dark:border-gray-800/50 hover:border-purple-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10">
-            <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
+
+        {/* How It Works Section */}
+        <div id="how-it-works-section" className="mt-16 sm:mt-24 mb-0 px-8 sm:px-12 lg:px-20 xl:px-32 py-8 sm:py-12 animate-fade-in-up delay-450">
+          <div className="max-w-4xl mx-auto">
+            {/* Section Header */}
+            <div 
+              ref={(el) => { sectionRefs.current[3] = el; }}
+              data-section="3"
+              className={`text-center mb-16 sm:mb-20 transition-all duration-700 ease-out ${
+                visibleSections.has(3) 
+                  ? 'opacity-100 translate-y-0 scale-100' 
+                  : 'opacity-0 translate-y-4 scale-95'
+              }`}
+            >
+              {/* Sub Header */}
+              <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 tracking-wider uppercase mb-4">
+                HOW IT WORKS
+              </p>
+              
+              {/* Main Title */}
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+                Let's walk through{' '}
+                <span className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 text-transparent bg-clip-text">
+                  how it works
+                </span>
+              </h2>
             </div>
-            <h3 className="text-lg font-semibold mb-2 group-hover:text-purple-400 transition-colors">Personalized Insights</h3>
-            <p className="text-gray-400 group-hover:text-gray-300 transition-colors">Get actionable recommendations based on your unique data patterns to improve sleep, recovery, and overall wellbeing.</p>
-          </div>
-          
-          {/* Enhanced Feature 3 */}
-          <div className="group bg-white/30 dark:bg-gray-900/30 backdrop-blur rounded-xl p-6 border border-gray-200/50 dark:border-gray-800/50 hover:border-pink-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-pink-500/10">
-            <div className="w-12 h-12 bg-pink-500/20 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <svg className="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
+
+            {/* Step 1 */}
+            <div 
+              ref={(el) => { sectionRefs.current[0] = el; }}
+              data-section="0"
+              className={`text-center mb-20 transition-all duration-700 ease-out ${
+                visibleSections.has(0) 
+                  ? 'opacity-100 translate-y-0 scale-100' 
+                  : 'opacity-0 translate-y-8 scale-90'
+              }`}
+            >
+              <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-12 transition-all duration-700 ease-out delay-200 ${
+                visibleSections.has(0) 
+                  ? 'opacity-100 translate-y-0 scale-100' 
+                  : 'opacity-0 translate-y-4 scale-95'
+              }`}>
+                Connect your fitness trackers
+              </h2>
+              <div className={`w-full max-w-2xl mx-auto rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-700 ease-out delay-300 ${
+                visibleSections.has(0) 
+                  ? 'opacity-100 scale-100' 
+                  : 'opacity-0 scale-85'
+              }`}>
+                <img 
+                  src="/images/fitness-tracker.png" 
+                  alt="Connect your fitness trackers"
+                  className="w-full h-auto"
+                />
+              </div>
             </div>
-            <h3 className="text-lg font-semibold mb-2 group-hover:text-pink-400 transition-colors">Build in Public</h3>
-            <p className="text-gray-400 group-hover:text-gray-300 transition-colors">Share your health journey with friends or the community to stay accountable and inspire others with your progress.</p>
+
+            {/* Divider Line */}
+            <div className="flex justify-center mb-20">
+              <div className="w-px h-16 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
+            </div>
+
+            {/* Step 2 */}
+            <div 
+              ref={(el) => { sectionRefs.current[1] = el; }}
+              data-section="1"
+              className={`text-center mb-20 transition-all duration-700 ease-out ${
+                visibleSections.has(1) 
+                  ? 'opacity-100 translate-y-0 scale-100' 
+                  : 'opacity-0 translate-y-8 scale-90'
+              }`}
+            >
+              <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-12 transition-all duration-700 ease-out delay-200 ${
+                visibleSections.has(1) 
+                  ? 'opacity-100 translate-y-0 scale-100' 
+                  : 'opacity-0 translate-y-4 scale-95'
+              }`}>
+                Upload blood tests and health records
+              </h2>
+              <div className={`w-full max-w-2xl mx-auto rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-700 ease-out delay-300 ${
+                visibleSections.has(1) 
+                  ? 'opacity-100 scale-100' 
+                  : 'opacity-0 scale-85'
+              }`}>
+                <img 
+                  src="/images/blood-upload.png" 
+                  alt="Upload blood tests and health records"
+                  className="w-full h-auto"
+                />
+              </div>
+            </div>
+
+            {/* Divider Line */}
+            <div className="flex justify-center mb-20">
+              <div className="w-px h-16 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
+            </div>
+
+            {/* Step 3 */}
+            <div 
+              ref={(el) => { sectionRefs.current[2] = el; }}
+              data-section="2"
+              className={`text-center mb-20 transition-all duration-700 ease-out ${
+                visibleSections.has(2) 
+                  ? 'opacity-100 translate-y-0 scale-100' 
+                  : 'opacity-0 translate-y-8 scale-90'
+              }`}
+            >
+              <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-12 transition-all duration-700 ease-out delay-200 ${
+                visibleSections.has(2) 
+                  ? 'opacity-100 translate-y-0 scale-100' 
+                  : 'opacity-0 translate-y-4 scale-95'
+              }`}>
+                Experiment with workouts and health protocols
+              </h2>
+              <div className={`w-full max-w-2xl mx-auto rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-700 ease-out delay-300 ${
+                visibleSections.has(2) 
+                  ? 'opacity-100 scale-100' 
+                  : 'opacity-0 scale-85'
+              }`}>
+                <img 
+                  src="/images/experiment.png" 
+                  alt="Experiment with workouts and health protocols"
+                  className="w-full h-auto"
+                />
+              </div>
+            </div>
+
+            {/* Divider Line */}
+            <div className="flex justify-center mb-20">
+              <div className="w-px h-16 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
+            </div>
+
+            {/* Step 4 */}
+            <div 
+              ref={(el) => { sectionRefs.current[4] = el; }}
+              data-section="4"
+              className={`text-center mb-20 transition-all duration-700 ease-out ${
+                visibleSections.has(4) 
+                  ? 'opacity-100 translate-y-0 scale-100' 
+                  : 'opacity-0 translate-y-8 scale-90'
+              }`}
+            >
+              <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-12 transition-all duration-700 ease-out delay-200 ${
+                visibleSections.has(4) 
+                  ? 'opacity-100 translate-y-0 scale-100' 
+                  : 'opacity-0 translate-y-4 scale-95'
+              }`}>
+                Track your health progress
+              </h2>
+              <div className={`w-full max-w-2xl mx-auto rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-700 ease-out delay-300 ${
+                visibleSections.has(4) 
+                  ? 'opacity-100 scale-100' 
+                  : 'opacity-0 scale-85'
+              }`}>
+                <img 
+                  src="/images/progress.png" 
+                  alt="Track your health progress"
+                  className="w-full h-auto"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Pricing Section */}
-        <div className="mt-16 sm:mt-24 mb-16 sm:mb-24 px-8 sm:px-12 lg:px-20 xl:px-32 py-16 sm:py-20 animate-fade-in-up delay-500">
+        <div className="mt-0 mb-16 sm:mb-24 px-8 sm:px-12 lg:px-20 xl:px-32 py-8 sm:py-12 animate-fade-in-up delay-500">
           <div className="max-w-7xl mx-auto">
             {/* Pricing Header */}
             <div className="text-center mb-12 sm:mb-16">
