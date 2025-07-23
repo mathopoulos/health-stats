@@ -562,6 +562,7 @@ export default function Home() {
     loading: true
   });
   const [error, setError] = useState<string | null>(null);
+  const [isRevlyExpanded, setIsRevlyExpanded] = useState(false);
   const [weightTimeRange, setWeightTimeRange] = useState<TimeRange>('last1year');
   const [bodyFatTimeRange, setBodyFatTimeRange] = useState<TimeRange>('last1year');
   const [hrvTimeRange, setHrvTimeRange] = useState<TimeRange>('last1year');
@@ -617,6 +618,21 @@ export default function Home() {
       window.removeEventListener('healthDataDeleted', handleHealthDataDeleted);
     };
   }, [session?.user?.id]);
+
+  // Auto-expand Revly component on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 100 && !isRevlyExpanded) {
+        setIsRevlyExpanded(true);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [isRevlyExpanded]);
 
   const fetchData = async () => {
     try {
@@ -3509,18 +3525,26 @@ export default function Home() {
           </div>
         )}
       </div>
-        <div className="fixed bottom-4 left-4 bg-indigo-500/15 hover:bg-indigo-500/25 backdrop-blur px-3 py-2.5 rounded-full shadow-lg text-sm font-medium tracking-wide text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 hover:shadow-md transition-all duration-300 flex items-center gap-1 hover:gap-2 hover:px-4 group">
-          <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <div className={`fixed bottom-4 left-4 bg-indigo-500/15 backdrop-blur py-2.5 rounded-full shadow-lg text-sm font-medium tracking-wide text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 transition-all duration-500 ease-out flex items-center ${
+          isRevlyExpanded 
+            ? 'bg-indigo-500/25 shadow-md gap-2 px-4' 
+            : 'gap-1 px-3 group'
+        }${!isRevlyExpanded ? ' hover:bg-indigo-500/25 hover:shadow-md hover:gap-2 hover:px-4' : ''}`}>
+          <svg className="w-4 h-4 flex-shrink-0 transition-transform duration-500 ease-out" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
           <a 
             href="https://www.revly.health"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center w-0 overflow-hidden group-hover:w-auto transition-all duration-300 ease-in-out whitespace-nowrap font-semibold"
+            className={`flex items-center overflow-hidden whitespace-nowrap font-semibold transition-all duration-500 ease-out ${
+              isRevlyExpanded 
+                ? 'w-auto opacity-100 transform translate-x-0' 
+                : 'w-0 opacity-0 transform -translate-x-2'
+            }${!isRevlyExpanded ? ' group-hover:w-auto group-hover:opacity-100 group-hover:translate-x-0' : ''}`}
           >
-            Powered by Revly
-            <svg className="w-3.5 h-3.5 ml-1.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <span className="transition-all duration-500 ease-out">Powered by Revly</span>
+            <svg className="w-3.5 h-3.5 ml-1.5 flex-shrink-0 transition-all duration-500 ease-out" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M7 17L17 7M17 7H7M17 7V17" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </a>
