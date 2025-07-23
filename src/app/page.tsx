@@ -476,7 +476,7 @@ export default function Home() {
                       See What's Actually Working
                     </h4>
                     <p className="text-gray-600 dark:text-gray-400">
-                      Visualize how your experiments affect your health metrics with beautiful charts that reveal correlations and prove what's driving real results.
+                      Visualize how your experiments affect your health metrics with beautiful charts that reveal correlations and prove what's driving real results. Share your dashboard publicly online to showcase your health journey.
                     </p>
                   </div>
                 </div>
