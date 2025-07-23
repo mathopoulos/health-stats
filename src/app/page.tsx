@@ -247,7 +247,7 @@ export default function Home() {
             <div 
               ref={(el) => { sectionRefs.current[0] = el; }}
               data-section="0"
-              className={`text-center mb-20 transition-all duration-700 ease-out ${
+              className={`text-center mb-12 transition-all duration-700 ease-out ${
                 visibleSections.has(0) 
                   ? 'opacity-100 translate-y-0 scale-100' 
                   : 'opacity-0 translate-y-8 scale-90'
@@ -274,15 +274,15 @@ export default function Home() {
             </div>
 
             {/* Divider Line */}
-            <div className="flex justify-center mb-20">
-              <div className="w-px h-16 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
+            <div className="flex justify-center mb-12">
+              <div className="w-0.5 h-20 bg-gray-300 dark:bg-gray-600"></div>
             </div>
 
             {/* Step 2 */}
             <div 
               ref={(el) => { sectionRefs.current[1] = el; }}
               data-section="1"
-              className={`text-center mb-20 transition-all duration-700 ease-out ${
+              className={`text-center mb-12 transition-all duration-700 ease-out ${
                 visibleSections.has(1) 
                   ? 'opacity-100 translate-y-0 scale-100' 
                   : 'opacity-0 translate-y-8 scale-90'
@@ -309,15 +309,15 @@ export default function Home() {
             </div>
 
             {/* Divider Line */}
-            <div className="flex justify-center mb-20">
-              <div className="w-px h-16 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
+            <div className="flex justify-center mb-12">
+              <div className="w-0.5 h-20 bg-gray-300 dark:bg-gray-600"></div>
             </div>
 
             {/* Step 3 */}
             <div 
               ref={(el) => { sectionRefs.current[2] = el; }}
               data-section="2"
-              className={`text-center mb-20 transition-all duration-700 ease-out ${
+              className={`text-center mb-12 transition-all duration-700 ease-out ${
                 visibleSections.has(2) 
                   ? 'opacity-100 translate-y-0 scale-100' 
                   : 'opacity-0 translate-y-8 scale-90'
@@ -344,15 +344,15 @@ export default function Home() {
             </div>
 
             {/* Divider Line */}
-            <div className="flex justify-center mb-20">
-              <div className="w-px h-16 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
+            <div className="flex justify-center mb-12">
+              <div className="w-0.5 h-20 bg-gray-300 dark:bg-gray-600"></div>
             </div>
 
             {/* Step 4 */}
             <div 
               ref={(el) => { sectionRefs.current[4] = el; }}
               data-section="4"
-              className={`text-center mb-20 transition-all duration-700 ease-out ${
+              className={`text-center mb-12 transition-all duration-700 ease-out ${
                 visibleSections.has(4) 
                   ? 'opacity-100 translate-y-0 scale-100' 
                   : 'opacity-0 translate-y-8 scale-90'
