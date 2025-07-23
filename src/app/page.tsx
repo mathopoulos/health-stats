@@ -293,7 +293,7 @@ export default function Home() {
                   ? 'opacity-100 translate-y-0 scale-100' 
                   : 'opacity-0 translate-y-4 scale-95'
               }`}>
-                Upload blood tests and health records
+                Upload any blood tests and health records
               </h2>
               <div className={`w-full max-w-2xl mx-auto rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-700 ease-out delay-300 ${
                 visibleSections.has(1) 
@@ -328,7 +328,7 @@ export default function Home() {
                   ? 'opacity-100 translate-y-0 scale-100' 
                   : 'opacity-0 translate-y-4 scale-95'
               }`}>
-                Experiment with workouts and health protocols
+                Experiment with workouts & health protocol
               </h2>
               <div className={`w-full max-w-2xl mx-auto rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-700 ease-out delay-300 ${
                 visibleSections.has(2) 
@@ -337,7 +337,7 @@ export default function Home() {
               }`}>
                 <img 
                   src="/images/experiment.png" 
-                  alt="Experiment with workouts and health protocols"
+                  alt="Experiment with workouts & health protocol"
                   className="w-full h-auto"
                 />
               </div>
@@ -363,7 +363,7 @@ export default function Home() {
                   ? 'opacity-100 translate-y-0 scale-100' 
                   : 'opacity-0 translate-y-4 scale-95'
               }`}>
-                Track your health progress
+                Track the impact, optimise, repeat
               </h2>
               <div className={`w-full max-w-2xl mx-auto rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-700 ease-out delay-300 ${
                 visibleSections.has(4) 
@@ -372,7 +372,7 @@ export default function Home() {
               }`}>
                 <img 
                   src="/images/progress.png" 
-                  alt="Track your health progress"
+                  alt="Track the impact, optimise, repeat"
                   className="w-full h-auto"
                 />
               </div>
