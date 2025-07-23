@@ -439,10 +439,10 @@ export default function Home() {
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      Unified Health Dashboard
+                      All Your Health Data, Automatically
                     </h4>
                     <p className="text-gray-600 dark:text-gray-400">
-                      Track weight, body fat, HRV, VO2 max, sleep, workouts, and 50+ blood biomarkers in one comprehensive dashboard with beautiful charts and trends.
+                      Upload blood test PDFs for automatic biomarker extraction and sync live fitness metrics from your tracker—everything centralized in one dashboard.
                     </p>
                   </div>
                 </div>
@@ -456,10 +456,10 @@ export default function Home() {
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      Auto-Sync iOS Health Data
+                      Document Health Experiments
                     </h4>
                     <p className="text-gray-600 dark:text-gray-400">
-                      Seamlessly connect your Apple Health, wearables, and fitness apps. Our iOS app automatically syncs your health data in real-time.
+                      Log and organize different experiments and health protocols you're trying, from workout routines to supplement stacks to lifestyle changes.
                     </p>
                   </div>
                 </div>
@@ -473,14 +473,13 @@ export default function Home() {
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      Blood Test PDF Processing
+                      See What's Actually Working
                     </h4>
                     <p className="text-gray-600 dark:text-gray-400">
-                      Upload blood test PDFs and we'll automatically extract and track your biomarkers over time. No more lost lab results or manual data entry.
+                      Visualize how your experiments affect your health metrics with beautiful charts that reveal correlations and prove what's driving real results.
                     </p>
                   </div>
                 </div>
-
 
               </div>
             </div>
