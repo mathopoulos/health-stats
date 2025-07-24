@@ -93,7 +93,12 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
 
       try {
         setIsLoading(true);
-        const response = await fetch('/api/experiments');
+        const response = await fetch('/api/experiments', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
         
         if (!response.ok) {
           throw new Error('Failed to fetch experiments');

@@ -628,7 +628,12 @@ export default function UploadPage() {
     
     setIsLoadingExperiments(true);
     try {
-      const response = await fetch('/api/experiments');
+      const response = await fetch('/api/experiments', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
@@ -655,6 +660,7 @@ export default function UploadPage() {
     try {
       const response = await fetch('/api/experiments', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -686,6 +692,10 @@ export default function UploadPage() {
     try {
       const response = await fetch(`/api/experiments?id=${id}`, {
         method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
 
       if (!response.ok) {
