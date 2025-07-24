@@ -119,19 +119,29 @@ export default function LeaderboardPage() {
 
         <div className="max-w-4xl mx-auto space-y-8">
           {/* Page Header */}
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center space-x-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
+          <div className="text-center space-y-6">
+            <div className="relative">
+              {/* Decorative elements */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-32 h-32 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
+              </div>
+              <div className="relative">
+                <div className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-full border border-indigo-200/20 dark:border-purple-300/20 backdrop-blur-sm mb-4">
+                  <div className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">LIVE RANKINGS</span>
+                </div>
+                <h1 className="text-5xl md:text-6xl font-black bg-gradient-to-r from-gray-900 via-indigo-900 to-purple-900 dark:from-white dark:via-indigo-100 dark:to-purple-100 text-transparent bg-clip-text leading-tight">
+                  Leaderboards
+                </h1>
+                <div className="flex items-center justify-center space-x-1 mt-2">
+                  <div className="w-1 h-1 bg-indigo-500 rounded-full"></div>
+                  <div className="w-8 h-px bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+                  <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+                </div>
               </div>
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400 text-transparent bg-clip-text">
-              Fitness Leaderboards
-            </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Compete with the Revly community and track your fitness progress
+            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto font-medium">
+              Compete with the <span className="text-indigo-600 dark:text-indigo-400 font-semibold">Revly community</span> and track your fitness progress
             </p>
           </div>
 
@@ -266,11 +276,7 @@ export default function LeaderboardPage() {
 
                           {/* Score */}
                           <div className="text-right">
-                            <div className={`text-3xl font-bold ${
-                              rank === 2 ? 'text-gray-600 dark:text-gray-300' :
-                              rank === 3 ? 'text-amber-700 dark:text-amber-500' :
-                              'text-gray-900 dark:text-white'
-                            }`}>
+                            <div className="text-3xl font-bold text-gray-900 dark:text-white">
                               {activeTab === 'hrv' ? entry.avgHRV : (entry as any).avgValue}
                             </div>
                             <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">
