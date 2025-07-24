@@ -55,6 +55,7 @@ export async function middleware(request: NextRequest) {
   );
   const isUploadPage = request.nextUrl.pathname.startsWith("/upload");
   const isDashboardPage = request.nextUrl.pathname.startsWith("/dashboard");
+  const isAdminPage = request.nextUrl.pathname.startsWith("/admin");
 
   // Special handling for iOS auth route
   const isIosAuthRoute = request.nextUrl.pathname.startsWith("/api/auth/ios");
@@ -107,6 +108,11 @@ export async function middleware(request: NextRequest) {
 
   // If user is not authenticated and trying to access upload page, redirect to sign-in page
   if (isUploadPage && !token) {
+    return NextResponse.redirect(new URL("/auth/signin", request.url));
+  }
+
+  // If user is trying to access admin pages, redirect to sign-in if not authenticated
+  if (isAdminPage && !token) {
     return NextResponse.redirect(new URL("/auth/signin", request.url));
   }
 
