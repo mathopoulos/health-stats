@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import AddResultsModal from '../components/AddResultsModal';
 import AddWorkoutProtocolModal from '../components/AddWorkoutProtocolModal';
 import AddSupplementProtocolModal from '../components/AddSupplementProtocolModal';
+import AddExperimentModal from '../components/AddExperimentModal';
 import Image from 'next/image';
 import Link from 'next/link';
 import ThemeToggle from '../components/ThemeToggle';
@@ -210,6 +211,22 @@ export default function UploadPage() {
   const [isAddSupplementProtocolModalOpen, setIsAddSupplementProtocolModalOpen] = useState(false);
   const [editingSupplementType, setEditingSupplementType] = useState<string | null>(null);
 
+  // Experiment state
+  const [experiments, setExperiments] = useState<Array<{
+    id: string;
+    name: string;
+    description: string;
+    frequency: string;
+    duration: string;
+    fitnessMarkers: string[];
+    bloodMarkers: string[];
+    status: 'active' | 'completed' | 'paused';
+    createdAt: string;
+  }>>([]);
+  const [isSavingExperiment, setIsSavingExperiment] = useState(false);
+  const [isAddExperimentModalOpen, setIsAddExperimentModalOpen] = useState(false);
+  const [isLoadingExperiments, setIsLoadingExperiments] = useState(false);
+
   // Delete account state
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
@@ -290,6 +307,7 @@ export default function UploadPage() {
     fetchCurrentDiet();
     fetchCurrentWorkoutProtocols();
     fetchCurrentSupplementProtocols();
+    fetchExperiments();
   }, [session?.user?.id, sessionStatus]);
 
   const handleUpdateProfile = async () => {
@@ -601,6 +619,88 @@ export default function UploadPage() {
       setTimeout(() => setStatus(''), 3000);
     } finally {
       setIsSavingSupplementProtocol(false);
+    }
+  };
+
+  // Experiment handlers
+  const fetchExperiments = async () => {
+    if (sessionStatus === 'loading' || !session?.user?.id) return;
+    
+    setIsLoadingExperiments(true);
+    try {
+      const response = await fetch('/api/experiments');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          setExperiments(data.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching experiments:', error);
+    } finally {
+      setIsLoadingExperiments(false);
+    }
+  };
+
+  const handleSaveExperiment = async (experimentData: {
+    name: string;
+    description: string;
+    frequency: string;
+    duration: string;
+    fitnessMarkers: string[];
+    bloodMarkers: string[];
+  }) => {
+    setIsSavingExperiment(true);
+    
+    try {
+      const response = await fetch('/api/experiments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(experimentData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create experiment');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        // Refresh experiments list
+        await fetchExperiments();
+        setStatus('Experiment created successfully');
+        setTimeout(() => setStatus(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error creating experiment:', error);
+      setStatus(error instanceof Error ? error.message : 'Failed to create experiment');
+      setTimeout(() => setStatus(''), 3000);
+    } finally {
+      setIsSavingExperiment(false);
+    }
+  };
+
+  const removeExperiment = async (id: string) => {
+    try {
+      const response = await fetch(`/api/experiments?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete experiment');
+      }
+
+      // Remove from local state
+      setExperiments(prev => prev.filter(exp => exp.id !== id));
+      setStatus('Experiment deleted successfully');
+      setTimeout(() => setStatus(''), 3000);
+    } catch (error) {
+      console.error('Error deleting experiment:', error);
+      setStatus(error instanceof Error ? error.message : 'Failed to delete experiment');
+      setTimeout(() => setStatus(''), 3000);
     }
   };
 
@@ -1821,6 +1921,101 @@ export default function UploadPage() {
                 )}
 
               </div>
+
+              {/* Experiments Section */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Experiments & Trials</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  Create and track health and fitness experiments to optimize your protocols and measure their impact.
+                </p>
+                
+                {/* Add Experiment Button */}
+                <button
+                  onClick={() => setIsAddExperimentModalOpen(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Create New Experiment
+                </button>
+
+                {/* Loading State */}
+                {isLoadingExperiments && (
+                  <div className="mt-6 flex items-center justify-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                    <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Loading experiments...</span>
+                  </div>
+                )}
+
+                {/* Current Experiments List */}
+                {!isLoadingExperiments && experiments.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Your Active Experiments:</h4>
+                    <div className="space-y-3">
+                      {experiments.filter(exp => exp.status === 'active').map((experiment) => (
+                        <div key={experiment.id} className="flex items-start justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                {experiment.name}
+                              </span>
+                              <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                                Active
+                              </span>
+                            </div>
+                            {experiment.description && (
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                                {experiment.description}
+                              </p>
+                            )}
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {experiment.frequency} • {experiment.duration} • Created {new Date(experiment.createdAt).toLocaleDateString()}
+                            </div>
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {[...experiment.fitnessMarkers.slice(0, 3), ...experiment.bloodMarkers.slice(0, 3)].map((marker) => (
+                                <span
+                                  key={marker}
+                                  className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300"
+                                >
+                                  {marker}
+                                </span>
+                              ))}
+                              {(experiment.fitnessMarkers.length + experiment.bloodMarkers.length) > 6 && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400">
+                                  +{(experiment.fitnessMarkers.length + experiment.bloodMarkers.length) - 6} more
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 ml-4">
+                            <button
+                              onClick={() => removeExperiment(experiment.id)}
+                              className="w-8 h-8 flex items-center justify-center rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              title="Remove experiment"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Total: {experiments.filter(exp => exp.status === 'active').length} active experiment{experiments.filter(exp => exp.status === 'active').length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Empty State */}
+                {!isLoadingExperiments && experiments.length === 0 && (
+                  <div className="mt-6 text-center py-6 text-gray-500 dark:text-gray-400">
+                    <p className="text-sm">No experiments created yet. Start your first health experiment!</p>
+                  </div>
+                )}
+
+              </div>
             </div>
           )}
 
@@ -2338,6 +2533,13 @@ export default function UploadPage() {
         isOpen={isAddSupplementProtocolModalOpen}
         onClose={() => setIsAddSupplementProtocolModalOpen(false)}
         onSave={handleSaveSupplementProtocols}
+      />
+
+      {/* Add Experiment Modal */}
+      <AddExperimentModal
+        isOpen={isAddExperimentModalOpen}
+        onClose={() => setIsAddExperimentModalOpen(false)}
+        onSave={handleSaveExperiment}
       />
 
       {/* Delete Account Confirmation Dialog */}

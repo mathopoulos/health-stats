@@ -15,6 +15,7 @@ import { useTheme } from '@/app/context/ThemeContext';
 import TrendIndicator from '@/components/TrendIndicator';
 import WorkoutHeatMap from '@/app/components/WorkoutHeatMap';
 import { WeeklyWorkoutProvider, useWeeklyWorkout } from '@/app/context/WeeklyWorkoutContext';
+import ActiveExperiments from '@/app/components/ActiveExperiments';
 
 interface HealthData {
   date: string;
@@ -3017,31 +3018,32 @@ export default function Home() {
           </div>
             </>
           ) : activeTab === 'protocols' ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-              {/* Diet Protocol */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 shadow-sm min-h-[200px] flex flex-col">
-                <div className="flex flex-col">
-                  <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Diet Protocol</span>
-                  <div className="mt-1.5 md:mt-2 flex flex-col md:flex-row md:items-baseline gap-1 md:gap-2">
-                    <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                      {data.loading ? (
-                        "..."
-                      ) : currentDietProtocol ? (
-                        currentDietProtocol.protocol.replace(/-/g, ' ').split(' ').map(word => 
-                          word.charAt(0).toUpperCase() + word.slice(1)
-                        ).join(' ')
-                      ) : (
-                        "None"
-                      )}
-                    </span>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+                {/* Diet Protocol */}
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 shadow-sm min-h-[200px] flex flex-col">
+                  <div className="flex flex-col">
+                    <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Diet Protocol</span>
+                    <div className="mt-1.5 md:mt-2 flex flex-col md:flex-row md:items-baseline gap-1 md:gap-2">
+                      <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                        {data.loading ? (
+                          "..."
+                        ) : currentDietProtocol ? (
+                          currentDietProtocol.protocol.replace(/-/g, ' ').split(' ').map(word => 
+                            word.charAt(0).toUpperCase() + word.slice(1)
+                          ).join(' ')
+                        ) : (
+                          "None"
+                        )}
+                      </span>
+                    </div>
+                    {currentDietProtocol && (
+                      <span className="mt-1 text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                        Started {new Date(currentDietProtocol.startDate).toLocaleDateString()}
+                      </span>
+                    )}
                   </div>
-                  {currentDietProtocol && (
-                    <span className="mt-1 text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                      Started {new Date(currentDietProtocol.startDate).toLocaleDateString()}
-                    </span>
-                  )}
                 </div>
-              </div>
 
               {/* Workout Protocol */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 shadow-sm min-h-[200px] flex flex-col">
@@ -3334,7 +3336,14 @@ export default function Home() {
                   )}
                 </div>
               </div>
-            </div>
+
+              </div>
+
+              {/* Active Experiments Section */}
+              <div className="mt-8">
+                <ActiveExperiments userId={userId} />
+              </div>
+            </>
           ) : (
           <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-6 py-6 shadow-sm">
               {/* Title removed from here
