@@ -628,10 +628,12 @@ export default function UploadPage() {
     
     setIsLoadingExperiments(true);
     try {
-      const response = await fetch('/api/experiments', {
-        credentials: 'include',
+      const timestamp = Date.now();
+      const response = await fetch(`/api/experiments?userId=${session.user.id}&t=${timestamp}`, {
         headers: {
-          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       });
       if (response.ok) {

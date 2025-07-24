@@ -102,19 +102,29 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status'); // 'active', 'completed', 'paused'
+    const userId = searchParams.get('userId');
+    
+    // For GET requests, we follow the pattern of other public APIs and accept userId as parameter
+    // If userId is not provided, fall back to session authentication
+    let targetUserId: string;
+    
+    if (userId) {
+      targetUserId = userId;
+    } else {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      targetUserId = session.user.id;
+    }
     
     const client = await clientPromise;
     const db = client.db("health-stats");
 
     // Build query
-    const query: any = { userId: session.user.id };
+    const query: any = { userId: targetUserId };
     if (status) {
       query.status = status;
     }

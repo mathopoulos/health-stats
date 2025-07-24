@@ -9,6 +9,7 @@ const PUBLIC_API_ROUTES = [
   '/api/users',
   '/api/validate-invite',
   '/api/health-protocols',
+  '/api/experiments',
   '/api/leaderboard',
   // Payment routes
   '/api/payment/check-purchase',

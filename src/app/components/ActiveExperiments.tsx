@@ -93,10 +93,12 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
 
       try {
         setIsLoading(true);
-        const response = await fetch('/api/experiments', {
-          credentials: 'include',
+        const timestamp = Date.now();
+        const response = await fetch(`/api/experiments?userId=${userId}&t=${timestamp}`, {
           headers: {
-            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           }
         });
         
