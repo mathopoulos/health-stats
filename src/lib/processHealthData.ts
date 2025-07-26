@@ -700,7 +700,7 @@ async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<
         
         // Log progress and check memory usage every 1000 records
         if (recordsProcessed % 1000 === 0) {
-          const currentMemory = Math.round((global as any).process?.memoryUsage?.()?.heapUsed / 1024 / 1024 || 0);
+          const currentMemory = Math.round((typeof process !== 'undefined' ? process.memoryUsage().heapUsed : 0) / 1024 / 1024);
           const memoryDelta = currentMemory - lastMemoryUsage;
           lastMemoryUsage = currentMemory;
           
@@ -858,7 +858,7 @@ async function processVO2Max(xmlKey: string, status: ProcessingStatus): Promise<
       Apple Watch records: ${appleWatchRecords}
       Other source records: ${otherSourceRecords}
       Total time: ${Math.round((Date.now() - startTime) / 1000)}s
-      Final memory usage: ${Math.round((global as any).process?.memoryUsage?.()?.heapUsed / 1024 / 1024 || 0)}MB
+      Final memory usage: ${Math.round((typeof process !== 'undefined' ? process.memoryUsage().heapUsed : 0) / 1024 / 1024)}MB
     `);
     
   } catch (error) {
