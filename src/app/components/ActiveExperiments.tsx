@@ -137,7 +137,25 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
             }))
             .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-          return { marker, data: filteredData };
+          // Deduplicate by date - take the average if multiple entries exist for the same day
+          const deduplicatedData: { [key: string]: { date: string, values: number[] } } = {};
+          
+          filteredData.forEach((item: any) => {
+            const dateKey = new Date(item.date).toDateString();
+            if (!deduplicatedData[dateKey]) {
+              deduplicatedData[dateKey] = { date: item.date, values: [] };
+            }
+            deduplicatedData[dateKey].values.push(item.value);
+          });
+
+          const finalData = Object.values(deduplicatedData)
+            .map(({ date, values }) => ({
+              date,
+              value: values.reduce((sum, val) => sum + val, 0) / values.length // Average the values
+            }))
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+          return { marker, data: finalData };
         } catch (error) {
           console.error(`Error fetching ${marker} data:`, error);
           return { marker, data: [] };
