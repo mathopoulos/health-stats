@@ -176,6 +176,13 @@ const getTickFormatter = (date: string) => {
   return d.toLocaleString('default', { month: 'short', day: 'numeric' });
 };
 
+// Color palette matching dashboard pill colors
+const STATUS_COLORS = {
+  optimal: '#047857', // green-700
+  normal: '#a16207',  // yellow-700
+  abnormal: '#b91c1c', // red-700
+};
+
 export default function BloodMarkerDetailModal({ 
   isOpen, 
   onClose, 
@@ -217,15 +224,15 @@ export default function BloodMarkerDetailModal({
   const unit = currentValue?.unit || '';
 
   const getStatusColor = (value: number): string => {
-    if (!referenceRanges) return '#3B82F6';
+    if (!referenceRanges) return STATUS_COLORS.normal;
     
     if (value >= referenceRanges.optimalMin && value <= referenceRanges.optimalMax) {
-      return '#10B981'; // Green for optimal
+      return STATUS_COLORS.optimal; // Green for optimal
     } else if (referenceRanges.normalMin && referenceRanges.normalMax && 
                value >= referenceRanges.normalMin && value <= referenceRanges.normalMax) {
-      return '#F59E0B'; // Yellow for normal
+      return STATUS_COLORS.normal; // Yellow for normal
     } else {
-      return '#EF4444'; // Red for abnormal
+      return STATUS_COLORS.abnormal; // Red for abnormal
     }
   };
 
@@ -324,15 +331,15 @@ export default function BloodMarkerDetailModal({
                     <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                       {chartData.map((point, index) => {
                         const getStatusColorForGradient = (value: number): string => {
-                          if (!referenceRanges) return lineColor;
+                          if (!referenceRanges) return STATUS_COLORS.normal;
                           
                           if (value >= referenceRanges.optimalMin && value <= referenceRanges.optimalMax) {
-                            return '#10B981'; // Green for optimal
+                            return STATUS_COLORS.optimal; // Green for optimal
                           } else if (referenceRanges.normalMin && referenceRanges.normalMax && 
                                      value >= referenceRanges.normalMin && value <= referenceRanges.normalMax) {
-                            return '#F59E0B'; // Yellow for normal
+                            return STATUS_COLORS.normal; // Yellow for normal
                           } else {
-                            return '#EF4444'; // Red for abnormal
+                            return STATUS_COLORS.abnormal; // Red for abnormal
                           }
                         };
                         
@@ -384,21 +391,21 @@ export default function BloodMarkerDetailModal({
                     type="monotone"
                     dataKey="value" 
                     stroke="url(#lineGradient)"
-                    activeDot={{ r: 6, stroke: lineColor, strokeWidth: 1, fill: bgColor }} 
+                    activeDot={{ r: 6, stroke: STATUS_COLORS.normal, strokeWidth: 1, fill: bgColor }} 
                     dot={(props: any) => { 
                       const { cx, cy, index, payload } = props;
                       
                       // Get the color based on reference ranges
                       const getStatusColorForDot = (value: number): string => {
-                        if (!referenceRanges) return lineColor;
+                        if (!referenceRanges) return STATUS_COLORS.normal;
                         
                         if (value >= referenceRanges.optimalMin && value <= referenceRanges.optimalMax) {
-                          return '#10B981'; // Green for optimal
+                          return STATUS_COLORS.optimal; // Green for optimal
                         } else if (referenceRanges.normalMin && referenceRanges.normalMax && 
                                    value >= referenceRanges.normalMin && value <= referenceRanges.normalMax) {
-                          return '#F59E0B'; // Yellow for normal
+                          return STATUS_COLORS.normal; // Yellow for normal
                         } else {
-                          return '#EF4444'; // Red for abnormal
+                          return STATUS_COLORS.abnormal; // Red for abnormal
                         }
                       };
                       
@@ -460,31 +467,31 @@ export default function BloodMarkerDetailModal({
                           
                           // Bottom abnormal
                           if (optimalMinPercent > 0) {
-                            stops.push(<stop key="abnormal-bottom-1" offset="0%" stopColor="#EF4444" />);
-                            stops.push(<stop key="abnormal-bottom-2" offset={`${optimalMinPercent}%`} stopColor="#EF4444" />);
+                            stops.push(<stop key="abnormal-bottom-1" offset="0%" stopColor={STATUS_COLORS.abnormal} />);
+                            stops.push(<stop key="abnormal-bottom-2" offset={`${optimalMinPercent}%`} stopColor={STATUS_COLORS.abnormal} />);
                           }
                           
                           // Normal range (if exists and below optimal)
                           if (referenceRanges.normalMin && normalMinPercent < optimalMinPercent) {
-                            stops.push(<stop key="normal-bottom-1" offset={`${normalMinPercent}%`} stopColor="#F59E0B" />);
-                            stops.push(<stop key="normal-bottom-2" offset={`${optimalMinPercent}%`} stopColor="#F59E0B" />);
+                            stops.push(<stop key="normal-bottom-1" offset={`${normalMinPercent}%`} stopColor={STATUS_COLORS.normal} />);
+                            stops.push(<stop key="normal-bottom-2" offset={`${optimalMinPercent}%`} stopColor={STATUS_COLORS.normal} />);
                           }
                           
                           // Optimal range
-                          stops.push(<stop key="optimal-1" offset={`${optimalMinPercent}%`} stopColor="#10B981" />);
-                          stops.push(<stop key="optimal-2" offset={`${optimalMaxPercent}%`} stopColor="#10B981" />);
+                          stops.push(<stop key="optimal-1" offset={`${optimalMinPercent}%`} stopColor={STATUS_COLORS.optimal} />);
+                          stops.push(<stop key="optimal-2" offset={`${optimalMaxPercent}%`} stopColor={STATUS_COLORS.optimal} />);
                           
                           // Normal range (if exists and above optimal)
                           if (referenceRanges.normalMax && normalMaxPercent > optimalMaxPercent) {
-                            stops.push(<stop key="normal-top-1" offset={`${optimalMaxPercent}%`} stopColor="#F59E0B" />);
-                            stops.push(<stop key="normal-top-2" offset={`${normalMaxPercent}%`} stopColor="#F59E0B" />);
+                            stops.push(<stop key="normal-top-1" offset={`${optimalMaxPercent}%`} stopColor={STATUS_COLORS.normal} />);
+                            stops.push(<stop key="normal-top-2" offset={`${normalMaxPercent}%`} stopColor={STATUS_COLORS.normal} />);
                           }
                           
                           // Top abnormal
                           if (optimalMaxPercent < 100) {
                             const topStart = referenceRanges.normalMax && normalMaxPercent > optimalMaxPercent ? normalMaxPercent : optimalMaxPercent;
-                            stops.push(<stop key="abnormal-top-1" offset={`${topStart}%`} stopColor="#EF4444" />);
-                            stops.push(<stop key="abnormal-top-2" offset="100%" stopColor="#EF4444" />);
+                            stops.push(<stop key="abnormal-top-1" offset={`${topStart}%`} stopColor={STATUS_COLORS.abnormal} />);
+                            stops.push(<stop key="abnormal-top-2" offset="100%" stopColor={STATUS_COLORS.abnormal} />);
                           }
                           
                           return stops;
