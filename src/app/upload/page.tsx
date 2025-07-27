@@ -6,6 +6,7 @@ import AddResultsModal from '../components/AddResultsModal';
 import AddWorkoutProtocolModal from '../components/AddWorkoutProtocolModal';
 import AddSupplementProtocolModal from '../components/AddSupplementProtocolModal';
 import AddExperimentModal from '../components/AddExperimentModal';
+import EditExperimentModal from '../components/EditExperimentModal';
 import Image from 'next/image';
 import Link from 'next/link';
 import ThemeToggle from '../components/ThemeToggle';
@@ -226,6 +227,18 @@ export default function UploadPage() {
   const [isSavingExperiment, setIsSavingExperiment] = useState(false);
   const [isAddExperimentModalOpen, setIsAddExperimentModalOpen] = useState(false);
   const [isLoadingExperiments, setIsLoadingExperiments] = useState(false);
+  const [isEditExperimentModalOpen, setIsEditExperimentModalOpen] = useState(false);
+  const [editingExperiment, setEditingExperiment] = useState<{
+    id: string;
+    name: string;
+    description: string;
+    frequency: string;
+    duration: string;
+    fitnessMarkers: string[];
+    bloodMarkers: string[];
+    status: 'active' | 'completed' | 'paused';
+    createdAt: string;
+  } | null>(null);
 
   // Delete account state
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
@@ -712,6 +725,30 @@ export default function UploadPage() {
     } catch (error) {
       console.error('Error deleting experiment:', error);
       setStatus(error instanceof Error ? error.message : 'Failed to delete experiment');
+      setTimeout(() => setStatus(''), 3000);
+    }
+  };
+
+  const handleEditExperiment = (experiment: typeof experiments[0]) => {
+    setEditingExperiment(experiment);
+    setIsEditExperimentModalOpen(true);
+  };
+
+  const handleUpdateExperiment = async (updatedExperiment: typeof experiments[0]) => {
+    try {
+      // Update local state
+      setExperiments(prev => 
+        prev.map(exp => 
+          exp.id === updatedExperiment.id 
+            ? { ...exp, ...updatedExperiment }
+            : exp
+        )
+      );
+      setStatus('Experiment updated successfully');
+      setTimeout(() => setStatus(''), 3000);
+    } catch (error) {
+      console.error('Error updating experiment in state:', error);
+      setStatus('Failed to update experiment');
       setTimeout(() => setStatus(''), 3000);
     }
   };
@@ -1999,6 +2036,15 @@ export default function UploadPage() {
                           </div>
                           <div className="flex items-center gap-2 ml-4">
                             <button
+                              onClick={() => handleEditExperiment(experiment)}
+                              className="w-8 h-8 flex items-center justify-center rounded-full text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                              title="Edit experiment"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
                               onClick={() => removeExperiment(experiment.id)}
                               className="w-8 h-8 flex items-center justify-center rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                               title="Remove experiment"
@@ -2552,6 +2598,17 @@ export default function UploadPage() {
         isOpen={isAddExperimentModalOpen}
         onClose={() => setIsAddExperimentModalOpen(false)}
         onSave={handleSaveExperiment}
+      />
+
+      {/* Edit Experiment Modal */}
+      <EditExperimentModal
+        isOpen={isEditExperimentModalOpen}
+        onClose={() => {
+          setIsEditExperimentModalOpen(false);
+          setEditingExperiment(null);
+        }}
+        onSave={handleUpdateExperiment}
+        experiment={editingExperiment}
       />
 
       {/* Delete Account Confirmation Dialog */}

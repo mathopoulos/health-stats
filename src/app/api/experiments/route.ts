@@ -203,4 +203,122 @@ export async function DELETE(request: Request) {
       { status: 500 }
     );
   }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const experimentId = searchParams.get('id');
+    
+    if (!experimentId || !ObjectId.isValid(experimentId)) {
+      return NextResponse.json({ 
+        error: 'Valid experiment ID is required' 
+      }, { status: 400 });
+    }
+
+    const { name, description, frequency, duration, fitnessMarkers, bloodMarkers } = await request.json();
+    
+    // Validate required fields
+    if (!name || !frequency || !duration) {
+      return NextResponse.json({ 
+        error: 'Name, frequency, and duration are required' 
+      }, { status: 400 });
+    }
+
+    // Validate that at least one marker is selected
+    if ((!fitnessMarkers || fitnessMarkers.length === 0) && 
+        (!bloodMarkers || bloodMarkers.length === 0)) {
+      return NextResponse.json({ 
+        error: 'At least one fitness or blood marker must be selected' 
+      }, { status: 400 });
+    }
+
+    const client = await clientPromise;
+    const db = client.db("health-stats");
+
+    // Check if experiment exists and belongs to user
+    const existingExperiment = await db.collection('experiments').findOne({
+      _id: new ObjectId(experimentId),
+      userId: session.user.id
+    });
+
+    if (!existingExperiment) {
+      return NextResponse.json({ 
+        error: 'Experiment not found or access denied' 
+      }, { status: 404 });
+    }
+
+    // Calculate new end date based on duration if duration changed
+    let endDate = existingExperiment.endDate;
+    if (duration !== existingExperiment.duration) {
+      const startDate = existingExperiment.startDate;
+      endDate = new Date(startDate);
+      
+      const durationMap: Record<string, number> = {
+        '1-week': 7,
+        '2-weeks': 14,
+        '4-weeks': 28,
+        '6-weeks': 42,
+        '8-weeks': 56,
+        '12-weeks': 84,
+        '16-weeks': 112,
+        '6-months': 182,
+        '1-year': 365
+      };
+
+      const durationDays = durationMap[duration] || 28;
+      endDate.setDate(startDate.getDate() + durationDays);
+    }
+
+    // Update experiment
+    const updateData = {
+      name: name.trim(),
+      description: description?.trim() || '',
+      frequency,
+      duration,
+      fitnessMarkers: fitnessMarkers || [],
+      bloodMarkers: bloodMarkers || [],
+      endDate,
+      updatedAt: new Date()
+    };
+
+    const result = await db.collection('experiments').updateOne(
+      { 
+        _id: new ObjectId(experimentId),
+        userId: session.user.id 
+      },
+      { $set: updateData }
+    );
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ 
+        error: 'Experiment not found or access denied' 
+      }, { status: 404 });
+    }
+
+    // Fetch and return updated experiment
+    const updatedExperiment = await db.collection('experiments').findOne({
+      _id: new ObjectId(experimentId)
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      data: {
+        ...updatedExperiment,
+        id: updatedExperiment?._id.toString(),
+        _id: updatedExperiment?._id.toString()
+      }
+    });
+  } catch (error) {
+    console.error('Error updating experiment:', error);
+    return NextResponse.json(
+      { error: 'Failed to update experiment' },
+      { status: 500 }
+    );
+  }
 } 
