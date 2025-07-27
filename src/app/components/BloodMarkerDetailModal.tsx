@@ -7,6 +7,7 @@ interface BloodMarker {
   value: number;
   unit: string;
   date: string;
+  referenceRange?: { min: number; max: number };
 }
 
 interface BloodMarkerDetailModalProps {
@@ -28,7 +29,10 @@ interface ReferenceRanges {
 }
 
 // Reference ranges mapping - extracted from the dashboard logic
-const getReferenceRanges = (markerKey: string): ReferenceRanges => {
+const getReferenceRanges = (
+  markerKey: string,
+  fallbackRange?: { min?: number; max?: number }
+): ReferenceRanges => {
   const key = markerKey.toLowerCase().replace(/[^a-zA-Z0-9]/g, '');
   
   // Default ranges for common markers
@@ -98,11 +102,16 @@ const getReferenceRanges = (markerKey: string): ReferenceRanges => {
     }
   };
 
-  return referenceRanges[key] || {
-    optimalMin: 0,
-    optimalMax: 100,
-    abnormalText: 'Outside normal range',
-    optimalText: 'Within normal range'
+  if (referenceRanges[key]) return referenceRanges[key];
+
+  // Fallback: use provided referenceRange if available
+  const min = fallbackRange?.min ?? 0;
+  const max = fallbackRange?.max ?? 100;
+  return {
+    optimalMin: min,
+    optimalMax: max,
+    abnormalText: `<${min} or >${max}`,
+    optimalText: `${min}-${max}`
   };
 };
 
@@ -196,7 +205,9 @@ export default function BloodMarkerDetailModal({
         }));
 
       setChartData(sortedData);
-      setReferenceRanges(getReferenceRanges(markerName));
+      setReferenceRanges(
+        getReferenceRanges(markerName, data[0]?.referenceRange)
+      );
     }
   }, [data, markerName]);
 
