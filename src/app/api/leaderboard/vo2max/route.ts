@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
+import { fetchAllHealthData, type HealthDataType } from '@/lib/s3';
 
 interface FitnessData {
   date: string;
@@ -32,26 +33,20 @@ export async function GET(request: Request) {
     const leaderboardData = await Promise.all(
       users.map(async (user) => {
         try {
-          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
-          const url = new URL(`/api/health-data?type=vo2max&userId=${user.userId}`, baseUrl);
+          // Fetch VO2 max data directly from S3 instead of making HTTP calls
+          const data = await fetchAllHealthData('vo2max' as HealthDataType, user.userId);
+          
+          if (!data || data.length === 0) {
+            return null;
+          }
 
-          const res = await fetch(url.toString(), {
-            headers: {
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache',
-              'Expires': '0'
-            }
-          });
-          if (!res.ok) return null;
-          const json = await res.json();
-          if (!json.success || !json.data || json.data.length === 0) return null;
-
-          const data: FitnessData[] = json.data;
-          data.sort((a: FitnessData, b: FitnessData) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          const fitnessData: FitnessData[] = data;
+          fitnessData.sort((a: FitnessData, b: FitnessData) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
           // Get a presigned profile image via /api/users
           let profileImageUrl: string | undefined = user.profileImage;
           try {
+            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
             const userRes = await fetch(`${baseUrl}/api/users/${user.userId}`);
             if (userRes.ok) {
               const userJson = await userRes.json();
@@ -63,11 +58,11 @@ export async function GET(request: Request) {
             // ignore errors – fallback to stored URL if any
           }
 
-          const latest = new Date(data[0].date);
+          const latest = new Date(fitnessData[0].date);
           const start = new Date(latest);
           start.setDate(start.getDate() - 30);
 
-          const recent = data.filter((d: FitnessData) => {
+          const recent = fitnessData.filter((d: FitnessData) => {
             const dt = new Date(d.date);
             return dt >= start && dt <= latest;
           });
