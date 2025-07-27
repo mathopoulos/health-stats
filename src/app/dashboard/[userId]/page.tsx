@@ -16,6 +16,7 @@ import TrendIndicator from '@/components/TrendIndicator';
 import WorkoutHeatMap from '@/app/components/WorkoutHeatMap';
 import { WeeklyWorkoutProvider, useWeeklyWorkout } from '@/app/context/WeeklyWorkoutContext';
 import ActiveExperiments from '@/app/components/ActiveExperiments';
+import BloodMarkerDetailModal from '@/app/components/BloodMarkerDetailModal';
 
 interface HealthData {
   date: string;
@@ -579,6 +580,16 @@ export default function Home() {
   const [currentDietProtocol, setCurrentDietProtocol] = useState<HealthProtocol | null>(null);
   const [currentWorkoutProtocol, setCurrentWorkoutProtocol] = useState<HealthProtocol | null>(null);
   const [currentSupplementProtocol, setCurrentSupplementProtocol] = useState<HealthProtocol | null>(null);
+  const [selectedMarker, setSelectedMarker] = useState<{ name: string; data: BloodMarker[] } | null>(null);
+  const [showMarkerDetailModal, setShowMarkerDetailModal] = useState(false);
+
+  // Handle blood marker click
+  const handleMarkerClick = (markerName: string, markerData: BloodMarker[]) => {
+    if (markerData.length > 0) {
+      setSelectedMarker({ name: markerName, data: markerData });
+      setShowMarkerDetailModal(true);
+    }
+  };
 
   // Add useEffect for title update
   useEffect(() => {
@@ -3357,12 +3368,12 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Lipid Panel</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="Total Cholesterol" data={data.bloodMarkers.totalCholesterol} userData={userData} />
-                    <MarkerRow label="LDL Cholesterol" data={data.bloodMarkers.ldl} userData={userData} />
-                    <MarkerRow label="HDL Cholesterol" data={data.bloodMarkers.hdl} userData={userData} />
-                    <MarkerRow label="Triglycerides" data={data.bloodMarkers.triglycerides} userData={userData} />
-                    <MarkerRow label="ApoB" data={data.bloodMarkers.apoB} userData={userData} />
-                    <MarkerRow label="Lp(a)" data={data.bloodMarkers.lpA} userData={userData} />
+                    <MarkerRow label="Total Cholesterol" data={data.bloodMarkers.totalCholesterol} userData={userData} onClick={() => handleMarkerClick('Total Cholesterol', data.bloodMarkers.totalCholesterol)} />
+                    <MarkerRow label="LDL Cholesterol" data={data.bloodMarkers.ldl} userData={userData} onClick={() => handleMarkerClick('LDL Cholesterol', data.bloodMarkers.ldl)} />
+                    <MarkerRow label="HDL Cholesterol" data={data.bloodMarkers.hdl} userData={userData} onClick={() => handleMarkerClick('HDL Cholesterol', data.bloodMarkers.hdl)} />
+                    <MarkerRow label="Triglycerides" data={data.bloodMarkers.triglycerides} userData={userData} onClick={() => handleMarkerClick('Triglycerides', data.bloodMarkers.triglycerides)} />
+                    <MarkerRow label="ApoB" data={data.bloodMarkers.apoB} userData={userData} onClick={() => handleMarkerClick('ApoB', data.bloodMarkers.apoB)} />
+                    <MarkerRow label="Lp(a)" data={data.bloodMarkers.lpA} userData={userData} onClick={() => handleMarkerClick('Lp(a)', data.bloodMarkers.lpA)} />
           </div>
                   <LastTestedDate data={data.bloodMarkers.totalCholesterol} />
                 </div>
@@ -3371,11 +3382,11 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Complete Blood Count</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="White Blood Cells" data={data.bloodMarkers.whiteBloodCells} userData={userData} />
-                    <MarkerRow label="Red Blood Cells" data={data.bloodMarkers.redBloodCells} userData={userData} />
-                    <MarkerRow label="Hematocrit" data={data.bloodMarkers.hematocrit} userData={userData} />
-                    <MarkerRow label="Hemoglobin" data={data.bloodMarkers.hemoglobin} userData={userData} />
-                    <MarkerRow label="Platelets" data={data.bloodMarkers.platelets} userData={userData} />
+                    <MarkerRow label="White Blood Cells" data={data.bloodMarkers.whiteBloodCells} userData={userData} onClick={() => handleMarkerClick('White Blood Cells', data.bloodMarkers.whiteBloodCells)} />
+                    <MarkerRow label="Red Blood Cells" data={data.bloodMarkers.redBloodCells} userData={userData} onClick={() => handleMarkerClick('Red Blood Cells', data.bloodMarkers.redBloodCells)} />
+                    <MarkerRow label="Hematocrit" data={data.bloodMarkers.hematocrit} userData={userData} onClick={() => handleMarkerClick('Hematocrit', data.bloodMarkers.hematocrit)} />
+                    <MarkerRow label="Hemoglobin" data={data.bloodMarkers.hemoglobin} userData={userData} onClick={() => handleMarkerClick('Hemoglobin', data.bloodMarkers.hemoglobin)} />
+                    <MarkerRow label="Platelets" data={data.bloodMarkers.platelets} userData={userData} onClick={() => handleMarkerClick('Platelets', data.bloodMarkers.platelets)} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.whiteBloodCells} />
                 </div>
@@ -3384,9 +3395,9 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Glucose Markers</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="HbA1c" data={data.bloodMarkers.hba1c} userData={userData} />
-                    <MarkerRow label="Fasting Insulin" data={data.bloodMarkers.fastingInsulin} userData={userData} />
-                    <MarkerRow label="Glucose" data={data.bloodMarkers.glucose} userData={userData} />
+                    <MarkerRow label="HbA1c" data={data.bloodMarkers.hba1c} userData={userData} onClick={() => handleMarkerClick('HbA1c', data.bloodMarkers.hba1c)} />
+                    <MarkerRow label="Fasting Insulin" data={data.bloodMarkers.fastingInsulin} userData={userData} onClick={() => handleMarkerClick('Fasting Insulin', data.bloodMarkers.fastingInsulin)} />
+                    <MarkerRow label="Glucose" data={data.bloodMarkers.glucose} userData={userData} onClick={() => handleMarkerClick('Glucose', data.bloodMarkers.glucose)} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.glucose} />
                 </div>
@@ -3395,9 +3406,9 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Liver Markers</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="ALT" data={data.bloodMarkers.alt} userData={userData} />
-                    <MarkerRow label="AST" data={data.bloodMarkers.ast} userData={userData} />
-                    <MarkerRow label="GGT" data={data.bloodMarkers.ggt} userData={userData} />
+                    <MarkerRow label="ALT" data={data.bloodMarkers.alt} userData={userData} onClick={() => handleMarkerClick('ALT', data.bloodMarkers.alt)} />
+                    <MarkerRow label="AST" data={data.bloodMarkers.ast} userData={userData} onClick={() => handleMarkerClick('AST', data.bloodMarkers.ast)} />
+                    <MarkerRow label="GGT" data={data.bloodMarkers.ggt} userData={userData} onClick={() => handleMarkerClick('GGT', data.bloodMarkers.ggt)} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.alt} />
                 </div>
@@ -3406,11 +3417,11 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Kidney Markers</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="eGFR" data={data.bloodMarkers.egfr} userData={userData} />
-                    <MarkerRow label="Cystatin C" data={data.bloodMarkers.cystatinC} userData={userData} />
-                    <MarkerRow label="BUN" data={data.bloodMarkers.bun} userData={userData} />
-                    <MarkerRow label="Creatinine" data={data.bloodMarkers.creatinine} userData={userData} />
-                    <MarkerRow label="Albumin" data={data.bloodMarkers.albumin} userData={userData} />
+                    <MarkerRow label="eGFR" data={data.bloodMarkers.egfr} userData={userData} onClick={() => handleMarkerClick('eGFR', data.bloodMarkers.egfr)} />
+                    <MarkerRow label="Cystatin C" data={data.bloodMarkers.cystatinC} userData={userData} onClick={() => handleMarkerClick('Cystatin C', data.bloodMarkers.cystatinC)} />
+                    <MarkerRow label="BUN" data={data.bloodMarkers.bun} userData={userData} onClick={() => handleMarkerClick('BUN', data.bloodMarkers.bun)} />
+                    <MarkerRow label="Creatinine" data={data.bloodMarkers.creatinine} userData={userData} onClick={() => handleMarkerClick('Creatinine', data.bloodMarkers.creatinine)} />
+                    <MarkerRow label="Albumin" data={data.bloodMarkers.albumin} userData={userData} onClick={() => handleMarkerClick('Albumin', data.bloodMarkers.albumin)} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.egfr} />
                 </div>
@@ -3419,10 +3430,10 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Sex Hormones</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="Testosterone" data={data.bloodMarkers.testosterone} userData={userData} />
-                    <MarkerRow label="Free Testosterone" data={data.bloodMarkers.freeTesto} userData={userData} />
-                    <MarkerRow label="Estradiol" data={data.bloodMarkers.estradiol} userData={userData} />
-                    <MarkerRow label="SHBG" data={data.bloodMarkers.shbg} userData={userData} />
+                    <MarkerRow label="Testosterone" data={data.bloodMarkers.testosterone} userData={userData} onClick={() => handleMarkerClick('Testosterone', data.bloodMarkers.testosterone)} />
+                    <MarkerRow label="Free Testosterone" data={data.bloodMarkers.freeTesto} userData={userData} onClick={() => handleMarkerClick('Free Testosterone', data.bloodMarkers.freeTesto)} />
+                    <MarkerRow label="Estradiol" data={data.bloodMarkers.estradiol} userData={userData} onClick={() => handleMarkerClick('Estradiol', data.bloodMarkers.estradiol)} />
+                    <MarkerRow label="SHBG" data={data.bloodMarkers.shbg} userData={userData} onClick={() => handleMarkerClick('SHBG', data.bloodMarkers.shbg)} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.testosterone} />
                 </div>
@@ -3431,9 +3442,9 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Thyroid Markers</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="T3" data={data.bloodMarkers.t3} userData={userData} />
-                    <MarkerRow label="T4" data={data.bloodMarkers.t4} userData={userData} />
-                    <MarkerRow label="TSH" data={data.bloodMarkers.tsh} userData={userData} />
+                    <MarkerRow label="T3" data={data.bloodMarkers.t3} userData={userData} onClick={() => handleMarkerClick('T3', data.bloodMarkers.t3)} />
+                    <MarkerRow label="T4" data={data.bloodMarkers.t4} userData={userData} onClick={() => handleMarkerClick('T4', data.bloodMarkers.t4)} />
+                    <MarkerRow label="TSH" data={data.bloodMarkers.tsh} userData={userData} onClick={() => handleMarkerClick('TSH', data.bloodMarkers.tsh)} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.t3} />
                 </div>
@@ -3442,10 +3453,10 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Vitamins & Inflammation</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="Vitamin D3" data={data.bloodMarkers.vitaminD} userData={userData} />
-                    <MarkerRow label="hs-CRP" data={data.bloodMarkers.crp} userData={userData} />
-                    <MarkerRow label="Homocysteine" data={data.bloodMarkers.homocysteine} userData={userData} />
-                    <MarkerRow label="IGF-1" data={data.bloodMarkers.igf1} userData={userData} />
+                    <MarkerRow label="Vitamin D3" data={data.bloodMarkers.vitaminD} userData={userData} onClick={() => handleMarkerClick('Vitamin D3', data.bloodMarkers.vitaminD)} />
+                    <MarkerRow label="hs-CRP" data={data.bloodMarkers.crp} userData={userData} onClick={() => handleMarkerClick('hs-CRP', data.bloodMarkers.crp)} />
+                    <MarkerRow label="Homocysteine" data={data.bloodMarkers.homocysteine} userData={userData} onClick={() => handleMarkerClick('Homocysteine', data.bloodMarkers.homocysteine)} />
+                    <MarkerRow label="IGF-1" data={data.bloodMarkers.igf1} userData={userData} onClick={() => handleMarkerClick('IGF-1', data.bloodMarkers.igf1)} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.vitaminD} />
                 </div>
@@ -3454,10 +3465,10 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Iron Panel</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="Ferritin" data={data.bloodMarkers.ferritin} userData={userData} />
-                    <MarkerRow label="Serum Iron" data={data.bloodMarkers.serumIron} userData={userData} />
-                    <MarkerRow label="TIBC" data={data.bloodMarkers.tibc} userData={userData} />
-                    <MarkerRow label="Transferrin Saturation" data={data.bloodMarkers.transferrinSaturation} userData={userData} />
+                    <MarkerRow label="Ferritin" data={data.bloodMarkers.ferritin} userData={userData} onClick={() => handleMarkerClick('Ferritin', data.bloodMarkers.ferritin)} />
+                    <MarkerRow label="Serum Iron" data={data.bloodMarkers.serumIron} userData={userData} onClick={() => handleMarkerClick('Serum Iron', data.bloodMarkers.serumIron)} />
+                    <MarkerRow label="TIBC" data={data.bloodMarkers.tibc} userData={userData} onClick={() => handleMarkerClick('TIBC', data.bloodMarkers.tibc)} />
+                    <MarkerRow label="Transferrin Saturation" data={data.bloodMarkers.transferrinSaturation} userData={userData} onClick={() => handleMarkerClick('Transferrin Saturation', data.bloodMarkers.transferrinSaturation)} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.ferritin} />
                 </div>
@@ -3466,12 +3477,12 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Electrolytes</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="Sodium" data={data.bloodMarkers.sodium} userData={userData} />
-                    <MarkerRow label="Potassium" data={data.bloodMarkers.potassium} userData={userData} />
-                    <MarkerRow label="Calcium" data={data.bloodMarkers.calcium} userData={userData} />
-                    <MarkerRow label="Phosphorus" data={data.bloodMarkers.phosphorus} userData={userData} />
-                    <MarkerRow label="Bicarbonate" data={data.bloodMarkers.bicarbonate} userData={userData} />
-                    <MarkerRow label="Chloride" data={data.bloodMarkers.chloride} userData={userData} />
+                    <MarkerRow label="Sodium" data={data.bloodMarkers.sodium} userData={userData} onClick={() => handleMarkerClick('Sodium', data.bloodMarkers.sodium)} />
+                    <MarkerRow label="Potassium" data={data.bloodMarkers.potassium} userData={userData} onClick={() => handleMarkerClick('Potassium', data.bloodMarkers.potassium)} />
+                    <MarkerRow label="Calcium" data={data.bloodMarkers.calcium} userData={userData} onClick={() => handleMarkerClick('Calcium', data.bloodMarkers.calcium)} />
+                    <MarkerRow label="Phosphorus" data={data.bloodMarkers.phosphorus} userData={userData} onClick={() => handleMarkerClick('Phosphorus', data.bloodMarkers.phosphorus)} />
+                    <MarkerRow label="Bicarbonate" data={data.bloodMarkers.bicarbonate} userData={userData} onClick={() => handleMarkerClick('Bicarbonate', data.bloodMarkers.bicarbonate)} />
+                    <MarkerRow label="Chloride" data={data.bloodMarkers.chloride} userData={userData} onClick={() => handleMarkerClick('Chloride', data.bloodMarkers.chloride)} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.sodium} />
                 </div>
@@ -3480,16 +3491,16 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">White Blood Cell Differentials</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="Neutrophil Count" data={data.bloodMarkers.neutrophilCount} userData={userData} />
-                    <MarkerRow label="Neutrophil Percentage" data={data.bloodMarkers.neutrophilPercentage} userData={userData} />
-                    <MarkerRow label="Lymphocyte Count" data={data.bloodMarkers.lymphocyteCount} userData={userData} />
-                    <MarkerRow label="Lymphocyte Percentage" data={data.bloodMarkers.lymphocytePercentage} userData={userData} />
-                    <MarkerRow label="Monocyte Count" data={data.bloodMarkers.monocyteCount} userData={userData} />
-                    <MarkerRow label="Monocyte Percentage" data={data.bloodMarkers.monocytePercentage} userData={userData} />
-                    <MarkerRow label="Eosinophil Count" data={data.bloodMarkers.eosinophilCount} userData={userData} />
-                    <MarkerRow label="Eosinophil Percentage" data={data.bloodMarkers.eosinophilPercentage} userData={userData} />
-                    <MarkerRow label="Basophil Count" data={data.bloodMarkers.basophilCount} userData={userData} />
-                    <MarkerRow label="Basophil Percentage" data={data.bloodMarkers.basophilPercentage} userData={userData} />
+                    <MarkerRow label="Neutrophil Count" data={data.bloodMarkers.neutrophilCount} userData={userData} onClick={() => handleMarkerClick('Neutrophil Count', data.bloodMarkers.neutrophilCount)} />
+                    <MarkerRow label="Neutrophil Percentage" data={data.bloodMarkers.neutrophilPercentage} userData={userData} onClick={() => handleMarkerClick('Neutrophil Percentage', data.bloodMarkers.neutrophilPercentage)} />
+                    <MarkerRow label="Lymphocyte Count" data={data.bloodMarkers.lymphocyteCount} userData={userData} onClick={() => handleMarkerClick('Lymphocyte Count', data.bloodMarkers.lymphocyteCount)} />
+                    <MarkerRow label="Lymphocyte Percentage" data={data.bloodMarkers.lymphocytePercentage} userData={userData} onClick={() => handleMarkerClick('Lymphocyte Percentage', data.bloodMarkers.lymphocytePercentage)} />
+                    <MarkerRow label="Monocyte Count" data={data.bloodMarkers.monocyteCount} userData={userData} onClick={() => handleMarkerClick('Monocyte Count', data.bloodMarkers.monocyteCount)} />
+                    <MarkerRow label="Monocyte Percentage" data={data.bloodMarkers.monocytePercentage} userData={userData} onClick={() => handleMarkerClick('Monocyte Percentage', data.bloodMarkers.monocytePercentage)} />
+                    <MarkerRow label="Eosinophil Count" data={data.bloodMarkers.eosinophilCount} userData={userData} onClick={() => handleMarkerClick('Eosinophil Count', data.bloodMarkers.eosinophilCount)} />
+                    <MarkerRow label="Eosinophil Percentage" data={data.bloodMarkers.eosinophilPercentage} userData={userData} onClick={() => handleMarkerClick('Eosinophil Percentage', data.bloodMarkers.eosinophilPercentage)} />
+                    <MarkerRow label="Basophil Count" data={data.bloodMarkers.basophilCount} userData={userData} onClick={() => handleMarkerClick('Basophil Count', data.bloodMarkers.basophilCount)} />
+                    <MarkerRow label="Basophil Percentage" data={data.bloodMarkers.basophilPercentage} userData={userData} onClick={() => handleMarkerClick('Basophil Percentage', data.bloodMarkers.basophilPercentage)} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.neutrophilCount} />
                 </div>
@@ -3498,11 +3509,11 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Red Blood Cell Indices</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="MCV" data={data.bloodMarkers.mcv} userData={userData} />
-                    <MarkerRow label="MCH" data={data.bloodMarkers.mch} userData={userData} />
-                    <MarkerRow label="MCHC" data={data.bloodMarkers.mchc} userData={userData} />
-                    <MarkerRow label="RDW" data={data.bloodMarkers.rdw} userData={userData} />
-                    <MarkerRow label="MPV" data={data.bloodMarkers.mpv} userData={userData} />
+                    <MarkerRow label="MCV" data={data.bloodMarkers.mcv} userData={userData} onClick={() => handleMarkerClick('MCV', data.bloodMarkers.mcv)} />
+                    <MarkerRow label="MCH" data={data.bloodMarkers.mch} userData={userData} onClick={() => handleMarkerClick('MCH', data.bloodMarkers.mch)} />
+                    <MarkerRow label="MCHC" data={data.bloodMarkers.mchc} userData={userData} onClick={() => handleMarkerClick('MCHC', data.bloodMarkers.mchc)} />
+                    <MarkerRow label="RDW" data={data.bloodMarkers.rdw} userData={userData} onClick={() => handleMarkerClick('RDW', data.bloodMarkers.rdw)} />
+                    <MarkerRow label="MPV" data={data.bloodMarkers.mpv} userData={userData} onClick={() => handleMarkerClick('MPV', data.bloodMarkers.mpv)} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.mcv} />
                 </div>
@@ -3511,12 +3522,12 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Vitamins & Minerals</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="Vitamin D" data={data.bloodMarkers.vitaminD} userData={userData} />
-                    <MarkerRow label="Vitamin B12" data={data.bloodMarkers.vitaminB12} userData={userData} />
-                    <MarkerRow label="Folate" data={data.bloodMarkers.folate} userData={userData} />
-                    <MarkerRow label="Iron" data={data.bloodMarkers.iron} userData={userData} />
-                    <MarkerRow label="Magnesium" data={data.bloodMarkers.magnesium} userData={userData} />
-                    <MarkerRow label="RBC Magnesium" data={data.bloodMarkers.rbcMagnesium} userData={userData} />
+                    <MarkerRow label="Vitamin D" data={data.bloodMarkers.vitaminD} userData={userData} onClick={() => handleMarkerClick('Vitamin D', data.bloodMarkers.vitaminD)} />
+                    <MarkerRow label="Vitamin B12" data={data.bloodMarkers.vitaminB12} userData={userData} onClick={() => handleMarkerClick('Vitamin B12', data.bloodMarkers.vitaminB12)} />
+                    <MarkerRow label="Folate" data={data.bloodMarkers.folate} userData={userData} onClick={() => handleMarkerClick('Folate', data.bloodMarkers.folate)} />
+                    <MarkerRow label="Iron" data={data.bloodMarkers.iron} userData={userData} onClick={() => handleMarkerClick('Iron', data.bloodMarkers.iron)} />
+                    <MarkerRow label="Magnesium" data={data.bloodMarkers.magnesium} userData={userData} onClick={() => handleMarkerClick('Magnesium', data.bloodMarkers.magnesium)} />
+                    <MarkerRow label="RBC Magnesium" data={data.bloodMarkers.rbcMagnesium} userData={userData} onClick={() => handleMarkerClick('RBC Magnesium', data.bloodMarkers.rbcMagnesium)} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.vitaminD} />
                 </div>
@@ -3525,8 +3536,8 @@ export default function Home() {
                 <div className="border border-gray-100 dark:border-gray-700 rounded-xl px-4 sm:px-6 py-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Additional Markers</h3>
                   <div className="space-y-6">
-                    <MarkerRow label="Creatine Kinase" data={data.bloodMarkers.creatineKinase} userData={userData} />
-                    <MarkerRow label="Cortisol" data={data.bloodMarkers.cortisol} userData={userData} />
+                                          <MarkerRow label="Creatine Kinase" data={data.bloodMarkers.creatineKinase} userData={userData} onClick={() => handleMarkerClick('Creatine Kinase', data.bloodMarkers.creatineKinase)} />
+                    <MarkerRow label="Cortisol" data={data.bloodMarkers.cortisol} userData={userData} onClick={() => handleMarkerClick('Cortisol', data.bloodMarkers.cortisol)} />
                   </div>
                   <LastTestedDate data={data.bloodMarkers.creatineKinase} />
                 </div>
@@ -3534,6 +3545,18 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Blood Marker Detail Modal */}
+      {showMarkerDetailModal && selectedMarker && (
+        <BloodMarkerDetailModal
+          isOpen={showMarkerDetailModal}
+          onClose={() => setShowMarkerDetailModal(false)}
+          markerName={selectedMarker.name}
+          data={selectedMarker.data}
+          userId={userId || ''}
+        />
+      )}
+
         <div className={`fixed bottom-4 left-4 bg-indigo-500/15 backdrop-blur py-2.5 rounded-full shadow-lg text-sm font-medium tracking-wide text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 transition-all duration-500 ease-out flex items-center ${
           isRevlyExpanded 
             ? 'bg-indigo-500/25 shadow-md gap-2 px-4' 
@@ -3564,7 +3587,12 @@ export default function Home() {
 }
 
 // Helper Components
-const MarkerRow = ({ label, data, userData }: { label: string, data: BloodMarker[], userData?: UserData | null }) => {
+const MarkerRow = ({ label, data, userData, onClick }: { 
+  label: string; 
+  data: BloodMarker[]; 
+  userData?: UserData | null;
+  onClick?: () => void;
+}) => {
   // Convert label to config key
   const configKey = label.toLowerCase()
     .replace(/-/g, '')
@@ -4029,7 +4057,12 @@ const MarkerRow = ({ label, data, userData }: { label: string, data: BloodMarker
   }
 
   return (
-    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 border-b border-gray-100 dark:border-gray-700 pb-4">
+    <div 
+      className={`flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 border-b border-gray-100 dark:border-gray-700 pb-4 ${
+        data.length > 0 && onClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-none px-2 -mx-2 py-2 transition-colors' : ''
+      }`}
+      onClick={data.length > 0 && onClick ? onClick : undefined}
+    >
       <span className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{label}</span>
       <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
         {data.length > 0 && (
