@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useTheme } from '../context/ThemeContext';
 import { TrendIndicator } from '@/components/TrendIndicator';
@@ -91,8 +92,14 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
   const [selectedExperiment, setSelectedExperiment] = useState<Experiment | null>(null);
   const [experimentFitnessData, setExperimentFitnessData] = useState<ExperimentFitnessData>({});
   const [isLoadingFitnessData, setIsLoadingFitnessData] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
+
+  // Ensure portal is only used on client side
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Filter experiments by status
   const activeExperiments = experiments.filter(exp => exp.status === 'active');
@@ -416,9 +423,12 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
     }
   }, [selectedExperiment, userId]);
 
-  const ExperimentDetailsModal = ({ experiment }: { experiment: Experiment }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+  const ExperimentDetailsModal = ({ experiment }: { experiment: Experiment }) => {
+    if (!isMounted) return null;
+    
+    const modalContent = (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-start justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div>
@@ -608,9 +618,12 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
             </div>
           )}
         </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+
+    return createPortal(modalContent, document.body);
+  };
 
   // Show loading state
   if (isLoading) {
