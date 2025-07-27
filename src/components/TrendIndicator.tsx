@@ -55,9 +55,9 @@ export const TrendIndicator = ({
       const iconColor = customColors.iconColor || color;
 
       return (
-        <div className={`flex items-center ${bgColor} ${showTimeRange ? 'rounded-full px-2 md:px-3 py-0.5 md:py-1' : ''} ${className}`}>
+        <div className={`flex items-center ${bgColor} rounded-xl px-3 py-1.5 ${className}`}>
           <svg 
-            className={`w-3 h-3 md:w-3.5 md:h-3.5 ${iconColor} ${showTimeRange ? 'mr-1 md:mr-1.5' : ''}`}
+            className={`w-3 h-3 md:w-3.5 md:h-3.5 ${iconColor} mr-1.5`}
             viewBox="0 0 24 24" 
             fill="none" 
             stroke="currentColor"

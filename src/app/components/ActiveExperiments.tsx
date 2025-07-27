@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useTheme } from '../context/ThemeContext';
+import { TrendIndicator } from '@/components/TrendIndicator';
 
 interface BiomarkerDataPoint {
   date: string;
@@ -111,7 +112,6 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
         try {
           // Convert display name to API parameter name
           const apiParamName = getApiParameterName(marker);
-          console.log(`Fetching data for marker: ${marker} -> API param: ${apiParamName}`);
           const response = await fetch(`/api/health-data?type=${apiParamName}&userId=${userId}&t=${Date.now()}`, {
             headers: {
               'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -120,13 +120,9 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
             }
           });
 
-          if (!response.ok) {
-            console.error(`Failed to fetch ${marker} data: ${response.status} ${response.statusText}`);
-            return { marker, data: [] };
-          }
+          if (!response.ok) return { marker, data: [] };
 
           const result = await response.json();
-          console.log(`Result for ${marker}:`, result);
           if (!result.data || !Array.isArray(result.data)) return { marker, data: [] };
 
           // Filter data to experiment time period and format
@@ -153,10 +149,8 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
       
       results.forEach(({ marker, data }) => {
         fitnessData[marker] = data;
-        console.log(`Stored data for marker ${marker}:`, data.length, 'data points');
       });
 
-      console.log('Final fitness data object:', fitnessData);
       setExperimentFitnessData(fitnessData);
     } catch (error) {
       console.error('Error fetching experiment fitness data:', error);
@@ -212,6 +206,86 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
       'Heart Rate': 'bpm'
     };
     return units[metricType] || '';
+  };
+
+  // Helper function to calculate trend indicator data
+  const calculateTrend = (data: FitnessDataPoint[], metricType: string, experiment: Experiment) => {
+    if (!data || data.length < 4) return null; // Need at least 4 data points for meaningful comparison
+    
+    const halfLength = Math.floor(data.length / 2);
+    
+    // First half (earlier period)
+    const firstHalf = data.slice(0, halfLength);
+    const firstHalfAvg = firstHalf.reduce((sum, item) => sum + item.value, 0) / firstHalf.length;
+    
+    // Second half (later period) 
+    const secondHalf = data.slice(halfLength);
+    const secondHalfAvg = secondHalf.reduce((sum, item) => sum + item.value, 0) / secondHalf.length;
+    
+    if (firstHalfAvg === 0) return null;
+    
+    // Calculate experiment duration for time range label
+    const startDate = new Date(experiment.startDate);
+    const endDate = experiment.status === 'active' ? new Date() : new Date(experiment.endDate);
+    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    let timeRangeLabel = 'experiment period';
+    if (diffDays >= 365) {
+      timeRangeLabel = 'past year';
+    } else if (diffDays >= 84) {
+      timeRangeLabel = 'past few months';
+    } else if (diffDays >= 28) {
+      timeRangeLabel = 'past month';
+    } else if (diffDays >= 14) {
+      timeRangeLabel = 'past few weeks';
+    } else {
+      timeRangeLabel = 'past week';
+    }
+    
+    return {
+      current: secondHalfAvg,
+      previous: firstHalfAvg,
+      isBodyFat: metricType === 'Body Fat %' || metricType === 'bodyFat',
+      timeRangeLabel
+    };
+  };
+
+  // Helper function to get metric-specific colors for trend indicators
+  const getMetricColors = (metricType: string) => {
+    const colorMap: Record<string, any> = {
+      'HRV': {
+        bgColor: 'bg-purple-50 dark:bg-purple-900/20',
+        textColor: 'text-purple-600 dark:text-purple-400',
+        iconColor: 'text-purple-500'
+      },
+      'VO2 Max': {
+        bgColor: 'bg-rose-50 dark:bg-rose-900/20',
+        textColor: 'text-rose-600 dark:text-rose-400',
+        iconColor: 'text-rose-500'
+      },
+      'Weight': {
+        bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
+        textColor: 'text-emerald-600 dark:text-emerald-400',
+        iconColor: 'text-emerald-500'
+      },
+      'Body Fat %': {
+        bgColor: 'bg-green-50 dark:bg-green-900/20',
+        textColor: 'text-green-600 dark:text-green-400',
+        iconColor: 'text-green-500'
+      },
+      'Heart Rate': {
+        bgColor: 'bg-red-50 dark:bg-red-900/20',
+        textColor: 'text-red-600 dark:text-red-400',
+        iconColor: 'text-red-500'
+      }
+    };
+    
+    return colorMap[metricType] || {
+      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+      textColor: 'text-blue-600 dark:text-blue-400',
+      iconColor: 'text-blue-500'
+    };
   };
 
   // Helper function to get adaptive Y-axis domain
@@ -407,14 +481,33 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
                 // Use the original display name for key lookup since data is stored with display names
                 const metricData = experimentFitnessData[metricType] || [];
                 const hasData = metricData.length > 0;
-                console.log(`Rendering metric ${metricType}: ${metricData.length} data points, hasData: ${hasData}`);
                 
                 return (
                   <div key={metricType} className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {getMetricDisplayName(metricType)}
-                      </h4>
+                      <div className="flex items-center gap-3">
+                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {getMetricDisplayName(metricType)}
+                        </h4>
+                        {hasData && (() => {
+                          const trend = calculateTrend(metricData, metricType, experiment);
+                          if (trend) {
+                            const colors = getMetricColors(metricType);
+                            return (
+                              <TrendIndicator 
+                                current={trend.current} 
+                                previous={trend.previous} 
+                                isFitnessMetric={true}
+                                isBodyFat={trend.isBodyFat}
+                                showTimeRange={false}
+                                customColors={colors}
+                                className="ml-2"
+                              />
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
                       <span className="text-sm text-gray-500 dark:text-gray-400">
                         {hasData ? `${metricData.length} data points` : 'No data'}
                       </span>
