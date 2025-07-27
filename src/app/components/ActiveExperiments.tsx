@@ -444,21 +444,14 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
 
         {/* Progress and Overview */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
             <div>
-              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Progress</span>
-              <div className="mt-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {experiment.progress}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div 
-                    className="h-2 rounded-full bg-purple-500"
-                    style={{ width: `${experiment.progress}%` }}
-                  />
-                </div>
+              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</span>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Active
+                </span>
               </div>
             </div>
             <div>
