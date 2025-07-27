@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useTheme } from '../context/ThemeContext';
 
 interface BiomarkerDataPoint {
   date: string;
@@ -15,6 +16,15 @@ interface BiomarkerTrend {
   baseline: number;
   target?: number;
   improvement?: 'increase' | 'decrease'; // What direction is considered improvement
+}
+
+interface FitnessDataPoint {
+  date: string;
+  value: number;
+}
+
+interface ExperimentFitnessData {
+  [metricType: string]: FitnessDataPoint[];
 }
 
 interface Experiment {
@@ -78,10 +88,154 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedExperiment, setSelectedExperiment] = useState<Experiment | null>(null);
+  const [experimentFitnessData, setExperimentFitnessData] = useState<ExperimentFitnessData>({});
+  const [isLoadingFitnessData, setIsLoadingFitnessData] = useState(false);
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
 
   // Filter experiments by status
   const activeExperiments = experiments.filter(exp => exp.status === 'active');
   const pastExperiments = experiments.filter(exp => exp.status === 'completed');
+
+  // Function to fetch experiment-specific fitness data
+  const fetchExperimentFitnessData = async (experiment: Experiment) => {
+    if (!userId || !experiment.fitnessMarkers?.length) return;
+
+    setIsLoadingFitnessData(true);
+    try {
+      const startDate = new Date(experiment.startDate);
+      const endDate = experiment.status === 'active' ? new Date() : new Date(experiment.endDate);
+      
+      // Fetch data for each fitness marker
+      const dataPromises = experiment.fitnessMarkers.map(async (marker) => {
+        try {
+          const response = await fetch(`/api/health-data?type=${marker}&userId=${userId}&t=${Date.now()}`, {
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0'
+            }
+          });
+
+          if (!response.ok) return { marker, data: [] };
+
+          const result = await response.json();
+          if (!result.data || !Array.isArray(result.data)) return { marker, data: [] };
+
+          // Filter data to experiment time period and format
+          const filteredData = result.data
+            .filter((item: any) => {
+              const itemDate = new Date(item.date);
+              return itemDate >= startDate && itemDate <= endDate;
+            })
+            .map((item: any) => ({
+              date: item.date,
+              value: item.value
+            }))
+            .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+          return { marker, data: filteredData };
+        } catch (error) {
+          console.error(`Error fetching ${marker} data:`, error);
+          return { marker, data: [] };
+        }
+      });
+
+      const results = await Promise.all(dataPromises);
+      const fitnessData: ExperimentFitnessData = {};
+      
+      results.forEach(({ marker, data }) => {
+        fitnessData[marker] = data;
+      });
+
+      setExperimentFitnessData(fitnessData);
+    } catch (error) {
+      console.error('Error fetching experiment fitness data:', error);
+    } finally {
+      setIsLoadingFitnessData(false);
+    }
+  };
+
+  // Helper function to get metric display name
+  const getMetricDisplayName = (metricType: string): string => {
+    const displayNames: Record<string, string> = {
+      heartRate: 'Heart Rate',
+      weight: 'Weight',
+      bodyFat: 'Body Fat',
+      hrv: 'HRV',
+      vo2max: 'VO2 Max'
+    };
+    return displayNames[metricType] || metricType;
+  };
+
+  // Helper function to get metric unit
+  const getMetricUnit = (metricType: string): string => {
+    const units: Record<string, string> = {
+      heartRate: 'bpm',
+      weight: 'lbs',
+      bodyFat: '%',
+      hrv: 'ms',
+      vo2max: 'ml/kg/min'
+    };
+    return units[metricType] || '';
+  };
+
+  // Helper function to get adaptive Y-axis domain
+  const getAdaptiveYAxisDomain = (data: FitnessDataPoint[], metricType: string): [number, number] => {
+    if (!data || data.length === 0) return [0, 100];
+    
+    const values = data.map(d => d.value);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min;
+    
+    // Add padding based on metric type
+    let paddingPercent = 0.1; // 10% padding by default
+    
+    switch (metricType) {
+      case 'weight':
+        paddingPercent = 0.05; // 5% padding for weight
+        break;
+      case 'bodyFat':
+        paddingPercent = 0.15; // 15% padding for body fat
+        break;
+      case 'hrv':
+        paddingPercent = 0.2; // 20% padding for HRV
+        break;
+    }
+    
+    const padding = range * paddingPercent;
+    return [Math.max(0, min - padding), max + padding];
+  };
+
+  // Helper function to format tooltip
+  const renderCustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      const date = new Date(label);
+      const formattedDate = date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+
+      return (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{formattedDate}</p>
+          <p className="text-sm font-medium text-gray-900 dark:text-white">
+            {data.value.toFixed(1)} {data.payload.unit || ''}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Helper function to format date for X-axis
+  const formatDate = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
 
   // Fetch experiments from API
   useEffect(() => {
@@ -126,9 +280,16 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
     fetchExperiments();
   }, [userId]);
 
+  // Fetch fitness data when an experiment is selected
+  useEffect(() => {
+    if (selectedExperiment && selectedExperiment.fitnessMarkers?.length > 0) {
+      fetchExperimentFitnessData(selectedExperiment);
+    }
+  }, [selectedExperiment, userId]);
+
   const ExperimentDetailsModal = ({ experiment }: { experiment: Experiment }) => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-start justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div>
@@ -140,7 +301,10 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
             </p>
           </div>
           <button
-            onClick={() => setSelectedExperiment(null)}
+            onClick={() => {
+              setSelectedExperiment(null);
+              setExperimentFitnessData({});
+            }}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
             <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -189,24 +353,121 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
           </div>
         </div>
 
-        {/* Biomarker Trends - Coming Soon */}
-        <div className="p-6 border-t border-gray-200 dark:border-gray-700">
-          <div className="text-center py-8">
-            <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
+        {/* Fitness Metrics Charts */}
+        <div className="p-6">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+            Tracked Fitness Metrics
+          </h3>
+          
+          {isLoadingFitnessData ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+              <span className="ml-3 text-gray-600 dark:text-gray-400">Loading metrics data...</span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Biomarker Tracking Coming Soon
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400">
-              Detailed biomarker progress charts and analysis will be available in future updates.
-            </p>
-          </div>
+          ) : experiment.fitnessMarkers?.length > 0 ? (
+            <div className="space-y-8">
+              {experiment.fitnessMarkers.map((metricType) => {
+                const metricData = experimentFitnessData[metricType] || [];
+                const hasData = metricData.length > 0;
+                
+                return (
+                  <div key={metricType} className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {getMetricDisplayName(metricType)}
+                      </h4>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {hasData ? `${metricData.length} data points` : 'No data'}
+                      </span>
+                    </div>
+                    
+                    {hasData ? (
+                      <div className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart 
+                            data={metricData.map(point => ({ ...point, unit: getMetricUnit(metricType) }))}
+                            margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+                          >
+                            <CartesianGrid 
+                              stroke={isDarkMode ? "rgba(75, 85, 99, 0.3)" : "rgba(156, 163, 175, 0.35)"}
+                              strokeWidth={0.75}
+                              strokeDasharray="0" 
+                              vertical={false}
+                            />
+                            <YAxis 
+                              domain={getAdaptiveYAxisDomain(metricData, metricType)}
+                              hide={true}
+                            />
+                            <XAxis 
+                              dataKey="date" 
+                              tickFormatter={formatDate}
+                              stroke="#9CA3AF"
+                              fontSize={12}
+                              tickLine={false}
+                              axisLine={false}
+                              dy={12}
+                              interval="preserveStart"
+                              minTickGap={40}
+                              allowDuplicatedCategory={false}
+                            />
+                            <Tooltip 
+                              content={renderCustomTooltip}
+                            />
+                            <Line 
+                              type="monotone"
+                              dataKey="value" 
+                              stroke={isDarkMode ? "#818cf8" : "#4f46e5"} 
+                              activeDot={{ 
+                                r: 6, 
+                                stroke: isDarkMode ? "#818cf8" : "#4f46e5", 
+                                strokeWidth: 1, 
+                                fill: isDarkMode ? "#1f2937" : "#ffffff" 
+                              }} 
+                              dot={(props: any) => { 
+                                const { cx, cy, index } = props; 
+                                const lineColor = isDarkMode ? "#818cf8" : "#4f46e5";
+                                const bgColor = isDarkMode ? "#1f2937" : "#ffffff";
+                                if (index === metricData.length - 1 && metricData.length > 0) { 
+                                  return (
+                                    <g>
+                                      <circle cx={cx} cy={cy} r={12} fill={lineColor} fillOpacity={0.15} stroke="none" />
+                                      <circle cx={cx} cy={cy} r={8} fill={lineColor} fillOpacity={0.3} stroke="none" />
+                                      <circle cx={cx} cy={cy} r={4} fill={lineColor} stroke={bgColor} strokeWidth={2} />
+                                    </g>
+                                  );
+                                } 
+                                return <React.Fragment key={index} />; 
+                              }}
+                              strokeWidth={2}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : (
+                      <div className="h-[200px] flex items-center justify-center text-gray-500 dark:text-gray-400">
+                        No {getMetricDisplayName(metricType).toLowerCase()} data available for this experiment period
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                No Fitness Metrics Selected
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400">
+                This experiment is not tracking any fitness metrics.
+              </p>
+            </div>
+          )}
         </div>
-
-
       </div>
     </div>
   );
