@@ -109,7 +109,10 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
       // Fetch data for each fitness marker
       const dataPromises = experiment.fitnessMarkers.map(async (marker) => {
         try {
-          const response = await fetch(`/api/health-data?type=${marker}&userId=${userId}&t=${Date.now()}`, {
+          // Convert display name to API parameter name
+          const apiParamName = getApiParameterName(marker);
+          console.log(`Fetching data for marker: ${marker} -> API param: ${apiParamName}`);
+          const response = await fetch(`/api/health-data?type=${apiParamName}&userId=${userId}&t=${Date.now()}`, {
             headers: {
               'Cache-Control': 'no-cache, no-store, must-revalidate',
               'Pragma': 'no-cache',
@@ -117,9 +120,13 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
             }
           });
 
-          if (!response.ok) return { marker, data: [] };
+          if (!response.ok) {
+            console.error(`Failed to fetch ${marker} data: ${response.status} ${response.statusText}`);
+            return { marker, data: [] };
+          }
 
           const result = await response.json();
+          console.log(`Result for ${marker}:`, result);
           if (!result.data || !Array.isArray(result.data)) return { marker, data: [] };
 
           // Filter data to experiment time period and format
@@ -146,8 +153,10 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
       
       results.forEach(({ marker, data }) => {
         fitnessData[marker] = data;
+        console.log(`Stored data for marker ${marker}:`, data.length, 'data points');
       });
 
+      console.log('Final fitness data object:', fitnessData);
       setExperimentFitnessData(fitnessData);
     } catch (error) {
       console.error('Error fetching experiment fitness data:', error);
@@ -158,14 +167,33 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
 
   // Helper function to get metric display name
   const getMetricDisplayName = (metricType: string): string => {
+    // Handle both API parameter names and display names
     const displayNames: Record<string, string> = {
       heartRate: 'Heart Rate',
       weight: 'Weight',
       bodyFat: 'Body Fat',
       hrv: 'HRV',
-      vo2max: 'VO2 Max'
+      vo2max: 'VO2 Max',
+      // Handle display names directly
+      'HRV': 'HRV',
+      'VO2 Max': 'VO2 Max',
+      'Weight': 'Weight',
+      'Body Fat %': 'Body Fat',
+      'Heart Rate': 'Heart Rate'
     };
     return displayNames[metricType] || metricType;
+  };
+
+  // Helper function to convert display names to API parameter names
+  const getApiParameterName = (displayName: string): string => {
+    const parameterMap: Record<string, string> = {
+      'HRV': 'hrv',
+      'VO2 Max': 'vo2max',
+      'Weight': 'weight',
+      'Body Fat %': 'bodyFat',
+      'Heart Rate': 'heartRate'
+    };
+    return parameterMap[displayName] || displayName.toLowerCase();
   };
 
   // Helper function to get metric unit
@@ -175,7 +203,13 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
       weight: 'lbs',
       bodyFat: '%',
       hrv: 'ms',
-      vo2max: 'ml/kg/min'
+      vo2max: 'ml/kg/min',
+      // Handle display names directly
+      'HRV': 'ms',
+      'VO2 Max': 'ml/kg/min',
+      'Weight': 'lbs',
+      'Body Fat %': '%',
+      'Heart Rate': 'bpm'
     };
     return units[metricType] || '';
   };
@@ -194,12 +228,15 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
     
     switch (metricType) {
       case 'weight':
+      case 'Weight':
         paddingPercent = 0.05; // 5% padding for weight
         break;
       case 'bodyFat':
+      case 'Body Fat %':
         paddingPercent = 0.15; // 15% padding for body fat
         break;
       case 'hrv':
+      case 'HRV':
         paddingPercent = 0.2; // 20% padding for HRV
         break;
     }
@@ -367,8 +404,10 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
           ) : experiment.fitnessMarkers?.length > 0 ? (
             <div className="space-y-8">
               {experiment.fitnessMarkers.map((metricType) => {
+                // Use the original display name for key lookup since data is stored with display names
                 const metricData = experimentFitnessData[metricType] || [];
                 const hasData = metricData.length > 0;
+                console.log(`Rendering metric ${metricType}: ${metricData.length} data points, hasData: ${hasData}`);
                 
                 return (
                   <div key={metricType} className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-6">
