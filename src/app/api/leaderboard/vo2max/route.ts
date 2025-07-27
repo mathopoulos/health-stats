@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { fetchAllHealthData, type HealthDataType } from '@/lib/s3';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION || 'us-east-1',
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+  },
+});
 
 interface FitnessData {
   date: string;
@@ -14,6 +24,25 @@ interface LeaderboardEntry {
   avgValue: number;
   dataPoints: number;
   latestDate: string;
+}
+
+// Helper function to generate presigned URL for profile image
+async function getPresignedProfileImageUrl(profileImageUrl: string): Promise<string | null> {
+  try {
+    const imageUrl = new URL(profileImageUrl);
+    const key = imageUrl.pathname.slice(1); // Remove leading slash
+    
+    const command = new GetObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME!,
+      Key: key,
+    });
+    
+    const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    return presignedUrl;
+  } catch (error) {
+    console.error('Error generating presigned URL for profile image:', error);
+    return null;
+  }
 }
 
 export async function GET(request: Request) {
@@ -43,19 +72,10 @@ export async function GET(request: Request) {
           const fitnessData: FitnessData[] = data;
           fitnessData.sort((a: FitnessData, b: FitnessData) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-          // Get a presigned profile image via /api/users
-          let profileImageUrl: string | undefined = user.profileImage;
-          try {
-            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
-            const userRes = await fetch(`${baseUrl}/api/users/${user.userId}`);
-            if (userRes.ok) {
-              const userJson = await userRes.json();
-              if (userJson.success && userJson.user?.profileImage) {
-                profileImageUrl = userJson.user.profileImage;
-              }
-            }
-          } catch (e) {
-            // ignore errors – fallback to stored URL if any
+          // Generate presigned profile image URL directly instead of making HTTP calls
+          let profileImageUrl: string | undefined = undefined;
+          if (user.profileImage) {
+            profileImageUrl = await getPresignedProfileImageUrl(user.profileImage) || undefined;
           }
 
           const latest = new Date(fitnessData[0].date);
