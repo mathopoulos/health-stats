@@ -1695,7 +1695,7 @@ export default function UploadPage() {
 
               {/* Delete Account Section - Subtle */}
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mt-6">
-                <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+                <div className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-medium text-gray-900 dark:text-white">Account Management</h3>
