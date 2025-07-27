@@ -526,9 +526,6 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
                           return null;
                         })()}
                       </div>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        {hasData ? `${metricData.length} data points` : 'No data'}
-                      </span>
                     </div>
                     
                     {hasData ? (
