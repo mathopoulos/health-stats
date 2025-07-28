@@ -254,59 +254,59 @@ export default function BloodMarkerDetailModal({
   const bgColor = isDarkMode ? "#1f2937" : "#ffffff";
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-xs sm:max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-auto">
         {/* Header */}
-        <div className="flex items-start justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{markerName}</h2>
+        <div className="flex items-start justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex-1 pr-2">
+            <h2 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{markerName}</h2>
             {currentValue && (
-              <div className="flex items-center gap-3 mt-2">
-                <span className="text-3xl font-bold text-gray-900 dark:text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mt-2">
+                <span className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                   {currentValue.value} {unit}
                 </span>
                 <span 
-                  className={`px-3 py-1 rounded-full text-sm font-medium text-white`}
+                  className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium text-white w-fit`}
                   style={{ backgroundColor: getStatusColor(currentValue.value) }}
                 >
                   {getStatus(currentValue.value)}
                 </span>
               </div>
             )}
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
               Last tested: {currentValue ? new Date(currentValue.date).toLocaleDateString() : 'No data'}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors ml-4 p-1"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 flex-shrink-0"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        {/* Reference Ranges - Clean design above chart */}
+        {/* Reference Ranges - Mobile responsive stacked layout */}
         {referenceRanges && (
-          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-            <div className="flex items-center justify-center gap-8">
-              <div className="flex items-center gap-2 text-sm">
-                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-3 sm:gap-8">
+              <div className="flex items-center gap-2 text-xs sm:text-sm">
+                <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
                 <span className="text-gray-600 dark:text-gray-400">Abnormal:</span>
                 <span className="text-gray-900 dark:text-white font-medium">{referenceRanges.abnormalText}</span>
               </div>
               
               {referenceRanges.normalText && (
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <div className="flex items-center gap-2 text-xs sm:text-sm">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full flex-shrink-0"></div>
                   <span className="text-gray-600 dark:text-gray-400">Normal:</span>
                   <span className="text-gray-900 dark:text-white font-medium">{referenceRanges.normalText}</span>
                 </div>
               )}
               
-              <div className="flex items-center gap-2 text-sm">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <div className="flex items-center gap-2 text-xs sm:text-sm">
+                <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
                 <span className="text-gray-600 dark:text-gray-400">Optimal:</span>
                 <span className="text-gray-900 dark:text-white font-medium">{referenceRanges.optimalText}</span>
               </div>
@@ -314,18 +314,29 @@ export default function BloodMarkerDetailModal({
           </div>
         )}
 
-        {/* Chart - Matching dashboard style exactly */}
-        <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        {/* Chart - Responsive height and margins */}
+        <div className="p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
             Historical Trend
           </h3>
           
           {chartData.length > 0 ? (
-            <div className="h-[340px] relative">
+            <div className="h-[280px] sm:h-[340px] relative">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart 
                   data={chartData} 
-                  margin={{ top: 30, right: 50, left: 50, bottom: 20 }}
+                  margin={{ 
+                    top: 20, 
+                    right: 15, 
+                    left: 10, 
+                    bottom: 15,
+                    ...(typeof window !== 'undefined' && window.innerWidth >= 640 && {
+                      top: 30,
+                      right: 50,
+                      left: 50,
+                      bottom: 20
+                    })
+                  }}
                 >
                   <defs>
                     <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -366,22 +377,22 @@ export default function BloodMarkerDetailModal({
                     domain={getAdaptiveYAxisDomain(chartData)}
                     hide={false}
                     stroke="#9CA3AF"
-                    fontSize={12}
+                    fontSize={10}
                     tickLine={false}
                     axisLine={false}
-                    width={40}
+                    width={30}
                     tickFormatter={(value) => Math.round(value).toString()}
                   />
                   <XAxis 
                     dataKey="date" 
                     tickFormatter={getTickFormatter}
                     stroke="#9CA3AF"
-                    fontSize={12}
+                    fontSize={10}
                     tickLine={false}
                     axisLine={false}
-                    dy={12}
+                    dy={8}
                     interval="preserveStart"
-                    minTickGap={40}
+                    minTickGap={30}
                     allowDuplicatedCategory={false}
                   />
                   
@@ -391,7 +402,7 @@ export default function BloodMarkerDetailModal({
                     type="monotone"
                     dataKey="value" 
                     stroke="url(#lineGradient)"
-                    activeDot={{ r: 6, stroke: STATUS_COLORS.normal, strokeWidth: 1, fill: bgColor }} 
+                    activeDot={{ r: 4, stroke: STATUS_COLORS.normal, strokeWidth: 1, fill: bgColor }} 
                     dot={(props: any) => { 
                       const { cx, cy, index, payload } = props;
                       
@@ -410,23 +421,29 @@ export default function BloodMarkerDetailModal({
                       };
                       
                       const dotColor = getStatusColorForDot(payload.value);
+                      const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
                       
                       // Special styling for the last point (matching dashboard)
                       if (index === chartData.length - 1 && chartData.length > 0) { 
+                        const outerRadius = isMobile ? 8 : 12;
+                        const middleRadius = isMobile ? 6 : 8;
+                        const innerRadius = isMobile ? 3 : 4;
+                        
                         return (
                           <g>
-                            <circle cx={cx} cy={cy} r={12} fill={dotColor} fillOpacity={0.15} stroke="none" />
-                            <circle cx={cx} cy={cy} r={8} fill={dotColor} fillOpacity={0.3} stroke="none" />
-                            <circle cx={cx} cy={cy} r={4} fill={dotColor} stroke={bgColor} strokeWidth={2} />
+                            <circle cx={cx} cy={cy} r={outerRadius} fill={dotColor} fillOpacity={0.15} stroke="none" />
+                            <circle cx={cx} cy={cy} r={middleRadius} fill={dotColor} fillOpacity={0.3} stroke="none" />
+                            <circle cx={cx} cy={cy} r={innerRadius} fill={dotColor} stroke={bgColor} strokeWidth={2} />
                           </g>
                         );
                       } else {
-                        // Regular dots for all other points
+                        // Regular dots for all other points - smaller on mobile
+                        const radius = isMobile ? 4 : 6;
                         return (
                           <circle 
                             cx={cx} 
                             cy={cy} 
-                            r={6} 
+                            r={radius} 
                             fill={dotColor} 
                             stroke={bgColor} 
                             strokeWidth={2}
@@ -439,9 +456,9 @@ export default function BloodMarkerDetailModal({
                 </LineChart>
               </ResponsiveContainer>
 
-              {/* Reference Range Bar */}
+              {/* Reference Range Bar - Hide on very small screens */}
               {referenceRanges && (
-                <div className="absolute right-2 top-8 bottom-5 w-1">
+                <div className="hidden sm:block absolute right-2 top-8 bottom-5 w-1">
                   <svg width="4" height="100%" className="overflow-visible">
                     <defs>
                       <linearGradient id="rangeGradient" x1="0%" y1="100%" x2="0%" y2="0%">
@@ -511,39 +528,43 @@ export default function BloodMarkerDetailModal({
               )}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-[340px] bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <p className="text-gray-500 dark:text-gray-400">No historical data available</p>
+            <div className="flex items-center justify-center h-[280px] sm:h-[340px] bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <p className="text-sm text-gray-500 dark:text-gray-400">No historical data available</p>
             </div>
           )}
         </div>
 
-        {/* Recent History Table */}
+        {/* Recent History Table - Mobile optimized */}
         {chartData.length > 0 && (
-          <div className="p-6 pt-0">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <div className="p-4 sm:p-6 pt-0">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
               Recent History
             </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto -mx-1">
+              <table className="w-full text-xs sm:text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-2 text-gray-600 dark:text-gray-400">Date</th>
-                    <th className="text-left py-2 text-gray-600 dark:text-gray-400">Value</th>
-                    <th className="text-left py-2 text-gray-600 dark:text-gray-400">Status</th>
+                    <th className="text-left py-2 px-1 text-gray-600 dark:text-gray-400 font-medium">Date</th>
+                    <th className="text-left py-2 px-1 text-gray-600 dark:text-gray-400 font-medium">Value</th>
+                    <th className="text-left py-2 px-1 text-gray-600 dark:text-gray-400 font-medium">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {chartData.slice().reverse().slice(0, 5).map((item, index) => (
                     <tr key={index} className="border-b border-gray-100 dark:border-gray-700">
-                      <td className="py-2 text-gray-900 dark:text-white">
-                        {new Date(item.fullDate).toLocaleDateString()}
+                      <td className="py-2 px-1 text-gray-900 dark:text-white">
+                        {new Date(item.fullDate).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric',
+                          ...(typeof window !== 'undefined' && window.innerWidth >= 640 && { year: 'numeric' })
+                        })}
                       </td>
-                      <td className="py-2 text-gray-900 dark:text-white font-medium">
+                      <td className="py-2 px-1 text-gray-900 dark:text-white font-medium">
                         {item.value} {unit}
                       </td>
-                      <td className="py-2">
+                      <td className="py-2 px-1">
                         <span 
-                          className="px-2 py-1 rounded-full text-xs font-medium text-white"
+                          className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium text-white"
                           style={{ backgroundColor: getStatusColor(item.value) }}
                         >
                           {getStatus(item.value)}
