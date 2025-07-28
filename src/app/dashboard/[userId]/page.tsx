@@ -19,6 +19,7 @@ import { WeeklyWorkoutProvider, useWeeklyWorkout } from '@/app/context/WeeklyWor
 import ActiveExperiments from '@/app/components/ActiveExperiments';
 import BloodMarkerDetailModal from '@/app/components/BloodMarkerDetailModal';
 import { getReferenceRanges, getBloodMarkerStatus, BLOOD_MARKER_STATUS_COLORS } from '@/lib/bloodMarkerRanges';
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface HealthData {
   date: string;
@@ -515,6 +516,199 @@ interface HealthProtocol {
   updatedAt: string;
 }
 
+// Helper to create an object with all blood-marker arrays empty
+function createEmptyBloodMarkers(): ChartData['bloodMarkers'] {
+  return {
+    // Lipid Panel
+    totalCholesterol: [], ldl: [], hdl: [], triglycerides: [], apoB: [], lpA: [],
+    // Complete Blood Count
+    whiteBloodCells: [], redBloodCells: [], hematocrit: [], hemoglobin: [], platelets: [],
+    // CBC Differentials
+    neutrophilCount: [], neutrophilPercentage: [], lymphocyteCount: [], lymphocytePercentage: [],
+    monocyteCount: [], monocytePercentage: [], eosinophilCount: [], eosinophilPercentage: [],
+    basophilCount: [], basophilPercentage: [],
+    // Red Blood Cell Indices
+    mcv: [], mch: [], mchc: [], rdw: [], mpv: [],
+    // Glucose Markers
+    hba1c: [], fastingInsulin: [], glucose: [],
+    // Liver Markers
+    alt: [], ast: [], ggt: [],
+    // Kidney Markers
+    egfr: [], cystatinC: [], bun: [], creatinine: [], albumin: [],
+    // Sex Hormones
+    testosterone: [], freeTesto: [], estradiol: [], shbg: [],
+    // Thyroid Markers
+    t3: [], t4: [], tsh: [],
+    // Vitamins & Minerals
+    vitaminD: [], vitaminB12: [], folate: [], iron: [], magnesium: [], rbcMagnesium: [],
+    // Inflammation
+    crp: [], homocysteine: [],
+    // Growth Factors
+    igf1: [],
+    // Iron Panel
+    ferritin: [], serumIron: [], tibc: [], transferrinSaturation: [],
+    // Electrolytes
+    sodium: [], potassium: [], calcium: [], phosphorus: [], bicarbonate: [], chloride: [],
+    // Additional markers
+    creatineKinase: [], cortisol: [],
+    // Longevity Markers
+    biologicalAge: []
+  };
+}
+
+// Lightweight fetch – only the data required for Home tab
+async function fetchHomeData(userId: string) {
+  try {
+    const timestamp = Date.now();
+    const [heartRateRes, weightRes, bodyFatRes, hrvRes, vo2maxRes, sleepRes, workoutRes] = await Promise.all([
+      fetch(`/api/health-data?type=heartRate&userId=${userId}&t=${timestamp}`),
+      fetch(`/api/health-data?type=weight&userId=${userId}&t=${timestamp}`),
+      fetch(`/api/health-data?type=bodyFat&userId=${userId}&t=${timestamp}`),
+      fetch(`/api/health-data?type=hrv&userId=${userId}&t=${timestamp}`),
+      fetch(`/api/health-data?type=vo2max&userId=${userId}&t=${timestamp}`),
+      fetch(`/api/health-data?type=sleep&userId=${userId}&t=${timestamp}`),
+      fetch(`/api/health-data?type=workout&userId=${userId}&t=${timestamp}`),
+    ]);
+
+    const responses = await Promise.all([
+      heartRateRes.json(),
+      weightRes.json(),
+      bodyFatRes.json(),
+      hrvRes.json(),
+      vo2maxRes.json(),
+      sleepRes.json(),
+      workoutRes.json(),
+    ]);
+
+    const [heartRateData, weightData, bodyFatData, hrvData, vo2maxData, sleepData, workoutData] = responses;
+
+    return {
+      heartRate: heartRateData.data || [],
+      weight: weightData.data || [],
+      bodyFat: bodyFatData.data || [],
+      hrv: hrvData.data || [],
+      vo2max: vo2maxData.data || [],
+      bloodMarkers: createEmptyBloodMarkers(),
+      loading: false,
+      // extra data handled outside
+      _sleep: sleepData,
+      _workout: workoutData,
+    } as any;
+  } catch (err) {
+    console.error('Error fetching home data', err);
+    return {
+      heartRate: [],
+      weight: [],
+      bodyFat: [],
+      hrv: [],
+      vo2max: [],
+      bloodMarkers: createEmptyBloodMarkers(),
+      loading: false,
+    } as ChartData;
+  }
+}
+
+// Heavy fetch – blood markers & protocols. Mutates state when complete.
+async function fetchBloodMarkers(userId: string, update: (bm: ChartData['bloodMarkers']) => void) {
+  function toCamel(str: string) {
+    return str
+      .replace(/[^a-zA-Z0-9 ]/g, '')
+      .split(' ')
+      .map((w,i)=> i===0 ? w.toLowerCase() : w.charAt(0).toUpperCase()+w.slice(1).toLowerCase())
+      .join('');
+  }
+  try {
+    const timestamp = Date.now();
+    const bloodRes = await fetch(`/api/health-data?type=bloodMarkers&userId=${userId}&t=${timestamp}`);
+    if (!bloodRes.ok) return;
+    const bloodData = await bloodRes.json();
+    if (!bloodData.success) return;
+
+    const processed: ChartData['bloodMarkers'] = createEmptyBloodMarkers();
+
+    const markerNameToKey: Record<string, keyof ChartData['bloodMarkers']> = {
+      'Total Cholesterol': 'totalCholesterol',
+      'LDL Cholesterol': 'ldl', 'LDL-C': 'ldl',
+      'HDL Cholesterol': 'hdl', 'HDL-C': 'hdl',
+      'Triglycerides': 'triglycerides',
+      'ApoB': 'apoB',
+      'Lp(a)': 'lpA',
+      // CBC
+      'White Blood Cell Count':'whiteBloodCells','White Blood Cells':'whiteBloodCells','WBC':'whiteBloodCells',
+      'Red Blood Cell Count':'redBloodCells','RBC':'redBloodCells','Red Blood Cells':'redBloodCells',
+      'Hematocrit':'hematocrit','HCT':'hematocrit','Hemoglobin':'hemoglobin','HGB':'hemoglobin',
+      'Platelet Count':'platelets','Platelets':'platelets',
+      // add other explicit if needed
+    } as any;
+
+    bloodData.data.forEach((entry: any) => {
+      const entryDate = entry.date || entry.testDate || entry.createdAt;
+      if (Array.isArray(entry.markers)) {
+        entry.markers.forEach((marker: any) => {
+          let key = markerNameToKey[marker.name];
+          if (!key) {
+            const camel = toCamel(marker.name);
+            if (camel in processed) key = camel as keyof ChartData['bloodMarkers'];
+          }
+          if (key) {
+            processed[key].push({
+              date: entryDate,
+              value: marker.value,
+              unit: marker.unit,
+              referenceRange: marker.referenceRange,
+            });
+          }
+        });
+      }
+    });
+
+    update(processed);
+  } catch (err) {
+    console.error('Error fetching blood markers', err);
+  }
+}
+
+// Fetch protocols helper
+async function fetchProtocols(userId: string, update: (diet: any, workout: any, supplement: any) => void){
+  try{
+    const timestamp = Date.now();
+    const [dietRes, workoutRes, suppRes] = await Promise.all([
+      fetch(`/api/health-protocols?protocolType=diet&activeOnly=true&userId=${userId}&t=${timestamp}`),
+      fetch(`/api/health-protocols?protocolType=exercise&activeOnly=true&userId=${userId}&t=${timestamp}`),
+      fetch(`/api/health-protocols?protocolType=supplement&activeOnly=true&userId=${userId}&t=${timestamp}`)
+    ]);
+    const [dietData, workoutData, suppData] = await Promise.all([dietRes.json(), workoutRes.json(), suppRes.json()]);
+    update(dietData, workoutData, suppData);
+  }catch(err){console.error('Error fetching protocols',err);} 
+}
+
+// Lightweight fetch – only the data required for Home tab
+async function fetchMetrics(userId: string){
+  const timestamp = Date.now();
+  const [heartRateRes, weightRes, bodyFatRes, hrvRes, vo2maxRes] = await Promise.all([
+    fetch(`/api/health-data?type=heartRate&userId=${userId}&t=${timestamp}`),
+    fetch(`/api/health-data?type=weight&userId=${userId}&t=${timestamp}`),
+    fetch(`/api/health-data?type=bodyFat&userId=${userId}&t=${timestamp}`),
+    fetch(`/api/health-data?type=hrv&userId=${userId}&t=${timestamp}`),
+    fetch(`/api/health-data?type=vo2max&userId=${userId}&t=${timestamp}`)
+  ]);
+  const [heartRateData, weightData, bodyFatData, hrvData, vo2maxData] = await Promise.all([
+    heartRateRes.json(), weightRes.json(), bodyFatRes.json(), hrvRes.json(), vo2maxRes.json()
+  ]);
+  return {
+    heartRate: heartRateData.data||[], weight: weightData.data||[], bodyFat: bodyFatData.data||[], hrv: hrvData.data||[], vo2max: vo2maxData.data||[]
+  };
+}
+
+async function fetchActivity(userId: string){
+  const timestamp = Date.now();
+  const [sleepRes, workoutRes] = await Promise.all([
+    fetch(`/api/health-data?type=sleep&userId=${userId}&t=${timestamp}`),
+    fetch(`/api/health-data?type=workout&userId=${userId}&t=${timestamp}`)
+  ]);
+  return Promise.all([sleepRes.json(), workoutRes.json()]);
+}
+
 export default function Home() {
   const { data: session, status } = useSession();
   const params = useParams<{ userId: string }>();
@@ -584,6 +778,10 @@ export default function Home() {
   const [currentSupplementProtocol, setCurrentSupplementProtocol] = useState<HealthProtocol | null>(null);
   const [selectedMarker, setSelectedMarker] = useState<{ name: string; data: BloodMarker[] } | null>(null);
   const [showMarkerDetailModal, setShowMarkerDetailModal] = useState(false);
+  const [hasLoadedData, setHasLoadedData] = useState(false);
+  const [metricsLoaded, setMetricsLoaded] = useState(false);
+  const [activityLoaded, setActivityLoaded] = useState(false);
+  const [protocolsLoaded, setProtocolsLoaded] = useState(false);
 
   // Handle blood marker click
   const handleMarkerClick = (markerName: string, markerData: BloodMarker[]) => {
@@ -1259,46 +1457,43 @@ export default function Home() {
   };
 
   const loadData = async () => {
-    setData(prev => ({ ...prev, loading: true }));
-    try {
-      const newData = await fetchData();
-      setData({
-        ...newData,
-        loading: false
-      });
-    } catch (error) {
-      console.error('Error loading data:', error);
-      setData(prev => ({
+    if (!userId) return;
+    setMetricsLoaded(false);
+    setActivityLoaded(false);
+    setData(prev=>({...prev, loading:true}));
+    try{
+      // fetch metrics first
+      const metricRes = await fetchMetrics(userId);
+      setData(prev=>({
         ...prev,
-        loading: false,
-        heartRate: [],
-        weight: [],
-        bodyFat: [],
-        hrv: [],
-        vo2max: [],
-        bloodMarkers: {
-          totalCholesterol: [], ldl: [], hdl: [], triglycerides: [], apoB: [], lpA: [],
-          whiteBloodCells: [], redBloodCells: [], hematocrit: [], hemoglobin: [], platelets: [],
-          neutrophilCount: [], neutrophilPercentage: [], lymphocyteCount: [], lymphocytePercentage: [],
-          monocyteCount: [], monocytePercentage: [], eosinophilCount: [], eosinophilPercentage: [],
-          basophilCount: [], basophilPercentage: [], mcv: [], mch: [], mchc: [], rdw: [], mpv: [],
-          hba1c: [], fastingInsulin: [], glucose: [],
-          alt: [], ast: [], ggt: [],
-          egfr: [], cystatinC: [], bun: [], creatinine: [], albumin: [],
-          testosterone: [], freeTesto: [], estradiol: [], shbg: [],
-          t3: [], t4: [], tsh: [],
-          vitaminD: [], vitaminB12: [], folate: [], iron: [],
-          magnesium: [], rbcMagnesium: [],
-          crp: [], homocysteine: [],
-          igf1: [],
-          ferritin: [], serumIron: [], tibc: [], transferrinSaturation: [],
-          sodium: [], potassium: [], calcium: [], phosphorus: [],
-          bicarbonate: [], chloride: [],
-          creatineKinase: [], cortisol: [],
-          biologicalAge: []
-        }
+        ...metricRes,
+        loading:false
       }));
-    }
+      setMetricsLoaded(true);
+
+      // activity in background
+      const [sleepResponse, workoutResponse] = await fetchActivity(userId);
+      // reuse existing activity processing code by creating helper processActivity
+      const activityFeedArr = buildActivityFeed(sleepResponse, workoutResponse);
+      setActivityFeed(activityFeedArr);
+      setActivityLoaded(true);
+      // after this test
+      setHasLoadedData(true);
+      // blood markers and protocols already triggered earlier
+      fetchBloodMarkers(userId,bm=> setData(prev=>({...prev, bloodMarkers: bm})));
+      fetchProtocols(userId,(diet,workout,supp)=>{
+        if(diet?.success){
+          setCurrentDietProtocol(diet.data?.[0]||null);
+        }
+        if(workout?.success){
+          setCurrentWorkoutProtocol(workout.data?.[0]||null);
+        }
+        if(supp?.success){
+          setCurrentSupplementProtocol(supp.data?.[0]||null);
+        }
+        setProtocolsLoaded(true);
+      });
+    } catch(err){console.error(err); setHasLoadedData(true);}  
   };
 
   useEffect(() => {
@@ -1309,12 +1504,6 @@ export default function Home() {
       router.push('/auth/signin');
       return;
     }
-
-    const loadData = async () => {
-      setData(prevData => ({ ...prevData, loading: true }));
-      const newData = await fetchData();
-      setData({ ...newData, loading: false });
-    };
 
     loadData();
   }, [session?.user, status, userId, router]);
@@ -1676,23 +1865,38 @@ export default function Home() {
     console.log('New results:', newResults);
   };
 
-  // Add loading state
-  if (status === 'loading' || data.loading) {
+  // Only show full skeleton if we don't have session data yet
+  if (status === 'loading' && !session) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-6">
-          {/* Loading Spinner */}
-          <div className="mb-8">
-            <div className="w-12 h-12 mx-auto">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-transparent border-t-indigo-500 border-r-indigo-400"></div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+        <div className="max-w-6xl mx-auto space-y-8 px-4">
+          {/* Profile header skeleton */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-6 py-6 shadow-sm">
+            <div className="flex flex-wrap items-center gap-4">
+              <Skeleton className="h-20 w-20 rounded-full flex-shrink-0" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-5 w-32" />
+              </div>
+              <div className="flex-shrink-0">
+                <Skeleton className="h-9 w-20 rounded-md" />
+              </div>
             </div>
           </div>
 
-          {/* Loading Text */}
-          <div>
-            <h2 className="text-xl font-medium text-gray-900 dark:text-white">
-              Loading health data...
-            </h2>
+          {/* Metric cards skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-40 w-full" />
+            ))}
+          </div>
+
+          {/* Activity feed skeleton */}
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-40" />
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-20 w-full" />
+            ))}
           </div>
         </div>
       </div>
@@ -1818,7 +2022,7 @@ export default function Home() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white truncate">
-                      {userData?.name || 'Your'}
+                      {userData?.name || session?.user?.name || 'Your'}
                     </h1>
                     <p className="text-gray-600 dark:text-gray-400">Health Dashboard</p>
                   </div>
@@ -1858,7 +2062,7 @@ export default function Home() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white truncate">
-                      {userData?.name || ''}
+                      {userData?.name || session?.user?.name || 'Health Dashboard'}
                     </h1>
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-gray-600 dark:text-gray-400 text-sm">Health Dashboard</p>
@@ -1950,6 +2154,31 @@ export default function Home() {
 
           {activeTab === 'home' ? (
             <div className="space-y-6">
+              {!hasLoadedData ? (
+                <>
+                  {/* Metric cards skeleton */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <Skeleton key={i} className="h-24 sm:h-28 w-full" />
+                    ))}
+                  </div>
+
+                  {/* Activity feed skeleton */}
+                  <div className="space-y-4">
+                    <Skeleton className="h-6 w-40" />
+                    <Skeleton className="h-64 w-full" />
+                  </div>
+
+                  {/* Recent activity skeleton */}
+                  <div className="space-y-4">
+                    <Skeleton className="h-6 w-40" />
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} className="h-20 w-full" />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
               {/* Bio Age Metrics */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
                 <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-6 py-4 sm:py-6 shadow-sm">
@@ -2195,6 +2424,8 @@ export default function Home() {
                   ))}
                 </div>
               </div>
+                </>
+              )}
             </div>
           ) : activeTab === 'metrics' ? (
             <>
@@ -3707,3 +3938,55 @@ const LastTestedDate = ({ data }: { data: BloodMarker[] }) => (
     </p>
   )
 );
+
+// after fetchActivity helper
+function buildActivityFeed(sleepResponse:any, workoutResponse:any): ActivityFeedItem[]{
+  const feed: ActivityFeedItem[] = [];
+  if(sleepResponse?.success && Array.isArray(sleepResponse.data)){
+    sleepResponse.data.forEach((entry:any)=>{
+      const stageDurations= entry.data?.stageDurations||{deep:0,core:0,rem:0,awake:0};
+      const tot = stageDurations.deep+stageDurations.core+stageDurations.rem+stageDurations.awake;
+      const pct=(d:number)=> tot? Math.round(d/tot*100):0;
+      const fmtDur=(m:number)=>`${Math.floor(m/60)}h ${Math.round(m%60)}m`;
+      feed.push({
+        id: entry.timestamp||entry._id||crypto.randomUUID(),
+        type:'sleep',
+        startTime: entry.data.startDate,
+        endTime: entry.data.endDate,
+        title: fmtDur(stageDurations.deep+stageDurations.core+stageDurations.rem),
+        subtitle:'Time asleep',
+        metrics:{ 'Deep sleep':fmtDur(stageDurations.deep), 'Core sleep':fmtDur(stageDurations.core), 'REM sleep':fmtDur(stageDurations.rem), 'Awake':fmtDur(stageDurations.awake)},
+        sleepStages:{
+          deep:{percentage:pct(stageDurations.deep),duration:fmtDur(stageDurations.deep)},
+          core:{percentage:pct(stageDurations.core),duration:fmtDur(stageDurations.core)},
+          rem:{percentage:pct(stageDurations.rem),duration:fmtDur(stageDurations.rem)},
+          awake:{percentage:pct(stageDurations.awake),duration:fmtDur(stageDurations.awake)}
+        }
+      });
+    });
+  }
+  if(workoutResponse?.success && Array.isArray(workoutResponse.data)){
+    workoutResponse.data.forEach((entry:any)=>{
+      const durSec= entry.data.metrics?.duration||0;
+      const min=Math.floor(durSec/60); const hrs=Math.floor(min/60); const mins=min%60;
+      const durStr= hrs>0?`${hrs}h ${mins}m`:`${mins}m`;
+      const dist= entry.data.metrics?.distance? `${(entry.data.metrics.distance*0.621371).toFixed(1)} mi`:undefined;
+      const cal= entry.data.metrics?.energyBurned? `${Math.round(entry.data.metrics.energyBurned)} cal`:undefined;
+      const hr= entry.data.metrics?.avgHeartRate? `${Math.round(entry.data.metrics.avgHeartRate)} bpm`:undefined;
+      const metrics: Record<string,string>={}; if(durStr)metrics.Duration=durStr; if(dist)metrics.Distance=dist;if(cal)metrics.Calories=cal;if(hr)metrics['Avg Heart Rate']=hr;
+      const actName= entry.data.activityType.replace(/_/g,' ').replace(/\b\w/g,(c:string)=>c.toUpperCase());
+      feed.push({
+        id: entry.timestamp||entry._id||crypto.randomUUID(),
+        type:'workout',
+        startTime: entry.data.startDate,
+        endTime: entry.data.endDate,
+        title:actName,
+        subtitle:durStr,
+        metrics,
+        activityType:entry.data.activityType
+      });
+    });
+  }
+  feed.sort((a,b)=> new Date(b.startTime).getTime()-new Date(a.startTime).getTime());
+  return feed;
+}
