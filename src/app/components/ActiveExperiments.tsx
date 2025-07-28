@@ -675,13 +675,13 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
   return (
     <div className="space-y-8">
       {/* Active Experiments Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl px-6 py-8 shadow-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl px-3 sm:px-6 py-6 sm:py-8 shadow-sm">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
             Active Experiments
           </h2>
-          <span className="text-sm text-gray-500 dark:text-gray-400">
+          <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
             {activeExperiments.length} active
           </span>
         </div>
@@ -692,18 +692,18 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
         {activeExperiments.map((experiment) => (
           <div
             key={experiment.id}
-            className="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-600"
+            className="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3 sm:p-4 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-600"
             onClick={() => setSelectedExperiment(experiment)}
           >
-            {/* Single Row Layout */}
-            <div className="flex items-center justify-between">
-              {/* Left: Title & Timeline */}
+            {/* Mobile-first responsive layout */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+              {/* Top/Left: Title & Details */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-1">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-2 sm:mb-1">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white line-clamp-1">
                     {experiment.name}
                   </h3>
-                  <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                     {experiment.frequency} • {experiment.duration}
                   </span>
                 </div>
@@ -713,38 +713,40 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
                   {[...experiment.fitnessMarkers.slice(0, 2), ...experiment.bloodMarkers.slice(0, 2)].map((marker) => (
                     <span
                       key={marker}
-                      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                      className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
                     >
                       {marker}
                     </span>
                   ))}
                   {(experiment.fitnessMarkers.length + experiment.bloodMarkers.length) > 4 && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                    <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
                       +{(experiment.fitnessMarkers.length + experiment.bloodMarkers.length) - 4} more
                     </span>
                   )}
                 </div>
               </div>
 
-              {/* Right: Progress */}
-              <div className="flex items-center gap-3 ml-4">
-                <div className="text-right">
-                  <div className="text-lg font-bold text-gray-900 dark:text-white">
-                    {experiment.progress}%
+              {/* Bottom/Right: Progress - Mobile optimized */}
+              <div className="flex items-center gap-3 justify-between sm:justify-end sm:ml-4">
+                <div className="flex items-center gap-3 flex-1 sm:flex-initial">
+                  <div className="text-left sm:text-right">
+                    <div className="text-lg font-bold text-gray-900 dark:text-white">
+                      {experiment.progress}%
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      Progress
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    Progress
+                  <div className="w-20 sm:w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div
+                      className="h-2 rounded-full transition-all duration-300 bg-purple-500"
+                      style={{ width: `${experiment.progress}%` }}
+                    />
                   </div>
-                </div>
-                <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div
-                    className="h-2 rounded-full transition-all duration-300 bg-purple-500"
-                    style={{ width: `${experiment.progress}%` }}
-                  />
                 </div>
                 
                 {/* Click indicator */}
-                <svg className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-indigo-500 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </div>
@@ -753,13 +755,13 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
         ))}
           </div>
         ) : (
-          <div className="text-center py-12">
+          <div className="text-center py-8 sm:py-12">
             <div className="text-gray-500 dark:text-gray-400 mb-2">
-              <svg className="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 sm:w-8 sm:h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <p className="text-gray-500 dark:text-gray-400">
+            <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400">
               No active experiments
             </p>
           </div>
@@ -768,13 +770,13 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
 
       {/* Past Experiments Section */}
       {pastExperiments.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl px-6 py-8 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl px-3 sm:px-6 py-6 sm:py-8 shadow-sm">
           {/* Past Experiments Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
               Past Experiments
             </h2>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
+            <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               {pastExperiments.length} completed
             </span>
           </div>
@@ -784,17 +786,17 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
             {pastExperiments.map((experiment) => (
               <div
                 key={experiment.id}
-                className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"
+                className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3 sm:p-4"
               >
-                {/* Single Row Layout */}
-                <div className="flex items-center justify-between">
-                  {/* Left: Title & Timeline */}
+                {/* Mobile-first responsive layout */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+                  {/* Top/Left: Title & Details */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-1">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-2 sm:mb-1">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white line-clamp-1">
                         {experiment.name}
                       </h3>
-                      <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                         {experiment.frequency} • {experiment.duration}
                       </span>
                     </div>
@@ -817,9 +819,9 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
                     </div>
                   </div>
 
-                  {/* Right: Completed Badge */}
-                  <div className="flex items-center gap-3 ml-4">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium">
+                  {/* Bottom/Right: Completed Badge */}
+                  <div className="flex items-center justify-start sm:justify-end sm:ml-4">
+                    <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs sm:text-sm font-medium">
                       ✓ Completed
                     </span>
                   </div>
