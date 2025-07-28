@@ -2022,7 +2022,7 @@ export default function Home() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white truncate">
-                      {userData?.name || session?.user?.name || 'Your'}
+                      {userData?.name || ''}
                     </h1>
                     <p className="text-gray-600 dark:text-gray-400">Health Dashboard</p>
                   </div>
@@ -2062,7 +2062,7 @@ export default function Home() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white truncate">
-                      {userData?.name || session?.user?.name || 'Health Dashboard'}
+                      {userData?.name || ''}
                     </h1>
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-gray-600 dark:text-gray-400 text-sm">Health Dashboard</p>
