@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { getReferenceRanges, getBloodMarkerStatus, BLOOD_MARKER_STATUS_COLORS, type ReferenceRanges } from '@/lib/bloodMarkerRanges';
 
 interface BloodMarker {
   value: number;
@@ -18,102 +19,7 @@ interface BloodMarkerDetailModalProps {
   userId: string;
 }
 
-interface ReferenceRanges {
-  optimalMin: number;
-  optimalMax: number;
-  normalMin?: number;
-  normalMax?: number;
-  abnormalText: string;
-  normalText?: string;
-  optimalText: string;
-}
-
-// Reference ranges mapping - extracted from the dashboard logic
-const getReferenceRanges = (
-  markerKey: string,
-  fallbackRange?: { min?: number; max?: number }
-): ReferenceRanges => {
-  const key = markerKey.toLowerCase().replace(/[^a-zA-Z0-9]/g, '');
-  
-  // Default ranges for common markers
-  const referenceRanges: Record<string, ReferenceRanges> = {
-    totalcholesterol: {
-      optimalMin: 160,
-      optimalMax: 200,
-      normalMin: 200,
-      normalMax: 239,
-      abnormalText: '<160 or >239',
-      normalText: '200-239',
-      optimalText: '160-200'
-    },
-    ldlcholesterol: {
-      optimalMin: 60,
-      optimalMax: 100,
-      normalMin: 100,
-      normalMax: 129,
-      abnormalText: '<60 or >129',
-      normalText: '100-129',
-      optimalText: '60-100'
-    },
-    hdlcholesterol: {
-      optimalMin: 60,
-      optimalMax: 120,
-      normalMin: 40,
-      normalMax: 60,
-      abnormalText: '<40 or >120',
-      normalText: '40-60',
-      optimalText: '60-120'
-    },
-    triglycerides: {
-      optimalMin: 50,
-      optimalMax: 100,
-      normalMin: 100,
-      normalMax: 149,
-      abnormalText: '<50 or >149',
-      normalText: '100-149',
-      optimalText: '50-100'
-    },
-    glucose: {
-      optimalMin: 65,
-      optimalMax: 86,
-      normalMin: 86,
-      normalMax: 99,
-      abnormalText: '<65 or >99',
-      normalText: '86-99',
-      optimalText: '65-86'
-    },
-    hba1c: {
-      optimalMin: 3,
-      optimalMax: 5.1,
-      normalMin: 5.1,
-      normalMax: 5.7,
-      abnormalText: '<3 or >5.7',
-      normalText: '5.1-5.7',
-      optimalText: '3.0-5.1'
-    },
-    vitaminD: {
-      optimalMin: 50,
-      optimalMax: 80,
-      normalMin: 30,
-      normalMax: 50,
-      abnormalText: '<30 or >80',
-      normalText: '30-50',
-      optimalText: '50-80'
-    }
-  };
-
-  if (referenceRanges[key]) return referenceRanges[key];
-
-  // Fallback: use provided referenceRange if available
-  const min = fallbackRange?.min ?? 0;
-  const max = fallbackRange?.max ?? 100;
-  return {
-    optimalMin: min,
-    optimalMax: max,
-    abnormalText: `<${min} or >${max}`,
-    optimalText: `${min}-${max}`
-  };
-};
+// Use centralized reference ranges and interfaces
 
 // Helper function to calculate adaptive Y-axis domain (similar to dashboard)
 const getAdaptiveYAxisDomain = (data: any[]): [number, number] => {
@@ -176,12 +82,8 @@ const getTickFormatter = (date: string) => {
   return d.toLocaleString('default', { month: 'short', day: 'numeric' });
 };
 
-// Color palette matching dashboard pill colors
-const STATUS_COLORS = {
-  optimal: '#047857', // green-700
-  normal: '#a16207',  // yellow-700
-  abnormal: '#b91c1c', // red-700
-};
+// Use centralized color constants
+const STATUS_COLORS = BLOOD_MARKER_STATUS_COLORS;
 
 export default function BloodMarkerDetailModal({ 
   isOpen, 
@@ -226,27 +128,15 @@ export default function BloodMarkerDetailModal({
   const getStatusColor = (value: number): string => {
     if (!referenceRanges) return STATUS_COLORS.normal;
     
-    if (value >= referenceRanges.optimalMin && value <= referenceRanges.optimalMax) {
-      return STATUS_COLORS.optimal; // Green for optimal
-    } else if (referenceRanges.normalMin && referenceRanges.normalMax && 
-               value >= referenceRanges.normalMin && value <= referenceRanges.normalMax) {
-      return STATUS_COLORS.normal; // Yellow for normal
-    } else {
-      return STATUS_COLORS.abnormal; // Red for abnormal
-    }
+    const status = getBloodMarkerStatus(value, markerName);
+    return STATUS_COLORS[status];
   };
 
   const getStatus = (value: number): string => {
     if (!referenceRanges) return 'Unknown';
     
-    if (value >= referenceRanges.optimalMin && value <= referenceRanges.optimalMax) {
-      return 'Optimal';
-    } else if (referenceRanges.normalMin && referenceRanges.normalMax && 
-               value >= referenceRanges.normalMin && value <= referenceRanges.normalMax) {
-      return 'Normal';
-    } else {
-      return 'Abnormal';
-    }
+    const status = getBloodMarkerStatus(value, markerName);
+    return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   // Line color that matches dashboard styling
@@ -344,14 +234,8 @@ export default function BloodMarkerDetailModal({
                         const getStatusColorForGradient = (value: number): string => {
                           if (!referenceRanges) return STATUS_COLORS.normal;
                           
-                          if (value >= referenceRanges.optimalMin && value <= referenceRanges.optimalMax) {
-                            return STATUS_COLORS.optimal; // Green for optimal
-                          } else if (referenceRanges.normalMin && referenceRanges.normalMax && 
-                                     value >= referenceRanges.normalMin && value <= referenceRanges.normalMax) {
-                            return STATUS_COLORS.normal; // Yellow for normal
-                          } else {
-                            return STATUS_COLORS.abnormal; // Red for abnormal
-                          }
+                          const status = getBloodMarkerStatus(value, markerName);
+                          return STATUS_COLORS[status];
                         };
                         
                         const color = getStatusColorForGradient(point.value);
@@ -410,14 +294,8 @@ export default function BloodMarkerDetailModal({
                       const getStatusColorForDot = (value: number): string => {
                         if (!referenceRanges) return STATUS_COLORS.normal;
                         
-                        if (value >= referenceRanges.optimalMin && value <= referenceRanges.optimalMax) {
-                          return STATUS_COLORS.optimal; // Green for optimal
-                        } else if (referenceRanges.normalMin && referenceRanges.normalMax && 
-                                   value >= referenceRanges.normalMin && value <= referenceRanges.normalMax) {
-                          return STATUS_COLORS.normal; // Yellow for normal
-                        } else {
-                          return STATUS_COLORS.abnormal; // Red for abnormal
-                        }
+                        const status = getBloodMarkerStatus(value, markerName);
+                        return STATUS_COLORS[status];
                       };
                       
                       const dotColor = getStatusColorForDot(payload.value);
