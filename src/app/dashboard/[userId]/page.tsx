@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Image from 'next/image';
+import Link from 'next/link';
 import AddResultsModal from '@/app/components/AddResultsModal';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
@@ -1821,6 +1822,14 @@ export default function Home() {
                       {userData?.name || 'Your'}
                     </h1>
                     <p className="text-gray-600 dark:text-gray-400">Health Dashboard</p>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <Link
+                      href="/upload"
+                      className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
+                    >
+                      Manage
+                    </Link>
                   </div>
                 </>
               ) : (
