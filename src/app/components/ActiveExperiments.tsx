@@ -762,25 +762,12 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
                     </div>
                     
                     {markerData.length > 0 ? (
-                      <div className="space-y-4">
-                        {/* Current Value */}
-                        <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Current Value:
-                          </span>
-                          <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                            {markerData[markerData.length - 1]?.value} {markerData[markerData.length - 1]?.unit}
-                          </span>
-                        </div>
-                        
-                        {/* Chart */}
-                        <BloodMarkerChart 
-                          data={markerData}
-                          markerName={markerName}
-                          height="h-64"
-                          showReferenceBar={true}
-                        />
-                      </div>
+                      <BloodMarkerChart 
+                        data={markerData}
+                        markerName={markerName}
+                        height="h-64"
+                        showReferenceBar={true}
+                      />
                     ) : (
                       <div className="h-[200px] flex items-center justify-center text-gray-500 dark:text-gray-400">
                         No {markerName.toLowerCase()} data available for this experiment period
