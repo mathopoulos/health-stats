@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useTheme } from '../context/ThemeContext';
 import { TrendIndicator } from '@/components/TrendIndicator';
+import BloodMarkerChart from '@/components/BloodMarkerChart';
 
 interface BiomarkerDataPoint {
   date: string;
@@ -27,6 +28,17 @@ interface FitnessDataPoint {
 
 interface ExperimentFitnessData {
   [metricType: string]: FitnessDataPoint[];
+}
+
+interface BloodMarkerDataPoint {
+  value: number;
+  unit: string;
+  date: string;
+  referenceRange?: { min: number; max: number };
+}
+
+interface ExperimentBloodMarkerData {
+  [markerName: string]: BloodMarkerDataPoint[];
 }
 
 interface Experiment {
@@ -91,7 +103,9 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedExperiment, setSelectedExperiment] = useState<Experiment | null>(null);
   const [experimentFitnessData, setExperimentFitnessData] = useState<ExperimentFitnessData>({});
+  const [experimentBloodMarkerData, setExperimentBloodMarkerData] = useState<ExperimentBloodMarkerData>({});
   const [isLoadingFitnessData, setIsLoadingFitnessData] = useState(false);
+  const [isLoadingBloodMarkerData, setIsLoadingBloodMarkerData] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
@@ -181,6 +195,58 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
       console.error('Error fetching experiment fitness data:', error);
     } finally {
       setIsLoadingFitnessData(false);
+    }
+  };
+
+  // Function to fetch experiment-specific blood marker data
+  const fetchExperimentBloodMarkerData = async (experiment: Experiment) => {
+    if (!userId || !experiment.bloodMarkers?.length) return;
+
+    setIsLoadingBloodMarkerData(true);
+    try {
+      const startDate = new Date(experiment.startDate);
+      const endDate = experiment.status === 'active' ? new Date() : new Date(experiment.endDate);
+      
+      // Fetch blood marker data for the experiment period
+      const response = await fetch(`/api/blood-markers?userId=${userId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch blood marker data');
+      }
+      
+      const bloodMarkerEntries = await response.json();
+      
+      // Process the data to match our component interface
+      const processedData: ExperimentBloodMarkerData = {};
+      
+      experiment.bloodMarkers.forEach(markerName => {
+        processedData[markerName] = [];
+      });
+      
+      // Process each blood marker entry
+      bloodMarkerEntries.data?.forEach((entry: any) => {
+        entry.markers.forEach((marker: any) => {
+          if (experiment.bloodMarkers.includes(marker.name)) {
+            processedData[marker.name].push({
+              date: entry.date,
+              value: marker.value,
+              unit: marker.unit,
+              referenceRange: marker.referenceRange
+            });
+          }
+        });
+      });
+      
+      // Sort each marker's data by date
+      Object.keys(processedData).forEach(markerName => {
+        processedData[markerName].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      });
+      
+      setExperimentBloodMarkerData(processedData);
+    } catch (error) {
+      console.error('Error fetching experiment blood marker data:', error);
+    } finally {
+      setIsLoadingBloodMarkerData(false);
     }
   };
 
@@ -416,10 +482,15 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
     fetchExperiments();
   }, [userId]);
 
-  // Fetch fitness data when an experiment is selected
+  // Fetch fitness and blood marker data when an experiment is selected
   useEffect(() => {
-    if (selectedExperiment && selectedExperiment.fitnessMarkers?.length > 0) {
-      fetchExperimentFitnessData(selectedExperiment);
+    if (selectedExperiment) {
+      if (selectedExperiment.fitnessMarkers?.length > 0) {
+        fetchExperimentFitnessData(selectedExperiment);
+      }
+      if (selectedExperiment.bloodMarkers?.length > 0) {
+        fetchExperimentBloodMarkerData(selectedExperiment);
+      }
     }
   }, [selectedExperiment, userId]);
 
@@ -443,6 +514,7 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
             onClick={() => {
               setSelectedExperiment(null);
               setExperimentFitnessData({});
+              setExperimentBloodMarkerData({});
             }}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
@@ -614,6 +686,74 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
               </h3>
               <p className="text-gray-500 dark:text-gray-400">
                 This experiment is not tracking any fitness metrics.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Blood Markers Section */}
+        <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+            Blood Markers
+          </h3>
+          
+          {experiment.bloodMarkers?.length > 0 ? (
+            <div className="space-y-8">
+              {experiment.bloodMarkers.map((markerName) => {
+                const markerData = experimentBloodMarkerData[markerName] || [];
+                
+                return (
+                  <div key={markerName} className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {markerName}
+                      </h4>
+                      {isLoadingBloodMarkerData && (
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                      )}
+                    </div>
+                    
+                    {markerData.length > 0 ? (
+                      <div className="space-y-4">
+                        {/* Current Value */}
+                        <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Current Value:
+                          </span>
+                          <span className="text-lg font-semibold text-gray-900 dark:text-white">
+                            {markerData[markerData.length - 1]?.value} {markerData[markerData.length - 1]?.unit}
+                          </span>
+                        </div>
+                        
+                        {/* Chart */}
+                        <BloodMarkerChart 
+                          data={markerData}
+                          markerName={markerName}
+                          height="h-64"
+                          showReferenceBar={true}
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-[200px] flex items-center justify-center text-gray-500 dark:text-gray-400">
+                        No {markerName.toLowerCase()} data available for this experiment period
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                No Blood Markers Selected
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400">
+                This experiment is not tracking any blood markers.
               </p>
             </div>
           )}
