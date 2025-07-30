@@ -22,12 +22,19 @@ interface BloodMarkerDetailModalProps {
 // Use centralized reference ranges and interfaces
 
 // Helper function to calculate adaptive Y-axis domain (similar to dashboard)
-const getAdaptiveYAxisDomain = (data: any[]): [number, number] => {
+const getAdaptiveYAxisDomain = (data: any[], refRanges?: ReferenceRanges): [number, number] => {
   if (!data || data.length <= 1) {
     return [0, 100]; // Default domain if no data
   }
   
   const values = data.map(item => item.value);
+  // Always include reference range bounds so the entire normal/optimal range is visible on the axis
+  if (refRanges) {
+    values.push(refRanges.optimalMin, refRanges.optimalMax);
+    if (refRanges.normalMin !== undefined && refRanges.normalMax !== undefined) {
+      values.push(refRanges.normalMin, refRanges.normalMax);
+    }
+  }
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min;
@@ -258,7 +265,7 @@ export default function BloodMarkerDetailModal({
                     vertical={false}
                   />
                   <YAxis 
-                    domain={getAdaptiveYAxisDomain(chartData)}
+                    domain={getAdaptiveYAxisDomain(chartData, referenceRanges)}
                     hide={false}
                     stroke="#9CA3AF"
                     fontSize={10}
@@ -342,7 +349,7 @@ export default function BloodMarkerDetailModal({
                       <linearGradient id="rangeGradient" x1="0%" y1="100%" x2="0%" y2="0%">
                         {/* Calculate percentages for each range */}
                         {(() => {
-                          const yAxisDomain = getAdaptiveYAxisDomain(chartData);
+                          const yAxisDomain = getAdaptiveYAxisDomain(chartData, referenceRanges);
                           const min = yAxisDomain[0];
                           const max = yAxisDomain[1];
                           const range = max - min;
@@ -360,34 +367,29 @@ export default function BloodMarkerDetailModal({
                           
                           const stops = [];
                           
-                          // Bottom abnormal
-                          if (optimalMinPercent > 0) {
-                            stops.push(<stop key="abnormal-bottom-1" offset="0%" stopColor={STATUS_COLORS.abnormal} />);
-                            stops.push(<stop key="abnormal-bottom-2" offset={`${optimalMinPercent}%`} stopColor={STATUS_COLORS.abnormal} />);
+                          // Build ordered stops for sharp color boundaries
+                          // The key is to have two stops at boundary points with different colors
+                          
+                          // Always start with abnormal at 0%
+                          stops.push(<stop key="start" offset="0%" stopColor={STATUS_COLORS.abnormal} />);
+                          
+                          // Normal range boundaries (if normal exists)
+                          if (referenceRanges.normalMin !== undefined && referenceRanges.normalMax !== undefined) {
+                            // Hard transition to normal at normalMinPercent
+                            stops.push(<stop key="pre-normal" offset={`${normalMinPercent}%`} stopColor={STATUS_COLORS.abnormal} />);
+                            stops.push(<stop key="normal-start" offset={`${normalMinPercent}%`} stopColor={STATUS_COLORS.normal} />);
+                            stops.push(<stop key="normal-end" offset={`${normalMaxPercent}%`} stopColor={STATUS_COLORS.normal} />);
                           }
                           
-                          // Normal range (if exists and below optimal)
-                          if (referenceRanges.normalMin && normalMinPercent < optimalMinPercent) {
-                            stops.push(<stop key="normal-bottom-1" offset={`${normalMinPercent}%`} stopColor={STATUS_COLORS.normal} />);
-                            stops.push(<stop key="normal-bottom-2" offset={`${optimalMinPercent}%`} stopColor={STATUS_COLORS.normal} />);
-                          }
+                          // Optimal range boundaries
+                          // Hard transition to optimal at optimalMinPercent
+                          stops.push(<stop key="pre-optimal" offset={`${optimalMinPercent}%`} stopColor={referenceRanges.normalMax !== undefined ? STATUS_COLORS.normal : STATUS_COLORS.abnormal} />);
+                          stops.push(<stop key="optimal-start" offset={`${optimalMinPercent}%`} stopColor={STATUS_COLORS.optimal} />);
+                          stops.push(<stop key="optimal-end" offset={`${optimalMaxPercent}%`} stopColor={STATUS_COLORS.optimal} />);
                           
-                          // Optimal range
-                          stops.push(<stop key="optimal-1" offset={`${optimalMinPercent}%`} stopColor={STATUS_COLORS.optimal} />);
-                          stops.push(<stop key="optimal-2" offset={`${optimalMaxPercent}%`} stopColor={STATUS_COLORS.optimal} />);
-                          
-                          // Normal range (if exists and above optimal)
-                          if (referenceRanges.normalMax && normalMaxPercent > optimalMaxPercent) {
-                            stops.push(<stop key="normal-top-1" offset={`${optimalMaxPercent}%`} stopColor={STATUS_COLORS.normal} />);
-                            stops.push(<stop key="normal-top-2" offset={`${normalMaxPercent}%`} stopColor={STATUS_COLORS.normal} />);
-                          }
-                          
-                          // Top abnormal
-                          if (optimalMaxPercent < 100) {
-                            const topStart = referenceRanges.normalMax && normalMaxPercent > optimalMaxPercent ? normalMaxPercent : optimalMaxPercent;
-                            stops.push(<stop key="abnormal-top-1" offset={`${topStart}%`} stopColor={STATUS_COLORS.abnormal} />);
-                            stops.push(<stop key="abnormal-top-2" offset="100%" stopColor={STATUS_COLORS.abnormal} />);
-                          }
+                          // Hard transition back to abnormal after optimal
+                          stops.push(<stop key="post-optimal" offset={`${optimalMaxPercent}%`} stopColor={STATUS_COLORS.abnormal} />);
+                          stops.push(<stop key="end" offset="100%" stopColor={STATUS_COLORS.abnormal} />);
                           
                           return stops;
                         })()}
