@@ -20,8 +20,8 @@ interface BloodMarkerChartProps {
 
 // Helper function to calculate adaptive Y-axis domain
 const getAdaptiveYAxisDomain = (data: any[], refRanges?: ReferenceRanges): [number, number] => {
-  if (!data || data.length <= 1) {
-    return [0, 100]; // Default domain if no data
+  if (!data || data.length === 0) {
+    return [0, 100]; // Default domain if no data at all
   }
   
   const values = data.map(item => item.value);
@@ -32,9 +32,22 @@ const getAdaptiveYAxisDomain = (data: any[], refRanges?: ReferenceRanges): [numb
       values.push(refRanges.normalMin, refRanges.normalMax);
     }
   }
+  
+  // Handle case where we only have reference ranges (no actual data)
+  if (values.length === 0) {
+    return [0, 100];
+  }
+  
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min;
+  
+  // For single data point or very small range, ensure we have some padding
+  if (data.length === 1 || range < 5) {
+    const padding = Math.max(10, Math.abs(max * 0.2)); // 20% padding or minimum 10 units
+    const lowerBound = Math.max(0, min - padding);
+    return [lowerBound, max + padding];
+  }
   
   // Calculate standard deviation to understand data variation
   const mean = values.reduce((sum, val) => sum + val, 0) / values.length;

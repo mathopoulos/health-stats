@@ -207,8 +207,8 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
       const startDate = new Date(experiment.startDate);
       const endDate = experiment.status === 'active' ? new Date() : new Date(experiment.endDate);
       
-      // Fetch blood marker data for the experiment period
-      const response = await fetch(`/api/blood-markers?userId=${userId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
+      // Fetch all blood marker data for this user (we'll filter on client side for precise control)
+      const response = await fetch(`/api/blood-markers?userId=${userId}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch blood marker data');
@@ -223,11 +223,16 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
         processedData[markerName] = [];
       });
       
-      // Process each blood marker entry
+      // Process each blood marker entry and collect all data points
+      const allMarkerData: { [markerName: string]: BloodMarkerDataPoint[] } = {};
+      experiment.bloodMarkers.forEach(markerName => {
+        allMarkerData[markerName] = [];
+      });
+      
       bloodMarkerEntries.data?.forEach((entry: any) => {
         entry.markers.forEach((marker: any) => {
           if (experiment.bloodMarkers.includes(marker.name)) {
-            processedData[marker.name].push({
+            allMarkerData[marker.name].push({
               date: entry.date,
               value: marker.value,
               unit: marker.unit,
@@ -237,9 +242,52 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
         });
       });
       
-      // Sort each marker's data by date
-      Object.keys(processedData).forEach(markerName => {
-        processedData[markerName].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      // Sort and filter each marker's data according to experiment requirements
+      Object.keys(allMarkerData).forEach(markerName => {
+        const allData = allMarkerData[markerName].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        
+        const experimentData: BloodMarkerDataPoint[] = [];
+        
+        // 1. Find the last data point before the experiment start date
+        let lastPreExperiment: BloodMarkerDataPoint | null = null;
+        for (const dataPoint of allData) {
+          const pointDate = new Date(dataPoint.date);
+          if (pointDate < startDate) {
+            lastPreExperiment = dataPoint;
+          } else {
+            break;
+          }
+        }
+        
+        // 2. Add the last pre-experiment point if it exists
+        if (lastPreExperiment) {
+          experimentData.push(lastPreExperiment);
+        }
+        
+        // 3. Add all data points during the experiment period
+        for (const dataPoint of allData) {
+          const pointDate = new Date(dataPoint.date);
+          if (pointDate >= startDate && pointDate <= endDate) {
+            experimentData.push(dataPoint);
+          }
+        }
+        
+        // 4. Find the first data point after the experiment end date
+        let firstPostExperiment: BloodMarkerDataPoint | null = null;
+        for (const dataPoint of allData) {
+          const pointDate = new Date(dataPoint.date);
+          if (pointDate > endDate) {
+            firstPostExperiment = dataPoint;
+            break;
+          }
+        }
+        
+        // 5. Add the first post-experiment point if it exists
+        if (firstPostExperiment) {
+          experimentData.push(firstPostExperiment);
+        }
+        
+        processedData[markerName] = experimentData;
       });
       
       setExperimentBloodMarkerData(processedData);
