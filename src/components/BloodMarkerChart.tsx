@@ -111,7 +111,7 @@ export default function BloodMarkerChart({
 }: BloodMarkerChartProps) {
   if (!data || data.length === 0) {
     return (
-      <div className={`flex items-center justify-center ${height} bg-gray-50 dark:bg-gray-700 rounded-lg ${className}`}>
+      <div className={`flex items-center justify-center ${height} ${className}`}>
         <p className="text-sm text-gray-500 dark:text-gray-400">No historical data available</p>
       </div>
     );
@@ -138,7 +138,7 @@ export default function BloodMarkerChart({
 
   return (
     <div className={`${height} relative ${className}`}>
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" style={{ backgroundColor: 'transparent' }}>
         <LineChart 
           data={chartData} 
           margin={{ 
