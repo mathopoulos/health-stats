@@ -149,7 +149,7 @@ export default function BloodMarkerChart({
             ...(typeof window !== 'undefined' && window.innerWidth >= 640 && {
               top: 30,
               right: showReferenceBar ? 50 : 30,
-              left: 50,
+              left: 10,
               bottom: 20
             })
           }}
@@ -185,13 +185,7 @@ export default function BloodMarkerChart({
           />
           <YAxis 
             domain={getAdaptiveYAxisDomain(chartData, referenceRanges)}
-            hide={false}
-            stroke="#9CA3AF"
-            fontSize={10}
-            tickLine={false}
-            axisLine={false}
-            width={30}
-            tickFormatter={(value) => Math.round(value).toString()}
+            hide={true}
           />
           <XAxis 
             dataKey="date" 
