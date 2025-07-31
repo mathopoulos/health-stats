@@ -347,7 +347,7 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
     return units[metricType] || '';
   };
 
-  // Helper function to calculate trend indicator data
+  // Helper function to calculate trend indicator data (for fitness metrics)
   const calculateTrend = (data: FitnessDataPoint[], metricType: string, experiment: Experiment) => {
     if (!data || data.length < 4) return null; // Need at least 4 data points for meaningful comparison
     
@@ -388,6 +388,22 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
       isBodyFat: metricType === 'Body Fat %' || metricType === 'bodyFat',
       timeRangeLabel
     };
+  };
+
+  // Helper function to calculate trend indicator data for blood markers
+  const calculateBloodMarkerTrend = (data: BloodMarkerDataPoint[], experiment: Experiment) => {
+    if (!data || data.length < 2) return null;
+    const halfLength = Math.floor(data.length / 2);
+    const firstHalf = data.slice(0, halfLength);
+    const secondHalf = data.slice(halfLength);
+    const firstHalfAvg = firstHalf.reduce((sum, item) => sum + item.value, 0) / firstHalf.length;
+    const secondHalfAvg = secondHalf.reduce((sum, item) => sum + item.value, 0) / secondHalf.length;
+    if (firstHalfAvg === 0) return null;
+    // Determine reference range from any data point that has it
+    const ref = data.find(dp => dp.referenceRange)?.referenceRange;
+    const min = ref?.min ?? 0;
+    const max = ref?.max ?? 100;
+    return { current: secondHalfAvg, previous: firstHalfAvg, min, max };
   };
 
   // Helper function to get metric-specific colors for trend indicators
@@ -726,6 +742,8 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
               {/* Blood Markers */}
               {experiment.bloodMarkers?.map((markerName) => {
                 const markerData = experimentBloodMarkerData[markerName] || [];
+                const hasData = markerData.length > 0;
+                const trend = hasData ? calculateBloodMarkerTrend(markerData, experiment) : null;
                 
                 return (
                   <div key={markerName} className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-6">
@@ -734,6 +752,16 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
                         <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
                           {markerName}
                         </h4>
+                        {trend && (
+                          <TrendIndicator
+                            current={trend.current}
+                            previous={trend.previous}
+                            min={trend.min}
+                            max={trend.max}
+                            showTimeRange={false}
+                            className="ml-2"
+                          />
+                        )}
                       </div>
                       {isLoadingBloodMarkerData && (
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
