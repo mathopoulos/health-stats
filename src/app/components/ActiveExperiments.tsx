@@ -605,20 +605,21 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
           </div>
         </div>
 
-        {/* Fitness Metrics Charts */}
+        {/* Tracked Metrics */}
         <div className="p-6">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-            Tracked Fitness Metrics
+            Tracked Metrics
           </h3>
           
-          {isLoadingFitnessData ? (
+          {(isLoadingFitnessData || isLoadingBloodMarkerData) ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
               <span className="ml-3 text-gray-600 dark:text-gray-400">Loading metrics data...</span>
             </div>
-          ) : experiment.fitnessMarkers?.length > 0 ? (
+          ) : (experiment.fitnessMarkers?.length > 0 || experiment.bloodMarkers?.length > 0) ? (
             <div className="space-y-8">
-              {experiment.fitnessMarkers.map((metricType) => {
+              {/* Fitness Metrics */}
+              {experiment.fitnessMarkers?.map((metricType) => {
                 // Use the original display name for key lookup since data is stored with display names
                 const metricData = experimentFitnessData[metricType] || [];
                 const hasData = metricData.length > 0;
@@ -721,41 +722,19 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
                   </div>
                 );
               })}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                No Fitness Metrics Selected
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                This experiment is not tracking any fitness metrics.
-              </p>
-            </div>
-          )}
-        </div>
 
-        {/* Blood Markers Section */}
-        <div className="p-6 border-t border-gray-200 dark:border-gray-700">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-            Blood Markers
-          </h3>
-          
-          {experiment.bloodMarkers?.length > 0 ? (
-            <div className="space-y-8">
-              {experiment.bloodMarkers.map((markerName) => {
+              {/* Blood Markers */}
+              {experiment.bloodMarkers?.map((markerName) => {
                 const markerData = experimentBloodMarkerData[markerName] || [];
                 
                 return (
                   <div key={markerName} className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {markerName}
-                      </h4>
+                      <div className="flex items-center gap-3">
+                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {markerName}
+                        </h4>
+                      </div>
                       {isLoadingBloodMarkerData && (
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
                       )}
@@ -783,14 +762,14 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
             <div className="text-center py-8">
               <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
                 <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                No Blood Markers Selected
+                No Metrics Selected
               </h3>
               <p className="text-gray-500 dark:text-gray-400">
-                This experiment is not tracking any blood markers.
+                This experiment is not tracking any fitness metrics or blood markers.
               </p>
             </div>
           )}
