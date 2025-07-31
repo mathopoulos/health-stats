@@ -132,6 +132,17 @@ export default function BloodMarkerChart({
 
   const referenceRanges = getReferenceRanges(markerName, data[0]?.referenceRange);
 
+  // Utility to get color per value
+  const getColorForValue = (value: number): string => {
+    if (!referenceRanges) return STATUS_COLORS.normal;
+    const status = getBloodMarkerStatus(value, markerName);
+    return STATUS_COLORS[status];
+  };
+
+  // Determine if all points share the same color
+  const uniqueColors = new Set(chartData.map(pt => getColorForValue(pt.value)));
+  const singleColorStroke = uniqueColors.size === 1 ? [...uniqueColors][0] : `url(#lineGradient-${markerName.replace(/\s+/g, '')})`;
+
   // Get dark mode state from document
   const isDarkMode = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
   const bgColor = isDarkMode ? "#1f2937" : "#ffffff";
@@ -156,7 +167,9 @@ export default function BloodMarkerChart({
         >
           <defs>
             <linearGradient id={`lineGradient-${markerName.replace(/\s+/g, '')}`} x1="0%" y1="0%" x2="100%" y2="0%">
-              {chartData.map((point, index) => {
+              {chartData.length === 1 ? (
+                <stop offset="0%" stopColor={STATUS_COLORS.normal} />
+              ) : chartData.map((point, index) => {
                 const getStatusColorForGradient = (value: number): string => {
                   if (!referenceRanges) return STATUS_COLORS.normal;
                   
@@ -165,7 +178,7 @@ export default function BloodMarkerChart({
                 };
                 
                 const color = getStatusColorForGradient(point.value);
-                const offset = chartData.length > 1 ? (index / (chartData.length - 1)) * 100 : 0;
+                const offset = (index / (chartData.length - 1)) * 100;
                 
                 return (
                   <stop 
@@ -203,9 +216,11 @@ export default function BloodMarkerChart({
           <Tooltip content={renderCustomTooltip} />
           
           <Line 
-            type="monotone"
+            type={chartData.length < 3 ? "linear" : "monotone"}
             dataKey="value" 
-            stroke={`url(#lineGradient-${markerName.replace(/\s+/g, '')})`}
+            stroke={singleColorStroke}
+            connectNulls={true}
+            isAnimationActive={false}
             activeDot={{ r: 4, stroke: STATUS_COLORS.normal, strokeWidth: 1, fill: bgColor }} 
             dot={(props: any) => { 
               const { cx, cy, index, payload } = props;
