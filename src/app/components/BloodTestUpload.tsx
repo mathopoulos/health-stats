@@ -32,6 +32,7 @@ export default function BloodTestUpload() {
   const [extractedDate, setExtractedDate] = useState<string | null>(null);
   const [dateGroups, setDateGroups] = useState<DateGroup[]>([]);
   const [hasMultipleDates, setHasMultipleDates] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   // Initialize PDF.js
   useEffect(() => {
@@ -49,6 +50,11 @@ export default function BloodTestUpload() {
     setExtractedDate(null);
     setDateGroups([]);
     setHasMultipleDates(false);
+    // Revoke existing object URL to avoid memory leak
+    setPdfUrl(prev => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
   }, []);
 
   const handleSaveMarkers = async (markers: BloodMarker[], date: Date) => {
@@ -133,6 +139,11 @@ export default function BloodTestUpload() {
     if (acceptedFiles.length === 0) return;
 
     const file = acceptedFiles[0];
+    // Generate a blob URL to preview the PDF later
+    setPdfUrl(prev => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
     if (file.type !== 'application/pdf') {
       toast.error('Please upload a PDF file');
       return;
@@ -342,6 +353,7 @@ export default function BloodTestUpload() {
         onSave={handleSaveMarkers}
         initialDate={extractedDate}
         dateGroups={dateGroups}
+        pdfUrl={pdfUrl}
       />
     </>
   );

@@ -27,6 +27,7 @@ interface BloodMarkerPreviewProps {
   onSave: (markers: BloodMarker[], date: Date) => Promise<boolean | void>;
   initialDate?: string | null;
   dateGroups?: DateGroup[];
+  pdfUrl?: string | null;
 }
 
 export default function BloodMarkerPreview({ 
@@ -35,7 +36,8 @@ export default function BloodMarkerPreview({
   markers: initialMarkers, 
   onSave, 
   initialDate,
-  dateGroups = []
+  dateGroups = [],
+  pdfUrl = null
 }: BloodMarkerPreviewProps) {
   // Date label and indicator
   const [wasDateExtracted, setWasDateExtracted] = useState<boolean>(false);
@@ -416,12 +418,26 @@ export default function BloodMarkerPreview({
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       
       <div className="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto">
-        <Dialog.Panel className="mx-auto max-w-3xl w-full bg-white dark:bg-gray-800 rounded-2xl p-6 max-h-[90vh] flex flex-col">
+        <Dialog.Panel className="mx-auto w-full max-w-5xl bg-white dark:bg-gray-800 rounded-2xl p-6 h-[90vh] flex flex-col">
           <Dialog.Title className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
             Review Extracted Blood Markers
           </Dialog.Title>
 
-          {/* Date Group Tabs */}
+          <div className="flex flex-col md:flex-row gap-6 flex-1 overflow-hidden">
+            {/* PDF Preview */}
+            {pdfUrl && (
+              <div className="hidden md:block md:w-1/2 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <object data={`${pdfUrl}#toolbar=0`} type="application/pdf" className="w-full h-full">
+                  <p className="p-4 text-center text-gray-500 dark:text-gray-400">
+                    Unable to display PDF. <a href={pdfUrl} target="_blank" rel="noopener" className="text-indigo-600 underline">Download</a>
+                  </p>
+                </object>
+              </div>
+            )}
+
+            {/* Right Side Content */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {/* Date Group Tabs */}
           {dateGroups.length > 1 && (
             <div className="mb-4">
               <div className="border-b border-gray-200 dark:border-gray-700">
@@ -527,6 +543,9 @@ export default function BloodMarkerPreview({
               </div>
             ))}
           </div>
+              {/* end right side content */}
+            </div>{/* end flex row container */}
+            </div>{/* end outer flex wrapper */}
 
           <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
             <button
