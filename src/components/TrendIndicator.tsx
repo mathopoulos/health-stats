@@ -134,6 +134,40 @@ export const TrendIndicator = ({
     color = (isIncrease !== decreaseIsGood) ? 'text-green-500' : 'text-red-500';
   }
 
+  // If custom colors are provided for blood markers, use pill styling but preserve red/green logic
+  if (customColors) {
+    const bgColor = customColors.bgColor || '';
+    // Use the calculated color (red/green logic) instead of custom text color
+    const textColor = color;
+    const iconColor = color;
+
+    return (
+      <div className={`flex items-center ${bgColor} rounded-xl px-3 py-1.5 ${className}`}>
+        <svg 
+          className={`w-3 h-3 md:w-3.5 md:h-3.5 ${iconColor} mr-1.5`}
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="currentColor"
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+          strokeWidth={2}
+        >
+          <path 
+            d={isZeroChange
+              ? "M5 12h14M12 5l7 7-7 7"
+              : isIncrease 
+                ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" 
+                : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"
+            } 
+          />
+        </svg>
+        <span className={`text-xs md:text-sm font-medium ${textColor}`}>
+          {isIncrease ? '+' : '-'}{absPercentChange}%
+        </span>
+      </div>
+    );
+  }
+
   return (
     <span className={`text-xs md:text-sm flex items-center ${color} ${className}`}>
       {isIncrease ? (

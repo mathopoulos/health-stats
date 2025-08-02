@@ -406,6 +406,15 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
     return { current: secondHalfAvg, previous: firstHalfAvg, min, max };
   };
 
+  // Helper function to get blood marker colors for trend indicators
+  const getBloodMarkerColors = () => {
+    return {
+      bgColor: 'bg-orange-50 dark:bg-orange-900/20',
+      textColor: 'text-orange-600 dark:text-orange-400',
+      iconColor: 'text-orange-500'
+    };
+  };
+
   // Helper function to get metric-specific colors for trend indicators
   const getMetricColors = (metricType: string) => {
     const colorMap: Record<string, any> = {
@@ -759,6 +768,7 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
                             min={trend.min}
                             max={trend.max}
                             showTimeRange={false}
+                            customColors={getBloodMarkerColors()}
                             className="ml-2"
                           />
                         )}
