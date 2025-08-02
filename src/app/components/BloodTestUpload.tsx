@@ -139,17 +139,20 @@ export default function BloodTestUpload() {
     if (acceptedFiles.length === 0) return;
 
     const file = acceptedFiles[0];
-    // Generate a blob URL to preview the PDF later
-    setPdfUrl(prev => {
-      if (prev) URL.revokeObjectURL(prev);
-      return URL.createObjectURL(file);
-    });
     if (file.type !== 'application/pdf') {
       toast.error('Please upload a PDF file');
       return;
     }
 
+    // Generate a blob URL to preview the PDF
+    setPdfUrl(prev => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+
+    // Show modal immediately with processing state
     setIsUploading(true);
+    setShowPreview(true);
     setUploadProgress('Preparing PDF file...');
 
     try {
@@ -231,7 +234,6 @@ export default function BloodTestUpload() {
         }
         
         console.log('📥 State after setting extractedDate, value is:', data.testDate);
-        setShowPreview(true);
         
         // Provide feedback about the extraction
         if (data.hasMultipleDates) {
@@ -354,6 +356,8 @@ export default function BloodTestUpload() {
         initialDate={extractedDate}
         dateGroups={dateGroups}
         pdfUrl={pdfUrl}
+        isProcessing={isUploading}
+        processingProgress={uploadProgress}
       />
     </>
   );

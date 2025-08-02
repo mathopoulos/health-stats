@@ -28,6 +28,8 @@ interface BloodMarkerPreviewProps {
   initialDate?: string | null;
   dateGroups?: DateGroup[];
   pdfUrl?: string | null;
+  isProcessing?: boolean;
+  processingProgress?: string;
 }
 
 export default function BloodMarkerPreview({ 
@@ -37,7 +39,9 @@ export default function BloodMarkerPreview({
   onSave, 
   initialDate,
   dateGroups = [],
-  pdfUrl = null
+  pdfUrl = null,
+  isProcessing = false,
+  processingProgress = ''
 }: BloodMarkerPreviewProps) {
   // Date label and indicator
   const [wasDateExtracted, setWasDateExtracted] = useState<boolean>(false);
@@ -437,7 +441,33 @@ export default function BloodMarkerPreview({
 
             {/* Right Side Content */}
             <div className="flex-1 flex flex-col overflow-hidden">
-              {/* Date Group Tabs */}
+              {isProcessing ? (
+                <div className="flex-1 flex flex-col items-center justify-center space-y-6">
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                    <div className="text-center">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                        Processing Blood Test
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Extracting blood markers from your PDF...
+                      </p>
+                      {processingProgress && (
+                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                          {processingProgress}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="w-full max-w-md">
+                    <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div className="bg-indigo-600 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Date Group Tabs */}
           {dateGroups.length > 1 && (
             <div className="mb-4">
               <div className="border-b border-gray-200 dark:border-gray-700">
@@ -543,28 +573,32 @@ export default function BloodMarkerPreview({
               </div>
             ))}
           </div>
-              {/* end right side content */}
+                  {/* end right side content */}
+                </>
+              )}
             </div>{/* end flex row container */}
             </div>{/* end outer flex wrapper */}
 
-          <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              {dateGroups.length > 1 
-                ? `Save All Markers With Original Dates (${sortedDateGroups.reduce((sum, group) => sum + group.markers.length, 0)})` 
-                : `Save Markers (${activeMarkers.length})`}
-            </button>
-          </div>
+{!isProcessing && (
+            <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                {dateGroups.length > 1 
+                  ? `Save All Markers With Original Dates (${sortedDateGroups.reduce((sum, group) => sum + group.markers.length, 0)})` 
+                  : `Save Markers (${activeMarkers.length})`}
+              </button>
+            </div>
+          )}
         </Dialog.Panel>
       </div>
     </Dialog>
