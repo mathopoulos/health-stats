@@ -18,8 +18,15 @@ const MAX_CHUNK_SIZE = 10000; // Maximum characters to process in a single API c
 // Sleep utility
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Strip ```json fences that the model may surround the payload with
+function stripJsonFence(str) {
+  return str.trim().replace(/^```(?:json)?\s*/i, '').replace(/```$/, '').trim();
+}
+
 // Advanced JSON repair utility
 function attemptToRepairJson(jsonString) {
+  // Strip any markdown code fences first
+  jsonString = stripJsonFence(jsonString);
   console.log('Attempting advanced JSON repair...');
   
   // Try standard JSON.parse first
@@ -553,8 +560,11 @@ ${text}`;
       let result;
       try {
         // Store the raw content for debugging
-        const rawContent = response.choices[0].message.content;
+        let rawContent = response.choices[0].message.content;
         console.log('Raw content from OpenAI (first 300 chars):', rawContent.slice(0, 300) + '...');
+        
+        // Remove possible markdown fences
+        rawContent = stripJsonFence(rawContent);
         
         // Try to parse the JSON response
         result = JSON.parse(rawContent);
