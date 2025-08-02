@@ -450,7 +450,7 @@ export default function BloodMarkerPreview({
                         Processing Blood Test
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Extracting blood markers from your PDF...
+                        This may take a few minutes.
                       </p>
                       {processingProgress && (
                         <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
@@ -459,10 +459,14 @@ export default function BloodMarkerPreview({
                       )}
                     </div>
                   </div>
-                  <div className="w-full max-w-md">
-                    <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div className="bg-indigo-600 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
-                    </div>
+                  <div className="flex justify-center">
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      Cancel
+                    </button>
                   </div>
                 </div>
               ) : (

@@ -158,7 +158,7 @@ export default function BloodTestUpload() {
     try {
       const extractedText = await extractTextFromPdf(file);
       
-      setUploadProgress('Processing blood test results...');
+      setUploadProgress('Analyzing PDF content...');
       
       console.log('📤 Sending PDF text to API for processing...');
       const response = await fetch('/api/pdf', {
