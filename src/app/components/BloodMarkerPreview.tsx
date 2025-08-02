@@ -494,16 +494,7 @@ export default function BloodMarkerPreview({
                   ))}
                 </nav>
               </div>
-              <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-100 dark:border-blue-800">
-                <p className="text-sm text-blue-700 dark:text-blue-300 flex items-center">
-                  <svg className="w-4 h-4 mr-1.5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span>
-                    <strong>All markers</strong> from all dates ({sortedDateGroups.reduce((sum, group) => sum + group.markers.length, 0)} total) will be saved with their <strong>original test dates</strong>.
-                  </span>
-                </p>
-              </div>
+
             </div>
           )}
 
