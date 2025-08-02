@@ -13,7 +13,7 @@ const MIN_REQUEST_INTERVAL = 1000; // Minimum 1 second between requests
 // Retry configuration
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 2000; // Start with 2 second delay
-const MAX_CHUNK_SIZE = 10000; // Maximum characters to process in a single API call
+const MAX_CHUNK_SIZE = 5000; // Reduced to mitigate large JSON responses
 
 // Sleep utility
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -565,9 +565,15 @@ ${text}`;
         
         // Remove possible markdown fences
         rawContent = stripJsonFence(rawContent);
-        
-        // Try to parse the JSON response
-        result = JSON.parse(rawContent);
+      
+      // Quick integrity check: if JSON is obviously truncated, trigger a retry
+      const trimmedContent = rawContent.trim();
+      if (!trimmedContent.startsWith('{') || !trimmedContent.endsWith('}')) {
+        throw new Error('Incomplete JSON response received from OpenAI');
+      }
+      
+      // Try to parse the JSON response
+      result = JSON.parse(rawContent);
       } catch (parseError) {
         console.error('JSON parsing error:', parseError.message);
         console.log('Attempting to fix malformed JSON...');
