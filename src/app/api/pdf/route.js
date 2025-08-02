@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
 // Allow the function to run up to 60 seconds on Vercel
-export const maxDuration = 60;
+export const maxDuration = 300; // allow up to 5 minutes on Hobby plan with Fluid Compute
 
 // Initialize OpenAI client
 const openai = new OpenAI({
