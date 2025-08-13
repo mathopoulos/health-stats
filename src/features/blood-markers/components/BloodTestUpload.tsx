@@ -274,7 +274,7 @@ export default function BloodTestUpload() {
               ? 'bg-gray-100 dark:bg-gray-800/50 border-gray-300 dark:border-gray-700 cursor-not-allowed'
               : isDragActive
               ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-300 dark:border-indigo-700 cursor-pointer'
-              : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer'
+              : 'border-gray-300 dark:border-gray-700 cursor-pointer'
           }`}
         >
           <input {...getInputProps()} disabled={isUploading} key={fileKey} />
