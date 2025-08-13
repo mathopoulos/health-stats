@@ -24,7 +24,7 @@ export const stepsConfig: Step[] = [
     id: 0,
     title: "Connect your fitness trackers",
     image: {
-      src: "/images/fitness-tracker.png",
+      src: "/images/landing/fitness-tracker.png",
       alt: "Connect your fitness trackers"
     },
     animation: {
@@ -36,7 +36,7 @@ export const stepsConfig: Step[] = [
     id: 1,
     title: "Upload any blood tests and health records",
     image: {
-      src: "/images/blood-upload.png",
+      src: "/images/landing/blood-upload.png",
       alt: "Upload blood tests and health records"
     },
     animation: {
@@ -48,7 +48,7 @@ export const stepsConfig: Step[] = [
     id: 2,
     title: "Experiment with workouts & health protocols",
     image: {
-      src: "/images/experiment.png",
+      src: "/images/landing/experiment.png",
       alt: "Experiment with workouts & health protocols"
     },
     animation: {
@@ -60,7 +60,7 @@ export const stepsConfig: Step[] = [
     id: 4,
     title: "Track the impact, optimise, repeat",
     image: {
-      src: "/images/progress.png",
+      src: "/images/landing/progress.png",
       alt: "Track the impact, optimise, repeat"
     },
     animation: {
