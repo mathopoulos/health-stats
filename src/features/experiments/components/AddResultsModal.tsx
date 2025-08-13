@@ -198,9 +198,10 @@ export default function AddResultsModal({ isOpen, onClose, prefilledResults }: A
     <Dialog open={isOpen} onClose={handleClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
-          <div className="p-6">
+      <div className="fixed inset-0 overflow-y-auto">
+        <div className="flex min-h-full items-start justify-center p-4">
+        <Dialog.Panel className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full shadow-xl flex flex-col">
+          <div className="p-6 overflow-y-auto max-h-[calc(100vh-4rem)] flex-1">
             <Dialog.Title className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">
               Add Blood Test Results
             </Dialog.Title>
@@ -345,6 +346,7 @@ export default function AddResultsModal({ isOpen, onClose, prefilledResults }: A
           </form>
           </div>
         </Dialog.Panel>
+        </div>
       </div>
     </Dialog>
   );

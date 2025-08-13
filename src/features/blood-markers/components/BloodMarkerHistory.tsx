@@ -1041,12 +1041,36 @@ export default function BloodMarkerHistory() {
       
       {/* Edit Modal */}
       {showEditModal && editingEntry && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
-            <div className="p-6">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                Edit Blood Marker Entry
-              </h3>
+        <>
+          <div
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50"
+            aria-hidden="true"
+            onClick={() => setShowEditModal(false)}
+          />
+          <div
+            className="fixed inset-0 overflow-y-auto z-50"
+            onClick={() => setShowEditModal(false)}
+          >
+            <div className="flex min-h-full items-start justify-center p-4">
+              <div
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-2xl w-full flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-6 overflow-y-auto max-h-[calc(100vh-4rem)]">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                      Edit Blood Marker Entry
+                    </h3>
+                    <button
+                      onClick={() => setShowEditModal(false)}
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      aria-label="Close"
+                    >
+                      <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
               
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1097,9 +1121,11 @@ export default function BloodMarkerHistory() {
                   Save Changes
                 </button>
               </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
       
       {/* Confirmation Dialog */}
