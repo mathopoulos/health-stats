@@ -795,7 +795,7 @@ export default function BloodMarkerHistory() {
             id="nameFilter"
             value={nameFilter}
             onChange={(e) => setNameFilter(e.target.value)}
-            className="w-full pl-8 pr-9 py-2.5 text-sm font-medium border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 dark:text-white bg-white/90 dark:bg-gray-800/90 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800 appearance-none"
+            className="w-full px-4 pr-10 py-2.5 text-sm font-medium border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 dark:text-white bg-white/90 dark:bg-gray-800/90 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800 appearance-none"
             style={{
               backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M4.94 5.72a.75.75 0 0 0-1.06 1.06l3.83 3.83a.75.75 0 0 0 1.06 0l3.83-3.83a.75.75 0 0 0-1.06-1.06L8 9.28 4.94 5.72z' fill='%236b7280'/%3e%3c/svg%3e")`,
               backgroundRepeat: 'no-repeat',
@@ -808,9 +808,6 @@ export default function BloodMarkerHistory() {
               <option key={name} value={name}>{name}</option>
             ))}
           </select>
-          <svg className="absolute left-2.5 top-3 w-4 h-4 text-gray-400 dark:text-gray-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
         </div>
         
         {/* Category Filter */}
@@ -819,7 +816,7 @@ export default function BloodMarkerHistory() {
             id="categoryFilter"
             value={categoryFilter}
             onChange={(e) => setcategoryFilter(e.target.value)}
-            className="w-full px-4 py-2.5 text-sm font-medium border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 dark:text-white bg-white/90 dark:bg-gray-800/90 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800 appearance-none"
+            className="w-full px-4 pr-10 py-2.5 text-sm font-medium border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 dark:text-white bg-white/90 dark:bg-gray-800/90 transition-all shadow-sm hover:bg-white dark:hover:bg-gray-800 appearance-none"
             style={{
               backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M4.94 5.72a.75.75 0 0 0-1.06 1.06l3.83 3.83a.75.75 0 0 0 1.06 0l3.83-3.83a.75.75 0 0 0-1.06-1.06L8 9.28 4.94 5.72z' fill='%236b7280'/%3e%3c/svg%3e")`,
               backgroundRepeat: 'no-repeat',
