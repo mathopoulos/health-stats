@@ -216,11 +216,12 @@ export default function AddExperimentModal({ isOpen, onClose, onSave }: AddExper
 
   return (
     <Dialog open={isOpen} onClose={handleClose} className="relative z-50">
-      <div className="fixed inset-0 bg-black bg-opacity-25" />
-
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
-          <div className="p-6">
+      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+      
+      <div className="fixed inset-0 overflow-y-auto">
+        <div className="flex min-h-full items-center justify-center p-4">
+        <Dialog.Panel className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full shadow-xl my-8 flex flex-col">
+          <div className="p-6 overflow-y-auto max-h-[70vh] flex-1">
             <div className="flex items-center justify-between mb-6">
               <Dialog.Title className="text-xl font-semibold text-gray-900 dark:text-white">
                 Create New Experiment
@@ -355,7 +356,7 @@ export default function AddExperimentModal({ isOpen, onClose, onSave }: AddExper
               )}
 
               {/* Submit Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-end gap-3 pt-6">
                 <button
                   type="button"
                   onClick={handleClose}
@@ -374,6 +375,7 @@ export default function AddExperimentModal({ isOpen, onClose, onSave }: AddExper
             </form>
           </div>
         </Dialog.Panel>
+        </div>
       </div>
     </Dialog>
   );
