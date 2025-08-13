@@ -27,8 +27,15 @@
       "@providers/*": ["./src/providers/*"],
       "@server/*": ["./src/server/*"],
       "@db/*": ["./src/db/*"]
-    }
+    },
+    "typeRoots": ["./types", "./node_modules/@types"]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "aws/lambda/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ]
 }

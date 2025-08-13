@@ -23,7 +23,8 @@ This document captures the high-level structure, naming rules, and conventions f
 │  │  ├─ db/             # Database clients & queries
 │  │  ├─ aws/            # S3, Lambda helpers used at runtime
 │  │  └─ payments/       # Stripe utilities
-│  └─ types/             # Global TS declaration merges
+│  └─ types/             # Shared domain and API types (no ambient declarations)
+├─ types/                # Ambient global .d.ts for third‑party modules (picked up via typeRoots)
 └─ docs/                 # Internal documentation (you are here)
 ```
 
@@ -49,7 +50,14 @@ Use these instead of long relative paths.
 
 ---
 
-## 3. Component Guidelines
+## 3. Types
+
+- `types/` (repo root): Ambient declarations only (e.g., NextAuth module augmentation, third‑party `.d.ts`). These are discovered via `typeRoots` in `tsconfig.json`.
+- `src/types/`: Domain and API types used across the app (interfaces, unions, DTOs). No ambient declarations here.
+
+---
+
+## 4. Component Guidelines
 
 * Prefer **server components**; mark client components explicitly with `'use client'`.
 * One component per file; export named components.
@@ -57,7 +65,7 @@ Use these instead of long relative paths.
 
 ---
 
-## 4. Back-end Utilities (`src/lib`)
+## 5. Back-end Utilities (`src/lib`)
 
 Each sub-folder owns a public API via an `index.ts` barrel.  Example pattern:
 
@@ -70,7 +78,7 @@ Callers then `import { getDb } from '@lib/db';`.
 
 ---
 
-## 5. Styling & UI
+## 6. Styling & UI
 
 * **Tailwind CSS** with a mobile-first approach.
 * Radix UI + Shadcn for accessible primitives.
@@ -78,21 +86,21 @@ Callers then `import { getDb } from '@lib/db';`.
 
 ---
 
-## 6. Testing
+## 7. Testing
 
 * Jest + React Testing Library.
 * Tests live next to code (e.g. `TrendIndicator.test.tsx`).
 
 ---
 
-## 7. Scripts & Infrastructure
+## 8. Scripts & Infrastructure
 
 * All operational scripts live in `infra/scripts`.
 * Cloud resources (Lambda bundle, policies) under `infra/aws`.
 
 ---
 
-## 8. Adding a New Feature
+## 9. Adding a New Feature
 
 1. Create a folder in `src/features` (`kebab-case`).
 2. Add hooks, utils, and small components there.
