@@ -122,11 +122,13 @@ export default function EditSupplementProtocolModal({
                       onChange={(e) => setLocalDosage(e.target.value)}
                       className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       placeholder="Amount"
+                      aria-label="Dosage amount"
                     />
                     <select
                       value={localUnit}
                       onChange={(e) => setLocalUnit(e.target.value)}
                       className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      aria-label="Unit"
                     >
                       {unitOptions.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -146,6 +148,7 @@ export default function EditSupplementProtocolModal({
                     value={localFrequency}
                     onChange={(e) => setLocalFrequency(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    aria-label="Frequency"
                   >
                     {frequencyOptions.map((option) => (
                       <option key={option.value} value={option.value}>
