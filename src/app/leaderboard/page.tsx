@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import ThemeToggle from '@/app/components/ThemeToggle';
-import { useTheme } from '@/app/context/ThemeContext';
+import ThemeToggle from '@components/ThemeToggle';
+import { useTheme } from '@providers/ThemeProvider';
 import toast, { Toaster } from 'react-hot-toast';
 
 interface LeaderboardEntry {

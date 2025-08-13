@@ -7,7 +7,7 @@ import 'react-calendar-heatmap/dist/styles.css';
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
 import { subYears, format, parseISO, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
-import { useWeeklyWorkout } from '../context/WeeklyWorkoutContext';
+import { useWeeklyWorkout } from '@providers/WeeklyWorkoutProvider';
 
 interface WorkoutData {
   data: {

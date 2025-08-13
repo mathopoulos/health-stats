@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import ConfirmDialog from './ui/ConfirmDialog';
+import ConfirmDialog from '@components/ui/ConfirmDialog';
 
 // Add these types for sorting
 type SortColumn = 'name' | 'category' | 'unit' | 'date' | 'value';

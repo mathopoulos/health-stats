@@ -1,7 +1,7 @@
 'use client';
 
 import { signIn } from "next-auth/react";
-import ThemeToggle from "@/app/components/ThemeToggle";
+import ThemeToggle from "@components/ThemeToggle";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 

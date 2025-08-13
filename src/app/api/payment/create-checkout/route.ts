@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import stripe from '@/lib/stripe';
+import stripe from '@server/services/stripe';
 
 // Price IDs for different environments
 const PRICE_ID = process.env.NODE_ENV === 'production'

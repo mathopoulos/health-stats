@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import clientPromise from '@/lib/mongodb';
+import clientPromise from '@server/services/mongodb';
 
 const ADMIN_EMAIL = 'alexandros@mathopoulos.com';
 

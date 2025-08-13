@@ -2,20 +2,20 @@
 
 import { useState, useRef, DragEvent, useEffect } from 'react';
 import { useSession, signOut } from "next-auth/react";
-import AddResultsModal from '../components/AddResultsModal';
-import AddWorkoutProtocolModal from '../components/AddWorkoutProtocolModal';
-import AddSupplementProtocolModal from '../components/AddSupplementProtocolModal';
-import AddExperimentModal from '../components/AddExperimentModal';
-import EditExperimentModal from '../components/EditExperimentModal';
+import AddResultsModal from '@features/experiments/components/AddResultsModal';
+import AddWorkoutProtocolModal from '@features/experiments/components/AddWorkoutProtocolModal';
+import AddSupplementProtocolModal from '@features/experiments/components/AddSupplementProtocolModal';
+import AddExperimentModal from '@features/experiments/components/AddExperimentModal';
+import EditExperimentModal from '@features/experiments/components/EditExperimentModal';
 import Image from 'next/image';
 import Link from 'next/link';
-import ThemeToggle from '../components/ThemeToggle';
-import BloodTestUpload from '../components/BloodTestUpload';
-import BloodMarkerHistory from '../components/BloodMarkerHistory';
-import FitnessMetricsHistory from '../components/FitnessMetricsHistory';
+import ThemeToggle from '@components/ThemeToggle';
+import BloodTestUpload from '@features/blood-markers/components/BloodTestUpload';
+import BloodMarkerHistory from '@features/blood-markers/components/BloodMarkerHistory';
+import FitnessMetricsHistory from '@features/workouts/components/FitnessMetricsHistory';
 import { toast } from 'react-hot-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
-import ConfirmDialog from '../components/ui/ConfirmDialog';
+import ConfirmDialog from '@components/ui/ConfirmDialog';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;

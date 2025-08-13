@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getReferenceRanges, getBloodMarkerStatus, BLOOD_MARKER_STATUS_COLORS, type ReferenceRanges } from '@/lib/bloodMarkerRanges';
 
@@ -105,10 +106,84 @@ const STATUS_COLORS = BLOOD_MARKER_STATUS_COLORS;
 export default function BloodMarkerChart({ 
   data, 
   markerName, 
-  height = "h-[280px] sm:h-[340px]",
+  height = "h-[280px] sm:h-[340px] w-full min-w-0",
   showReferenceBar = true,
   className = "" 
 }: BloodMarkerChartProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [ready, setReady] = useState(false);
+  const [{ width, height: measuredHeight }, setSize] = useState({ width: 0, height: 0 });
+  const [chartWidth, setChartWidth] = useState(580);
+
+  // Utility debug logger with distinctive prefix so you can filter easily
+  const debugLog = (...args: any[]) => {
+    // Only log in development to avoid noise in production builds
+    if (process.env.NODE_ENV !== 'production') {
+      // Use a color so it stands out; searchable prefix [BChartProbe]
+      console.info('%c[BChartProbe]', 'color:#8e44ad;', ...args);
+    }
+  };
+
+  // Detect when the wrapper has a non-zero size, then render the chart
+  useEffect(() => {
+    const el = containerRef.current;
+    debugLog('Mounted chart wrapper', { markerName, dataPoints: data.length });
+    if (!el) return;
+
+    // Helper to check dimensions
+    const checkSize = () => {
+      const { width, height } = el.getBoundingClientRect();
+      if (width > 0 && height > 0) {
+        setSize({ width, height });
+        // Calculate responsive chart width based on available container width
+        const responsiveWidth = Math.max(300, Math.min(580, width - 40)); // 40px for padding
+        setChartWidth(responsiveWidth);
+        setReady(true);
+        debugLog('Container ready', { width, height, chartWidth: responsiveWidth, markerName, dataPoints: data.length });
+        return true;
+      }
+      return false;
+    };
+
+    // 1) Immediate check – covers most cases
+    if (checkSize()) return;
+
+    // 2) Observe future size changes
+    let obs: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      obs = new ResizeObserver(() => {
+        if (checkSize() && obs) {
+          obs.disconnect();
+          obs = null;
+        }
+      });
+      obs.observe(el);
+    }
+
+    // 3) Fallback polling (covers Safari versions without ResizeObserver firing inside hidden elements)
+    const pollId = setInterval(() => {
+      if (checkSize()) {
+        clearInterval(pollId);
+        if (obs) obs.disconnect();
+      }
+    }, 250);
+
+    return () => {
+      if (obs) obs.disconnect();
+      clearInterval(pollId);
+    };
+  }, []);
+
+  // Ensure Recharts recalculates when the component mounts or data changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Fire multiple resize events in quick succession to give ResizeObserver ample chances
+      const timeouts = [0, 100, 300].map(delay =>
+        setTimeout(() => window.dispatchEvent(new Event('resize')), delay)
+      );
+      return () => timeouts.forEach(id => clearTimeout(id));
+    }
+  }, [data.length]);
   if (!data || data.length === 0) {
     return (
       <div className={`flex items-center justify-center ${height} ${className}`}>
@@ -148,21 +223,17 @@ export default function BloodMarkerChart({
   const bgColor = isDarkMode ? "#1f2937" : "#ffffff";
 
   return (
-    <div className={`${height} relative ${className}`}>
-      <ResponsiveContainer width="100%" height="100%" style={{ backgroundColor: 'transparent' }}>
+    <div ref={containerRef} className={`relative w-full min-w-0 ${height} ${className}`}>
+      <div style={{ width: '100%', height: '100%' }}>
         <LineChart 
+          width={chartWidth} 
+          height={280} 
           data={chartData} 
           margin={{ 
             top: 20, 
             right: showReferenceBar ? 15 : 30, 
             left: 10, 
-            bottom: 15,
-            ...(typeof window !== 'undefined' && window.innerWidth >= 640 && {
-              top: 30,
-              right: showReferenceBar ? 50 : 30,
-              left: 10,
-              bottom: 20
-            })
+            bottom: 15
           }}
         >
           <defs>
@@ -267,7 +338,7 @@ export default function BloodMarkerChart({
             strokeWidth={2}
           />
         </LineChart>
-      </ResponsiveContainer>
+      </div>
 
       {/* Reference Range Bar */}
       {showReferenceBar && referenceRanges && (

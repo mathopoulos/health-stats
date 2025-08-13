@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProcessingJob } from '@/lib/processingJobs';
+import { getProcessingJob } from '@server/services/processingJobs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

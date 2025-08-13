@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<HealthData>
-  <Record type="HKQuantityTypeIdentifierBodyMass" value="75.5" startDate="2024-01-12T08:00:00Z" endDate="2024-01-12T08:00:00Z" />
-  <Record type="HKQuantityTypeIdentifierBodyMass" value="75.2" startDate="2024-01-11T08:00:00Z" endDate="2024-01-11T08:00:00Z" />
-  <Record type="HKQuantityTypeIdentifierBodyFatPercentage" value="20.5" startDate="2024-01-12T08:00:00Z" endDate="2024-01-12T08:00:00Z" />
-  <Record type="HKQuantityTypeIdentifierHeartRateVariabilitySDNN" value="45.3" startDate="2024-01-12T08:00:00Z" endDate="2024-01-12T08:00:00Z" />
-  <Record type="HKQuantityTypeIdentifierVO2Max" value="42.1" startDate="2024-01-12T08:00:00Z" endDate="2024-01-12T08:00:00Z" />
-</HealthData> 

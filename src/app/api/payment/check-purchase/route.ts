@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { hasUserPurchasedProduct } from '@/lib/stripe';
+import { hasUserPurchasedProduct } from '@server/services/stripe';
 
 export async function POST(request: Request) {
   try {

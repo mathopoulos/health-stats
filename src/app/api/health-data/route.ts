@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchAllHealthData, type HealthDataType, generatePresignedUploadUrl } from '@/lib/s3';
+import { fetchAllHealthData, type HealthDataType, generatePresignedUploadUrl } from '@server/services/s3';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 

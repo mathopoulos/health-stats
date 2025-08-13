@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import ThemeToggle from "@/app/components/ThemeToggle";
+import ThemeToggle from "@components/ThemeToggle";
 import Link from 'next/link';
 
 interface CheckoutPageProps {

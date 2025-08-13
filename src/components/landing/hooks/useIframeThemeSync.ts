@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useTheme } from '../../../context/ThemeContext';
+import { useTheme } from '@providers/ThemeProvider';
 
 interface UseIframeThemeSyncOptions {
   iframeId: string;

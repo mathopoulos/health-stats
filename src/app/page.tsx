@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import ThemeToggle from './components/ThemeToggle';
+import ThemeToggle from '@components/ThemeToggle';
 import {
   LifetimeOfferBanner,
   Navigation,
@@ -15,7 +15,7 @@ import {
   stepsConfig,
   pricingConfig,
   dashboardPreviewConfig
-} from './components/landing';
+} from '@components/landing';
 
 /**
  * Landing Page Component - Refactored for better maintainability

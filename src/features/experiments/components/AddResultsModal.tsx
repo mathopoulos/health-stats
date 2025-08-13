@@ -4,7 +4,7 @@ import React, { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { Dialog } from '@headlessui/react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import "./datepicker.css";
+import "@components/datepicker.css";
 import { toast } from 'react-hot-toast';
 
 interface AddResultsModalProps {

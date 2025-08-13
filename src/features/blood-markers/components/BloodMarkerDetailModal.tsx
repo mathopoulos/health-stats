@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getReferenceRanges, getBloodMarkerStatus, BLOOD_MARKER_STATUS_COLORS, type ReferenceRanges } from '@/lib/bloodMarkerRanges';
-import BloodMarkerChart from '@/components/BloodMarkerChart';
+import BloodMarkerChart from '@features/blood-markers/components/BloodMarkerChart';
 
 interface BloodMarker {
   value: number;
@@ -39,6 +39,16 @@ export default function BloodMarkerDetailModal({
     }
   }, [data, markerName]);
 
+  // Force Recharts to recalculate dimensions once the modal is visible
+  useEffect(() => {
+    if (isOpen && typeof window !== 'undefined') {
+      const id = setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 50); // allow DOM to paint before dispatching
+      return () => clearTimeout(id);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const currentValue = data?.[0];
@@ -62,8 +72,8 @@ export default function BloodMarkerDetailModal({
 
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-xs sm:max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-auto">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-[90vw] max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-auto">
         {/* Header */}
         <div className="flex items-start justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex-1 pr-2">
@@ -123,7 +133,7 @@ export default function BloodMarkerDetailModal({
         )}
 
         {/* Chart - Responsive height and margins */}
-        <div className="p-4 sm:p-6">
+        <div className="p-4 sm:p-6 w-full min-w-0">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
             Historical Trend
           </h3>

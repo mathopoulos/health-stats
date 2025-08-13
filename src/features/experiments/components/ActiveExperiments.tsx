@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useTheme } from '../context/ThemeContext';
-import { TrendIndicator } from '@/components/TrendIndicator';
-import BloodMarkerChart from '@/components/BloodMarkerChart';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { useTheme } from '@providers/ThemeProvider';
+import { TrendIndicator } from '@components/TrendIndicator';
+import BloodMarkerChart from '@features/blood-markers/components/BloodMarkerChart';
 
 interface BiomarkerDataPoint {
   date: string;
@@ -570,9 +570,45 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
   const ExperimentDetailsModal = ({ experiment }: { experiment: Experiment }) => {
     if (!isMounted) return null;
     
+    const [chartWidth, setChartWidth] = useState(800);
+
+    // Update chart width on window resize
+    useEffect(() => {
+      const updateChartWidth = () => {
+        if (typeof window !== 'undefined') {
+          // Much more conservative sizing for mobile to prevent horizontal scroll
+          const isMobile = window.innerWidth < 640;
+          const modalPadding = 32; // Account for modal padding (p-4 = 16px each side)
+          const chartMargins = 40; // Account for chart margins
+          const availableWidth = window.innerWidth - modalPadding - chartMargins;
+          
+          let newWidth;
+          if (isMobile) {
+            // On mobile, be very conservative - use 70% of available width, max 400px
+            newWidth = Math.max(280, Math.min(400, availableWidth * 0.7));
+          } else {
+            // On desktop, can be more generous
+            newWidth = Math.max(400, Math.min(800, availableWidth * 0.9));
+          }
+          
+          setChartWidth(newWidth);
+          console.log('Chart sizing:', { isMobile, windowWidth: window.innerWidth, availableWidth, newWidth });
+        }
+      };
+
+      // Set initial width
+      updateChartWidth();
+
+      // Add resize listener
+      if (typeof window !== 'undefined') {
+        window.addEventListener('resize', updateChartWidth);
+        return () => window.removeEventListener('resize', updateChartWidth);
+      }
+    }, []);
+    
     const modalContent = (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-[100] p-4 backdrop-blur-sm overflow-y-auto">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl w-[90vw] max-w-4xl min-h-0 max-h-[calc(100vh-2rem)] overflow-y-auto my-4">
         {/* Header */}
         <div className="flex items-start justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div>
@@ -678,11 +714,12 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
                     </div>
                     
                     {hasData ? (
-                      <div className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart 
-                            data={metricData.map(point => ({ ...point, unit: getMetricUnit(metricType) }))}
-                            margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+                      <div className="h-[300px] w-full min-w-0">
+                        <LineChart 
+                          width={chartWidth}
+                          height={280}
+                          data={metricData.map(point => ({ ...point, unit: getMetricUnit(metricType) }))}
+                          margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
                           >
                             <CartesianGrid 
                               stroke={isDarkMode ? "rgba(75, 85, 99, 0.3)" : "rgba(156, 163, 175, 0.35)"}
@@ -737,7 +774,6 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
                               strokeWidth={2}
                             />
                           </LineChart>
-                        </ResponsiveContainer>
                       </div>
                     ) : (
                       <div className="h-[200px] flex items-center justify-center text-gray-500 dark:text-gray-400">
@@ -779,7 +815,7 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
                     </div>
                     
                     {markerData.length > 0 ? (
-                      <div className="h-64">
+                      <div className="h-64 w-full min-w-0">
                         <BloodMarkerChart 
                           data={markerData}
                           markerName={markerName}

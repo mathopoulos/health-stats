@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { saveHealthData, type HealthDataType } from '@/lib/s3';
+import { saveHealthData, type HealthDataType } from '@server/services/s3';
 
 const IOS_USER_ID = '100492380040453908509';
 

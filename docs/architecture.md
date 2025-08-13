@@ -1,0 +1,105 @@
+# Project Architecture
+
+This document captures the high-level structure, naming rules, and conventions for the *Health-Stats* code-base.
+
+---
+
+## 1. Directory Layout
+
+```
+.
+├─ infra/                # Deployment + operational tooling (never imported by the app)
+│  ├─ aws/               # CloudFormation / Lambda helpers
+│  └─ scripts/           # One-off migration & data scripts
+├─ public/               # Static assets served by Next.js
+├─ src/
+│  ├─ app/               # Next.js App-Router tree (pages, route handlers, RSC)
+│  │  └─ api/            # HTTP route handlers only (no business logic)
+│  ├─ components/        # Re-usable UI components (client + server)
+│  │  └─ ui/             # Low-level primitives (Card, Skeleton, Dialog…)
+│  ├─ features/          # Domain-specific hooks, utils, and small components
+│  ├─ lib/               # Back-end helpers grouped by domain
+│  │  ├─ auth/           # Authentication helpers / adapters
+│  │  ├─ db/             # Database clients & queries
+│  │  ├─ aws/            # S3, Lambda helpers used at runtime
+│  │  └─ payments/       # Stripe utilities
+│  └─ types/             # Global TS declaration merges
+└─ docs/                 # Internal documentation (you are here)
+```
+
+### Rules
+
+1. **No business logic inside `src/app/api`.**  Route handlers are thin.  Real work lives in `src/lib/…` or `src/features/…`.
+2. **All directories are lowercase-kebab-case**, except Next.js dynamic segments (e.g. `[userId]`).
+3. **Files use PascalCase** for React components, `camelCase` for helpers.
+
+---
+
+## 2. Path Aliases (tsconfig.json)
+
+```jsonc
+"paths": {
+  "@/*":            ["./src/*"],
+  "@components/*":  ["./src/components/*"],
+  "@features/*":    ["./src/features/*"],
+  "@lib/*":         ["./src/lib/*"]
+}
+```
+Use these instead of long relative paths.
+
+---
+
+## 3. Component Guidelines
+
+* Prefer **server components**; mark client components explicitly with `'use client'`.
+* One component per file; export named components.
+* Keep story/tests adjacent (`MyComp.test.tsx`, `MyComp.stories.tsx`).
+
+---
+
+## 4. Back-end Utilities (`src/lib`)
+
+Each sub-folder owns a public API via an `index.ts` barrel.  Example pattern:
+
+```ts
+// src/lib/db/index.ts
+export * from './mongodb';
+```
+
+Callers then `import { getDb } from '@lib/db';`.
+
+---
+
+## 5. Styling & UI
+
+* **Tailwind CSS** with a mobile-first approach.
+* Radix UI + Shadcn for accessible primitives.
+* Use utility classes; avoid custom CSS unless necessary.
+
+---
+
+## 6. Testing
+
+* Jest + React Testing Library.
+* Tests live next to code (e.g. `TrendIndicator.test.tsx`).
+
+---
+
+## 7. Scripts & Infrastructure
+
+* All operational scripts live in `infra/scripts`.
+* Cloud resources (Lambda bundle, policies) under `infra/aws`.
+
+---
+
+## 8. Adding a New Feature
+
+1. Create a folder in `src/features` (`kebab-case`).
+2. Add hooks, utils, and small components there.
+3. If you need API endpoints, add route handlers under `src/app/api/feature-name`.
+4. Expose helper functions in `src/lib/feature-name` when necessary.
+
+---
+
+_Feel free to extend this document as the project evolves._
+

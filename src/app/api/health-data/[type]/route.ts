@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { S3Client, ListObjectsV2Command, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { HealthDataType } from '@/lib/s3';
+import { HealthDataType } from '@server/services/s3';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

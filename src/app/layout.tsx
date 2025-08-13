@@ -2,7 +2,7 @@
 
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider } from '@providers/ThemeProvider';
 import { SessionProvider } from 'next-auth/react';
 import { Toaster } from 'react-hot-toast';
 import { Analytics } from '@vercel/analytics/react';

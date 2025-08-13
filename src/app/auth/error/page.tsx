@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import ThemeToggle from '@/app/components/ThemeToggle';
+import ThemeToggle from '@components/ThemeToggle';
 
 export default function AuthError() {
   const searchParams = useSearchParams();

@@ -4,22 +4,22 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Image from 'next/image';
 import Link from 'next/link';
-import AddResultsModal from '@/app/components/AddResultsModal';
+import AddResultsModal from '@features/experiments/components/AddResultsModal';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import Head from 'next/head';
 import toast, { Toaster } from 'react-hot-toast';
-import ThemeToggle from '@/app/components/ThemeToggle';
-import { useTheme } from '@/app/context/ThemeContext';
-import TrendIndicator from '@/components/TrendIndicator';
-import WorkoutHeatMap from '@/app/components/WorkoutHeatMap';
-import { WeeklyWorkoutProvider, useWeeklyWorkout } from '@/app/context/WeeklyWorkoutContext';
-import ActiveExperiments from '@/app/components/ActiveExperiments';
-import BloodMarkerDetailModal from '@/app/components/BloodMarkerDetailModal';
+import ThemeToggle from '@components/ThemeToggle';
+import { useTheme } from '@providers/ThemeProvider';
+import TrendIndicator from '@components/TrendIndicator';
+import WorkoutHeatMap from '@features/workouts/components/WorkoutHeatMap';
+import { WeeklyWorkoutProvider, useWeeklyWorkout } from '@providers/WeeklyWorkoutProvider';
+import ActiveExperiments from '@features/experiments/components/ActiveExperiments';
+import BloodMarkerDetailModal from '@features/blood-markers/components/BloodMarkerDetailModal';
 import { getReferenceRanges, getBloodMarkerStatus, BLOOD_MARKER_STATUS_COLORS } from '@/lib/bloodMarkerRanges';
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from '@components/ui/skeleton'
 
 interface HealthData {
   date: string;

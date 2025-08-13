@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
-import { fetchAllHealthData, type HealthDataType } from '@/lib/s3';
+import clientPromise from '@server/services/mongodb';
+import { fetchAllHealthData, type HealthDataType } from '@server/services/s3';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 

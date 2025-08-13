@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
-import ConfirmDialog from './ui/ConfirmDialog';
+import ConfirmDialog from '@components/ui/ConfirmDialog';
 import { formatDistanceToNow } from 'date-fns';
 
 // Types for fitness metrics

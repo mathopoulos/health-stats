@@ -3,7 +3,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import { deleteOldXmlFiles } from '@/lib/s3';
+import { deleteOldXmlFiles } from '@server/services/s3';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 
