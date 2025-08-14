@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { listDataFiles } from '@server/services/s3';
+import { listDataFiles } from '@/server/aws/s3';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { createProcessingJob } from '@server/services/processingJobs';
-import { invokeLambda } from '@server/services/lambda';
+import { createProcessingJob } from '@/server/jobs/processingJobs';
+import { invokeLambda } from '@/server/aws/lambda';
 
 export async function POST(request: Request) {
   try {

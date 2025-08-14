@@ -1,6 +1,6 @@
 import { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
-import { hasUserPurchasedProduct } from './stripe';
+import { hasUserPurchasedProduct } from '@/server/payments/stripe';
 import crypto from 'crypto';
 
 // This is a server-side map to track users who are authenticated

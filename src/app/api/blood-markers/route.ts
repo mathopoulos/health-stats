@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import clientPromise from '@server/services/mongodb';
+import clientPromise from '@/db/client';
 import { CreateBloodMarkerEntry, BloodMarkerEntry } from '@/types/bloodMarker';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';

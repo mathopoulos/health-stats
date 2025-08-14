@@ -19,8 +19,6 @@ export async function generatePresignedUploadUrl(key: string, contentType: strin
     throw new Error('AWS_BUCKET_NAME environment variable is not set');
   }
 
-  // If userId is provided and the key is for data storage (not temporary uploads),
-  // include it in the path
   if (userId && key.startsWith('data/')) {
     key = `data/${userId}/${key.slice(5)}`;
   }
@@ -89,21 +87,16 @@ export async function processS3XmlFile(key: string, processor: (chunk: string) =
           }
         };
 
-        // Process chunks in smaller batches
         const processChunk = async () => {
           while (!shouldStop) {
             const endIndex = xmlChunk.indexOf(recordEndMarker);
             if (endIndex === -1) {
-              // If chunk is too large and no end marker found, try to find a safe point to trim
               if (xmlChunk.length > MAX_CHUNK_SIZE) {
-                // Look for the last complete record
                 const lastCompleteEnd = xmlChunk.lastIndexOf(recordEndMarker);
                 if (lastCompleteEnd !== -1) {
-                  // Keep everything after the last complete record
                   xmlChunk = xmlChunk.slice(lastCompleteEnd + recordEndMarker.length);
                   console.log(`Trimmed chunk to ${xmlChunk.length} bytes, keeping partial record`);
                 } else {
-                  // If we can't find any complete records, we have to clear it
                   console.log(`Warning: Clearing ${xmlChunk.length} bytes of data with no complete records`);
                   xmlChunk = '';
                 }
@@ -113,7 +106,6 @@ export async function processS3XmlFile(key: string, processor: (chunk: string) =
 
             const startIndex = xmlChunk.lastIndexOf(recordStartMarker, endIndex);
             if (startIndex === -1) {
-              // If we have a corrupted chunk, try to salvage what we can
               const nextStart = xmlChunk.indexOf(recordStartMarker, endIndex);
               if (nextStart !== -1) {
                 xmlChunk = xmlChunk.slice(nextStart);
@@ -130,7 +122,6 @@ export async function processS3XmlFile(key: string, processor: (chunk: string) =
               const result = await processor(wrappedRecord);
               processedRecords++;
               
-              // Log progress every 10000 records
               if (processedRecords % 10000 === 0) {
                 console.log(`Processed ${processedRecords} records`);
               }
@@ -142,23 +133,18 @@ export async function processS3XmlFile(key: string, processor: (chunk: string) =
               }
             } catch (error) {
               console.error('Error processing record:', error);
-              // Continue with next record despite errors
             }
 
             xmlChunk = xmlChunk.slice(endIndex + recordEndMarker.length);
 
-            // Add periodic cleanup to prevent memory buildup
             const now = Date.now();
-            if (now - lastProcessTime > 30000) { // Every 30 seconds
+            if (now - lastProcessTime > 30000) {
               lastProcessTime = now;
               console.log(`Processing status: ${processedRecords} records processed, current chunk size: ${xmlChunk.length} bytes`);
-              // Force garbage collection if available
               if (global.gc) {
                 try {
                   global.gc();
-                } catch (e) {
-                  // Ignore GC errors
-                }
+                } catch (e) {}
               }
             }
           }
@@ -173,8 +159,7 @@ export async function processS3XmlFile(key: string, processor: (chunk: string) =
           try {
             xmlChunk += chunk.toString('utf-8');
             
-            // Process chunk when it gets large
-            if (xmlChunk.length > MAX_CHUNK_SIZE / 2) { // Process at half max size to prevent overflow
+            if (xmlChunk.length > MAX_CHUNK_SIZE / 2) {
               processingPromise = processingPromise
                 .then(processChunk)
                 .catch(error => {
@@ -199,7 +184,7 @@ export async function processS3XmlFile(key: string, processor: (chunk: string) =
 
         stream.on('end', () => {
           processingPromise
-            .then(processChunk) // Process any remaining data
+            .then(processChunk)
             .then(() => {
               if (streamError) {
                 reject(streamError);
@@ -282,21 +267,18 @@ export async function fetchAllHealthData(type: HealthDataType, userId: string): 
       try {
         const data = await fetchDataFile(key);
         
-        // Handle sleep and workout data which are stored as arrays of objects
         if ((type === 'sleep' || type === 'workout') && !Array.isArray(data)) {
           return data ? [data] : [];
         }
         
-        // Handle array data for other types
         return Array.isArray(data) ? data : [];
       } catch (error) {
-        // If we're looking for bodyFat but couldn't find it, try the lowercase variant
         if (type === 'bodyFat') {
           const lowercaseKey = `data/${userId}/bodyfat.json`;
           const data = await fetchDataFile(lowercaseKey);
           return Array.isArray(data) ? data : [];
         }
-        throw error; // Re-throw for other data types
+        throw error;
       }
     } catch (error) {
       console.log(`No data found for ${type}:`, error);
@@ -310,7 +292,6 @@ export async function fetchAllHealthData(type: HealthDataType, userId: string): 
 
 export async function deleteOldXmlFiles(userId: string): Promise<void> {
   try {
-    // List all XML files for the user
     const command = new ListObjectsV2Command({
       Bucket: BUCKET_NAME,
       Prefix: `uploads/${userId}/`,
@@ -319,7 +300,6 @@ export async function deleteOldXmlFiles(userId: string): Promise<void> {
     const response = await s3Client.send(command);
     const xmlFiles = response.Contents?.filter(obj => obj.Key?.endsWith('.xml')) || [];
 
-    // Delete each XML file
     for (const file of xmlFiles) {
       if (!file.Key) continue;
 
@@ -350,19 +330,16 @@ export async function saveHealthData(healthData: HealthData): Promise<void> {
   const key = `data/${healthData.userId}/${healthData.type}.json`;
 
   try {
-    // For sleep and workout data, always store as array
     if (healthData.type === 'sleep' || healthData.type === 'workout') {
       let dataArray: any[] = [];
       
       try {
-        // Try to get existing data
         const existingData = await fetchDataFile(key);
         dataArray = Array.isArray(existingData) ? existingData : existingData ? [existingData] : [];
       } catch (error) {
         console.log(`No existing ${healthData.type} data found, starting with empty array`);
       }
 
-      // Add new data
       const newEntry = {
         type: healthData.type,
         userId: healthData.userId,
@@ -370,25 +347,20 @@ export async function saveHealthData(healthData: HealthData): Promise<void> {
         timestamp: healthData.timestamp
       };
 
-      // Check if we already have this session (based on startDate)
       const existingIndex = dataArray.findIndex(
         (entry: any) => entry.data.startDate === healthData.data.startDate
       );
 
       if (existingIndex >= 0) {
-        // Update existing entry
         dataArray[existingIndex] = newEntry;
       } else {
-        // Add new entry
         dataArray.push(newEntry);
       }
 
-      // Sort by startDate in descending order (newest first)
       dataArray.sort((a: any, b: any) => 
         new Date(b.data.startDate).getTime() - new Date(a.data.startDate).getTime()
       );
 
-      // Always save as array
       const command = new PutObjectCommand({
         Bucket: BUCKET_NAME,
         Key: key,
@@ -401,7 +373,6 @@ export async function saveHealthData(healthData: HealthData): Promise<void> {
       return;
     }
 
-    // For non-sleep/workout data
     const command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,
@@ -415,4 +386,6 @@ export async function saveHealthData(healthData: HealthData): Promise<void> {
     console.error(`Error saving ${healthData.type} data:`, error);
     throw error;
   }
-} 
+}
+
+

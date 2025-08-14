@@ -1,6 +1,6 @@
 import { XMLParser } from 'fast-xml-parser/src/fxp';
-import { processS3XmlFile, generatePresignedUploadUrl, fetchAllHealthData, type HealthDataType } from './s3';
-import { updateProcessingJobProgress, updateProcessingJobStatus } from './processingJobs';
+import { processS3XmlFile, generatePresignedUploadUrl, fetchAllHealthData, type HealthDataType } from '@/server/aws/s3';
+import { updateProcessingJobProgress, updateProcessingJobStatus } from '@/server/jobs/processingJobs';
 
 interface HealthRecord {
   date: string;

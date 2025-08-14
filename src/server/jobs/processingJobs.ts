@@ -1,5 +1,5 @@
 import { ProcessingJob, CreateProcessingJob, ProcessingStatus } from '@/types/processingJob';
-import clientPromise from './mongodb';
+import clientPromise from '@/db/client';
 import { ObjectId } from 'mongodb';
 
 const COLLECTION = 'processing-jobs';
@@ -96,4 +96,6 @@ export async function updateProcessingJobProgress(
   return updateProcessingJobStatus(jobId, 'processing', {
     progress: { current, total, message }
   });
-} 
+}
+
+

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generatePresignedUploadUrl, deleteOldXmlFiles } from '@server/services/s3';
+import { generatePresignedUploadUrl, deleteOldXmlFiles } from '@/server/aws/s3';
 import { randomUUID } from 'crypto';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';

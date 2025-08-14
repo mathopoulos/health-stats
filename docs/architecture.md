@@ -18,11 +18,14 @@ This document captures the high-level structure, naming rules, and conventions f
 │  ├─ components/        # Re-usable UI components (client + server)
 │  │  └─ ui/             # Low-level primitives (Card, Skeleton, Dialog…)
 │  ├─ features/          # Domain-specific hooks, utils, and small components
-│  ├─ lib/               # Back-end helpers grouped by domain
-│  │  ├─ auth/           # Authentication helpers / adapters
-│  │  ├─ db/             # Database clients & queries
-│  │  ├─ aws/            # S3, Lambda helpers used at runtime
-│  │  └─ payments/       # Stripe utilities
+│  ├─ server/            # Server-only modules (no React) – business logic lives here
+│  │  ├─ aws/            # S3, Lambda clients & helpers
+│  │  ├─ payments/       # Stripe client & helpers
+│  │  └─ jobs/           # Background job persistence & status helpers
+│  ├─ db/                # Database client & schema constants (e.g., Mongo client)
+│  ├─ lib/               # Shared utilities (pure helpers, auth config, parsing)
+│  │  ├─ auth/           # Next-Auth config and helpers
+│  │  └─ utils.ts        # UI-agnostic helpers (e.g., cn)
 │  └─ types/             # Shared domain and API types (no ambient declarations)
 ├─ types/                # Ambient global .d.ts for third‑party modules (picked up via typeRoots)
 └─ docs/                 # Internal documentation (you are here)
@@ -30,7 +33,7 @@ This document captures the high-level structure, naming rules, and conventions f
 
 ### Rules
 
-1. **No business logic inside `src/app/api`.**  Route handlers are thin.  Real work lives in `src/lib/…` or `src/features/…`.
+1. **No business logic inside `src/app/api`.** Route handlers are thin. Real work lives in `src/server/*` (primary) or `src/features/*` (UI-adjacent helpers). `src/lib` is for shared, UI-agnostic utilities only.
 2. **All directories are lowercase-kebab-case**, except Next.js dynamic segments (e.g. `[userId]`).
 3. **Files use PascalCase** for React components, `camelCase` for helpers.
 
@@ -40,10 +43,14 @@ This document captures the high-level structure, naming rules, and conventions f
 
 ```jsonc
 "paths": {
-  "@/*":            ["./src/*"],
-  "@components/*":  ["./src/components/*"],
-  "@features/*":    ["./src/features/*"],
-  "@lib/*":         ["./src/lib/*"]
+  "@/*":             ["./src/*"],
+  "@components/*":   ["./src/components/*"],
+  "@ui/*":           ["./src/components/*"],
+  "@features/*":     ["./src/features/*"],
+  "@lib/*":          ["./src/lib/*"],
+  "@providers/*":    ["./src/providers/*"],
+  "@server/*":       ["./src/server/*"],
+  "@db/*":           ["./src/db/*"]
 }
 ```
 Use these instead of long relative paths.
@@ -73,16 +80,30 @@ Use these instead of long relative paths.
 
 ---
 
-## 5. Back-end Utilities (`src/lib`)
+## 5. Server Modules (`src/server`)
 
-Each sub-folder owns a public API via an `index.ts` barrel.  Example pattern:
+Server-only modules encapsulate integrations and domain logic. Prefer importing from these instead of calling SDKs directly in routes.
+
+Examples:
 
 ```ts
-// src/lib/db/index.ts
-export * from './mongodb';
+// S3 helpers
+import { listDataFiles, fetchAllHealthData } from '@/server/aws/s3';
+
+// Stripe helpers
+import stripe, { hasUserPurchasedProduct } from '@/server/payments/stripe';
+
+// Background jobs
+import { createProcessingJob, getProcessingJob } from '@/server/jobs/processingJobs';
+
+// Lambda
+import { invokeLambda } from '@/server/aws/lambda';
+
+// DB client
+import clientPromise from '@/db/client';
 ```
 
-Callers then `import { getDb } from '@lib/db';`.
+`src/server/index.ts` provides barrels if you want to group imports.
 
 ---
 
@@ -105,6 +126,8 @@ Callers then `import { getDb } from '@lib/db';`.
 
 * All operational scripts live in `infra/scripts`.
 * Cloud resources (Lambda bundle, policies) under `infra/aws`.
+
+Note: Historic shims under `src/server/services/*` and `src/lib/*` were removed in favor of the canonical `src/server/*` and `src/db/*` structure.
 
 ---
 

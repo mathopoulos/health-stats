@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { listDataFiles } from '@server/services/s3';
+import { listDataFiles } from '@/server/aws/s3';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 

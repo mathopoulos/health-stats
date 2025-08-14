@@ -7,9 +7,11 @@ const lambdaClient = new LambdaClient({
 export async function invokeLambda(jobId: string, userId: string, xmlKey: string): Promise<void> {
   const command = new InvokeCommand({
     FunctionName: 'process-health-data',
-    InvocationType: 'Event', // Asynchronous invocation
+    InvocationType: 'Event',
     Payload: Buffer.from(JSON.stringify({ jobId, userId, xmlKey }))
   });
 
   await lambdaClient.send(command);
-} 
+}
+
+
