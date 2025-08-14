@@ -105,26 +105,24 @@ export async function parseHealthData(filePath: string): Promise<HealthData> {
 
     stream.on('end', () => {
       // Sort and limit data to last 7 days
-      ['steps', 'weight', 'sleep', 'hrv'].forEach((metric) => {
-        data[metric as keyof HealthData].sort((a, b) => 
+      ;(['steps', 'weight', 'sleep', 'hrv'] as const).forEach((metric) => {
+        data[metric].sort((a, b) => 
           new Date(a.date).getTime() - new Date(b.date).getTime()
         );
 
-        // If no data is available for the last 7 days, add some placeholder data
-        if (data[metric as keyof HealthData].length === 0) {
+        if (data[metric].length === 0) {
           const last7Days = Array.from({ length: 7 }, (_, i) => {
             const date = new Date();
             date.setDate(date.getDate() - i);
             return date.toISOString().split('T')[0];
           }).reverse();
 
-          // Add placeholder data based on metric type
           switch (metric) {
             case 'steps':
               data.steps = last7Days.map(date => ({ date, value: 0 }));
               break;
             case 'weight':
-              data.weight = last7Days.map(date => ({ date, value: 70 })); // Default weight
+              data.weight = last7Days.map(date => ({ date, value: 70 }));
               break;
             case 'sleep':
               data.sleep = last7Days.map(date => ({ date, value: 0 }));
@@ -143,4 +141,6 @@ export async function parseHealthData(filePath: string): Promise<HealthData> {
       reject(error);
     });
   });
-} 
+}
+
+

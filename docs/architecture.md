@@ -15,13 +15,15 @@ This document captures the high-level structure, naming rules, and conventions f
 ├─ src/
 │  ├─ app/               # Next.js App-Router tree (pages, route handlers, RSC)
 │  │  └─ api/            # HTTP route handlers only (no business logic)
-│  ├─ components/        # Re-usable UI components (client + server)
-│  │  └─ ui/             # Low-level primitives (Card, Skeleton, Dialog…)
-│  ├─ features/          # Domain-specific hooks, utils, and small components
+│  ├─ components/        # Shared UI (cross-feature). Keep feature-owned UI in features/*
+│  │  └─ ui/             # Low-level primitives (Card, Skeleton, Dialog…). Barrel in index.ts
+│  ├─ features/          # Feature folders own their UI, hooks, and utils
+│  ├─ providers/         # App-level providers (e.g., SessionProvider, ThemeProvider)
 │  ├─ server/            # Server-only modules (no React) – business logic lives here
 │  │  ├─ aws/            # S3, Lambda clients & helpers
 │  │  ├─ payments/       # Stripe client & helpers
-│  │  └─ jobs/           # Background job persistence & status helpers
+│  │  ├─ jobs/           # Background job persistence & status helpers
+│  │  └─ processing/     # Long-running/processing flows (canonical imports)
 │  ├─ db/                # Database client & schema constants (e.g., Mongo client)
 │  ├─ lib/               # Shared utilities (pure helpers, auth config, parsing)
 │  │  ├─ auth/           # Next-Auth config and helpers
@@ -78,6 +80,40 @@ Use these instead of long relative paths.
 * One component per file; export named components.
 * Keep story/tests adjacent (`MyComp.test.tsx`, `MyComp.stories.tsx`).
 
+### Feature ownership & barrels
+
+- **Feature-owned UI** lives under `src/features/<feature>/components`. Avoid putting feature UI in `src/components`.
+- Add a local barrel when helpful: `src/features/<feature>/components/index.ts`.
+- Examples:
+
+```ts
+// Feature components (recommended)
+import AddExperimentModal from '@features/experiments/components/AddExperimentModal';
+import BloodTestUpload from '@features/blood-markers/components/BloodTestUpload';
+
+// Shared primitives
+import { ConfirmDialog } from '@components/ui';
+```
+
+### App providers
+
+- App-level providers live in `src/providers`.
+- Example usage in `src/app/layout.tsx`:
+
+```tsx
+import { SessionProvider } from '@providers/SessionProvider';
+import { ThemeProvider } from '@providers/ThemeProvider';
+
+// ...
+<SessionProvider>
+  <ThemeProvider>{children}</ThemeProvider>
+</SessionProvider>
+```
+
+### Compatibility re-exports
+
+- During migration, some files in `src/components/*` may re-export from `src/features/*` to avoid breaking legacy paths. Prefer importing from `@features/*` going forward.
+
 ---
 
 ## 5. Server Modules (`src/server`)
@@ -105,6 +141,19 @@ import clientPromise from '@/db/client';
 
 `src/server/index.ts` provides barrels if you want to group imports.
 
+### Processing flows
+
+- Canonical imports for processing live under `src/server/processing`.
+
+```ts
+import { processHealthData } from '@server/processing/processHealthData';
+```
+
+### Barrels & canonical imports
+
+- Prefer importing from canonical modules (`@server/aws/s3`, `@server/payments/stripe`, `@db/client`, `@features/<feature>/components`).
+- Add `index.ts` barrels in folders with multiple exports to keep imports ergonomic.
+
 ---
 
 ## 6. Styling & UI
@@ -127,16 +176,16 @@ import clientPromise from '@/db/client';
 * All operational scripts live in `infra/scripts`.
 * Cloud resources (Lambda bundle, policies) under `infra/aws`.
 
-Note: Historic shims under `src/server/services/*` and `src/lib/*` were removed in favor of the canonical `src/server/*` and `src/db/*` structure.
+Note: Historic shims under `src/server/services/*` and duplicate libs under `src/lib/*` were removed in favor of canonical modules in `src/server/*` and `src/db/*`.
 
 ---
 
 ## 9. Adding a New Feature
 
 1. Create a folder in `src/features` (`kebab-case`).
-2. Add hooks, utils, and small components there.
+2. Add hooks, utils, and components there (`components/`, `utils/`). Keep domain-specific utilities with the feature (e.g., `@features/health-data/utils`).
 3. If you need API endpoints, add route handlers under `src/app/api/feature-name`.
-4. Expose helper functions in `src/lib/feature-name` when necessary.
+4. Only use `src/lib` for cross-cutting, UI-agnostic helpers. Otherwise keep helpers inside the feature.
 
 ---
 

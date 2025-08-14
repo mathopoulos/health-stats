@@ -16,7 +16,7 @@ import FitnessMetricsHistory from '@features/workouts/components/FitnessMetricsH
 import { toast } from 'react-hot-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
 import ConfirmDialog from '@components/ui/ConfirmDialog';
-import EditSupplementProtocolModal from '@components/EditSupplementProtocolPopover';
+import EditSupplementProtocolModal from '@features/experiments/components/EditSupplementProtocolPopover';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
