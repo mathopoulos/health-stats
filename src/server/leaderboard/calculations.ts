@@ -12,8 +12,9 @@ import type {
 
 /**
  * Filter health data by time window from the most recent date
+ * @exported for testing
  */
-function filterByTimeWindow(data: HealthDataPoint[], days: number): HealthDataPoint[] {
+export function filterByTimeWindow(data: HealthDataPoint[], days: number): HealthDataPoint[] {
   if (data.length === 0) return [];
   
   // Sort by date descending to get the most recent first
@@ -33,8 +34,9 @@ function filterByTimeWindow(data: HealthDataPoint[], days: number): HealthDataPo
 
 /**
  * Calculate average value from health data points
+ * @exported for testing
  */
-function calculateAverage(data: HealthDataPoint[]): number {
+export function calculateAverage(data: HealthDataPoint[]): number {
   if (data.length === 0) return 0;
   return data.reduce((sum, item) => sum + item.value, 0) / data.length;
 }
