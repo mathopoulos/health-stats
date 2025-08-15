@@ -74,14 +74,8 @@ export default function DashboardPage() {
     getTimeRangeData
   } = useTimeRangeFilters();
 
-  // Authentication check
-  useEffect(() => {
-    if (status === 'loading') return;
-    if (!session) {
-      window.location.href = '/auth/signin';
-      return;
-    }
-  }, [session, status]);
+  // Note: No authentication check - dashboard is publicly viewable
+  // Authentication only affects whether the "Manage" button is shown
 
   // Fetch user data
   useEffect(() => {
@@ -170,14 +164,9 @@ export default function DashboardPage() {
     }
   };
 
-  // Show loading state
+  // Show loading state only while session is being determined
   if (status === 'loading') {
     return <div>Loading...</div>;
-  }
-
-  // Show authentication required
-  if (!session) {
-    return <div>Please sign in to access your dashboard.</div>;
   }
 
 

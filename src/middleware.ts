@@ -103,6 +103,13 @@ export async function middleware(request: NextRequest) {
 
   // Handle non-API routes
   
+  // Allow dashboard pages for both authenticated and unauthenticated users
+  if (isDashboardPage) {
+    const response = NextResponse.next();
+    response.headers.set('x-pathname', request.nextUrl.pathname);
+    return response;
+  }
+  
   // If user is authenticated and trying to access auth pages, redirect to home
   if (isAuthPage && token && !isInvitePage) {
     return NextResponse.redirect(new URL("/upload", request.url));
@@ -118,9 +125,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/auth/signin", request.url));
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  response.headers.set('x-pathname', request.nextUrl.pathname);
+  return response;
 }
 
 export const config = {
-  matcher: ["/upload/:path*", "/api/:path*", "/auth/:path*", "/dashboard/:path*"],
+  matcher: ["/upload/:path*", "/api/:path*", "/auth/:path*", "/dashboard/:path*", "/admin/:path*"],
 }; 
