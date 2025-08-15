@@ -312,9 +312,9 @@ describe('TabNavigation', () => {
       const validTabs: DashboardTab[] = ['home', 'metrics', 'blood', 'protocols'];
       
       validTabs.forEach(tab => {
-        const { rerender } = render(<TabNavigation {...defaultProps} activeTab={tab} />);
+        const { unmount } = render(<TabNavigation {...defaultProps} activeTab={tab} />);
         expect(screen.getByRole('navigation')).toBeInTheDocument();
-        rerender(<TabNavigation {...defaultProps} activeTab={tab} />);
+        unmount(); // Clean up before next iteration
       });
     });
   });

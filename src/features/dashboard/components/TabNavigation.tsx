@@ -16,6 +16,7 @@ interface TabButtonProps {
 function TabButton({ isActive, onClick, children }: TabButtonProps) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={`py-4 px-1 inline-flex items-center border-b-2 font-medium text-sm whitespace-nowrap ${
         isActive
