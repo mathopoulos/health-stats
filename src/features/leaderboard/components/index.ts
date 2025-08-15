@@ -6,7 +6,6 @@ export { LeaderboardHeader } from './LeaderboardHeader';
 export { LeaderboardTabs } from './LeaderboardTabs';
 export { LeaderboardTable } from './LeaderboardTable';
 export { LeaderboardEntry } from './LeaderboardEntry';
-export { LeaderboardStats } from './LeaderboardStats';
 
 // State components
 export { LoadingState } from './LoadingState';

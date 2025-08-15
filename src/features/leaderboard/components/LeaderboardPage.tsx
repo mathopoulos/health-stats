@@ -10,7 +10,6 @@ import {
   LeaderboardHeader,
   LeaderboardTabs,
   LeaderboardTable,
-  LeaderboardStats,
 } from './index';
 import { useLeaderboardData, useLeaderboardFilters } from '../hooks';
 
@@ -65,13 +64,6 @@ export function LeaderboardPage() {
             activeTab={filters.metric}
             onTabChange={handleTabChange}
             loading={state.loading}
-          />
-
-          {/* Leaderboard Stats */}
-          <LeaderboardStats
-            entries={currentData?.entries || []}
-            metric={filters.metric}
-            loading={currentLoading}
           />
 
           {/* Main Leaderboard Table */}

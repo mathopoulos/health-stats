@@ -21,13 +21,7 @@ jest.mock('../LeaderboardTabs', () => ({
   )),
 }));
 
-jest.mock('../LeaderboardStats', () => ({
-  LeaderboardStats: jest.fn(({ entries, metric, loading }) => (
-    <div data-testid="leaderboard-stats">
-      Stats - Metric: {metric}, Entries: {entries?.length || 0}, Loading: {loading ? 'yes' : 'no'}
-    </div>
-  )),
-}));
+
 
 jest.mock('../LeaderboardTable', () => ({
   LeaderboardTable: jest.fn(({ data, loading, error, metric, onRetry }) => (
@@ -88,7 +82,6 @@ describe('LeaderboardPage', () => {
     expect(screen.getByTestId('theme-toggle')).toBeInTheDocument();
     expect(screen.getByTestId('leaderboard-header')).toBeInTheDocument();
     expect(screen.getByTestId('leaderboard-tabs')).toBeInTheDocument();
-    expect(screen.getByTestId('leaderboard-stats')).toBeInTheDocument();
     expect(screen.getByTestId('leaderboard-table')).toBeInTheDocument();
   });
 
@@ -107,13 +100,7 @@ describe('LeaderboardPage', () => {
     expect(screen.getByText(/Loading: {"hrv":false,"vo2max":false}/)).toBeInTheDocument();
   });
 
-  it('passes correct props to LeaderboardStats', () => {
-    render(<LeaderboardPage />);
-    
-    const stats = screen.getByTestId('leaderboard-stats');
-    expect(stats).toHaveTextContent('Metric: hrv');
-    expect(stats).toHaveTextContent('Entries: 1');
-  });
+
 
   it('passes correct props to LeaderboardTable', () => {
     render(<LeaderboardPage />);
@@ -186,8 +173,8 @@ describe('LeaderboardPage', () => {
     
     render(<LeaderboardPage />);
     
-    expect(screen.getByText(/Entries: 0/)).toBeInTheDocument();
     expect(screen.getByText(/Data: 0/)).toBeInTheDocument();
+    expect(screen.getByText(/Users: 0/)).toBeInTheDocument();
   });
 
   it('renders with vo2max active tab', () => {
@@ -218,8 +205,6 @@ describe('LeaderboardPage', () => {
     render(<LeaderboardPage />);
     
     expect(screen.getByText(/Active: vo2max/)).toBeInTheDocument();
-    const stats = screen.getByTestId('leaderboard-stats');
-    expect(stats).toHaveTextContent('Metric: vo2max');
     expect(screen.getByText(/Users: 50/)).toBeInTheDocument();
   });
 
