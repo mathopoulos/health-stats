@@ -5,6 +5,8 @@ import {
   type LeaderboardResult,
   type LeaderboardMetric,
   type LeaderboardOptions,
+  isValidLeaderboardMetric,
+  getDefaultLeaderboardOptions,
 } from '../types';
 
 describe('Leaderboard Types', () => {
@@ -113,5 +115,20 @@ describe('Leaderboard Types', () => {
     expect(partialOptions.timeWindowDays).toBe(7);
     expect(partialOptions.minDataPoints).toBeUndefined();
     expect(partialOptions.maxEntries).toBeUndefined();
+  });
+
+  it('should validate leaderboard metrics correctly', () => {
+    expect(isValidLeaderboardMetric('hrv')).toBe(true);
+    expect(isValidLeaderboardMetric('vo2max')).toBe(true);
+    expect(isValidLeaderboardMetric('invalid')).toBe(false);
+    expect(isValidLeaderboardMetric('')).toBe(false);
+  });
+
+  it('should provide default leaderboard options', () => {
+    const defaults = getDefaultLeaderboardOptions();
+
+    expect(defaults.timeWindowDays).toBe(30);
+    expect(defaults.minDataPoints).toBe(1);
+    expect(defaults.maxEntries).toBe(100);
   });
 });

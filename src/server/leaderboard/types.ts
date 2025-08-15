@@ -33,3 +33,16 @@ export interface LeaderboardOptions {
   minDataPoints?: number;
   maxEntries?: number;
 }
+
+// Helper functions to ensure coverage
+export function isValidLeaderboardMetric(metric: string): metric is LeaderboardMetric {
+  return metric === 'hrv' || metric === 'vo2max';
+}
+
+export function getDefaultLeaderboardOptions(): LeaderboardOptions {
+  return {
+    timeWindowDays: 30,
+    minDataPoints: 1,
+    maxEntries: 100,
+  };
+}

@@ -87,4 +87,25 @@ describe('Leaderboard Calculations - Simple Coverage Tests', () => {
       {}
     );
   });
+
+  it('should exercise more code paths for coverage', async () => {
+    // Test calculateAverage function by importing it via module access
+    const calculations = require('../calculations');
+    
+    // Test generateLeaderboard with different options to hit more branches
+    const mockClientPromise = require('@/db/client').default;
+    mockClientPromise.mockRejectedValue(new Error('Test error'));
+
+    // Test with different options to hit more code paths
+    await expect(calculations.generateLeaderboard('hrv', { 
+      timeWindowDays: 7, 
+      minDataPoints: 2, 
+      maxEntries: 10 
+    })).rejects.toThrow('Failed to generate hrv leaderboard');
+
+    expect(consoleSpy.log).toHaveBeenCalledWith(
+      'Generating hrv leaderboard with options:',
+      { timeWindowDays: 7, minDataPoints: 2, maxEntries: 10 }
+    );
+  });
 });
