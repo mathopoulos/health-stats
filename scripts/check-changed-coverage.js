@@ -77,12 +77,14 @@ function runCoverageForChangedFiles(changedFiles) {
 
   try {
     // Run Jest with coverage for changed files only
+    // Disable global coverage thresholds to avoid failures when testing individual files
     const jestArgs = [
       '--coverage',
       '--collectCoverageFrom=src/**/*.{ts,tsx}',
       '--collectCoverageFrom=!src/**/*.{test,spec}.{ts,tsx}',
       '--collectCoverageFrom=!src/**/__tests__/**',
       '--collectCoverageFrom=!src/**/index.{ts,tsx}',
+      '--coverageThreshold={}', // Disable global thresholds
       '--findRelatedTests',
       '--passWithNoTests',
       ...changedFiles
