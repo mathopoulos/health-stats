@@ -67,19 +67,21 @@ function runCoverageForChangedFiles(changedFiles) {
 
   try {
     // Run Jest with coverage for changed files only
-    const testCommand = [
-      'npx jest',
+    const jestArgs = [
       '--coverage',
-      '--collectCoverageFrom="src/**/*.{ts,tsx}"',
-      '--collectCoverageFrom="!src/**/*.{test,spec}.{ts,tsx}"',
-      '--collectCoverageFrom="!src/**/__tests__/**"',
-      '--collectCoverageFrom="!src/**/index.{ts,tsx}"',
+      '--collectCoverageFrom=src/**/*.{ts,tsx}',
+      '--collectCoverageFrom=!src/**/*.{test,spec}.{ts,tsx}',
+      '--collectCoverageFrom=!src/**/__tests__/**',
+      '--collectCoverageFrom=!src/**/index.{ts,tsx}',
       '--findRelatedTests',
       '--passWithNoTests',
-      changedFiles.join(' ')
-    ].join(' ');
+      ...changedFiles
+    ];
 
-    execSync(testCommand, { stdio: 'inherit' });
+    execSync('npx jest ' + jestArgs.map(arg => `"${arg}"`).join(' '), { 
+      stdio: 'inherit', 
+      shell: true 
+    });
     
     // Read coverage summary
     const coverageSummaryPath = path.join(process.cwd(), 'coverage', 'coverage-summary.json');
