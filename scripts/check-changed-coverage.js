@@ -41,7 +41,8 @@ function getChangedFiles() {
       !file.includes('.test.') &&
       !file.includes('.spec.') &&
       !file.includes('/__tests__/') &&
-      !file.includes('/index.ts') // Skip barrel files
+      !file.includes('/index.ts') && // Skip barrel files
+      fs.existsSync(file) // Only include files that still exist (filter out deleted files)
     );
   } catch (error) {
     console.log('ℹ️  Could not get changed files (probably first commit). Running full coverage check...');
