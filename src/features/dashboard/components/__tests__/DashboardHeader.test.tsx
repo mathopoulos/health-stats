@@ -40,14 +40,12 @@ Object.assign(navigator, {
 });
 
 // Mock window.location
-const mockLocation = {
+// Mock location with jest
+delete (window as any).location;
+window.location = {
   href: 'https://example.com/dashboard/test-user',
   origin: 'https://example.com',
-};
-Object.defineProperty(window, 'location', {
-  value: mockLocation,
-  writable: true,
-});
+} as Location;
 
 describe('DashboardHeader', () => {
   const mockUserData: UserData = {
