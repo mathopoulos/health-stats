@@ -54,6 +54,7 @@ export function DashboardHeader({ userData, userId, sessionUserId, loading }: Da
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Health Dashboard</p>
                 <button
+                  type="button"
                   onClick={() => {
                     const shareUrl = `${window.location.origin}/dashboard/${userId}`;
                     navigator.clipboard.writeText(shareUrl).then(() => {
@@ -123,6 +124,7 @@ export function DashboardHeader({ userData, userId, sessionUserId, loading }: Da
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Health Dashboard</p>
                 <button
+                  type="button"
                   onClick={() => {
                     const url = window.location.href;
                     navigator.clipboard.writeText(url).then(() => {
