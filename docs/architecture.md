@@ -300,6 +300,74 @@ Note: Historic shims under `src/server/services/*` and duplicate libs under `src
 3. If you need API endpoints, add route handlers under `src/app/api/feature-name`.
 4. Only use `src/lib` for cross-cutting, UI-agnostic helpers. Otherwise keep helpers inside the feature.
 
+### Leaderboard Feature Example
+
+The leaderboard feature demonstrates the complete feature-based architecture:
+
+```
+src/features/leaderboard/
+├── components/           # UI components
+│   ├── __tests__/       # Component tests
+│   ├── LeaderboardPage.tsx
+│   ├── LeaderboardHeader.tsx
+│   ├── LeaderboardTabs.tsx
+│   ├── LeaderboardTable.tsx
+│   ├── LeaderboardEntry.tsx
+│   ├── LoadingState.tsx
+│   └── index.ts         # Barrel exports
+├── hooks/               # Custom hooks
+│   ├── __tests__/       # Hook tests
+│   ├── useLeaderboardData.ts
+│   ├── useLeaderboardFilters.ts
+│   └── index.ts
+├── utils/               # Feature utilities
+│   ├── __tests__/       # Utility tests
+│   ├── rank-helpers.ts
+│   ├── leaderboard-calculations.ts
+│   ├── constants.ts
+│   └── index.ts
+├── types/               # Feature types
+│   └── index.ts
+└── index.ts             # Main feature export
+```
+
+**Server-side business logic** lives in `src/server/leaderboard/`:
+
+```
+src/server/leaderboard/
+├── calculations.ts      # Core leaderboard generation
+├── profile-images.ts    # S3 image URL handling
+├── types.ts            # Server-only types
+└── index.ts            # Server exports
+```
+
+**API routes** are thin wrappers:
+
+```ts
+// ✅ Good: Thin API route (24 lines)
+import { generateLeaderboard } from '@/server/leaderboard';
+
+export async function GET() {
+  const result = await generateLeaderboard('hrv', options);
+  return NextResponse.json({ success: true, data: result.entries });
+}
+
+// ❌ Bad: Business logic in route (145+ lines)
+export async function GET() {
+  const client = await clientPromise;
+  const users = await db.collection('users').find({})...
+  // ... 140+ more lines of processing
+}
+```
+
+### Key Benefits
+
+- **Maintainability**: Business logic is separated and testable
+- **Reusability**: Server modules can be used by multiple API routes
+- **Performance**: Shared utilities reduce code duplication
+- **Type Safety**: Proper TypeScript interfaces throughout
+- **Testing**: Clean separation enables comprehensive testing
+
 ---
 
 _Feel free to extend this document as the project evolves._
