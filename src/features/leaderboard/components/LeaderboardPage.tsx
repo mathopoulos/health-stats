@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useTheme } from '@providers/ThemeProvider';
+
 import { Toaster } from 'react-hot-toast';
 import ThemeToggle from '@components/ThemeToggle';
 
@@ -19,8 +19,6 @@ import { useLeaderboardData, useLeaderboardFilters } from '../hooks';
  * Much cleaner and more maintainable than the original 300-line monolithic component
  */
 export function LeaderboardPage() {
-  const { theme } = useTheme();
-  
   // Use our custom hooks for data management and filters
   const { state, refreshData, clearError } = useLeaderboardData();
   const { filters, setMetric } = useLeaderboardFilters();
@@ -69,6 +67,13 @@ export function LeaderboardPage() {
             loading={state.loading}
           />
 
+          {/* Leaderboard Stats */}
+          <LeaderboardStats
+            entries={currentData?.entries || []}
+            metric={filters.metric}
+            loading={currentLoading}
+          />
+
           {/* Main Leaderboard Table */}
           <LeaderboardTable
             data={currentData?.entries || []}
@@ -77,7 +82,6 @@ export function LeaderboardPage() {
             metric={filters.metric}
             onRetry={handleRetry}
           />
-
 
         </div>
       </main>

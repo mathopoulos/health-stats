@@ -45,14 +45,35 @@ export function LeaderboardHeader({ totalUsers, lastUpdated, loading }: Leaderbo
         <div className="w-8 h-px bg-gradient-to-r from-purple-500 to-blue-500"></div>
       </div>
       
-      {/* Subtitle */}
-      <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-        Compete with the{' '}
-        <span className="text-purple-400 font-semibold">
-          Revly community
-        </span>{' '}
-        and track your fitness progress
-      </p>
+      {/* Subtitle with stats */}
+      <div className="space-y-2">
+        <p className="text-lg text-gray-300 max-w-2xl mx-auto">
+          Compete with the{' '}
+          <span className="text-purple-400 font-semibold">
+            Revly community
+          </span>{' '}
+          and track your fitness progress
+        </p>
+        
+        {/* User count and last updated */}
+        <div className="flex items-center justify-center space-x-4 text-sm text-gray-400">
+          {loading ? (
+            <span className="animate-pulse">Loading...</span>
+          ) : (
+            <>
+              {totalUsers > 0 && (
+                <span>{totalUsers.toLocaleString()} competitors</span>
+              )}
+              {lastUpdated && (
+                <>
+                  {totalUsers > 0 && <span>•</span>}
+                  <span>Updated {formatLastUpdated(lastUpdated)}</span>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
