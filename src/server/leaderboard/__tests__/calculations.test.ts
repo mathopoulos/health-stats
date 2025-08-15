@@ -88,24 +88,26 @@ describe('Leaderboard Calculations - Simple Coverage Tests', () => {
     );
   });
 
-  it('should exercise more code paths for coverage', async () => {
-    // Test calculateAverage function by importing it via module access
-    const calculations = require('../calculations');
-    
-    // Test generateLeaderboard with different options to hit more branches
+  it('should test generateMultipleLeaderboards with errors for coverage', async () => {
     const mockClientPromise = require('@/db/client').default;
     mockClientPromise.mockRejectedValue(new Error('Test error'));
 
-    // Test with different options to hit more code paths
-    await expect(calculations.generateLeaderboard('hrv', { 
-      timeWindowDays: 7, 
-      minDataPoints: 2, 
-      maxEntries: 10 
-    })).rejects.toThrow('Failed to generate hrv leaderboard');
+    const { generateMultipleLeaderboards } = require('../calculations');
 
+    // Test multiple metrics to exercise more code paths
+    await expect(generateMultipleLeaderboards(['hrv', 'vo2max'], { 
+      timeWindowDays: 14, 
+      minDataPoints: 3 
+    })).rejects.toThrow();
+
+    // Should have called generateLeaderboard for each metric
     expect(consoleSpy.log).toHaveBeenCalledWith(
       'Generating hrv leaderboard with options:',
-      { timeWindowDays: 7, minDataPoints: 2, maxEntries: 10 }
+      { timeWindowDays: 14, minDataPoints: 3 }
+    );
+    expect(consoleSpy.log).toHaveBeenCalledWith(
+      'Generating vo2max leaderboard with options:',
+      { timeWindowDays: 14, minDataPoints: 3 }
     );
   });
 });
