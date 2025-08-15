@@ -118,6 +118,25 @@ describe('Leaderboard Calculations - Simple Coverage Tests', () => {
   });
 
 
+  it('should exercise generateLeaderboard with different options for branch coverage', async () => {
+    const mockClientPromise = require('@/db/client').default;
+    mockClientPromise.mockRejectedValue(new Error('Test error for different options'));
+
+    const { generateLeaderboard } = require('../calculations');
+
+    // Test with different options to potentially hit different branches
+    await expect(generateLeaderboard('hrv', { 
+      timeWindowDays: 90, 
+      minDataPoints: 5, 
+      maxEntries: 50 
+    })).rejects.toThrow('Failed to generate hrv leaderboard');
+
+    expect(consoleSpy.log).toHaveBeenCalledWith(
+      'Generating hrv leaderboard with options:',
+      { timeWindowDays: 90, minDataPoints: 5, maxEntries: 50 }
+    );
+  });
+
   // Unit tests for pure helper functions
   describe('filterByTimeWindow', () => {
     it('should return empty array for empty input', () => {
@@ -212,6 +231,19 @@ describe('Leaderboard Calculations - Simple Coverage Tests', () => {
       ];
       const result = calculateAverage(healthData);
       expect(result).toBe(0);
+    });
+
+    it('should handle edge case with very large time window', () => {
+      const baseDate = new Date('2024-01-15');
+      const healthData = [
+        { date: baseDate.toISOString(), value: 50 },
+        { date: new Date(baseDate.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(), value: 45 },
+      ];
+
+      // Test with very large time window to ensure all data is included
+      const result = filterByTimeWindow(healthData, 365);
+      expect(result.length).toBe(2);
+      expect(result[0].value).toBe(50); // sorted descending by date
     });
   });
 });
