@@ -10,6 +10,14 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:coverage:watch": "jest --coverage --watch",
+    "test:ci": "jest --ci --coverage --watchAll=false",
+    "test:changed": "jest --onlyChanged --passWithNoTests",
+    "coverage:check": "jest --coverage --passWithNoTests && echo 'Coverage thresholds passed!'",
+    "coverage:report": "npm run test:coverage && node scripts/coverage-report.js",
+    "coverage:open": "npm run test:coverage && open coverage/lcov-report/index.html",
+    "coverage:changed": "node scripts/check-changed-coverage.js",
+    "prepare": "husky",
     "extract-health-data": "tsx scripts/extractHeartRate.ts",
     "extract-weight": "tsx scripts/extractWeight.ts",
     "extract-body-fat": "tsx scripts/extractBodyFat.ts",
@@ -18,7 +26,13 @@
     "check-old-paths": "tsx scripts/check-old-paths.ts",
     "check-user-ids": "tsx scripts/check-user-ids.ts",
     "cleanup-users": "tsx scripts/cleanup-users.ts",
-    "test-apis": "ts-node scripts/test-apis.ts"
+    "test-apis": "ts-node scripts/test-apis.ts",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "src/**/*.{js,jsx,ts,tsx}": [
+      "npm run test:changed --findRelatedTests --passWithNoTests"
+    ]
   },
   "dependencies": {
     "@aws-sdk/client-lambda": "^3.726.1",
@@ -69,7 +83,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/jest-dom": "^6.7.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/aws-lambda": "^8.10.147",
@@ -80,14 +94,18 @@
     "autoprefixer": "^10.4.20",
     "eslint": "^8",
     "eslint-config-next": "14.0.4",
+    "husky": "^9.1.7",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
+    "lint-staged": "^16.1.5",
+    "msw": "^2.10.5",
     "postcss": "^8",
     "postcss-import": "^16.1.0",
     "postcss-preset-env": "^10.1.3",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "whatwg-fetch": "^3.6.20"
   }
 }

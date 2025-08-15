@@ -28,7 +28,9 @@ This document captures the high-level structure, naming rules, and conventions f
 │  ├─ lib/               # Shared utilities (pure helpers, auth config, parsing)
 │  │  ├─ auth/           # Next-Auth config and helpers
 │  │  └─ utils.ts        # UI-agnostic helpers (e.g., cn)
-│  └─ types/             # Shared domain and API types (no ambient declarations)
+│  ├─ types/             # Shared domain and API types (no ambient declarations)
+│  ├─ constants/         # App-wide constants and configuration (sleep targets, etc.)
+│  └─ test-utils/        # Testing utilities and custom render functions
 ├─ types/                # Ambient global .d.ts for third‑party modules (picked up via typeRoots)
 └─ docs/                 # Internal documentation (you are here)
 ```
@@ -38,6 +40,12 @@ This document captures the high-level structure, naming rules, and conventions f
 1. **No business logic inside `src/app/api`.** Route handlers are thin. Real work lives in `src/server/*` (primary) or `src/features/*` (UI-adjacent helpers). `src/lib` is for shared, UI-agnostic utilities only.
 2. **All directories are lowercase-kebab-case**, except Next.js dynamic segments (e.g. `[userId]`).
 3. **Files use PascalCase** for React components, `camelCase` for helpers.
+
+### Recent Improvements
+
+- **Eliminated ambiguous "shared" folder**: Reorganized into clear, conventional directories (`types/`, `constants/`, `test-utils/`) for better developer experience.
+- **Added path aliases**: New aliases for `@types/*`, `@constants/*`, and `@test-utils` improve import ergonomics.
+- **Centralized utilities**: Moved blood marker processing and metric calculations to `src/lib/` for better reusability.
 
 ---
 
@@ -50,6 +58,9 @@ This document captures the high-level structure, naming rules, and conventions f
   "@ui/*":           ["./src/components/*"],
   "@features/*":     ["./src/features/*"],
   "@lib/*":          ["./src/lib/*"],
+  "@types/*":        ["./src/types/*"],
+  "@constants/*":    ["./src/constants/*"],
+  "@test-utils":     ["./src/test-utils"],
   "@providers/*":    ["./src/providers/*"],
   "@server/*":       ["./src/server/*"],
   "@db/*":           ["./src/db/*"]
@@ -93,6 +104,11 @@ import BloodTestUpload from '@features/blood-markers/components/BloodTestUpload'
 
 // Shared primitives
 import { ConfirmDialog } from '@components/ui';
+
+// Types, constants, and utilities
+import type { ChartData } from '@types/dashboard';
+import { SLEEP_STAGE_TARGETS } from '@constants/sleep';
+import { aggregateData } from '@lib/metric-calculations';
 ```
 
 ### App providers
@@ -164,10 +180,107 @@ import { processHealthData } from '@server/processing/processHealthData';
 
 ---
 
-## 7. Testing
+## 7. Testing & Coverage
 
-* Jest + React Testing Library.
+### Testing Framework
+
+* **Jest + React Testing Library** for unit and integration tests.
 * Tests live next to code (e.g. `TrendIndicator.test.tsx`).
+* Custom test utilities in `src/test-utils/` provide consistent setup.
+
+```ts
+// Use custom render with providers
+import { render, screen } from '@test-utils';
+
+// Instead of raw React Testing Library
+// import { render, screen } from '@testing-library/react';
+```
+
+### Available Test Commands
+
+```bash
+# Basic testing
+npm test                    # Run all tests once
+npm run test:watch         # Run tests in watch mode
+npm run test:changed       # Run tests for changed files only
+
+# Coverage commands
+npm run test:coverage      # Run tests with coverage report
+npm run test:coverage:watch # Coverage in watch mode
+npm run coverage:report    # Detailed coverage analysis
+npm run coverage:open      # Open HTML coverage report
+npm run coverage:check     # Verify coverage meets thresholds
+npm run coverage:changed   # Check coverage for changed files only
+
+# CI/CD
+npm run test:ci           # Optimized for CI environments
+```
+
+### Pre-commit Testing
+
+Pre-commit hooks automatically run:
+1. **ESLint** with auto-fix on staged files
+2. **Tests** for files related to your changes
+3. **No coverage enforcement** during commits (encourages frequent commits)
+
+Pre-push hooks run:
+1. **Full test suite** to ensure nothing is broken
+2. **Coverage check for changed files** with stricter requirements
+
+### Coverage Standards
+
+#### Global Thresholds (Baseline)
+- **Global minimum**: 7% branches, 6% functions, 4% lines/statements
+- **Business logic** (`src/lib/`): Higher standards (40-45%)
+
+#### Changed Files Requirements (Pre-Push)
+Stricter standards for new/modified code:
+- **Components**: 60% statements, 50% branches, 60% functions
+- **Hooks**: 70% statements, 60% branches, 80% functions
+- **Utils/Lib**: 80-85% statements, 70-75% branches, 90% functions
+- **API Routes**: 70% statements, 60% branches, 80% functions
+- **Default**: 50% statements, 40% branches, 50% functions
+
+This ensures **new code is well-tested** while allowing gradual improvement of legacy code.
+
+### Coverage Improvement Strategy
+
+1. **Phase 1**: Test utility functions (`src/lib/`)
+   - `blood-marker-processing.ts` - Critical data transformation
+   - `metric-calculations.ts` - Mathematical operations
+   - `utils.ts` - Helper functions
+
+2. **Phase 2**: Test key components
+   - Dashboard components with complex logic
+   - Form validation and data submission
+   - Critical user flows
+
+3. **Phase 3**: Integration tests
+   - API endpoints (`src/app/api/`)
+   - Full user workflows
+   - Error handling paths
+
+### Best Practices
+
+```ts
+// ✅ Good: Test behavior, not implementation
+test('should display user name when loaded', async () => {
+  render(<UserProfile userId="123" />);
+  expect(await screen.findByText('John Doe')).toBeInTheDocument();
+});
+
+// ❌ Avoid: Testing internal state
+test('should set loading to false', () => {
+  const wrapper = shallow(<UserProfile />);
+  expect(wrapper.state('loading')).toBe(false);
+});
+```
+
+**Key Principles**:
+- Test user-visible behavior, not implementation details
+- Focus on critical paths first (authentication, data processing, payments)
+- Write genuine tests that catch real bugs, not just to increase coverage
+- Use descriptive test names that explain the expected behavior
 
 ---
 

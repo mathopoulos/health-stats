@@ -35,6 +35,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# test coverage
+coverage/
+*.lcov
+
 # data files
 public/export.xml
 public/data/

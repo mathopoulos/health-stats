@@ -1,0 +1,6 @@
+echo "🔍 Running pre-commit checks..."
+
+# Run lint-staged to check only staged files
+npx lint-staged
+
+echo "✅ Pre-commit checks passed!"

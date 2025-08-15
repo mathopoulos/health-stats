@@ -1,0 +1,11 @@
+echo "🧪 Running pre-push checks..."
+
+# First: Run all tests to ensure nothing is broken
+echo "1️⃣ Running full test suite..."
+npm run test:ci
+
+# Second: Check coverage for changed files specifically  
+echo "2️⃣ Checking coverage for changed files..."
+node scripts/check-changed-coverage.js
+
+echo "✅ All pre-push checks passed!"

@@ -24,6 +24,9 @@
       "@ui/*": ["./src/components/*"],
       "@features/*": ["./src/features/*"],
       "@lib/*": ["./src/lib/*"],
+      "@types/*": ["./src/types/*"],
+      "@constants/*": ["./src/constants/*"],
+      "@test-utils": ["./src/test-utils"],
       "@providers/*": ["./src/providers/*"],
       "@server/*": ["./src/server/*"],
       "@db/*": ["./src/db/*"]
