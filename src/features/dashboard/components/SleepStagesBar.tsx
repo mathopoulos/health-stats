@@ -7,7 +7,10 @@ export function SleepStagesBar({ stageDurations }: SleepStagesBarProps) {
     return <div className="text-sm text-gray-500">No sleep data available</div>;
   }
 
-  const durationToMinutes = (duration: string): number => {
+  const durationToMinutes = (duration: string | undefined): number => {
+    if (!duration || typeof duration !== 'string') {
+      return 0;
+    }
     const hours = duration.match(/(\d+)h/)?.[1] || '0';
     const minutes = duration.match(/(\d+)m/)?.[1] || '0';
     return parseInt(hours) * 60 + parseInt(minutes);
