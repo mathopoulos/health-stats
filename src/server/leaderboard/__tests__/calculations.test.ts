@@ -1,4 +1,4 @@
-// Simple tests focused on coverage for calculations.ts
+// Comprehensive tests focused on coverage for calculations.ts
 // Mock dependencies first before any imports
 jest.mock('@/db/client', () => ({
   default: jest.fn(),

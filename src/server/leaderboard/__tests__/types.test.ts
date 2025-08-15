@@ -1,10 +1,10 @@
-import type {
-  HealthDataPoint,
-  UserRecord,
-  LeaderboardEntry,
-  LeaderboardResult,
-  LeaderboardMetric,
-  LeaderboardOptions,
+import {
+  type HealthDataPoint,
+  type UserRecord,
+  type LeaderboardEntry,
+  type LeaderboardResult,
+  type LeaderboardMetric,
+  type LeaderboardOptions,
 } from '../types';
 
 describe('Leaderboard Types', () => {
