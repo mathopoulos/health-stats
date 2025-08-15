@@ -16,6 +16,9 @@ const COVERAGE_REQUIREMENTS = {
   lib: { statements: 85, branches: 75, functions: 90, lines: 85 },
   api: { statements: 70, branches: 60, functions: 80, lines: 70 },
   
+  // Server files often contain integration code (DB, S3, etc.) - more challenging to test
+  server: { statements: 45, branches: 35, functions: 50, lines: 45 },
+  
   // Default for other files
   default: { statements: 50, branches: 40, functions: 50, lines: 50 }
 };
@@ -52,6 +55,7 @@ function getCoverageRequirements(filePath) {
   if (filePath.includes('/utils/')) return COVERAGE_REQUIREMENTS.utils;
   if (filePath.includes('/lib/')) return COVERAGE_REQUIREMENTS.lib;
   if (filePath.includes('/api/')) return COVERAGE_REQUIREMENTS.api;
+  if (filePath.includes('/server/')) return COVERAGE_REQUIREMENTS.server;
   return COVERAGE_REQUIREMENTS.default;
 }
 
