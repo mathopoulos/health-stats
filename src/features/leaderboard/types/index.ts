@@ -80,11 +80,7 @@ export interface LeaderboardEntryProps {
   isTopThree: boolean;
 }
 
-export interface LeaderboardHeaderProps {
-  totalUsers: number;
-  lastUpdated?: string;
-  loading?: boolean;
-}
+
 
 // Utility types
 export interface RankConfig {

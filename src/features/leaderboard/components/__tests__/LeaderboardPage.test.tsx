@@ -3,9 +3,9 @@ import { LeaderboardPage } from '../LeaderboardPage';
 
 // Mock the child components and hooks
 jest.mock('../LeaderboardHeader', () => ({
-  LeaderboardHeader: jest.fn(({ totalUsers, loading }) => (
+  LeaderboardHeader: jest.fn(() => (
     <div data-testid="leaderboard-header">
-      Header - Users: {totalUsers}, Loading: {loading ? 'yes' : 'no'}
+      Header
     </div>
   )),
 }));
@@ -85,12 +85,11 @@ describe('LeaderboardPage', () => {
     expect(screen.getByTestId('leaderboard-table')).toBeInTheDocument();
   });
 
-  it('passes correct props to LeaderboardHeader', () => {
+  it('renders LeaderboardHeader', () => {
     render(<LeaderboardPage />);
     
     const header = screen.getByTestId('leaderboard-header');
-    expect(header).toHaveTextContent('Users: 100');
-    expect(header).toHaveTextContent('Loading: no');
+    expect(header).toHaveTextContent('Header');
   });
 
   it('passes correct props to LeaderboardTabs', () => {
@@ -134,7 +133,7 @@ describe('LeaderboardPage', () => {
     render(<LeaderboardPage />);
     
     const header = screen.getByTestId('leaderboard-header');
-    expect(header).toHaveTextContent('Loading: yes');
+    expect(header).toHaveTextContent('Header');
   });
 
   it('renders with error state', () => {
@@ -174,7 +173,6 @@ describe('LeaderboardPage', () => {
     render(<LeaderboardPage />);
     
     expect(screen.getByText(/Data: 0/)).toBeInTheDocument();
-    expect(screen.getByText(/Users: 0/)).toBeInTheDocument();
   });
 
   it('renders with vo2max active tab', () => {
@@ -205,7 +203,6 @@ describe('LeaderboardPage', () => {
     render(<LeaderboardPage />);
     
     expect(screen.getByText(/Active: vo2max/)).toBeInTheDocument();
-    expect(screen.getByText(/Users: 50/)).toBeInTheDocument();
   });
 
   it('handles retry functionality', () => {

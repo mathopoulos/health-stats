@@ -53,11 +53,7 @@ export function LeaderboardPage() {
 
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Page Header */}
-          <LeaderboardHeader
-            totalUsers={currentData?.totalUsers || 0}
-            lastUpdated={currentData?.lastUpdated}
-            loading={currentLoading}
-          />
+          <LeaderboardHeader />
 
           {/* Tab Navigation */}
           <LeaderboardTabs
