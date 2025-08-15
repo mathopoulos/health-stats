@@ -17,5 +17,4 @@ export type {
   LeaderboardTabsProps,
   LeaderboardTableProps,
   LeaderboardEntryProps,
-  LeaderboardHeaderProps,
 } from '../types';

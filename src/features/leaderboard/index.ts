@@ -21,7 +21,6 @@ export type {
   LeaderboardTabsProps,
   LeaderboardTableProps,
   LeaderboardEntryProps,
-  LeaderboardHeaderProps,
   RankConfig,
   MetricConfig,
   UseLeaderboardDataReturn,
