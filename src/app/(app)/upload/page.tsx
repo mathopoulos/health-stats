@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, DragEvent, useEffect } from 'react';
+import React, { useState, useRef, DragEvent, useEffect } from 'react';
 import { useSession, signOut } from "next-auth/react";
 import AddResultsModal from '@features/experiments/components/AddResultsModal';
 import AddWorkoutProtocolModal from '@features/experiments/components/AddWorkoutProtocolModal';

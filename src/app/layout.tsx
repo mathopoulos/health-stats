@@ -1,28 +1,30 @@
-'use client';
-
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { ThemeProvider } from '@providers/ThemeProvider';
-import { SessionProvider } from '@providers/SessionProvider';
-import { Toaster } from 'react-hot-toast';
+import { ClientProviders } from './client-providers';
 import { Analytics } from '@vercel/analytics/react';
+import { getServerSession } from 'next-auth';
 
 const inter = Inter({ subsets: ['latin'] });
 
-export default function RootLayout({
+export const metadata = {
+  title: 'Health Stats - Track Your Health Metrics',
+  description: 'Track and monitor your health metrics in one place. Upload health data, monitor biomarkers, and optimize your wellness journey.',
+  keywords: 'health tracking, biomarkers, fitness metrics, wellness, health data',
+};
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getServerSession();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <SessionProvider>
-          <ThemeProvider>
-            {children}
-          </ThemeProvider>
-        </SessionProvider>
-        <Toaster position="bottom-left" />
+        <ClientProviders session={session}>
+          {children}
+        </ClientProviders>
         <Analytics />
       </body>
     </html>

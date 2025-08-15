@@ -1,7 +1,5 @@
-'use client';
-
 import React from 'react';
-import ThemeToggle from '@components/ThemeToggle';
+import ThemeToggle from '@components/ThemeToggleClient';
 import {
   LifetimeOfferBanner,
   Navigation,
@@ -36,7 +34,7 @@ export default function Home() {
     <main 
       className="min-h-screen bg-primary dark:bg-primary-dark-dark text-gray-900 dark:text-white overflow-hidden"
       role="main"
-      aria-label="revly landing page"
+      aria-label="Health Stats landing page"
     >
       {/* Background Effects */}
       <div 

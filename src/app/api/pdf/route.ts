@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
 // Allow the function to run up to 60 seconds on Vercel
@@ -19,15 +19,15 @@ const INITIAL_RETRY_DELAY = 2000; // Start with 2 second delay
 const MAX_CHUNK_SIZE = 5000; // Reduced to mitigate large JSON responses
 
 // Sleep utility
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 
 // Strip ```json fences that the model may surround the payload with
-function stripJsonFence(str) {
+function stripJsonFence(str: string): string {
   return str.trim().replace(/^```(?:json)?\s*/i, '').replace(/```$/, '').trim();
 }
 
 // Advanced JSON repair utility
-function attemptToRepairJson(jsonString) {
+function attemptToRepairJson(jsonString: string): any {
   // Strip any markdown code fences first
   jsonString = stripJsonFence(jsonString);
   console.log('Attempting advanced JSON repair...');
@@ -54,7 +54,7 @@ function attemptToRepairJson(jsonString) {
   repaired = repaired.replace(/:\s*([a-zA-Z][a-zA-Z0-9_\s]+)(\s*[,\}])/g, ':"$1"$2');
   
   // Balance brackets and braces
-  const bracketStack = [];
+  const bracketStack: string[] = [];
   let balancedString = '';
   
   for (let i = 0; i < repaired.length; i++) {
@@ -89,7 +89,7 @@ function attemptToRepairJson(jsonString) {
     console.log('Attempting to parse repaired JSON...');
     return JSON.parse(balancedString);
   } catch (repairError) {
-    console.error('Advanced JSON repair failed:', repairError.message);
+    console.error('Advanced JSON repair failed:', repairError);
     console.log('Falling back to minimal JSON structure');
     
     // Return a minimal valid structure as fallback
@@ -97,8 +97,30 @@ function attemptToRepairJson(jsonString) {
   }
 }
 
+interface BloodMarker {
+  name: string;
+  unit: string;
+  category: string;
+}
+
+interface ExtractedMarker extends BloodMarker {
+  value: number;
+  flag?: 'High' | 'Low' | null;
+}
+
+interface DateGroup {
+  testDate: string;
+  markers: ExtractedMarker[];
+}
+
+interface ExtractionResult {
+  testDate: string | null;
+  markers: ExtractedMarker[];
+  dateGroups: DateGroup[];
+}
+
 // Define supported blood markers and their units for the LLM to extract
-const SUPPORTED_MARKERS = [
+const SUPPORTED_MARKERS: BloodMarker[] = [
   // Lipid Panel
   { name: 'Total Cholesterol', unit: 'mg/dL', category: 'Lipid Panel' },
   { name: 'LDL-C', unit: 'mg/dL', category: 'Lipid Panel' },
@@ -207,7 +229,7 @@ const SUPPORTED_MARKERS = [
 ];
 
 // Create normalization map for alternative marker names
-const MARKER_NORMALIZATION_MAP = {
+const MARKER_NORMALIZATION_MAP: Record<string, string> = {
   // Lipid Panel
   'CHOLESTEROL, TOTAL': 'Total Cholesterol',
   'CHOLESTEROL,TOTAL': 'Total Cholesterol',
@@ -450,7 +472,7 @@ const MARKER_NORMALIZATION_MAP = {
 };
 
 // Add function to normalize marker names and units
-function normalizeMarker(marker) {
+function normalizeMarker(marker: ExtractedMarker): ExtractedMarker {
   // Normalize marker name
   const normalizedName = MARKER_NORMALIZATION_MAP[marker.name.toUpperCase()] || marker.name;
   
@@ -464,7 +486,7 @@ function normalizeMarker(marker) {
   };
 }
 
-async function waitForRateLimit() {
+async function waitForRateLimit(): Promise<void> {
   const now = Date.now();
   const timeSinceLastRequest = now - lastRequestTime;
   
@@ -476,7 +498,7 @@ async function waitForRateLimit() {
   lastRequestTime = Date.now();
 }
 
-async function extractBloodMarkersWithLLM(text) {
+async function extractBloodMarkersWithLLM(text: string): Promise<ExtractionResult> {
   console.log('Processing text (first 500 chars):', text.slice(0, 500));
   
   const prompt = `Extract blood test results from the following text, paying attention to multiple test dates.
@@ -538,7 +560,7 @@ ${text}`;
 
   console.log('Sending request to OpenAI...');
   
-  let lastError;
+  let lastError: Error | undefined;
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
       await waitForRateLimit();
@@ -560,10 +582,10 @@ ${text}`;
         temperature: 0
       });
 
-      let result;
+      let result: any;
       try {
         // Store the raw content for debugging
-        let rawContent = response.choices[0].message.content;
+        let rawContent = response.choices[0]?.message?.content || '';
         console.log('Raw content from OpenAI (first 300 chars):', rawContent.slice(0, 300) + '...');
         
         // Remove possible markdown fences
@@ -578,18 +600,18 @@ ${text}`;
       // Try to parse the JSON response
       result = JSON.parse(rawContent);
       } catch (parseError) {
-        console.error('JSON parsing error:', parseError.message);
+        console.error('JSON parsing error:', parseError);
         console.log('Attempting to fix malformed JSON...');
         
         // Get the raw content
-        const rawContent = response.choices[0].message.content;
+        const rawContent = response.choices[0]?.message?.content || '';
         
         // Use the advanced JSON repair utility
         result = attemptToRepairJson(rawContent);
         
         // If repair returned an empty structure, throw an error to trigger a retry
         if (!result.dateGroups || result.dateGroups.length === 0) {
-          throw new Error(`Failed to parse or repair JSON: ${parseError.message}`);
+          throw new Error(`Failed to parse or repair JSON: ${parseError}`);
         }
       }
       
@@ -602,11 +624,11 @@ ${text}`;
       }
       
       // Process and validate each date group
-      const validatedDateGroups = [];
+      const validatedDateGroups: DateGroup[] = [];
       
       for (const dateGroup of result.dateGroups) {
         // Validate test date
-        let validatedDate = null;
+        let validatedDate: string | null = null;
         if (dateGroup.testDate) {
           try {
             // If the date is not already in ISO format, attempt to parse it
@@ -636,7 +658,7 @@ ${text}`;
               throw new Error(`Invalid ISO date format: ${dateString}`);
             }
           } catch (error) {
-            console.warn('🧪 Error validating date:', error.message);
+            console.warn('🧪 Error validating date:', error);
             console.warn('🧪 Original date string from LLM:', dateGroup.testDate);
           }
         }
@@ -648,7 +670,7 @@ ${text}`;
         }
         
         // Validate each marker against the supported list
-        const validatedMarkers = dateGroup.markers.map(marker => {
+        const validatedMarkers = dateGroup.markers.map((marker: any) => {
           // First normalize the marker
           const normalizedMarker = normalizeMarker(marker);
           
@@ -697,8 +719,8 @@ ${text}`;
       );
       
       // Consolidate date groups with the same date
-      const consolidatedDateGroups = [];
-      const dateMap = new Map();
+      const consolidatedDateGroups: DateGroup[] = [];
+      const dateMap = new Map<string, ExtractedMarker[]>();
       
       // First, group all markers by date
       for (const dateGroup of validatedDateGroups) {
@@ -706,14 +728,14 @@ ${text}`;
         if (!dateMap.has(date)) {
           dateMap.set(date, []);
         }
-        dateMap.get(date).push(...dateGroup.markers);
+        dateMap.get(date)!.push(...dateGroup.markers);
       }
       
       // Create consolidated date groups with unique markers
       for (const [date, markers] of dateMap.entries()) {
         // Deduplicate markers by name (keeping the first occurrence)
-        const uniqueMarkers = [];
-        const markerNames = new Set();
+        const uniqueMarkers: ExtractedMarker[] = [];
+        const markerNames = new Set<string>();
         
         for (const marker of markers) {
           if (!markerNames.has(marker.name)) {
@@ -756,7 +778,7 @@ ${text}`;
       
       return { testDate: null, markers: [], dateGroups: [] };
 
-    } catch (error) {
+    } catch (error: any) {
       lastError = error;
       console.error(`Attempt ${attempt + 1} failed:`, {
         status: error?.status,
@@ -791,7 +813,7 @@ ${text}`;
 }
 
 // Add a function to process large PDFs in chunks
-async function processLargeText(text) {
+async function processLargeText(text: string): Promise<ExtractionResult> {
   // If text is small enough, process it directly
   if (text.length <= MAX_CHUNK_SIZE) {
     return await extractBloodMarkersWithLLM(text);
@@ -801,7 +823,7 @@ async function processLargeText(text) {
   
   // Split text into chunks with some overlap
   const overlap = 200;  // Characters of overlap between chunks
-  let chunks = [];
+  const chunks: string[] = [];
   
   for (let i = 0; i < text.length; i += MAX_CHUNK_SIZE - overlap) {
     const end = Math.min(i + MAX_CHUNK_SIZE, text.length);
@@ -811,7 +833,7 @@ async function processLargeText(text) {
   console.log(`Split text into ${chunks.length} chunks`);
   
   // Process each chunk
-  const chunkResults = [];
+  const chunkResults: ExtractionResult[] = [];
   
   for (let i = 0; i < chunks.length; i++) {
     console.log(`Processing chunk ${i + 1}/${chunks.length}...`);
@@ -825,7 +847,7 @@ async function processLargeText(text) {
   }
   
   // Merge the results
-  let allDateGroups = [];
+  let allDateGroups: DateGroup[] = [];
   
   // Collect all date groups from all chunks
   chunkResults.forEach(result => {
@@ -836,8 +858,8 @@ async function processLargeText(text) {
   
   // Consolidate date groups just like in the original function
   // (reusing this code to maintain consistency)
-  const consolidatedDateGroups = [];
-  const dateMap = new Map();
+  const consolidatedDateGroups: DateGroup[] = [];
+  const dateMap = new Map<string, ExtractedMarker[]>();
   
   // First, group all markers by date
   for (const dateGroup of allDateGroups) {
@@ -845,14 +867,14 @@ async function processLargeText(text) {
     if (!dateMap.has(date)) {
       dateMap.set(date, []);
     }
-    dateMap.get(date).push(...dateGroup.markers);
+    dateMap.get(date)!.push(...dateGroup.markers);
   }
   
   // Create consolidated date groups with unique markers
   for (const [date, markers] of dateMap.entries()) {
     // Deduplicate markers by name (keeping the first occurrence)
-    const uniqueMarkers = [];
-    const markerNames = new Set();
+    const uniqueMarkers: ExtractedMarker[] = [];
+    const markerNames = new Set<string>();
     
     for (const marker of markers) {
       if (!markerNames.has(marker.name)) {
@@ -894,11 +916,11 @@ async function processLargeText(text) {
 }
 
 // Update the POST handler to use the new processLargeText function
-export async function POST(request) {
+export async function POST(request: NextRequest) {
   console.log('=== Text Processing Started ===');
   
   try {
-    const { text } = await request.json();
+    const { text }: { text: string } = await request.json();
     
     if (!text) {
       return NextResponse.json({ 
@@ -934,4 +956,4 @@ export async function POST(request) {
       error: error instanceof Error ? error.message : 'Failed to process text'
     }, { status: 500 });
   }
-} 
+}
