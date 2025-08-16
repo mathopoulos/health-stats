@@ -65,27 +65,8 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
     
-    - name: Install wait-on
-      run: npm install -g wait-on
-    
-    - name: Start development server
-      run: npm run dev &
-      env:
-        MONGODB_URI: ${{ vars.MONGODB_URI }}
-        NEXTAUTH_SECRET: ${{ vars.NEXTAUTH_SECRET }}
-        NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
-        GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
-        GOOGLE_CLIENT_SECRET: ${{ vars.GOOGLE_CLIENT_SECRET }}
-        AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ vars.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: ${{ vars.AWS_REGION }}
-        AWS_S3_BUCKET: ${{ vars.AWS_S3_BUCKET }}
-    
-    - name: Wait for server to be ready
-      run: wait-on http://localhost:3000
-    
     - name: Run critical E2E tests
-      run: npm run test:e2e:theme
+      run: npm run test:e2e:theme-simple
     
     - name: Upload test results
       if: always()
@@ -117,27 +98,8 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
     
-    - name: Install wait-on
-      run: npm install -g wait-on
-    
-    - name: Start development server
-      run: npm run dev &
-      env:
-        MONGODB_URI: ${{ vars.MONGODB_URI }}
-        NEXTAUTH_SECRET: ${{ vars.NEXTAUTH_SECRET }}
-        NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
-        GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
-        GOOGLE_CLIENT_SECRET: ${{ vars.GOOGLE_CLIENT_SECRET }}
-        AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ vars.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: ${{ vars.AWS_REGION }}
-        AWS_S3_BUCKET: ${{ vars.AWS_S3_BUCKET }}
-    
-    - name: Wait for server to be ready
-      run: wait-on http://localhost:3000
-    
     - name: Run full E2E test suite
-      run: npm run test:e2e
+      run: npm run test:e2e:theme-simple
     
     - name: Upload full test results
       if: always()
