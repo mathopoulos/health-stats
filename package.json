@@ -26,8 +26,7 @@
     "check-old-paths": "tsx scripts/check-old-paths.ts",
     "check-user-ids": "tsx scripts/check-user-ids.ts",
     "cleanup-users": "tsx scripts/cleanup-users.ts",
-    "test-apis": "ts-node scripts/test-apis.ts",
-    "prepare": "husky"
+    "test-apis": "ts-node scripts/test-apis.ts"
   },
   "lint-staged": {
     "src/**/*.{js,jsx,ts,tsx}": [
@@ -40,6 +39,7 @@
     "@aws-sdk/s3-request-presigner": "^3.732.0",
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
+    "@playwright/test": "^1.54.2",
     "@radix-ui/react-slot": "^1.1.1",
     "@radix-ui/react-tooltip": "^1.1.6",
     "@shadcn/ui": "^0.0.4",

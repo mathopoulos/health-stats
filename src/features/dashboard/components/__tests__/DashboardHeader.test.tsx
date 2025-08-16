@@ -55,8 +55,8 @@ const mockLocation = {
 describe('DashboardHeader', () => {
   beforeEach(() => {
     // Mock window.location for each test
-    delete (global as any).window.location;
-    (global as any).window.location = mockLocation;
+    delete (window as any).location;
+    (window as any).location = mockLocation;
   });
 
   const mockUserData: UserData = {
