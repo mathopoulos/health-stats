@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run linting
+npm run lint
+
+# Run unit tests for changed files
+npm run test:changed
+
+# Run E2E tests on every commit (commented out by default)
+# Uncomment the line below if you want E2E tests on every commit
+# npm run test:e2e:theme

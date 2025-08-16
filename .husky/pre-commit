@@ -1,6 +1,12 @@
-echo "🔍 Running pre-commit checks..."
+# Run linting
+npm run lint
 
-# Run lint-staged to check only staged files
-npx lint-staged
+# Run unit tests for changed files
+npm run test:changed
 
-echo "✅ Pre-commit checks passed!"
+# E2E tests are now optional - run manually when needed
+# Uncomment the lines below if you want automatic E2E testing on commit
+# if git diff --cached --name-only | grep -E "(theme|ThemeToggle|layout\.tsx|globals\.css)" > /dev/null; then
+#   echo "Theme-related files changed, running theme toggle tests..."
+#   npm run test:e2e:theme
+# fi

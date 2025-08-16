@@ -43,3 +43,15 @@ coverage/
 public/export.xml
 public/data/
 public/temp/
+
+# Playwright test artifacts
+test-results/
+playwright-report/
+playwright/.cache/
+*.png
+*.jpg
+*.jpeg
+*.webm
+*.mp4
+*.trace
+*.har

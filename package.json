@@ -26,7 +26,15 @@
     "check-old-paths": "tsx scripts/check-old-paths.ts",
     "check-user-ids": "tsx scripts/check-user-ids.ts",
     "cleanup-users": "tsx scripts/cleanup-users.ts",
-    "test-apis": "ts-node scripts/test-apis.ts"
+    "test-apis": "ts-node scripts/test-apis.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:theme": "playwright test theme-toggle.spec.ts",
+    "test:e2e:report": "playwright show-report",
+    "test:e2e:clean": "rm -rf test-results/ playwright-report/",
+    "test:e2e:clean-all": "rm -rf test-results/ playwright-report/ node_modules/.cache/playwright/"
   },
   "lint-staged": {
     "src/**/*.{js,jsx,ts,tsx}": [
