@@ -13,7 +13,30 @@ This setup creates a quality assurance pipeline that:
 
 GitHub Actions will automatically start working once you push the workflow files to your repository.
 
-### 2. Get Vercel Credentials
+### 2. Add Environment Variables to GitHub Actions
+
+**This is crucial for E2E tests to work!**
+
+1. **Go to your GitHub repository** → Settings → Secrets and variables → Actions
+2. **Click "Variables" tab** (not Secrets)
+3. **Click "New repository variable"**
+4. **Add these variables:**
+
+```
+MONGODB_URI=mongodb://localhost:27017/test
+NEXTAUTH_SECRET=your-nextauth-secret-key
+NEXTAUTH_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+AWS_ACCESS_KEY_ID=your-aws-access-key
+AWS_SECRET_ACCESS_KEY=your-aws-secret-key
+AWS_REGION=us-east-1
+AWS_S3_BUCKET=your-s3-bucket-name
+```
+
+**Note:** Use your actual values from your `.env.local` file, but for testing you can use placeholder values.
+
+### 3. Get Vercel Credentials
 
 You'll need these from your Vercel dashboard:
 
@@ -23,100 +46,43 @@ You'll need these from your Vercel dashboard:
    - Org ID
    - Create a Vercel token (Account → Tokens → Create)
 
-### 3. Add GitHub Secrets
+### 4. Add GitHub Secrets
 
 1. **Go to your GitHub repository** → Settings → Secrets and variables → Actions
-2. **Add these secrets:**
+2. **Click "Secrets" tab**
+3. **Add these secrets:**
    - `VERCEL_TOKEN` - Your Vercel token
-   - `VERCEL_ORG_ID` - Your Vercel organization ID
    - `VERCEL_PROJECT_ID` - Your Vercel project ID
+   - `VERCEL_ORG_ID` - Your Vercel org ID
 
-### 4. Test the Setup
+## 🔄 How It Works
 
-1. **Create a feature branch:**
-   ```bash
-   git checkout -b feature/test-github-actions
-   ```
+### **On Every Push/Pull Request:**
+1. **Linting & Type Checking** - Catches code quality issues
+2. **Unit Tests** - Tests individual components
+3. **E2E Tests** - Tests theme toggle functionality
+4. **Preview Deployment** - Creates a Vercel preview URL
 
-2. **Make a small change and push:**
-   ```bash
-   git add .
-   git commit -m "test: add GitHub Actions setup"
-   git push origin feature/test-github-actions
-   ```
+### **On Main Branch:**
+1. **All tests above** +
+2. **Full E2E Suite** - Complete testing
+3. **Production Deployment** - Deploys to production
 
-3. **Create a Pull Request** on GitHub
+## 🚨 Troubleshooting
 
-4. **Watch the Actions run** in the Actions tab
+### **E2E Tests Failing?**
+- Make sure you've added all environment variables
+- Check that the variables match your local `.env.local` file
+- Use placeholder values for sensitive data in CI
 
-## 🔄 New Workflow
+### **Vercel Deployment Failing?**
+- Verify your Vercel credentials are correct
+- Check that your project is connected to Vercel
+- Ensure your Vercel token has the right permissions
 
-### For Feature Development:
-```
-1. Create feature branch
-2. Make changes
-3. Push to GitHub
-4. Create Pull Request
-5. GitHub Actions runs tests
-6. Vercel deploys preview
-7. Review and merge
-```
+## 📊 Benefits
 
-### For Production Deployment:
-```
-1. Merge to main
-2. GitHub Actions runs full test suite
-3. All tests pass
-4. Vercel deploys to production
-```
-
-## 🛠️ Available Commands
-
-```bash
-# Local development
-npm run test:e2e:theme        # Run theme tests
-npm run test:e2e             # Run all E2E tests
-npm run test:e2e:headed      # See browser while testing
-
-# Cleanup
-npm run test:e2e:clean       # Clean test artifacts
-```
-
-## 📊 What Gets Tested
-
-### On Every PR:
-- ✅ Linting and type checking
-- ✅ Unit tests
-- ✅ Critical E2E tests (theme toggle)
-- ✅ Preview deployment
-
-### On Main Branch:
-- ✅ All of the above
-- ✅ Full E2E test suite
-- ✅ Production deployment
-
-## 🎯 Benefits
-
-1. **Quality Assurance** - No broken code reaches production
-2. **Preview Deployments** - Test changes before merging
-3. **Automated Testing** - No manual testing required
-4. **Rollback Safety** - Easy to revert if issues arise
-
-## 🔧 Troubleshooting
-
-### If Actions Fail:
-1. Check the Actions tab in GitHub
-2. Look at the specific job that failed
-3. Fix the issue and push again
-
-### If Vercel Deployment Fails:
-1. Check Vercel dashboard for build logs
-2. Verify secrets are correct
-3. Check if build command works locally
-
-## 📈 Next Steps
-
-1. **Add more E2E tests** for critical user flows
-2. **Set up monitoring** for production
-3. **Add performance testing**
-4. **Configure branch protection rules**
+- **Quality Assurance** - Tests run before every deployment
+- **Preview URLs** - Test changes before merging to main
+- **Automated Deployment** - No manual deployment needed
+- **Rollback Safety** - Easy to revert if issues arise
