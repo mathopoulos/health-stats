@@ -63,19 +63,14 @@ test.describe('Simple Theme Toggle Test', () => {
               if (body.classList.contains('light')) {
                 body.classList.remove('light');
                 body.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
               } else {
                 body.classList.remove('dark');
                 body.classList.add('light');
-                localStorage.setItem('theme', 'light');
               }
               updateStatus();
             });
             
-            // Initialize theme from localStorage
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            body.classList.remove('light', 'dark');
-            body.classList.add(savedTheme);
+            // Initialize theme
             updateStatus();
           </script>
         </body>
@@ -83,11 +78,11 @@ test.describe('Simple Theme Toggle Test', () => {
     `);
 
     // Get initial theme state
-    const initialTheme = await page.evaluate(() => localStorage.getItem('theme'));
     const initialHtmlClass = await page.evaluate(() => document.body.className);
+    const initialStatus = await page.evaluate(() => document.getElementById('status').textContent);
     
-    console.log('Initial theme:', initialTheme);
     console.log('Initial HTML class:', initialHtmlClass);
+    console.log('Initial status:', initialStatus);
 
     // Find and click theme toggle button
     const themeToggle = page.getByRole('button', { name: 'Toggle theme' });
@@ -100,26 +95,30 @@ test.describe('Simple Theme Toggle Test', () => {
     await page.waitForTimeout(500);
 
     // Check that theme has changed
-    const newTheme = await page.evaluate(() => localStorage.getItem('theme'));
     const newHtmlClass = await page.evaluate(() => document.body.className);
+    const newStatus = await page.evaluate(() => document.getElementById('status').textContent);
     
-    console.log('New theme:', newTheme);
     console.log('New HTML class:', newHtmlClass);
+    console.log('New status:', newStatus);
 
     // Verify theme toggle worked
-    expect(newTheme).not.toBe(initialTheme);
     expect(newHtmlClass).not.toBe(initialHtmlClass);
+    expect(newStatus).not.toBe(initialStatus);
+    expect(newHtmlClass).toContain('dark');
+    expect(newStatus).toContain('dark');
 
     // Toggle back
     await themeToggle.click();
     await page.waitForTimeout(500);
 
-    const finalTheme = await page.evaluate(() => localStorage.getItem('theme'));
     const finalHtmlClass = await page.evaluate(() => document.body.className);
+    const finalStatus = await page.evaluate(() => document.getElementById('status').textContent);
 
     // Verify we're back to original state
-    expect(finalTheme).toBe(initialTheme);
     expect(finalHtmlClass).toBe(initialHtmlClass);
+    expect(finalStatus).toBe(initialStatus);
+    expect(finalHtmlClass).toContain('light');
+    expect(finalStatus).toContain('light');
     
     console.log('✅ Theme toggle test completed successfully!');
   });
