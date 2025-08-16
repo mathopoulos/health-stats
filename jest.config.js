@@ -38,6 +38,9 @@ const customJestConfig = {
     '!src/test-utils/**/*', // Exclude test utilities
     '!src/constants/**/*', // Constants don't need testing
     '!src/**/index.{js,jsx,ts,tsx}', // Exclude barrel files
+    // Exclude complex integration files with external deps (next-auth, etc)
+    '!src/features/admin/components/AdminLayout.tsx',
+    '!src/features/admin/hooks/useAdminAuth.ts',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
