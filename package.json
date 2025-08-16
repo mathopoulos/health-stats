@@ -32,6 +32,7 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:theme": "playwright test theme-toggle.spec.ts",
+    "test:e2e:theme-simple": "playwright test theme-toggle-simple.spec.ts",
     "test:e2e:report": "playwright show-report",
     "test:e2e:clean": "rm -rf test-results/ playwright-report/",
     "test:e2e:clean-all": "rm -rf test-results/ playwright-report/ node_modules/.cache/playwright/"
