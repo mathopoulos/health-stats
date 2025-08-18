@@ -36,6 +36,17 @@ interface StateData {
 // Secret for iOS token verification
 const IOS_AUTH_SECRET = process.env.NEXTAUTH_SECRET || 'default-secret-change-me';
 
+// Utility to detect if we're on a Vercel preview deployment
+export function isPreviewDeployment(): boolean {
+  const url = process.env.VERCEL_URL || process.env.NEXTAUTH_URL || '';
+  return url.includes('vercel.app') && !url.includes('www.revly.health');
+}
+
+// Get the production URL for OAuth proxy
+export function getProductionUrl(): string {
+  return process.env.NEXTAUTH_URL || 'https://www.revly.health';
+}
+
 // Verify an iOS token to ensure it's authentic and not expired
 function verifyIosToken(token: string): boolean {
   try {

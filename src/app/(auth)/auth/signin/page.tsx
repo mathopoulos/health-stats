@@ -86,6 +86,27 @@ export default function SignIn() {
     console.log("iOS authentication:", finalIsIosApp, "Direct:", isDirectIosAuth);
     const callbackUrl = searchParams?.get('callback_url') || '/upload';
     
+    // Check if we're on a Vercel preview deployment
+    const isPreview = window.location.hostname.includes('vercel.app') && 
+                     !window.location.hostname.includes('www.revly.health');
+    
+    if (isPreview && !finalIsIosApp) {
+      // For preview deployments, redirect through OAuth proxy
+      console.log("Preview deployment detected, using OAuth proxy");
+      const currentUrl = window.location.origin;
+      let proxyUrl = `/api/auth/proxy?provider=google&return_url=${encodeURIComponent(currentUrl)}`;
+      
+      // Preserve any state data by adding it to the proxy URL
+      if (validatedEmail) {
+        const stateData = { email: validatedEmail };
+        const encodedState = encodeURIComponent(JSON.stringify(stateData));
+        proxyUrl += `&state=${encodedState}`;
+      }
+      
+      window.location.href = proxyUrl;
+      return;
+    }
+    
     // State data with iOS flags to ensure they're preserved through redirects
     const stateData: any = {};
     
@@ -106,6 +127,7 @@ export default function SignIn() {
       console.log("Adding iOS platform to state", stateData);
     }
     
+    // Regular sign in for production or iOS
     signIn('google', { 
       // Always use a web URL for NextAuth compatibility
       callbackUrl: finalIsIosApp ? '/auth/mobile-callback' : callbackUrl,
