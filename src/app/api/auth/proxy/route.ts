@@ -72,10 +72,12 @@ function processSuccessCallback(
   // Add OAuth parameters
   addOAuthParams(targetUrl, additionalParams);
 
-  console.log('OAuth proxy: Redirecting to target', {
-    target: targetUrl.toString(),
-    hasOriginalState: !!decodedState.originalState
-  });
+  if (process.env.NODE_ENV === 'development') {
+    console.log('OAuth proxy: Redirecting to target', {
+      target: targetUrl.toString(),
+      hasOriginalState: !!decodedState.originalState
+    });
+  }
 
   return NextResponse.redirect(targetUrl.toString());
 }
@@ -89,11 +91,14 @@ export async function GET(request: NextRequest) {
   const state = searchParams.get('state');
   const error = searchParams.get('error');
 
-  console.log('OAuth proxy: Received callback', {
-    hasCode: !!code,
-    hasState: !!state,
-    error: error || 'none'
-  });
+  // Reduced logging for production
+  if (process.env.NODE_ENV === 'development') {
+    console.log('OAuth proxy: Received callback', {
+      hasCode: !!code,
+      hasState: !!state,
+      error: error || 'none'
+    });
+  }
 
   // Handle OAuth errors first
   if (error) {
