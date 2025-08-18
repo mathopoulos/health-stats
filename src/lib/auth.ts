@@ -93,7 +93,7 @@ function shouldUseOAuthProxy(): boolean {
     VERCEL_URL: vercelUrl,
     NODE_ENV: process.env.NODE_ENV,
     shouldUseProxy: shouldUse,
-    redirectUri: shouldUse ? 'https://auth.revly.health/api/auth/proxy' : 'standard NextAuth',
+    redirectUri: shouldUse ? 'https://www.revly.health/api/auth/proxy' : 'standard NextAuth',
     userAgent: typeof window !== 'undefined' ? 'client' : 'server'
   });
   
@@ -103,7 +103,9 @@ function shouldUseOAuthProxy(): boolean {
 // Helper function to get the appropriate redirect URI
 function getOAuthRedirectUri(): string {
   if (shouldUseOAuthProxy()) {
-    return 'https://www.revly.health/api/auth/proxy';
+    const currentUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'https://www.revly.health';
+    const targetParam = encodeURIComponent(currentUrl);
+    return `https://www.revly.health/api/auth/proxy?target=${targetParam}`;
   }
   // For production, use standard NextAuth callback
   return `${process.env.NEXTAUTH_URL}/api/auth/callback/google`;

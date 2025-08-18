@@ -35,10 +35,26 @@ function isTrustedDomain(hostname: string): boolean {
 }
 
 /**
- * Determine target URL from Referer header
+ * Determine target URL from query parameter or Referer header
  */
 function getTargetEnvironment(request: NextRequest): string {
-  // Check Referer header first (most reliable)
+  // Check explicit target parameter first (most reliable)
+  const targetParam = request.nextUrl.searchParams.get('target');
+  if (targetParam) {
+    try {
+      const targetUrl = new URL(decodeURIComponent(targetParam));
+      if (isTrustedDomain(targetUrl.hostname)) {
+        console.log('Using explicit target parameter:', targetParam);
+        return `${targetUrl.protocol}//${targetUrl.host}`;
+      } else {
+        console.warn('Untrusted target parameter:', targetParam);
+      }
+    } catch (e) {
+      console.warn('Invalid target parameter:', targetParam);
+    }
+  }
+
+  // Check Referer header as fallback
   const referer = request.headers.get('referer');
   if (referer) {
     try {
@@ -96,11 +112,13 @@ export async function GET(request: NextRequest) {
     // Build NextAuth callback URL
     const callbackUrl = new URL(`${targetEnv}/api/auth/callback/google`);
     
-    // Forward all OAuth parameters to NextAuth
+    // Forward all OAuth parameters to NextAuth (excluding our internal target parameter)
     const forwardedParams: Record<string, string> = {};
     searchParams.forEach((value, key) => {
-      callbackUrl.searchParams.set(key, value);
-      forwardedParams[key] = value;
+      if (key !== 'target') { // Exclude our internal target parameter
+        callbackUrl.searchParams.set(key, value);
+        forwardedParams[key] = value;
+      }
     });
 
     console.log('🚀 Proxy redirecting:', {
