@@ -491,5 +491,63 @@ describe('OAuth Proxy API Route', () => {
       const location = response.headers.get('location');
       expect(location).toContain('/auth/error');
     });
+
+    it('should handle successful OAuth callback with valid state', async () => {
+      // Create a fresh state that won't be expired
+      const targetUrl = 'https://www.revly.health';
+      const originalState = 'test-oauth-state';
+      const currentTime = Date.now();
+      const proxyState = {
+        targetUrl,
+        originalState,
+        timestamp: currentTime, // Current timestamp so it won't be expired
+        signature: require('crypto')
+          .createHmac('sha256', mockEnv.NEXTAUTH_SECRET)
+          .update(`${targetUrl}:${originalState}:${currentTime}`)
+          .digest('hex')
+      };
+      const validState = Buffer.from(JSON.stringify(proxyState)).toString('base64');
+      const code = 'test_oauth_code';
+      
+      const request = createMockRequest(
+        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${validState}`
+      );
+
+      const response = await GET(request);
+      
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toBeTruthy();
+      expect(location).toContain('revly.health');
+    });
+
+    it('should handle OAuth error with state extraction', async () => {
+      const targetUrl = 'https://preview-xyz.vercel.app';
+      const currentTime = Date.now();
+      const proxyState = {
+        targetUrl,
+        timestamp: currentTime,
+        signature: require('crypto')
+          .createHmac('sha256', mockEnv.NEXTAUTH_SECRET)
+          .update(`${targetUrl}::${currentTime}`)
+          .digest('hex')
+      };
+      const validState = Buffer.from(JSON.stringify(proxyState)).toString('base64');
+      
+      const request = createMockRequest(
+        `https://auth.revly.health/api/auth/proxy?error=access_denied&state=${validState}`
+      );
+
+      const response = await GET(request);
+      
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toContain('/auth/error');
+      expect(location).toContain('error=access_denied');
+    });
   });
 });
