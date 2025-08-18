@@ -84,14 +84,17 @@ function verifyIosToken(token: string): boolean {
 // Helper function to determine if we should use the OAuth proxy
 function shouldUseOAuthProxy(): boolean {
   const currentUrl = process.env.NEXTAUTH_URL || '';
-  const shouldUse = currentUrl.includes('.vercel.app') || currentUrl.includes('localhost') || process.env.NODE_ENV === 'development';
+  const vercelUrl = process.env.VERCEL_URL || '';
+  const shouldUse = currentUrl.includes('.vercel.app') || currentUrl.includes('localhost') || vercelUrl.includes('.vercel.app') || process.env.NODE_ENV === 'development';
   
   // Debug logging
-  console.log('OAuth Proxy Detection:', {
+  console.log('🔍 OAuth Proxy Detection:', {
     NEXTAUTH_URL: currentUrl,
+    VERCEL_URL: vercelUrl,
     NODE_ENV: process.env.NODE_ENV,
     shouldUseProxy: shouldUse,
-    redirectUri: shouldUse ? 'https://auth.revly.health/api/auth/proxy' : 'standard NextAuth'
+    redirectUri: shouldUse ? 'https://auth.revly.health/api/auth/proxy' : 'standard NextAuth',
+    userAgent: typeof window !== 'undefined' ? 'client' : 'server'
   });
   
   return shouldUse;
@@ -111,17 +114,22 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-      authorization: {
+      authorization: shouldUseOAuthProxy() ? {
+        url: "https://accounts.google.com/o/oauth2/v2/auth",
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code",
+          scope: "openid email profile",
+          redirect_uri: getOAuthRedirectUri()
+        }
+      } : {
         params: {
           prompt: "consent",
           access_type: "offline",
           response_type: "code"
         }
-      },
-      // Override redirect URI for non-production environments
-      ...(shouldUseOAuthProxy() && {
-        redirectUri: getOAuthRedirectUri()
-      })
+      }
     }),
   ],
   session: {
@@ -141,6 +149,17 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account, profile, email, credentials }) {
+      // Debug OAuth flow
+      console.log("🔐 NextAuth signIn callback:", {
+        provider: account?.provider,
+        userEmail: user?.email,
+        accountDetails: {
+          access_token: account?.access_token ? "present" : "missing",
+          refresh_token: account?.refresh_token ? "present" : "missing",
+          providerAccountId: account?.providerAccountId,
+        }
+      });
+      
       if (user.email) {
         console.log("Auth flow for:", user.email);
         
