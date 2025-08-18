@@ -84,8 +84,17 @@ function verifyIosToken(token: string): boolean {
 // Helper function to determine if we should use the OAuth proxy
 function shouldUseOAuthProxy(): boolean {
   const currentUrl = process.env.NEXTAUTH_URL || '';
-  // Use proxy for Vercel preview URLs and localhost (not production)
-  return currentUrl.includes('.vercel.app') || currentUrl.includes('localhost') || process.env.NODE_ENV === 'development';
+  const shouldUse = currentUrl.includes('.vercel.app') || currentUrl.includes('localhost') || process.env.NODE_ENV === 'development';
+  
+  // Debug logging
+  console.log('OAuth Proxy Detection:', {
+    NEXTAUTH_URL: currentUrl,
+    NODE_ENV: process.env.NODE_ENV,
+    shouldUseProxy: shouldUse,
+    redirectUri: shouldUse ? 'https://auth.revly.health/api/auth/proxy' : 'standard NextAuth'
+  });
+  
+  return shouldUse;
 }
 
 // Helper function to get the appropriate redirect URI
@@ -106,13 +115,13 @@ export const authOptions: NextAuthOptions = {
         params: {
           prompt: "consent",
           access_type: "offline",
-          response_type: "code",
-          // Use proxy for non-production environments
-          ...(shouldUseOAuthProxy() && {
-            redirect_uri: getOAuthRedirectUri()
-          })
+          response_type: "code"
         }
-      }
+      },
+      // Override redirect URI for non-production environments
+      ...(shouldUseOAuthProxy() && {
+        redirectUri: getOAuthRedirectUri()
+      })
     }),
   ],
   session: {
