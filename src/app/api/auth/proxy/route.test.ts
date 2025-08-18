@@ -549,5 +549,52 @@ describe('OAuth Proxy API Route', () => {
       expect(location).toContain('/auth/error');
       expect(location).toContain('error=access_denied');
     });
+
+    it('should handle OAuth error without valid state', async () => {
+      const request = createMockRequest(
+        `https://auth.revly.health/api/auth/proxy?error=access_denied`
+      );
+
+      const response = await GET(request);
+      
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toBeTruthy();
+      // When no state is provided, it redirects to base URL with error
+      expect(location).toContain('revly.health');
+    });
+
+    it('should handle successful OAuth with properly constructed redirect', async () => {
+      // Create completely valid state 
+      const targetUrl = 'https://www.revly.health';
+      const originalState = 'oauth-state-123';
+      const now = Date.now();
+      
+      const signature = require('crypto')
+        .createHmac('sha256', mockEnv.NEXTAUTH_SECRET)
+        .update(`${targetUrl}:${originalState}:${now}`)
+        .digest('hex');
+        
+      const validState = Buffer.from(JSON.stringify({
+        targetUrl,
+        originalState,
+        timestamp: now,
+        signature
+      })).toString('base64');
+      
+      const request = createMockRequest(
+        `https://auth.revly.health/api/auth/proxy?code=auth_code_123&state=${validState}`
+      );
+
+      const response = await GET(request);
+      
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toBeTruthy();
+    });
   });
 });
