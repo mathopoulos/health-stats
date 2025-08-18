@@ -111,16 +111,18 @@ describe('Simple OAuth Proxy', () => {
       expect(location).toContain('error=missing_parameters');
     });
 
-    it('should handle missing state parameter', async () => {
+    it('should handle missing state parameter (state is optional for proxy)', async () => {
       const request = createMockRequest(
         'https://auth.revly.health/api/auth/proxy?code=oauth_code_123'
       );
 
       const response = await GET(request);
       
+      // State is optional when using proxy, so this should redirect to callback
       const location = response.headers.get('location');
-      expect(location).toContain('/auth/error');
-      expect(location).toContain('error=missing_parameters');
+      expect(location).toContain('www.revly.health');
+      expect(location).toContain('/api/auth/callback/google');
+      expect(location).toContain('code=oauth_code_123');
     });
 
     it('should reject untrusted domains', async () => {

@@ -43,7 +43,10 @@ function getTargetEnvironment(request: NextRequest): string {
   if (referer) {
     try {
       const refererUrl = new URL(referer);
-      if (isTrustedDomain(refererUrl.hostname)) {
+      // Skip Google referers - they don't tell us the original environment
+      if (refererUrl.hostname.includes('google.com') || refererUrl.hostname.includes('accounts.google.com')) {
+        console.log('Skipping Google referer, using production fallback');
+      } else if (isTrustedDomain(refererUrl.hostname)) {
         return `${refererUrl.protocol}//${refererUrl.host}`;
       }
     } catch (e) {
@@ -80,9 +83,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${targetEnv}/auth/error?error=${encodeURIComponent(error)}`);
     }
 
-    // Validate required parameters
-    if (!code || !state) {
-      console.error('Missing OAuth parameters:', { hasCode: !!code, hasState: !!state });
+    // Validate required parameters - state is optional when using proxy
+    if (!code) {
+      console.error('Missing OAuth code parameter');
       const targetEnv = getTargetEnvironment(request);
       return NextResponse.redirect(`${targetEnv}/auth/error?error=missing_parameters`);
     }
