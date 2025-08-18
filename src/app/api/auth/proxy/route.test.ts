@@ -4,36 +4,16 @@
 
 import { NextRequest } from 'next/server';
 import { GET, POST } from './route';
-import { getOAuthProxySecret } from '@/lib/auth-secrets';
 
 // Mock environment variables
 const mockEnv = {
-  NEXTAUTH_SECRET: 'test-secret-key',
   NEXTAUTH_URL: 'https://www.revly.health',
   NODE_ENV: 'test'
 };
 
-// Save original env and set test env
 const originalEnv = process.env;
 
-// Helper function to create valid proxy state using the same secret as the actual code
-function createValidProxyState(targetUrl: string, originalState?: string, timestamp?: number) {
-  const stateTimestamp = timestamp || Date.now();
-  const data = `${targetUrl}:${originalState || ''}:${stateTimestamp}`;
-  const signature = require('crypto')
-    .createHmac('sha256', getOAuthProxySecret())
-    .update(data)
-    .digest('hex');
-    
-  return Buffer.from(JSON.stringify({
-    targetUrl,
-    originalState,
-    timestamp: stateTimestamp,
-    signature
-  })).toString('base64');
-}
-
-beforeAll(() => {
+beforeEach(() => {
   process.env = { ...originalEnv, ...mockEnv };
 });
 
@@ -41,225 +21,25 @@ afterAll(() => {
   process.env = originalEnv;
 });
 
-// Helper to create a mock request
-function createMockRequest(url: string) {
+// Helper to create mock requests
+function createMockRequest(url: string, headers: Record<string, string> = {}) {
   return new NextRequest(url, {
-    method: 'GET'
+    headers: {
+      'user-agent': 'test',
+      ...headers
+    }
   });
 }
 
-
-
-describe('OAuth Proxy API Route', () => {
+describe('Simple OAuth Proxy', () => {
   describe('GET /api/auth/proxy', () => {
-    it('should handle missing parameters', async () => {
+    
+    it('should handle successful OAuth callback from Vercel preview', async () => {
       const request = createMockRequest(
-        'https://auth.revly.health/api/auth/proxy'
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toContain('/auth/error');
-      expect(location).toContain('error=missing_parameters');
-    });
-
-    it('should handle OAuth errors gracefully', async () => {
-      const error = 'access_denied';
-      
-      const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?error=${error}`
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toBeTruthy();
-    });
-
-    it('should handle malformed state gracefully', async () => {
-      const invalidState = 'invalid_base64_state';
-      const code = 'test_oauth_code';
-      
-      const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${invalidState}`
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toBeTruthy();
-    });
-
-    it('should handle valid state with malformed JSON', async () => {
-      const invalidJsonState = Buffer.from('invalid json content').toString('base64');
-      const code = 'test_oauth_code';
-      
-      const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${invalidJsonState}`
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toBeTruthy();
-    });
-
-    it('should handle expired state gracefully', async () => {
-      const expiredTimestamp = Date.now() - (25 * 60 * 1000); // 25 minutes ago
-      const stateData = {
-        targetUrl: 'https://test.vercel.app/api/auth/callback/google',
-        timestamp: expiredTimestamp,
-        signature: 'test-signature'
-      };
-      const expiredState = Buffer.from(JSON.stringify(stateData)).toString('base64');
-      const code = 'test_oauth_code';
-      
-      const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${expiredState}`
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toBeTruthy();
-    });
-
-    it('should handle state with invalid signature', async () => {
-      const stateData = {
-        targetUrl: 'https://test.vercel.app/api/auth/callback/google',
-        timestamp: Date.now(),
-        signature: 'invalid-signature'
-      };
-      const invalidSigState = Buffer.from(JSON.stringify(stateData)).toString('base64');
-      const code = 'test_oauth_code';
-      
-      const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${invalidSigState}`
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toBeTruthy();
-    });
-
-    it('should handle missing code parameter', async () => {
-      const state = 'some_state';
-      
-      const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?state=${state}`
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toContain('/auth/error');
-      expect(location).toContain('error=missing_parameters');
-    });
-
-    it('should handle missing state parameter', async () => {
-      const code = 'test_oauth_code';
-      
-      const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?code=${code}`
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toContain('/auth/error');
-      expect(location).toContain('error=missing_parameters');
-    });
-  });
-
-  describe('POST /api/auth/proxy', () => {
-    it('should return health check response', async () => {
-      const request = new NextRequest('https://auth.revly.health/api/auth/proxy', {
-        method: 'POST'
-      });
-
-      const response = await POST(request);
-      
-      expect(response.status).toBe(200);
-      
-      const data = await response.json();
-      expect(data.status).toBe('healthy');
-      expect(data.version).toBe('1.0.0');
-      expect(data.timestamp).toBeDefined();
-      
-      // Timestamp should be a valid ISO string
-      expect(() => new Date(data.timestamp)).not.toThrow();
-      expect(new Date(data.timestamp).getTime()).toBeGreaterThan(0);
-    });
-
-    it('should return health check with correct format', async () => {
-      const request = new NextRequest('https://auth.revly.health/api/auth/proxy', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
+        'https://auth.revly.health/api/auth/proxy?code=oauth_code_123&state=nextauth_state_abc',
+        {
+          'referer': 'https://health-stats-preview-xyz.vercel.app/auth/signin'
         }
-      });
-
-      const response = await POST(request);
-      
-      expect(response.status).toBe(200);
-      expect(response.headers.get('content-type')).toContain('application/json');
-      
-      const data = await response.json();
-      expect(Object.keys(data)).toEqual(expect.arrayContaining(['status', 'version', 'timestamp']));
-      expect(typeof data.status).toBe('string');
-      expect(typeof data.version).toBe('string');
-      expect(typeof data.timestamp).toBe('string');
-    });
-  });
-
-  describe('Error handling', () => {
-    it('should handle various OAuth error types', async () => {
-      const errorTypes = ['access_denied', 'invalid_request', 'unauthorized_client'];
-      
-      for (const errorType of errorTypes) {
-        const request = createMockRequest(
-          `https://auth.revly.health/api/auth/proxy?error=${errorType}`
-        );
-
-        const response = await GET(request);
-        
-        expect(response.status).toBeGreaterThanOrEqual(302);
-        expect(response.status).toBeLessThanOrEqual(308);
-        
-        const location = response.headers.get('location');
-        expect(location).toBeTruthy();
-      }
-    });
-
-    it('should handle empty parameters', async () => {
-      const request = createMockRequest(
-        'https://auth.revly.health/api/auth/proxy?code=&state='
       );
 
       const response = await GET(request);
@@ -268,384 +48,139 @@ describe('OAuth Proxy API Route', () => {
       expect(response.status).toBeLessThanOrEqual(308);
       
       const location = response.headers.get('location');
-      expect(location).toContain('/auth/error');
-      expect(location).toContain('error=missing_parameters');
+      expect(location).toContain('health-stats-preview-xyz.vercel.app');
+      expect(location).toContain('/api/auth/callback/google');
+      expect(location).toContain('code=oauth_code_123');
+      expect(location).toContain('state=nextauth_state_abc');
     });
 
-    it('should handle URL with error description', async () => {
+    it('should fallback to production when no referer', async () => {
       const request = createMockRequest(
-        'https://auth.revly.health/api/auth/proxy?error=access_denied&error_description=User+cancelled'
+        'https://auth.revly.health/api/auth/proxy?code=oauth_code_123&state=nextauth_state_abc'
       );
 
       const response = await GET(request);
       
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
       const location = response.headers.get('location');
-      expect(location).toBeTruthy();
+      expect(location).toContain('www.revly.health');
+      expect(location).toContain('/api/auth/callback/google');
+      expect(location).toContain('code=oauth_code_123');
+      expect(location).toContain('state=nextauth_state_abc');
     });
 
-    it('should handle state with missing required fields', async () => {
-      const incompleteStateData = {
-        // Missing targetUrl
-        timestamp: Date.now(),
-        signature: 'test-signature'
-      };
-      const incompleteState = Buffer.from(JSON.stringify(incompleteStateData)).toString('base64');
-      const code = 'test_oauth_code';
-      
+    it('should handle localhost development environment', async () => {
       const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${incompleteState}`
+        'https://auth.revly.health/api/auth/proxy?code=oauth_code_123&state=nextauth_state_abc',
+        {
+          'referer': 'http://localhost:3000/auth/signin'
+        }
       );
 
       const response = await GET(request);
       
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
       const location = response.headers.get('location');
-      expect(location).toBeTruthy();
+      expect(location).toContain('localhost:3000');
+      expect(location).toContain('/api/auth/callback/google');
     });
 
-    it('should handle state with missing timestamp', async () => {
-      const noTimestampStateData = {
-        targetUrl: 'https://test.vercel.app/api/auth/callback/google',
-        // Missing timestamp
-        signature: 'test-signature'
-      };
-      const noTimestampState = Buffer.from(JSON.stringify(noTimestampStateData)).toString('base64');
-      const code = 'test_oauth_code';
-      
+    it('should handle OAuth errors', async () => {
       const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${noTimestampState}`
+        'https://auth.revly.health/api/auth/proxy?error=access_denied&state=nextauth_state',
+        {
+          'referer': 'https://preview.vercel.app/auth/signin'
+        }
       );
 
       const response = await GET(request);
       
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
       const location = response.headers.get('location');
-      expect(location).toBeTruthy();
-    });
-
-    it('should handle environment fallback', async () => {
-      // Test with no environment variables set
-      const originalUrl = process.env.NEXTAUTH_URL;
-      delete process.env.NEXTAUTH_URL;
-      
-      const request = createMockRequest(
-        'https://auth.revly.health/api/auth/proxy'
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toBeTruthy();
-      
-      // Restore environment
-      if (originalUrl) {
-        process.env.NEXTAUTH_URL = originalUrl;
-      }
-    });
-
-    it('should process OAuth callback and perform redirect', async () => {
-      const targetUrl = 'https://www.revly.health';
-      const originalState = 'test-oauth-state';
-      const validState = createValidProxyState(targetUrl, originalState);
-      const code = 'valid_oauth_code_123';
-      
-      const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${validState}`
-      );
-
-      const response = await GET(request);
-      
-      // Should redirect somewhere (either success or error)
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toBeTruthy();
-      expect(location).toContain('https://');
-    });
-
-    it('should handle OAuth callback with current timestamp', async () => {
-      const targetUrl = 'https://www.revly.health';
-      const validState = createValidProxyState(targetUrl);
-      const code = 'valid_oauth_code_456';
-      
-      const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${validState}`
-      );
-
-      const response = await GET(request);
-      
-      // Should redirect (success or error is fine, we're testing the flow)
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toBeTruthy();
-      expect(location).toContain('revly.health');
-    });
-
-    it('should handle OAuth error with valid state extraction', async () => {
-      const targetUrl = 'https://test-env.vercel.app';
-      const validState = createValidProxyState(targetUrl);
-      
-      const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?error=access_denied&state=${validState}`
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toContain(targetUrl);
-      expect(location).toContain('/auth/error');
-    });
-
-    it('should handle missing required parameters with empty values', async () => {
-      const request = createMockRequest(
-        'https://auth.revly.health/api/auth/proxy?code=&state='
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toContain('/auth/error');
-      expect(location).toContain('error=missing_parameters');
-    });
-
-    it('should handle corrupted base64 state', async () => {
-      const corruptedState = 'not-valid-base64-!!!';
-      const code = 'test_code';
-      
-      const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${corruptedState}`
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toContain('/auth/error');
-      expect(location).toContain('error=invalid_state');
-    });
-
-    it('should handle state with missing signature field', async () => {
-      const stateWithoutSignature = {
-        targetUrl: 'https://example.com',
-        originalState: 'test',
-        timestamp: Date.now()
-        // Missing signature field
-      };
-      const invalidState = Buffer.from(JSON.stringify(stateWithoutSignature)).toString('base64');
-      const code = 'test_code';
-      
-      const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${invalidState}`
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toContain('/auth/error');
-    });
-
-    it('should handle state with missing targetUrl field', async () => {
-      const stateWithoutTarget = {
-        originalState: 'test',
-        signature: 'invalid',
-        timestamp: Date.now()
-        // Missing targetUrl field
-      };
-      const invalidState = Buffer.from(JSON.stringify(stateWithoutTarget)).toString('base64');
-      const code = 'test_code';
-      
-      const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${invalidState}`
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toContain('/auth/error');
-    });
-
-    it('should handle successful OAuth callback with valid state', async () => {
-      // Create a fresh state that won't be expired
-      const targetUrl = 'https://www.revly.health';
-      const originalState = 'test-oauth-state';
-      const currentTime = Date.now();
-      const proxyState = {
-        targetUrl,
-        originalState,
-        timestamp: currentTime, // Current timestamp so it won't be expired
-        signature: require('crypto')
-          .createHmac('sha256', mockEnv.NEXTAUTH_SECRET)
-          .update(`${targetUrl}:${originalState}:${currentTime}`)
-          .digest('hex')
-      };
-      const validState = Buffer.from(JSON.stringify(proxyState)).toString('base64');
-      const code = 'test_oauth_code';
-      
-      const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${validState}`
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toBeTruthy();
-      expect(location).toContain('revly.health');
-    });
-
-    it('should handle OAuth error with state extraction', async () => {
-      const targetUrl = 'https://preview-xyz.vercel.app';
-      const currentTime = Date.now();
-      const proxyState = {
-        targetUrl,
-        timestamp: currentTime,
-        signature: require('crypto')
-          .createHmac('sha256', mockEnv.NEXTAUTH_SECRET)
-          .update(`${targetUrl}::${currentTime}`)
-          .digest('hex')
-      };
-      const validState = Buffer.from(JSON.stringify(proxyState)).toString('base64');
-      
-      const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?error=access_denied&state=${validState}`
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
+      expect(location).toContain('preview.vercel.app');
       expect(location).toContain('/auth/error');
       expect(location).toContain('error=access_denied');
     });
 
-    it('should handle OAuth error without valid state', async () => {
+    it('should handle missing code parameter', async () => {
       const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?error=access_denied`
+        'https://auth.revly.health/api/auth/proxy?state=nextauth_state'
       );
 
       const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toBeTruthy();
-      // When no state is provided, it redirects to base URL with error
-      expect(location).toContain('revly.health');
-    });
-
-    it('should handle successful OAuth with properly constructed redirect', async () => {
-      // Create completely valid state 
-      const targetUrl = 'https://www.revly.health';
-      const originalState = 'oauth-state-123';
-      const now = Date.now();
-      
-      const signature = require('crypto')
-        .createHmac('sha256', mockEnv.NEXTAUTH_SECRET)
-        .update(`${targetUrl}:${originalState}:${now}`)
-        .digest('hex');
-        
-      const validState = Buffer.from(JSON.stringify({
-        targetUrl,
-        originalState,
-        timestamp: now,
-        signature
-      })).toString('base64');
-      
-      const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?code=auth_code_123&state=${validState}`
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toBeTruthy();
-    });
-
-    it('should handle untrusted domain', async () => {
-      // Test untrusted domain rejection with properly signed state
-      const targetUrl = 'https://evil.com';
-      const validState = createValidProxyState(targetUrl);
-      
-      const request = createMockRequest(
-        `https://auth.revly.health/api/auth/proxy?code=test_code&state=${validState}`
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
       
       const location = response.headers.get('location');
       expect(location).toContain('/auth/error');
-      expect(location).toContain('error=invalid_state');
+      expect(location).toContain('error=missing_parameters');
     });
 
-    it('should handle POST health check', async () => {
-      // Simple test to boost coverage for the POST endpoint
-      const request = new NextRequest('https://auth.revly.health/api/auth/proxy', {
-        method: 'POST'
-      });
+    it('should handle missing state parameter (state is optional for proxy)', async () => {
+      const request = createMockRequest(
+        'https://auth.revly.health/api/auth/proxy?code=oauth_code_123'
+      );
 
-      const response = await POST(request);
+      const response = await GET(request);
+      
+      // State is optional when using proxy, so this should redirect to callback
+      const location = response.headers.get('location');
+      expect(location).toContain('www.revly.health');
+      expect(location).toContain('/api/auth/callback/google');
+      expect(location).toContain('code=oauth_code_123');
+    });
+
+    it('should reject untrusted domains', async () => {
+      const request = createMockRequest(
+        'https://auth.revly.health/api/auth/proxy?code=oauth_code_123&state=nextauth_state',
+        {
+          'referer': 'https://evil.com/auth/signin'
+        }
+      );
+
+      const response = await GET(request);
+      
+      const location = response.headers.get('location');
+      expect(location).toContain('www.revly.health'); // Should fallback to production
+      expect(location).not.toContain('evil.com');
+    });
+
+    it('should preserve additional OAuth parameters', async () => {
+      const request = createMockRequest(
+        'https://auth.revly.health/api/auth/proxy?code=oauth_code&state=nextauth_state&scope=email%20profile&authuser=0'
+      );
+
+      const response = await GET(request);
+      
+      const location = response.headers.get('location');
+      expect(location).toContain('code=oauth_code');
+      expect(location).toContain('state=nextauth_state');
+      expect(location).toContain('scope=email+profile'); // URL encoded
+      expect(location).toContain('authuser=0');
+    });
+
+    it('should handle malformed referer gracefully', async () => {
+      const request = createMockRequest(
+        'https://auth.revly.health/api/auth/proxy?code=oauth_code&state=nextauth_state',
+        {
+          'referer': 'not-a-valid-url'
+        }
+      );
+
+      const response = await GET(request);
+      
+      const location = response.headers.get('location');
+      expect(location).toContain('www.revly.health'); // Should fallback
+    });
+
+  });
+
+  describe('POST /api/auth/proxy', () => {
+    
+    it('should return health check', async () => {
+      const response = await POST();
       
       expect(response.status).toBe(200);
       const data = await response.json();
       expect(data.status).toBe('healthy');
-      expect(data.timestamp).toBeDefined();
       expect(data.version).toBe('1.0.0');
+      expect(data.timestamp).toBeDefined();
     });
-
-    it('should handle catch block for processing errors', async () => {
-      // Test to boost coverage by hitting the catch block - simulate a processing error
-      const request = createMockRequest(
-        'https://auth.revly.health/api/auth/proxy?code=test_code&state=invalid-json-state'
-      );
-
-      const response = await GET(request);
-      
-      expect(response.status).toBeGreaterThanOrEqual(302);
-      expect(response.status).toBeLessThanOrEqual(308);
-      
-      const location = response.headers.get('location');
-      expect(location).toContain('/auth/error');
-      expect(location).toContain('error=invalid_state');
-    });
-
 
   });
 });

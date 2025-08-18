@@ -1,7 +1,6 @@
 import { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import { hasUserPurchasedProduct } from '@/server/payments/stripe';
-import { getOAuthRedirectUri, getBaseUrl } from './auth-proxy';
 import crypto from 'crypto';
 
 // This is a server-side map to track users who are authenticated
@@ -82,19 +81,59 @@ function verifyIosToken(token: string): boolean {
   }
 }
 
+// Helper function to determine if we should use the OAuth proxy
+function shouldUseOAuthProxy(): boolean {
+  const currentUrl = process.env.NEXTAUTH_URL || '';
+  const vercelUrl = process.env.VERCEL_URL || '';
+  const shouldUse = currentUrl.includes('.vercel.app') || currentUrl.includes('localhost') || vercelUrl.includes('.vercel.app') || process.env.NODE_ENV === 'development';
+  
+  // Debug logging
+  console.log('🔍 OAuth Proxy Detection:', {
+    NEXTAUTH_URL: currentUrl,
+    VERCEL_URL: vercelUrl,
+    NODE_ENV: process.env.NODE_ENV,
+    shouldUseProxy: shouldUse,
+    redirectUri: shouldUse ? 'https://auth.revly.health/api/auth/proxy' : 'standard NextAuth',
+    userAgent: typeof window !== 'undefined' ? 'client' : 'server'
+  });
+  
+  return shouldUse;
+}
+
+// Helper function to get the appropriate redirect URI
+function getOAuthRedirectUri(): string {
+  if (shouldUseOAuthProxy()) {
+    return 'https://www.revly.health/api/auth/proxy';
+  }
+  // For production, use standard NextAuth callback
+  return `${process.env.NEXTAUTH_URL}/api/auth/callback/google`;
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-      authorization: {
+      authorization: shouldUseOAuthProxy() ? {
+        url: "https://accounts.google.com/o/oauth2/v2/auth",
         params: {
           prompt: "consent",
           access_type: "offline",
           response_type: "code",
+          scope: "openid email profile",
           redirect_uri: getOAuthRedirectUri()
         }
-      }
+      } : {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      },
+      // Disable state validation when using proxy to avoid cookie domain issues
+      ...(shouldUseOAuthProxy() && {
+        checks: ["pkce"] // Only use PKCE, skip state validation
+      })
     }),
   ],
   session: {
@@ -114,6 +153,17 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account, profile, email, credentials }) {
+      // Debug OAuth flow
+      console.log("🔐 NextAuth signIn callback:", {
+        provider: account?.provider,
+        userEmail: user?.email,
+        accountDetails: {
+          access_token: account?.access_token ? "present" : "missing",
+          refresh_token: account?.refresh_token ? "present" : "missing",
+          providerAccountId: account?.providerAccountId,
+        }
+      });
+      
       if (user.email) {
         console.log("Auth flow for:", user.email);
         
@@ -233,8 +283,8 @@ export const authOptions: NextAuthOptions = {
     async redirect({ url, baseUrl }) {
       console.log("NextAuth redirect URL:", url);
       
-      // Get the base URL for the current environment
-      const currentBaseUrl = getBaseUrl();
+      // Get the production URL from env
+      const productionUrl = process.env.NEXTAUTH_URL || baseUrl;
       
       // Direct iOS app URL scheme redirect - highest priority
       if (url.startsWith('health.revly://')) {
@@ -257,7 +307,7 @@ export const authOptions: NextAuthOptions = {
                 stateData.iosBypass === true) {
               
               console.log("iOS auth: Verified iOS auth in Google callback, redirecting to mobile-callback");
-              return `${currentBaseUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}`;
+              return `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}`;
             }
           }
         } catch (e) {
@@ -286,7 +336,7 @@ export const authOptions: NextAuthOptions = {
                 stateData.iosBypass === true) {
               
               console.log("iOS auth: Intercepted payment redirect for iOS user, sending to mobile-callback");
-              return `${currentBaseUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}&iosRedirect=true`;
+              return `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}&iosRedirect=true`;
             }
           }
         } catch (e) {
@@ -315,7 +365,7 @@ export const authOptions: NextAuthOptions = {
         }
         
         // Default web callback
-        return `${currentBaseUrl}/upload`;
+        return `${productionUrl}/upload`;
       }
       
       // For development, bypass invite page redirect for errors
@@ -326,26 +376,26 @@ export const authOptions: NextAuthOptions = {
       
       // In production: If auth failed due to missing invite code or payment, redirect to checkout page
       if (url.includes('error=Callback') || url.includes('error=AccessDenied')) {
-        return `${currentBaseUrl}/auth/checkout`;
+        return `${productionUrl}/auth/checkout`;
       }
       
       // If the URL is explicitly set to /upload, honor that
       if (url.includes('/upload')) {
-        return url.startsWith('http') ? url : `${currentBaseUrl}${url}`;
+        return url.startsWith('http') ? url : `${productionUrl}${url}`;
       }
       
       // For all successful auth callbacks, direct to upload page
       if (url.includes('auth/callback')) {
-        return `${currentBaseUrl}/upload`;
+        return `${productionUrl}/upload`;
       }
       
-      // If the URL starts with baseUrl or currentBaseUrl, go to the requested URL
-      if (url.startsWith(baseUrl) || url.startsWith(currentBaseUrl)) {
+      // If the URL starts with baseUrl or productionUrl, go to the requested URL
+      if (url.startsWith(baseUrl) || url.startsWith(productionUrl)) {
         return url;
       }
       
       // Default fallback - go to upload page
-      return `${currentBaseUrl}/upload`;
+      return `${productionUrl}/upload`;
     }
   },
   pages: {
