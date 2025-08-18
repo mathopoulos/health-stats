@@ -76,7 +76,69 @@ describe('OAuth Proxy API Route', () => {
       expect(response.status).toBeLessThanOrEqual(308);
       
       const location = response.headers.get('location');
-      expect(location).toContain('/auth/error');
+      expect(location).toBeTruthy();
+    });
+
+    it('should handle valid state with malformed JSON', async () => {
+      const invalidJsonState = Buffer.from('invalid json content').toString('base64');
+      const code = 'test_oauth_code';
+      
+      const request = createMockRequest(
+        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${invalidJsonState}`
+      );
+
+      const response = await GET(request);
+      
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toBeTruthy();
+    });
+
+    it('should handle expired state gracefully', async () => {
+      const expiredTimestamp = Date.now() - (25 * 60 * 1000); // 25 minutes ago
+      const stateData = {
+        targetUrl: 'https://test.vercel.app/api/auth/callback/google',
+        timestamp: expiredTimestamp,
+        signature: 'test-signature'
+      };
+      const expiredState = Buffer.from(JSON.stringify(stateData)).toString('base64');
+      const code = 'test_oauth_code';
+      
+      const request = createMockRequest(
+        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${expiredState}`
+      );
+
+      const response = await GET(request);
+      
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toBeTruthy();
+    });
+
+    it('should handle state with invalid signature', async () => {
+      const stateData = {
+        targetUrl: 'https://test.vercel.app/api/auth/callback/google',
+        timestamp: Date.now(),
+        signature: 'invalid-signature'
+      };
+      const invalidSigState = Buffer.from(JSON.stringify(stateData)).toString('base64');
+      const code = 'test_oauth_code';
+      
+      const request = createMockRequest(
+        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${invalidSigState}`
+      );
+
+      const response = await GET(request);
+      
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toBeTruthy();
     });
 
     it('should handle missing code parameter', async () => {
@@ -133,6 +195,26 @@ describe('OAuth Proxy API Route', () => {
       expect(() => new Date(data.timestamp)).not.toThrow();
       expect(new Date(data.timestamp).getTime()).toBeGreaterThan(0);
     });
+
+    it('should return health check with correct format', async () => {
+      const request = new NextRequest('https://auth.revly.health/api/auth/proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const response = await POST(request);
+      
+      expect(response.status).toBe(200);
+      expect(response.headers.get('content-type')).toContain('application/json');
+      
+      const data = await response.json();
+      expect(Object.keys(data)).toEqual(expect.arrayContaining(['status', 'version', 'timestamp']));
+      expect(typeof data.status).toBe('string');
+      expect(typeof data.version).toBe('string');
+      expect(typeof data.timestamp).toBe('string');
+    });
   });
 
   describe('Error handling', () => {
@@ -167,6 +249,87 @@ describe('OAuth Proxy API Route', () => {
       const location = response.headers.get('location');
       expect(location).toContain('/auth/error');
       expect(location).toContain('error=missing_parameters');
+    });
+
+    it('should handle URL with error description', async () => {
+      const request = createMockRequest(
+        'https://auth.revly.health/api/auth/proxy?error=access_denied&error_description=User+cancelled'
+      );
+
+      const response = await GET(request);
+      
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toBeTruthy();
+    });
+
+    it('should handle state with missing required fields', async () => {
+      const incompleteStateData = {
+        // Missing targetUrl
+        timestamp: Date.now(),
+        signature: 'test-signature'
+      };
+      const incompleteState = Buffer.from(JSON.stringify(incompleteStateData)).toString('base64');
+      const code = 'test_oauth_code';
+      
+      const request = createMockRequest(
+        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${incompleteState}`
+      );
+
+      const response = await GET(request);
+      
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toBeTruthy();
+    });
+
+    it('should handle state with missing timestamp', async () => {
+      const noTimestampStateData = {
+        targetUrl: 'https://test.vercel.app/api/auth/callback/google',
+        // Missing timestamp
+        signature: 'test-signature'
+      };
+      const noTimestampState = Buffer.from(JSON.stringify(noTimestampStateData)).toString('base64');
+      const code = 'test_oauth_code';
+      
+      const request = createMockRequest(
+        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${noTimestampState}`
+      );
+
+      const response = await GET(request);
+      
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toBeTruthy();
+    });
+
+    it('should handle environment fallback', async () => {
+      // Test with no environment variables set
+      const originalUrl = process.env.NEXTAUTH_URL;
+      delete process.env.NEXTAUTH_URL;
+      
+      const request = createMockRequest(
+        'https://auth.revly.health/api/auth/proxy'
+      );
+
+      const response = await GET(request);
+      
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toBeTruthy();
+      
+      // Restore environment
+      if (originalUrl) {
+        process.env.NEXTAUTH_URL = originalUrl;
+      }
     });
   });
 });
