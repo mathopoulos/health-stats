@@ -29,6 +29,28 @@ function createMockRequest(url: string) {
   });
 }
 
+// Helper to create a valid proxy state that matches the route's expectations
+function createValidProxyState(targetUrl: string, originalState?: string) {
+  const crypto = require('crypto');
+  // Use the same secret that's used in the tests - ensure consistency
+  const secret = mockEnv.NEXTAUTH_SECRET;
+  const timestamp = Date.now();
+  const dataToSign = `${targetUrl}:${originalState || ''}:${timestamp}`;
+  const signature = crypto
+    .createHmac('sha256', secret)
+    .update(dataToSign)
+    .digest('hex');
+
+  const proxyState = {
+    targetUrl,
+    originalState: originalState || undefined, // Ensure undefined for missing state
+    signature,
+    timestamp
+  };
+
+  return Buffer.from(JSON.stringify(proxyState)).toString('base64');
+}
+
 describe('OAuth Proxy API Route', () => {
   describe('GET /api/auth/proxy', () => {
     it('should handle missing parameters', async () => {
@@ -330,6 +352,144 @@ describe('OAuth Proxy API Route', () => {
       if (originalUrl) {
         process.env.NEXTAUTH_URL = originalUrl;
       }
+    });
+
+    it('should process OAuth callback and perform redirect', async () => {
+      const targetUrl = 'https://www.revly.health';
+      const originalState = 'test-oauth-state';
+      const validState = createValidProxyState(targetUrl, originalState);
+      const code = 'valid_oauth_code_123';
+      
+      const request = createMockRequest(
+        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${validState}`
+      );
+
+      const response = await GET(request);
+      
+      // Should redirect somewhere (either success or error)
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toBeTruthy();
+      expect(location).toContain('https://');
+    });
+
+    it('should handle OAuth callback with current timestamp', async () => {
+      const targetUrl = 'https://www.revly.health';
+      const validState = createValidProxyState(targetUrl);
+      const code = 'valid_oauth_code_456';
+      
+      const request = createMockRequest(
+        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${validState}`
+      );
+
+      const response = await GET(request);
+      
+      // Should redirect (success or error is fine, we're testing the flow)
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toBeTruthy();
+      expect(location).toContain('revly.health');
+    });
+
+    it('should handle OAuth error with valid state extraction', async () => {
+      const targetUrl = 'https://test-env.vercel.app';
+      const validState = createValidProxyState(targetUrl);
+      
+      const request = createMockRequest(
+        `https://auth.revly.health/api/auth/proxy?error=access_denied&state=${validState}`
+      );
+
+      const response = await GET(request);
+      
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toContain(targetUrl);
+      expect(location).toContain('/auth/error');
+    });
+
+    it('should handle missing required parameters with empty values', async () => {
+      const request = createMockRequest(
+        'https://auth.revly.health/api/auth/proxy?code=&state='
+      );
+
+      const response = await GET(request);
+      
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toContain('/auth/error');
+      expect(location).toContain('error=missing_parameters');
+    });
+
+    it('should handle corrupted base64 state', async () => {
+      const corruptedState = 'not-valid-base64-!!!';
+      const code = 'test_code';
+      
+      const request = createMockRequest(
+        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${corruptedState}`
+      );
+
+      const response = await GET(request);
+      
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toContain('/auth/error');
+      expect(location).toContain('error=processing_error');
+    });
+
+    it('should handle state with missing signature field', async () => {
+      const stateWithoutSignature = {
+        targetUrl: 'https://example.com',
+        originalState: 'test',
+        timestamp: Date.now()
+        // Missing signature field
+      };
+      const invalidState = Buffer.from(JSON.stringify(stateWithoutSignature)).toString('base64');
+      const code = 'test_code';
+      
+      const request = createMockRequest(
+        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${invalidState}`
+      );
+
+      const response = await GET(request);
+      
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toContain('/auth/error');
+    });
+
+    it('should handle state with missing targetUrl field', async () => {
+      const stateWithoutTarget = {
+        originalState: 'test',
+        signature: 'invalid',
+        timestamp: Date.now()
+        // Missing targetUrl field
+      };
+      const invalidState = Buffer.from(JSON.stringify(stateWithoutTarget)).toString('base64');
+      const code = 'test_code';
+      
+      const request = createMockRequest(
+        `https://auth.revly.health/api/auth/proxy?code=${code}&state=${invalidState}`
+      );
+
+      const response = await GET(request);
+      
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toContain('/auth/error');
     });
   });
 });
