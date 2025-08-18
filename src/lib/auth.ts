@@ -129,7 +129,11 @@ export const authOptions: NextAuthOptions = {
           access_type: "offline",
           response_type: "code"
         }
-      }
+      },
+      // Disable state validation when using proxy to avoid cookie domain issues
+      ...(shouldUseOAuthProxy() && {
+        checks: ["pkce"] // Only use PKCE, skip state validation
+      })
     }),
   ],
   session: {

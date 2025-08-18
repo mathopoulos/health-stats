@@ -65,11 +65,12 @@ export async function GET(request: NextRequest) {
     const state = searchParams.get('state');
     const error = searchParams.get('error');
 
-    console.log('OAuth proxy received:', {
+    console.log('🔄 OAuth proxy received:', {
       hasCode: !!code,
       hasState: !!state,
       hasError: !!error,
-      referer: request.headers.get('referer')
+      referer: request.headers.get('referer'),
+      allParams: Object.fromEntries(searchParams.entries())
     });
 
     // Handle OAuth errors
@@ -93,13 +94,31 @@ export async function GET(request: NextRequest) {
     const callbackUrl = new URL(`${targetEnv}/api/auth/callback/google`);
     
     // Forward all OAuth parameters to NextAuth
+    const forwardedParams: Record<string, string> = {};
     searchParams.forEach((value, key) => {
       callbackUrl.searchParams.set(key, value);
+      forwardedParams[key] = value;
     });
 
-    console.log('Redirecting to:', callbackUrl.toString());
+    console.log('🚀 Proxy redirecting:', {
+      targetEnv,
+      callbackUrl: callbackUrl.toString(),
+      forwardedParams,
+      originalReferer: request.headers.get('referer'),
+      stateParam: state,
+      cookies: request.headers.get('cookie')
+    });
     
-    return NextResponse.redirect(callbackUrl.toString());
+    // Create redirect response and preserve any relevant cookies
+    const response = NextResponse.redirect(callbackUrl.toString());
+    
+    // Forward any auth-related cookies from the original request
+    const cookieHeader = request.headers.get('cookie');
+    if (cookieHeader) {
+      response.headers.set('cookie', cookieHeader);
+    }
+    
+    return response;
 
   } catch (error) {
     console.error('OAuth proxy error:', error);
