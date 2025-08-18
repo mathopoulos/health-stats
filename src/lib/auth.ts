@@ -103,7 +103,7 @@ function shouldUseOAuthProxy(): boolean {
 // Helper function to get the appropriate redirect URI
 function getOAuthRedirectUri(): string {
   if (shouldUseOAuthProxy()) {
-    return 'https://auth.revly.health/api/auth/proxy';
+    return 'https://www.revly.health/api/auth/proxy';
   }
   // For production, use standard NextAuth callback
   return `${process.env.NEXTAUTH_URL}/api/auth/callback/google`;
