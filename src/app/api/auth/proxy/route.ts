@@ -1,158 +1,117 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { 
-  ProxyState,
-  parseState, 
-  verifyState, 
-  isTrustedDomain, 
-  extractTargetUrl,
-  buildCallbackUrl,
-  buildErrorUrl,
-  addOAuthParams
-} from './proxy-utils';
 
 /**
- * OAuth Redirect Proxy
+ * Simple OAuth Redirect Proxy
  * 
- * This endpoint serves as a stable redirect URI for OAuth providers (like Google)
- * that can be configured once and work across all environments (production, preview, development).
+ * This proxy works with NextAuth's standard OAuth flow without requiring custom state formats.
+ * It determines the target environment from the Referer header and forwards OAuth parameters.
  * 
  * Flow:
- * 1. User initiates OAuth from any environment (prod/preview/dev)
- * 2. OAuth provider redirects to this stable proxy URL
- * 3. Proxy validates the state and redirects back to the original environment
- * 4. Original environment completes the OAuth flow
- * 
- * Security:
- * - State parameter validation to prevent CSRF attacks
- * - Origin validation to ensure redirects only go to trusted domains
- * - Signature verification to prevent state tampering
+ * 1. User initiates OAuth from any environment (NextAuth generates standard state)
+ * 2. Google redirects to this proxy with standard OAuth parameters
+ * 3. Proxy determines target environment from Referer header
+ * 4. Proxy redirects to target environment's NextAuth callback with original parameters
+ * 5. NextAuth completes OAuth flow normally
  */
 
+// Trusted domains for security
+const TRUSTED_DOMAINS = [
+  'localhost',
+  'revly.health',
+  'www.revly.health',
+  'vercel.app'
+];
+
 /**
- * Handle OAuth error responses
+ * Check if a domain is trusted
  */
-function handleOAuthError(error: string, state?: string): NextResponse {
-  console.error('OAuth proxy: OAuth provider returned error', error);
-  
-  const targetUrl = extractTargetUrl(state);
-  const errorUrl = buildErrorUrl(targetUrl, error);
-  
-  return NextResponse.redirect(errorUrl);
+function isTrustedDomain(hostname: string): boolean {
+  return TRUSTED_DOMAINS.some(domain => {
+    if (domain === 'vercel.app') {
+      return hostname.includes('.vercel.app');
+    }
+    return hostname === domain || hostname.includes(domain);
+  });
 }
 
 /**
- * Validate required OAuth parameters
+ * Determine target URL from Referer header
  */
-function validateParameters(code: string | null, state: string | null): NextResponse | null {
-  if (!code || !state) {
-    console.error('OAuth proxy: Missing required parameters', { code: !!code, state: !!state });
-    const fallbackUrl = process.env.NEXTAUTH_URL || 'https://www.revly.health';
-    return NextResponse.redirect(`${fallbackUrl}/auth/error?error=missing_parameters`);
+function getTargetEnvironment(request: NextRequest): string {
+  // Check Referer header first (most reliable)
+  const referer = request.headers.get('referer');
+  if (referer) {
+    try {
+      const refererUrl = new URL(referer);
+      if (isTrustedDomain(refererUrl.hostname)) {
+        return `${refererUrl.protocol}//${refererUrl.host}`;
+      }
+    } catch (e) {
+      console.warn('Invalid referer:', referer);
+    }
   }
-  return null;
+
+  // Fallback to production
+  return process.env.NEXTAUTH_URL || 'https://www.revly.health';
 }
 
 /**
- * Process OAuth success callback
- */
-function processSuccessCallback(
-  decodedState: ProxyState, 
-  code: string, 
-  additionalParams: Record<string, string | null>
-): NextResponse {
-  // Build target URL with OAuth code
-  const targetUrl = new URL(decodedState.targetUrl);
-  targetUrl.searchParams.set('code', code);
-  
-  // Restore original state if it existed
-  if (decodedState.originalState) {
-    targetUrl.searchParams.set('state', decodedState.originalState);
-  }
-
-  // Add OAuth parameters
-  addOAuthParams(targetUrl, additionalParams);
-
-  if (process.env.NODE_ENV === 'development') {
-    console.log('OAuth proxy: Redirecting to target', {
-      target: targetUrl.toString(),
-      hasOriginalState: !!decodedState.originalState
-    });
-  }
-
-  return NextResponse.redirect(targetUrl.toString());
-}
-
-/**
- * Handle OAuth callback and redirect to target environment
+ * Handle OAuth callback
  */
 export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const code = searchParams.get('code');
-  const state = searchParams.get('state');
-  const error = searchParams.get('error');
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const code = searchParams.get('code');
+    const state = searchParams.get('state');
+    const error = searchParams.get('error');
 
-  // Reduced logging for production
-  if (process.env.NODE_ENV === 'development') {
-    console.log('OAuth proxy: Received callback', {
+    console.log('OAuth proxy received:', {
       hasCode: !!code,
       hasState: !!state,
-      error: error || 'none'
+      hasError: !!error,
+      referer: request.headers.get('referer')
     });
-  }
 
-  // Handle OAuth errors first
-  if (error) {
-    return handleOAuthError(error, state || undefined);
-  }
-
-  // Validate required parameters
-  const validationError = validateParameters(code, state);
-  if (validationError) {
-    return validationError;
-  }
-
-  try {
-    // Parse and validate state
-    const decodedState = parseState(state!);
-    if (!decodedState) {
-      console.error('OAuth proxy: Failed to parse state');
-      const fallbackUrl = process.env.NEXTAUTH_URL || 'https://www.revly.health';
-      return NextResponse.redirect(`${fallbackUrl}/auth/error?error=invalid_state`);
+    // Handle OAuth errors
+    if (error) {
+      console.error('OAuth error:', error);
+      const targetEnv = getTargetEnvironment(request);
+      return NextResponse.redirect(`${targetEnv}/auth/error?error=${encodeURIComponent(error)}`);
     }
+
+    // Validate required parameters
+    if (!code || !state) {
+      console.error('Missing OAuth parameters:', { hasCode: !!code, hasState: !!state });
+      const targetEnv = getTargetEnvironment(request);
+      return NextResponse.redirect(`${targetEnv}/auth/error?error=missing_parameters`);
+    }
+
+    // Determine target environment
+    const targetEnv = getTargetEnvironment(request);
     
-    if (!verifyState(decodedState)) {
-      console.error('OAuth proxy: State validation failed');
-      const fallbackUrl = process.env.NEXTAUTH_URL || 'https://www.revly.health';
-      return NextResponse.redirect(`${fallbackUrl}/auth/error?error=invalid_state`);
-    }
+    // Build NextAuth callback URL
+    const callbackUrl = new URL(`${targetEnv}/api/auth/callback/google`);
+    
+    // Forward all OAuth parameters to NextAuth
+    searchParams.forEach((value, key) => {
+      callbackUrl.searchParams.set(key, value);
+    });
 
-    // Validate target domain
-    if (!isTrustedDomain(decodedState.targetUrl)) {
-      console.error('OAuth proxy: Untrusted target domain', decodedState.targetUrl);
-      const fallbackUrl = process.env.NEXTAUTH_URL || 'https://www.revly.health';
-      return NextResponse.redirect(`${fallbackUrl}/auth/error?error=untrusted_domain`);
-    }
-
-    // Extract additional OAuth parameters
-    const additionalParams = {
-      scope: searchParams.get('scope'),
-      authuser: searchParams.get('authuser'),
-      prompt: searchParams.get('prompt')
-    };
-
-    return processSuccessCallback(decodedState, code!, additionalParams);
+    console.log('Redirecting to:', callbackUrl.toString());
+    
+    return NextResponse.redirect(callbackUrl.toString());
 
   } catch (error) {
-    console.error('OAuth proxy: Error processing callback', error);
+    console.error('OAuth proxy error:', error);
     const fallbackUrl = process.env.NEXTAUTH_URL || 'https://www.revly.health';
-    return NextResponse.redirect(`${fallbackUrl}/auth/error?error=processing_error`);
+    return NextResponse.redirect(`${fallbackUrl}/auth/error?error=proxy_error`);
   }
 }
 
 /**
- * Health check endpoint
+ * Health check
  */
-export async function POST(request: NextRequest) {
+export async function POST() {
   return NextResponse.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
