@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
 
   // Handle OAuth errors first
   if (error) {
-    return handleOAuthError(error, state);
+    return handleOAuthError(error, state || undefined);
   }
 
   // Validate required parameters
