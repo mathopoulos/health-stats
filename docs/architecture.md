@@ -26,7 +26,9 @@ This document captures the high-level structure, naming rules, and conventions f
 │  │  └─ processing/     # Long-running/processing flows (canonical imports)
 │  ├─ db/                # Database client & schema constants (e.g., Mongo client)
 │  ├─ lib/               # Shared utilities (pure helpers, auth config, parsing)
-│  │  ├─ auth/           # Next-Auth config and helpers
+│  │  ├─ auth.ts         # NextAuth configuration
+│  │  ├─ auth-proxy.ts   # OAuth proxy utilities for stable redirect URIs
+│  │  ├─ auth-secrets.ts # Shared secret management for OAuth
 │  │  └─ utils.ts        # UI-agnostic helpers (e.g., cn)
 │  ├─ types/             # Shared domain and API types (no ambient declarations)
 │  ├─ constants/         # App-wide constants and configuration (sleep targets, etc.)
@@ -367,6 +369,83 @@ export async function GET() {
 - **Performance**: Shared utilities reduce code duplication
 - **Type Safety**: Proper TypeScript interfaces throughout
 - **Testing**: Clean separation enables comprehensive testing
+
+---
+
+## 10. Authentication Architecture
+
+The application uses **NextAuth.js** with a stable OAuth proxy system to handle authentication across all environments (production, preview deployments, and development).
+
+### OAuth Proxy System
+
+**Problem**: Vercel preview deployments create dynamic URLs that can't be pre-configured in OAuth provider settings. Google OAuth requires exact redirect URI matches.
+
+**Solution**: A stable proxy subdomain (`auth.revly.health`) that handles OAuth callbacks and redirects to the appropriate environment.
+
+#### Architecture Components
+
+```
+src/lib/auth.ts           # NextAuth configuration with proxy integration
+src/lib/auth-proxy.ts     # Proxy utilities and state management  
+src/lib/auth-secrets.ts   # Shared secret management
+src/app/api/auth/proxy/   # OAuth proxy endpoint
+```
+
+#### Flow Diagram
+
+```
+1. User initiates OAuth from any environment (prod/preview/dev)
+   ↓
+2. OAuth provider redirects to: https://auth.revly.health/api/auth/proxy
+   ↓
+3. Proxy validates state and determines target environment
+   ↓
+4. Redirect to: {original-environment}/api/auth/callback/google
+   ↓
+5. NextAuth completes authentication flow
+```
+
+#### Security Features
+
+- **State Validation**: HMAC signatures prevent tampering
+- **Timestamp Expiry**: States expire after 10 minutes
+- **Environment Detection**: Automatic URL resolution for all environments
+- **Error Handling**: Comprehensive fallbacks for edge cases
+
+#### Environment Configuration
+
+**Production**:
+- `OAUTH_PROXY_URL=https://auth.revly.health/api/auth/proxy`
+- `USE_OAUTH_PROXY=true`
+
+**Preview Deployments**: 
+- `USE_OAUTH_PROXY=true` (proxy URL auto-detected)
+
+**Development**:
+- Direct OAuth (no proxy needed for localhost)
+
+#### Supported Authentication Flows
+
+- **Web Authentication**: Standard Google OAuth flow
+- **iOS Authentication**: Custom callback handling for mobile app
+- **Session Management**: JWT-based sessions with secure cookies
+
+### Route Structure
+
+```
+src/app/api/auth/
+├── [...nextauth]/route.ts    # NextAuth core endpoints
+├── proxy/route.ts            # OAuth proxy for stable redirects
+├── ios/route.ts             # iOS-specific auth endpoints
+└── user-status/route.ts     # Authentication status checks
+```
+
+### Key Benefits
+
+- **Seamless Deployments**: OAuth works on all preview URLs without manual configuration
+- **Security**: State validation prevents OAuth attacks
+- **Scalability**: One-time setup supports unlimited preview deployments  
+- **Developer Experience**: No manual OAuth configuration for each deployment
 
 ---
 
