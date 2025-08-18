@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { headers } from 'next/headers';
-import { getOAuthProxySecret } from '@/lib/auth-secrets';
-import crypto from 'crypto';
+import { 
+  ProxyState,
+  parseState, 
+  verifyState, 
+  isTrustedDomain, 
+  extractTargetUrl,
+  buildCallbackUrl,
+  buildErrorUrl,
+  addOAuthParams
+} from './proxy-utils';
 
 /**
  * OAuth Redirect Proxy
@@ -21,80 +28,56 @@ import crypto from 'crypto';
  * - Signature verification to prevent state tampering
  */
 
-interface ProxyState {
-  targetUrl: string;      // Where to redirect back to
-  originalState?: string; // Original state from the OAuth flow
-  signature: string;      // HMAC signature for integrity
-  timestamp: number;      // When the state was created (for expiry)
-}
-
-const PROXY_SECRET = getOAuthProxySecret();
-const STATE_EXPIRY_MINUTES = 10; // State expires after 10 minutes
-
-// Trusted domains for redirects
-const TRUSTED_DOMAINS = [
-  'localhost:3000',
-  'www.revly.health',
-  'revly.health',
-  '.vercel.app', // All Vercel preview deployments
-  '.vercel.com'  // Alternative Vercel domains
-];
-
 /**
- * Generate HMAC signature for state validation
+ * Handle OAuth error responses
  */
-function generateSignature(data: string): string {
-  return crypto
-    .createHmac('sha256', PROXY_SECRET)
-    .update(data)
-    .digest('hex');
-}
-
-/**
- * Verify state integrity and expiry
- */
-function verifyState(state: ProxyState): boolean {
-  // Check expiry
-  const now = Date.now();
-  const stateAge = now - state.timestamp;
-  const maxAge = STATE_EXPIRY_MINUTES * 60 * 1000;
+function handleOAuthError(error: string, state?: string): NextResponse {
+  console.error('OAuth proxy: OAuth provider returned error', error);
   
-  if (stateAge > maxAge) {
-    console.warn('OAuth proxy: State expired', { age: stateAge, maxAge });
-    return false;
-  }
-
-  // Verify signature
-  const dataToSign = `${state.targetUrl}:${state.originalState || ''}:${state.timestamp}`;
-  const expectedSignature = generateSignature(dataToSign);
+  const targetUrl = extractTargetUrl(state);
+  const errorUrl = buildErrorUrl(targetUrl, error);
   
-  if (state.signature !== expectedSignature) {
-    console.warn('OAuth proxy: Invalid state signature');
-    return false;
-  }
-
-  return true;
+  return NextResponse.redirect(errorUrl);
 }
 
 /**
- * Check if a URL is from a trusted domain
+ * Validate required OAuth parameters
  */
-function isTrustedDomain(url: string): boolean {
-  try {
-    const parsedUrl = new URL(url);
-    const hostname = parsedUrl.hostname;
-    
-    return TRUSTED_DOMAINS.some(trustedDomain => {
-      if (trustedDomain.startsWith('.')) {
-        // Wildcard domain like .vercel.app
-        return hostname.endsWith(trustedDomain);
-      }
-      return hostname === trustedDomain;
-    });
-  } catch (error) {
-    console.error('OAuth proxy: Invalid URL format', url, error);
-    return false;
+function validateParameters(code: string | null, state: string | null): NextResponse | null {
+  if (!code || !state) {
+    console.error('OAuth proxy: Missing required parameters', { code: !!code, state: !!state });
+    const fallbackUrl = process.env.NEXTAUTH_URL || 'https://www.revly.health';
+    return NextResponse.redirect(`${fallbackUrl}/auth/error?error=missing_parameters`);
   }
+  return null;
+}
+
+/**
+ * Process OAuth success callback
+ */
+function processSuccessCallback(
+  decodedState: ProxyState, 
+  code: string, 
+  additionalParams: Record<string, string | null>
+): NextResponse {
+  // Build target URL with OAuth code
+  const targetUrl = new URL(decodedState.targetUrl);
+  targetUrl.searchParams.set('code', code);
+  
+  // Restore original state if it existed
+  if (decodedState.originalState) {
+    targetUrl.searchParams.set('state', decodedState.originalState);
+  }
+
+  // Add OAuth parameters
+  addOAuthParams(targetUrl, additionalParams);
+
+  console.log('OAuth proxy: Redirecting to target', {
+    target: targetUrl.toString(),
+    hasOriginalState: !!decodedState.originalState
+  });
+
+  return NextResponse.redirect(targetUrl.toString());
 }
 
 /**
@@ -112,38 +95,25 @@ export async function GET(request: NextRequest) {
     error: error || 'none'
   });
 
-  // Handle OAuth errors
+  // Handle OAuth errors first
   if (error) {
-    console.error('OAuth proxy: OAuth provider returned error', error);
-    
-    // Try to extract target URL from state even on error
-    let errorRedirectUrl = process.env.NEXTAUTH_URL || 'https://www.revly.health';
-    
-    if (state) {
-      try {
-        const decodedState: ProxyState = JSON.parse(atob(state));
-        if (isTrustedDomain(decodedState.targetUrl)) {
-          const targetUrl = new URL(decodedState.targetUrl);
-          errorRedirectUrl = `${targetUrl.origin}/auth/error?error=${encodeURIComponent(error)}`;
-        }
-      } catch (e) {
-        console.warn('OAuth proxy: Could not decode state for error redirect', e);
-      }
-    }
-    
-    return NextResponse.redirect(errorRedirectUrl);
+    return handleOAuthError(error, state);
   }
 
   // Validate required parameters
-  if (!code || !state) {
-    console.error('OAuth proxy: Missing required parameters', { code: !!code, state: !!state });
-    const fallbackUrl = process.env.NEXTAUTH_URL || 'https://www.revly.health';
-    return NextResponse.redirect(`${fallbackUrl}/auth/error?error=missing_parameters`);
+  const validationError = validateParameters(code, state);
+  if (validationError) {
+    return validationError;
   }
 
   try {
-    // Decode and validate state
-    const decodedState: ProxyState = JSON.parse(atob(state));
+    // Parse and validate state
+    const decodedState = parseState(state!);
+    if (!decodedState) {
+      console.error('OAuth proxy: Failed to parse state');
+      const fallbackUrl = process.env.NEXTAUTH_URL || 'https://www.revly.health';
+      return NextResponse.redirect(`${fallbackUrl}/auth/error?error=invalid_state`);
+    }
     
     if (!verifyState(decodedState)) {
       console.error('OAuth proxy: State validation failed');
@@ -158,30 +128,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${fallbackUrl}/auth/error?error=untrusted_domain`);
     }
 
-    // Build redirect URL with OAuth parameters
-    const targetUrl = new URL(decodedState.targetUrl);
-    targetUrl.searchParams.set('code', code);
-    
-    // Restore original state if it existed
-    if (decodedState.originalState) {
-      targetUrl.searchParams.set('state', decodedState.originalState);
-    }
+    // Extract additional OAuth parameters
+    const additionalParams = {
+      scope: searchParams.get('scope'),
+      authuser: searchParams.get('authuser'),
+      prompt: searchParams.get('prompt')
+    };
 
-    // Add any additional parameters from the OAuth callback
-    const scope = searchParams.get('scope');
-    const authuser = searchParams.get('authuser');
-    const prompt = searchParams.get('prompt');
-    
-    if (scope) targetUrl.searchParams.set('scope', scope);
-    if (authuser) targetUrl.searchParams.set('authuser', authuser);
-    if (prompt) targetUrl.searchParams.set('prompt', prompt);
-
-    console.log('OAuth proxy: Redirecting to target', {
-      target: targetUrl.toString(),
-      hasOriginalState: !!decodedState.originalState
-    });
-
-    return NextResponse.redirect(targetUrl.toString());
+    return processSuccessCallback(decodedState, code!, additionalParams);
 
   } catch (error) {
     console.error('OAuth proxy: Error processing callback', error);

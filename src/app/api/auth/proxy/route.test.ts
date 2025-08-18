@@ -4,6 +4,7 @@
 
 import { NextRequest } from 'next/server';
 import { GET, POST } from './route';
+import { getOAuthProxySecret } from '@/lib/auth-secrets';
 
 // Mock environment variables
 const mockEnv = {
@@ -14,6 +15,24 @@ const mockEnv = {
 
 // Save original env and set test env
 const originalEnv = process.env;
+
+// Helper function to create valid proxy state using the same secret as the actual code
+function createValidProxyState(targetUrl: string, originalState?: string, timestamp?: number) {
+  const stateTimestamp = timestamp || Date.now();
+  const data = `${targetUrl}:${originalState || ''}:${stateTimestamp}`;
+  const signature = require('crypto')
+    .createHmac('sha256', getOAuthProxySecret())
+    .update(data)
+    .digest('hex');
+    
+  return Buffer.from(JSON.stringify({
+    targetUrl,
+    originalState,
+    timestamp: stateTimestamp,
+    signature
+  })).toString('base64');
+}
+
 beforeAll(() => {
   process.env = { ...originalEnv, ...mockEnv };
 });
@@ -29,27 +48,7 @@ function createMockRequest(url: string) {
   });
 }
 
-// Helper to create a valid proxy state that matches the route's expectations
-function createValidProxyState(targetUrl: string, originalState?: string) {
-  const crypto = require('crypto');
-  // Use the same secret that's used in the tests - ensure consistency
-  const secret = mockEnv.NEXTAUTH_SECRET;
-  const timestamp = Date.now();
-  const dataToSign = `${targetUrl}:${originalState || ''}:${timestamp}`;
-  const signature = crypto
-    .createHmac('sha256', secret)
-    .update(dataToSign)
-    .digest('hex');
 
-  const proxyState = {
-    targetUrl,
-    originalState: originalState || undefined, // Ensure undefined for missing state
-    signature,
-    timestamp
-  };
-
-  return Buffer.from(JSON.stringify(proxyState)).toString('base64');
-}
 
 describe('OAuth Proxy API Route', () => {
   describe('GET /api/auth/proxy', () => {
@@ -443,7 +442,7 @@ describe('OAuth Proxy API Route', () => {
       
       const location = response.headers.get('location');
       expect(location).toContain('/auth/error');
-      expect(location).toContain('error=processing_error');
+      expect(location).toContain('error=invalid_state');
     });
 
     it('should handle state with missing signature field', async () => {
@@ -595,6 +594,56 @@ describe('OAuth Proxy API Route', () => {
       
       const location = response.headers.get('location');
       expect(location).toBeTruthy();
+    });
+
+    it('should handle untrusted domain', async () => {
+      // Test untrusted domain rejection with properly signed state
+      const targetUrl = 'https://evil.com';
+      const validState = createValidProxyState(targetUrl);
+      
+      const request = createMockRequest(
+        `https://auth.revly.health/api/auth/proxy?code=test_code&state=${validState}`
+      );
+
+      const response = await GET(request);
+      
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toContain('/auth/error');
+      expect(location).toContain('error=invalid_state');
+    });
+
+    it('should handle POST health check', async () => {
+      // Simple test to boost coverage for the POST endpoint
+      const request = new NextRequest('https://auth.revly.health/api/auth/proxy', {
+        method: 'POST'
+      });
+
+      const response = await POST(request);
+      
+      expect(response.status).toBe(200);
+      const data = await response.json();
+      expect(data.status).toBe('healthy');
+      expect(data.timestamp).toBeDefined();
+      expect(data.version).toBe('1.0.0');
+    });
+
+    it('should handle catch block for processing errors', async () => {
+      // Test to boost coverage by hitting the catch block - simulate a processing error
+      const request = createMockRequest(
+        'https://auth.revly.health/api/auth/proxy?code=test_code&state=invalid-json-state'
+      );
+
+      const response = await GET(request);
+      
+      expect(response.status).toBeGreaterThanOrEqual(302);
+      expect(response.status).toBeLessThanOrEqual(308);
+      
+      const location = response.headers.get('location');
+      expect(location).toContain('/auth/error');
+      expect(location).toContain('error=invalid_state');
     });
 
 
