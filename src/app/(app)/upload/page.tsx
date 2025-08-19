@@ -32,6 +32,12 @@ interface ProcessingResult {
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// GLOBAL TEST - This should run when the file loads
+console.log('🟢 UPLOAD PAGE FILE LOADED - GLOBAL SCOPE');
+if (typeof window !== 'undefined') {
+  console.log('🟢 CLIENT SIDE EXECUTION CONFIRMED');
+}
+
 async function triggerProcessing(updateStatus: (status: string) => void): Promise<ProcessingResult> {
   console.log('Starting triggerProcessing function');
   try {
@@ -142,6 +148,9 @@ async function triggerProcessing(updateStatus: (status: string) => void): Promis
 }
 
 export default function UploadPage() {
+  // BASIC TEST - This runs before any hooks
+  console.log('🚀 UPLOAD PAGE COMPONENT STARTED - VERSION 1.2.3');
+  
   const { data: session, status: sessionStatus, update: updateSession } = useSession();
   
   // DEPLOYMENT TEST - This should appear immediately on page load
