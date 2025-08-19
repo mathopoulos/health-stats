@@ -32,12 +32,6 @@ interface ProcessingResult {
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// GLOBAL TEST - This should run when the file loads
-console.log('🟢 UPLOAD PAGE FILE LOADED - GLOBAL SCOPE');
-if (typeof window !== 'undefined') {
-  console.log('🟢 CLIENT SIDE EXECUTION CONFIRMED');
-}
-
 async function triggerProcessing(updateStatus: (status: string) => void): Promise<ProcessingResult> {
   console.log('Starting triggerProcessing function');
   try {
@@ -148,24 +142,7 @@ async function triggerProcessing(updateStatus: (status: string) => void): Promis
 }
 
 export default function UploadPage() {
-  // BASIC TEST - This runs before any hooks
-  console.log('🚀 UPLOAD PAGE COMPONENT STARTED - VERSION 1.2.3');
-  
   const { data: session, status: sessionStatus, update: updateSession } = useSession();
-  
-  // DEPLOYMENT TEST - This should appear immediately on page load
-  console.log('🚀 UPLOAD PAGE LOADED - SESSION FIX VERSION 1.2.3');
-  
-  // Debug session changes
-  useEffect(() => {
-    console.log('🔍 SESSION DEBUG:', {
-      status: sessionStatus,
-      hasSession: !!session,
-      userId: session?.user?.id,
-      userEmail: session?.user?.email,
-      timestamp: new Date().toISOString()
-    });
-  }, [session, sessionStatus]);
   const inputFileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -277,57 +254,21 @@ export default function UploadPage() {
   const [confirmationPhrase, setConfirmationPhrase] = useState('');
   const requiredPhrase = 'DELETE MY ACCOUNT';
 
-  // Handle preview deployment session race condition
+  // Fix session race condition in preview deployments
   useEffect(() => {
-    // Check if we just came from OAuth proxy (has oauth_success parameter)
-    const isFromOAuthProxy = searchParams?.get('oauth_success') === 'true';
-    
-    // If we're authenticated but missing user data, this might be a preview deployment
-    // session race condition. Force a session refresh.
-    if (sessionStatus === 'authenticated' && session && (!session.user?.id || isFromOAuthProxy)) {
-      console.log('Preview deployment session race condition detected, refreshing session...', {
-        hasUserId: !!session.user?.id,
-        isFromOAuthProxy,
-        userEmail: session.user?.email,
-        sessionUser: session.user
-      });
+    // If authenticated but missing user ID, force session refresh
+    if (sessionStatus === 'authenticated' && session && !session.user?.id) {
       updateSession();
-      
-      // Clean up the oauth_success parameter from URL
-      if (isFromOAuthProxy) {
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.delete('oauth_success');
-        window.history.replaceState({}, '', newUrl.toString());
-      }
+    }
+    
+    // Clean up OAuth proxy success parameter from URL
+    const isFromOAuthProxy = searchParams?.get('oauth_success') === 'true';
+    if (isFromOAuthProxy) {
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('oauth_success');
+      window.history.replaceState({}, '', newUrl.toString());
     }
   }, [sessionStatus, session, updateSession, searchParams]);
-
-  // Aggressive session refresh for preview deployments
-  useEffect(() => {
-    // Force refresh if authenticated but no userId after 2 seconds
-    const timer = setTimeout(() => {
-      if (sessionStatus === 'authenticated' && session && !session.user?.id) {
-        console.log('AGGRESSIVE: Session still missing userId after 2s, forcing refresh');
-        updateSession();
-      }
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [sessionStatus, session, updateSession]);
-
-  // Add visibility change handler to refresh session when page becomes visible
-  // This mimics what happens when you open dev tools and fixes the race condition
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && sessionStatus === 'authenticated' && session && !session.user?.id) {
-        console.log('Page became visible and session missing user data, refreshing...');
-        updateSession();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [sessionStatus, session, updateSession]);
 
   useEffect(() => {
     // Retry mechanism for session-dependent data fetching
