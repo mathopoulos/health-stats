@@ -198,9 +198,17 @@ export const authOptions: NextAuthOptions = {
       return false;
     },
     async session({ session, token }) {
-      if (session.user && token.sub) {
-        session.user.id = token.sub;
+      if (session.user) {
+        // Use token.id (which we set in JWT callback) or fall back to token.sub
+        session.user.id = token.id || token.sub;
         session.accessToken = token.accessToken as string | undefined;
+        
+        console.log("Session callback:", {
+          tokenId: token.id,
+          tokenSub: token.sub,
+          finalUserId: session.user.id,
+          userEmail: session.user.email
+        });
         
         // Pass the iOS flag to the session if present
         if (token.isIosApp) {
@@ -234,7 +242,19 @@ export const authOptions: NextAuthOptions = {
       }
       
       if (user) {
-        token.id = user.id;
+        // For Google OAuth, user.id might be undefined, so use email or sub as fallback
+        token.id = user.id || user.email || token.sub;
+        console.log("JWT callback setting user ID:", { 
+          userId: user.id, 
+          userEmail: user.email, 
+          tokenSub: token.sub, 
+          finalId: token.id 
+        });
+      }
+      
+      // Ensure token always has an ID
+      if (!token.id && token.sub) {
+        token.id = token.sub;
       }
       
       return token;
