@@ -144,6 +144,9 @@ async function triggerProcessing(updateStatus: (status: string) => void): Promis
 export default function UploadPage() {
   const { data: session, status: sessionStatus, update: updateSession } = useSession();
   
+  // DEPLOYMENT TEST - This should appear immediately on page load
+  console.log('🚀 UPLOAD PAGE LOADED - SESSION FIX VERSION 1.2.3');
+  
   // Debug session changes
   useEffect(() => {
     console.log('🔍 SESSION DEBUG:', {
