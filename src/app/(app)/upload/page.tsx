@@ -143,6 +143,17 @@ async function triggerProcessing(updateStatus: (status: string) => void): Promis
 
 export default function UploadPage() {
   const { data: session, status: sessionStatus, update: updateSession } = useSession();
+  
+  // Debug session changes
+  useEffect(() => {
+    console.log('🔍 SESSION DEBUG:', {
+      status: sessionStatus,
+      hasSession: !!session,
+      userId: session?.user?.id,
+      userEmail: session?.user?.email,
+      timestamp: new Date().toISOString()
+    });
+  }, [session, sessionStatus]);
   const inputFileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -264,7 +275,9 @@ export default function UploadPage() {
     if (sessionStatus === 'authenticated' && session && (!session.user?.id || isFromOAuthProxy)) {
       console.log('Preview deployment session race condition detected, refreshing session...', {
         hasUserId: !!session.user?.id,
-        isFromOAuthProxy
+        isFromOAuthProxy,
+        userEmail: session.user?.email,
+        sessionUser: session.user
       });
       updateSession();
       
@@ -276,6 +289,19 @@ export default function UploadPage() {
       }
     }
   }, [sessionStatus, session, updateSession, searchParams]);
+
+  // Aggressive session refresh for preview deployments
+  useEffect(() => {
+    // Force refresh if authenticated but no userId after 2 seconds
+    const timer = setTimeout(() => {
+      if (sessionStatus === 'authenticated' && session && !session.user?.id) {
+        console.log('AGGRESSIVE: Session still missing userId after 2s, forcing refresh');
+        updateSession();
+      }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [sessionStatus, session, updateSession]);
 
   // Add visibility change handler to refresh session when page becomes visible
   // This mimics what happens when you open dev tools and fixes the race condition
