@@ -78,17 +78,25 @@ export async function GET(request: NextRequest) {
       for (const cookie of sessionCookies) {
         const [name, value] = cookie.split('=');
         if (name && value) {
-          // Set cookie for preview domain
+          // Set cookie for preview domain with improved settings for faster availability
           response.cookies.set(name, value, {
             httpOnly: true,
             secure: true,
             sameSite: 'lax',
             path: '/',
-            domain: returnUrlObj.hostname.includes('vercel.app') ? undefined : returnUrlObj.hostname
+            // Don't set domain for vercel.app deployments to ensure cookie availability
+            domain: returnUrlObj.hostname.includes('vercel.app') ? undefined : returnUrlObj.hostname,
+            // Ensure immediate availability
+            maxAge: 30 * 24 * 60 * 60 // 30 days
           });
         }
       }
     }
+    
+    // Add cache control headers to prevent caching issues
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
     
     return response;
     

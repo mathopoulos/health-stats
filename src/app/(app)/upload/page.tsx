@@ -255,8 +255,34 @@ export default function UploadPage() {
   const requiredPhrase = 'DELETE MY ACCOUNT';
 
   useEffect(() => {
+    // Retry mechanism for session-dependent data fetching
+    // This helps with race conditions in preview deployments where session cookies
+    // may take time to be properly established after OAuth proxy redirect
+    const fetchWithRetry = async (fetchFn: () => Promise<void>, retryCount = 0): Promise<void> => {
+      const maxRetries = 3;
+      const retryDelay = 1000; // 1 second
+      
+      if (sessionStatus === 'loading') return;
+      
+      if (!session?.user?.id) {
+        if (retryCount < maxRetries && sessionStatus === 'authenticated') {
+          // Session status is authenticated but user ID not available yet
+          // This can happen during OAuth proxy flow - retry after delay
+          console.log(`Session user ID not available, retrying in ${retryDelay}ms (attempt ${retryCount + 1}/${maxRetries})`);
+          setTimeout(() => fetchWithRetry(fetchFn, retryCount + 1), retryDelay);
+        }
+        return;
+      }
+      
+      try {
+        await fetchFn();
+      } catch (error) {
+        console.error('Error in fetchWithRetry:', error);
+      }
+    };
+
     const fetchUserData = async () => {
-      if (sessionStatus === 'loading' || !session?.user?.id) return;
+      if (!session?.user?.id) return;
       
       try {
         const response = await fetch(`/api/users/${session.user.id}`);
@@ -275,7 +301,7 @@ export default function UploadPage() {
     };
 
     const fetchCurrentDiet = async () => {
-      if (sessionStatus === 'loading' || !session?.user?.id) return;
+      if (!session?.user?.id) return;
       
       try {
         const response = await fetch(`/api/health-protocols?protocolType=diet&activeOnly=true&userId=${session.user.id}`);
@@ -291,7 +317,7 @@ export default function UploadPage() {
     };
 
     const fetchCurrentWorkoutProtocols = async () => {
-      if (sessionStatus === 'loading' || !session?.user?.id) return;
+      if (!session?.user?.id) return;
       
       try {
         const response = await fetch(`/api/health-protocols?protocolType=exercise&activeOnly=true&userId=${session.user.id}`);
@@ -308,7 +334,7 @@ export default function UploadPage() {
     };
 
     const fetchCurrentSupplementProtocols = async () => {
-      if (sessionStatus === 'loading' || !session?.user?.id) return;
+      if (!session?.user?.id) return;
       
       try {
         const response = await fetch(`/api/health-protocols?protocolType=supplement&activeOnly=true&userId=${session.user.id}`);
@@ -324,11 +350,12 @@ export default function UploadPage() {
       }
     };
 
-    fetchUserData();
-    fetchCurrentDiet();
-    fetchCurrentWorkoutProtocols();
-    fetchCurrentSupplementProtocols();
-    fetchExperiments();
+    // Use retry mechanism for all session-dependent data fetching
+    fetchWithRetry(fetchUserData);
+    fetchWithRetry(fetchCurrentDiet);
+    fetchWithRetry(fetchCurrentWorkoutProtocols);
+    fetchWithRetry(fetchCurrentSupplementProtocols);
+    fetchWithRetry(fetchExperiments);
   }, [session?.user?.id, sessionStatus]);
 
   const handleUpdateProfile = async () => {
@@ -642,7 +669,7 @@ export default function UploadPage() {
 
   // Experiment handlers
   const fetchExperiments = async () => {
-    if (sessionStatus === 'loading' || !session?.user?.id) return;
+    if (!session?.user?.id) return;
     
     setIsLoadingExperiments(true);
     try {
