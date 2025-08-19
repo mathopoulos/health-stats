@@ -200,7 +200,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         // Use token.id (which we set in JWT callback) or fall back to token.sub
-        session.user.id = token.id || token.sub;
+        session.user.id = (token.id || token.sub || session.user.email || 'unknown') as string;
         session.accessToken = token.accessToken as string | undefined;
         
         console.log("Session callback:", {
@@ -243,7 +243,7 @@ export const authOptions: NextAuthOptions = {
       
       if (user) {
         // For Google OAuth, user.id might be undefined, so use email or sub as fallback
-        token.id = user.id || user.email || token.sub;
+        token.id = user.id || user.email || token.sub || 'unknown';
         console.log("JWT callback setting user ID:", { 
           userId: user.id, 
           userEmail: user.email, 
@@ -252,9 +252,9 @@ export const authOptions: NextAuthOptions = {
         });
       }
       
-      // Ensure token always has an ID
-      if (!token.id && token.sub) {
-        token.id = token.sub;
+      // Ensure token always has an ID (string value)
+      if (!token.id) {
+        token.id = token.sub || token.email || 'unknown';
       }
       
       return token;
