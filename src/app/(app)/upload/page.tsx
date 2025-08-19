@@ -463,8 +463,44 @@ export default function UploadPage() {
     }
   };
 
-  const removeWorkoutProtocol = (type: string) => {
-    setWorkoutProtocols(prev => prev.filter(w => w.type !== type));
+  const removeWorkoutProtocol = async (type: string) => {
+    // Update local state immediately for optimistic UI
+    const updatedProtocols = workoutProtocols.filter(w => w.type !== type);
+    setWorkoutProtocols(updatedProtocols);
+    
+    // Save to backend to persist the deletion
+    setIsSavingWorkoutProtocol(true);
+    try {
+      const response = await fetch('/api/health-protocols', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          protocolType: 'exercise',
+          protocol: JSON.stringify({ workouts: updatedProtocols }),
+          startDate: new Date().toISOString()
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to remove workout protocol');
+      }
+
+      setStatus('Workout protocol removed successfully');
+      setTimeout(() => setStatus(''), 3000);
+    } catch (error) {
+      console.error('Error removing workout protocol:', error);
+      
+      // Revert local state on error
+      setWorkoutProtocols(workoutProtocols);
+      
+      setStatus(error instanceof Error ? error.message : 'Failed to remove workout protocol');
+      setTimeout(() => setStatus(''), 3000);
+    } finally {
+      setIsSavingWorkoutProtocol(false);
+    }
   };
 
   const updateWorkoutProtocolFrequency = async (type: string, newFrequency: number) => {
