@@ -8,6 +8,7 @@
  * - Pathname detection from various header sources
  */
 
+import React from 'react';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
