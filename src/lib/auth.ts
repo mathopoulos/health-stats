@@ -198,8 +198,9 @@ export const authOptions: NextAuthOptions = {
       return false;
     },
     async session({ session, token }) {
-      if (session.user && token.sub) {
-        session.user.id = token.sub;
+      if (session.user) {
+        // Use token.id (which we set in JWT callback) or fall back to token.sub
+        session.user.id = (token.id || token.sub || session.user.email || 'unknown') as string;
         session.accessToken = token.accessToken as string | undefined;
         
         // Pass the iOS flag to the session if present
@@ -212,7 +213,6 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account }) {
       // Store access token and iOS flag in JWT
       if (account) {
-        console.log("JWT callback for:", account.provider);
         token.accessToken = account.access_token;
         
         // Check for iOS authentication
@@ -224,7 +224,6 @@ export const authOptions: NextAuthOptions = {
             if ((stateData.iosToken && verifyIosToken(stateData.iosToken)) || 
                 stateData.platform === 'ios' || 
                 stateData.iosBypass === true) {
-              console.log("iOS auth: Marking JWT with iOS flag");
               token.isIosApp = true;
             }
           }
@@ -234,7 +233,13 @@ export const authOptions: NextAuthOptions = {
       }
       
       if (user) {
-        token.id = user.id;
+        // For Google OAuth, user.id might be undefined, so use email or sub as fallback
+        token.id = user.id || user.email || token.sub || 'unknown';
+      }
+      
+      // Ensure token always has an ID (string value)
+      if (!token.id) {
+        token.id = token.sub || token.email || 'unknown';
       }
       
       return token;
