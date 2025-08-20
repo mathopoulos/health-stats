@@ -26,6 +26,7 @@ export default function UploadPage() {
   const [status, setStatus] = useState<string>('');
   const [isAddResultsModalOpen, setIsAddResultsModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [fileKey, setFileKey] = useState(0);
   const [name, setName] = useState<string>('');
   const [nameError, setNameError] = useState<string | null>(null);
   const [age, setAge] = useState<number | ''>('');
