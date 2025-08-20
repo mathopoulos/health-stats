@@ -13,7 +13,7 @@ import {
   stepsConfig,
   pricingConfig,
   dashboardPreviewConfig
-} from '@components/landing';
+} from '@features/landing';
 
 /**
  * Landing Page Component - Refactored for better maintainability
