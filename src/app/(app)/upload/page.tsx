@@ -10,7 +10,7 @@ import EditExperimentModal from '@features/experiments/components/EditExperiment
 import Image from 'next/image';
 import Link from 'next/link';
 import ThemeToggle from '@components/ThemeToggle';
-import UploadDashboard from '@features/upload/components/UploadDashboard';
+import BloodTestUpload from '@features/blood-markers/components/BloodTestUpload';
 import BloodMarkerHistory from '@features/blood-markers/components/BloodMarkerHistory';
 import FitnessMetricsHistory from '@features/workouts/components/FitnessMetricsHistory';
 import { toast } from 'react-hot-toast';
@@ -2435,7 +2435,7 @@ export default function UploadPage() {
                 <p className="text-gray-600 dark:text-gray-400 mb-6">
                   Upload your blood test PDF and we'll automatically extract the results.
                 </p>
-                <UploadDashboard />
+                <BloodTestUpload />
               </div>
 
               {/* Manual Entry Section */}
