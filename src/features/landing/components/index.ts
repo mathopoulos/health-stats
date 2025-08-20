@@ -7,12 +7,17 @@ export { default as ActionButtons } from './ActionButtons';
 export { default as HowItWorksSection } from './HowItWorksSection';
 export { default as FeatureStep } from './FeatureStep';
 export { default as PricingSection } from './PricingSection';
+export { default as PricingHeader } from './PricingHeader';
+export { default as PricingCard } from './PricingCard';
 export { default as FeatureList } from './FeatureList';
 export { default as Footer } from './Footer';
 
 // Configuration exports
 export * from './config';
 export * from './types';
+
+// Utility exports
+export * from './utils/button-actions';
 
 // Hooks exports
 export { useScrollAnimation } from './hooks/useScrollAnimation';

@@ -3,6 +3,7 @@
 import React from 'react';
 import { HeroConfig } from './types';
 import { useSmoothScroll } from './hooks/useSmoothScroll';
+import { createButtonActionHandler, extractButtonActions } from './utils/button-actions';
 
 interface ActionButtonsProps {
   config: HeroConfig;
@@ -11,14 +12,12 @@ interface ActionButtonsProps {
 
 export default function ActionButtons({ config, className = '' }: ActionButtonsProps) {
   const { scrollToSection } = useSmoothScroll();
+  const buttonActions = extractButtonActions(config);
 
-  const handleSecondaryAction = () => {
-    if (config.buttons.secondary.action === 'scroll' && config.buttons.secondary.target) {
-      scrollToSection(config.buttons.secondary.target);
-    } else if (config.buttons.secondary.action === 'link' && config.buttons.secondary.href) {
-      window.location.href = config.buttons.secondary.href;
-    }
-  };
+  const handleSecondaryAction = createButtonActionHandler(
+    buttonActions.secondary,
+    scrollToSection
+  );
 
   return (
     <section 
