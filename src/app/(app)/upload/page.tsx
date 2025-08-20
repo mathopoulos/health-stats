@@ -10,149 +10,20 @@ import EditExperimentModal from '@features/experiments/components/EditExperiment
 import Image from 'next/image';
 import Link from 'next/link';
 import ThemeToggle from '@components/ThemeToggle';
-import BloodTestUpload from '@features/blood-markers/components/BloodTestUpload';
-import BloodMarkerHistory from '@features/blood-markers/components/BloodMarkerHistory';
-import FitnessMetricsHistory from '@features/workouts/components/FitnessMetricsHistory';
+import UploadDashboard from '@features/upload/components/UploadDashboard';
 import { toast } from 'react-hot-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
 import ConfirmDialog from '@components/ui/ConfirmDialog';
 import EditSupplementProtocolModal from '@features/experiments/components/EditSupplementProtocolPopover';
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 2000;
-
-interface ProcessingResult {
-  success: boolean;
-  message: string;
-  error?: string;
-  results: Array<{
-    message: string;
-  }>;
-}
-
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-async function triggerProcessing(updateStatus: (status: string) => void): Promise<ProcessingResult> {
-  console.log('Starting triggerProcessing function');
-  try {
-    // Start the processing
-    console.log('Making POST request to /api/process');
-    updateStatus('Initiating processing request...');
-    
-    const startResponse = await fetch('/api/process', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    
-    console.log('Response status from /api/process:', startResponse.status);
-    
-    if (!startResponse.ok) {
-      const errorText = await startResponse.text();
-      console.error('Error response from /api/process:', errorText);
-      let error;
-      try {
-        error = JSON.parse(errorText);
-      } catch {
-        error = { error: errorText || 'Failed to start processing' };
-      }
-      throw new Error(error.error || 'Failed to start processing');
-    }
-
-    // Get the processing ID from the response
-    const responseData = await startResponse.json();
-    console.log('Received processing ID:', responseData.processingId);
-    const { processingId } = responseData;
-    
-    // Poll for status with exponential backoff
-    let attempts = 0;
-    const maxAttempts = 60; // 15 minutes total polling time with exponential backoff
-    let backoffMs = 2000; // Start with 2 seconds
-    const maxBackoffMs = 30000; // Max 30 seconds between polls
-    
-    updateStatus('Processing started. Waiting for status updates...');
-    
-    while (attempts < maxAttempts) {
-      console.log(`Polling attempt ${attempts + 1}/${maxAttempts} - waiting ${backoffMs}ms`);
-      await sleep(backoffMs); // Wait with exponential backoff
-      
-      try {
-        console.log(`Checking status for processingId: ${processingId}`);
-        const statusResponse = await fetch(`/api/process/status?id=${processingId}`);
-        console.log('Status response:', statusResponse.status);
-        
-        if (!statusResponse.ok) {
-          console.error('Error checking status:', statusResponse.status, statusResponse.statusText);
-          throw new Error('Failed to check processing status');
-        }
-        
-        const statusText = await statusResponse.text();
-        console.log('Raw status response:', statusText);
-        
-        let status;
-        try {
-          status = JSON.parse(statusText);
-          console.log('Parsed status response:', status);
-        } catch (parseError) {
-          console.error('Failed to parse status response as JSON:', parseError);
-          throw new Error('Invalid status response format');
-        }
-        
-        if (status.completed) {
-          console.log('Processing completed successfully');
-          return {
-            success: true,
-            message: status.message || 'Processing completed successfully',
-            results: status.results || []
-          };
-        } else if (status.error) {
-          console.error('Error in status response:', status.error);
-          throw new Error(status.error);
-        }
-        
-        // If still processing, continue polling with exponential backoff
-        attempts++;
-        backoffMs = Math.min(backoffMs * 1.5, maxBackoffMs); // Increase backoff time, but cap at maxBackoffMs
-        
-        // Update processing status with progress if available
-        if (status.progress) {
-          console.log('Current progress:', status.progress);
-          updateStatus(`Processing... ${status.progress}`);
-        } else {
-          console.log('No progress information in status response');
-          updateStatus(`Processing... (waiting for progress updates)`);
-        }
-      } catch (error) {
-        console.error('Error checking status:', error);
-        throw error;
-      }
-    }
-    
-    // If we reach here, processing is taking too long but might still be running
-    console.warn('Processing is taking longer than expected, exceeded max polling attempts');
-    return {
-      success: true,
-      message: 'Processing is taking longer than expected. Please check your dashboard in a few minutes to see your processed data.',
-      results: []
-    };
-    
-  } catch (error) {
-    console.error('Processing error in triggerProcessing:', error);
-    throw error;
-  }
-}
+// Note: Processing functionality has been moved to the new upload hooks
+// This file now uses the UploadDashboard component for upload functionality
 
 export default function UploadPage() {
   const { data: session, status: sessionStatus, update: updateSession } = useSession();
   const inputFileRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processingStatus, setProcessingStatus] = useState<string>('');
   const [isAddResultsModalOpen, setIsAddResultsModalOpen] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
   const [name, setName] = useState<string>('');
   const [nameError, setNameError] = useState<string | null>(null);
   const [age, setAge] = useState<number | ''>('');
@@ -171,22 +42,6 @@ export default function UploadPage() {
     return tab && ['profile', 'protocols', 'fitness', 'blood', 'more'].includes(tab) ? tab : 'profile';
   });
   const profileImageRef = useRef<HTMLInputElement>(null);
-  const [isFileLoading, setIsFileLoading] = useState(false);
-  const [fileKey, setFileKey] = useState(0);
-  const [hasExistingUploads, setHasExistingUploads] = useState(false);
-  const [prefilledResults, setPrefilledResults] = useState<Array<{
-    name: string;
-    value: number;
-    unit: string;
-    category: string;
-  }> | null>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<Array<{
-    id: string;
-    filename: string;
-    uploadDate: string;
-  }>>([]);
-  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [isHelpExpanded, setIsHelpExpanded] = useState(false);
   const [currentDiet, setCurrentDiet] = useState<string>('');
   const [isSavingProtocol, setIsSavingProtocol] = useState(false);
@@ -2533,7 +2388,7 @@ export default function UploadPage() {
                 <p className="text-gray-600 dark:text-gray-400 mb-6">
                   Upload your blood test PDF and we'll automatically extract the results.
                 </p>
-                <BloodTestUpload />
+                <UploadDashboard />
               </div>
 
               {/* Manual Entry Section */}
