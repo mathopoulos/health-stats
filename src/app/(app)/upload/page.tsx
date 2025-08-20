@@ -11,6 +11,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import ThemeToggle from '@components/ThemeToggle';
 import UploadDashboard from '@features/upload/components/UploadDashboard';
+import BloodMarkerHistory from '@features/blood-markers/components/BloodMarkerHistory';
 import { toast } from 'react-hot-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
 import ConfirmDialog from '@components/ui/ConfirmDialog';
