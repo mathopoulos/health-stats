@@ -12,6 +12,7 @@ import Link from 'next/link';
 import ThemeToggle from '@components/ThemeToggle';
 import UploadDashboard from '@features/upload/components/UploadDashboard';
 import BloodMarkerHistory from '@features/blood-markers/components/BloodMarkerHistory';
+import FitnessMetricsHistory from '@features/workouts/components/FitnessMetricsHistory';
 import { toast } from 'react-hot-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
 import ConfirmDialog from '@components/ui/ConfirmDialog';
@@ -48,6 +49,49 @@ export default function UploadPage() {
   const [isHelpExpanded, setIsHelpExpanded] = useState(false);
   const [currentDiet, setCurrentDiet] = useState<string>('');
   const [isSavingProtocol, setIsSavingProtocol] = useState(false);
+
+  // Processing state for health data (keeping for backward compatibility)
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState<string>('');
+
+  // Upload state (keeping for backward compatibility)
+  const [uploading, setUploading] = useState(false);
+  const [hasExistingUploads, setHasExistingUploads] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+
+  // Additional state variables for file management
+  const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<number>(0);
+  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
+  const [isFileLoading, setIsFileLoading] = useState(false);
+
+  // Simple triggerProcessing function for backward compatibility
+  const triggerProcessing = async (statusCallback: (status: string) => void) => {
+    try {
+      statusCallback('Starting processing...');
+      const response = await fetch('/api/process', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: session?.user?.id
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Processing failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Error in triggerProcessing:', error);
+      throw error;
+    }
+  };
   
   // Workout protocol state
   const [workoutProtocols, setWorkoutProtocols] = useState<Array<{
@@ -706,7 +750,7 @@ export default function UploadPage() {
       console.log('triggerProcessing result:', result);
       
       if (result.success) {
-        const resultMessage = result.message + (result.results.length > 0 ? ` ${result.results.map(r => r.message).join(', ')}` : '');
+        const resultMessage = result.message + (result.results?.length > 0 ? ` ${result.results.map((r: any) => r.message).join(', ')}` : '');
         console.log('Processing successful, setting message:', resultMessage);
         setProcessingStatus(resultMessage);
       } else {

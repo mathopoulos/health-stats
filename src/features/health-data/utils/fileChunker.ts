@@ -164,7 +164,7 @@ export async function uploadChunk(
   const checksum = await generateChecksum(chunk);
   formData.append('checksum', checksum);
 
-  let lastError: Error;
+  let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     // Check if operation was cancelled
@@ -279,7 +279,7 @@ export async function uploadChunk(
     }
   }
 
-  throw lastError || new Error(`Failed to upload chunk ${chunkNumber + 1} after ${maxRetries + 1} attempts`);
+  throw lastError ?? new Error(`Failed to upload chunk ${chunkNumber + 1} after ${maxRetries + 1} attempts`);
 }
 
 // Generate checksum for data integrity verification
