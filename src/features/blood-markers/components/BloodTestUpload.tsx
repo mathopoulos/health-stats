@@ -7,11 +7,13 @@ import { toast } from 'react-hot-toast';
 import { signIn, useSession } from 'next-auth/react';
 import { usePDFUpload } from '../../upload/hooks';
 import BloodMarkerPreview from './BloodMarkerPreview';
+import { BloodMarker } from '../../upload/types';
 
 export default function BloodTestUpload() {
   const { data: session } = useSession();
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [fileKey, setFileKey] = useState(0);
+  const [showPreview, setShowPreview] = useState(false);
 
   // Use the new PDF upload hook
   const pdfUpload = usePDFUpload({
@@ -104,7 +106,7 @@ export default function BloodTestUpload() {
       'application/pdf': ['.pdf'],
     },
     maxFiles: 1,
-    disabled: isUploading,
+    disabled: pdfUpload.isUploading || pdfUpload.isProcessing,
   });
 
   return (
@@ -189,8 +191,9 @@ export default function BloodTestUpload() {
       </div>
 
       <BloodMarkerPreview
-        isOpen={pdfUpload.extractedMarkers.length > 0}
+        isOpen={showPreview}
         onClose={() => {
+          setShowPreview(false);
           resetUpload();
         }}
         markers={pdfUpload.extractedMarkers}
