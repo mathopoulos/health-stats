@@ -334,8 +334,9 @@ describe('AddWorkoutProtocolModal', () => {
     const frequencySelects = screen.getAllByDisplayValue('2x');
     fireEvent.change(frequencySelects[0], { target: { value: '3' } });
     
-    // Total should update to 5 (3 + 2)
-    expect(screen.getByText('Total weekly sessions: 5')).toBeInTheDocument();
+    // Total should update to 5 (3 + 2) - text is split across DOM elements
+    expect(screen.getByText('Total weekly sessions:', { exact: false })).toBeInTheDocument();
+    expect(screen.getByText('5')).toBeInTheDocument();
   });
 
   it('shows workout categories in frequency step', () => {
