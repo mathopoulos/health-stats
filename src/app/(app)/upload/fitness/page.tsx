@@ -124,6 +124,10 @@ export default function FitnessPage() {
   const router = useRouter();
   const inputFileRef = useRef<HTMLInputElement>(null);
   
+  // User profile state for navigation
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [name, setName] = useState<string>('');
+
   // Fitness-specific state
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -154,10 +158,25 @@ export default function FitnessPage() {
     }
   }, [session, sessionStatus]);
 
-  // Fetch uploaded files
+  // Fetch user data and uploaded files
   useEffect(() => {
     if (sessionStatus === 'loading') return;
     if (!session?.user?.id) return;
+
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch(`/api/users/${session.user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.user) {
+            setName(data.user.name || '');
+            setProfileImage(data.user.profileImage || null);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
 
     const fetchUploadedFiles = async () => {
       setIsLoadingFiles(true);
@@ -177,6 +196,7 @@ export default function FitnessPage() {
       }
     };
 
+    fetchWithRetry(fetchUserData);
     fetchWithRetry(fetchUploadedFiles);
   }, [session?.user?.id, sessionStatus]);
 
@@ -439,8 +459,8 @@ export default function FitnessPage() {
         activeTab="fitness"
         onTabChange={handleTabChange}
         session={session}
-        profileImage={null}
-        name=""
+        profileImage={profileImage}
+        name={name}
       />
 
       {/* Mobile Header */}

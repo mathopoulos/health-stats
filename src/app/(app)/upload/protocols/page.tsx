@@ -38,6 +38,10 @@ export default function ProtocolsPage() {
   const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
   
+  // User profile state for navigation
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [name, setName] = useState<string>('');
+  
   // Diet protocol state
   const [currentDiet, setCurrentDiet] = useState<string>('');
   const [isSavingProtocol, setIsSavingProtocol] = useState(false);
@@ -110,6 +114,21 @@ export default function ProtocolsPage() {
   useEffect(() => {
     if (sessionStatus === 'loading') return;
     if (!session?.user?.id) return;
+
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch(`/api/users/${session.user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.user) {
+            setName(data.user.name || '');
+            setProfileImage(data.user.profileImage || null);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
 
     const fetchCurrentDiet = async () => {
       if (!session?.user?.id) return;
@@ -188,6 +207,7 @@ export default function ProtocolsPage() {
     };
 
     // Use retry mechanism for session-dependent data fetching
+    fetchWithRetry(fetchUserData);
     fetchWithRetry(fetchCurrentDiet);
     fetchWithRetry(fetchCurrentWorkoutProtocols);
     fetchWithRetry(fetchCurrentSupplementProtocols);
@@ -640,8 +660,8 @@ export default function ProtocolsPage() {
         activeTab="protocols"
         onTabChange={handleTabChange}
         session={session}
-        profileImage={null}
-        name=""
+        profileImage={profileImage}
+        name={name}
       />
 
       {/* Mobile Header */}

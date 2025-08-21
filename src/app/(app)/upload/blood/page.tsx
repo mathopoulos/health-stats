@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from "next-auth/react";
 import { useRouter } from 'next/navigation';
 import AddResultsModal from '@features/experiments/components/AddResultsModal';
@@ -9,6 +9,10 @@ import { BloodTab, DesktopNavigation, MobileNavigation, MobileHeader } from '@fe
 export default function BloodPage() {
   const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
+  
+  // User profile state for navigation
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [name, setName] = useState<string>('');
   
   // Blood test state
   const [isAddResultsModalOpen, setIsAddResultsModalOpen] = useState(false);
@@ -35,6 +39,29 @@ export default function BloodPage() {
         router.push('/upload/profile');
     }
   };
+
+  // Fetch user data for navigation
+  useEffect(() => {
+    if (sessionStatus === 'loading') return;
+    if (!session?.user?.id) return;
+
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch(`/api/users/${session.user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.user) {
+            setName(data.user.name || '');
+            setProfileImage(data.user.profileImage || null);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    fetchUserData();
+  }, [session?.user?.id, sessionStatus]);
 
   // Loading state
   if (sessionStatus === 'loading') {
@@ -72,8 +99,8 @@ export default function BloodPage() {
         activeTab="blood"
         onTabChange={handleTabChange}
         session={session}
-        profileImage={null}
-        name=""
+        profileImage={profileImage}
+        name={name}
       />
 
       {/* Mobile Header */}
