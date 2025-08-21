@@ -84,6 +84,7 @@ export default function UploadDashboard({
       <AddResultsModal
         isOpen={showAddResults}
         onClose={() => setShowAddResults(false)}
+        prefilledResults={null}
       />
 
       <AddWorkoutProtocolModal
