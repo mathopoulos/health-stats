@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from "next-auth/react";
 import { useRouter } from 'next/navigation';
-import AddResultsModal from '@features/experiments/components/AddResultsModal';
-import { BloodTab, DesktopNavigation, MobileNavigation, MobileHeader } from '@features/upload/components';
+import { BloodTab, DesktopNavigation, MobileNavigation, MobileHeader, AddResultsModal } from '@features/upload/components';
 
 export default function BloodPage() {
   const { data: session, status: sessionStatus } = useSession();

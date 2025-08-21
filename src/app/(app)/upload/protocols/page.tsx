@@ -3,12 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from "next-auth/react";
 import { useRouter } from 'next/navigation';
-import AddWorkoutProtocolModal from '@features/experiments/components/AddWorkoutProtocolModal';
-import AddSupplementProtocolModal from '@features/experiments/components/AddSupplementProtocolModal';
-import AddExperimentModal from '@features/experiments/components/AddExperimentModal';
-import EditExperimentModal from '@features/experiments/components/EditExperimentModal';
-import EditSupplementProtocolModal from '@features/experiments/components/EditSupplementProtocolPopover';
-import { ProtocolsTab, DesktopNavigation, MobileNavigation, MobileHeader } from '@features/upload/components';
+import { 
+  ProtocolsTab, 
+  DesktopNavigation, 
+  MobileNavigation, 
+  MobileHeader,
+  AddWorkoutProtocolModal,
+  AddSupplementProtocolModal,
+  AddExperimentModal,
+  EditExperimentModal,
+  EditSupplementProtocolPopover as EditSupplementProtocolModal
+} from '@features/upload/components';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
