@@ -3,202 +3,292 @@ import { render, screen } from '@testing-library/react';
 import FormCard from '../FormCard';
 
 describe('FormCard', () => {
-  it('renders with title and children', () => {
-    render(
-      <FormCard title="Test Title">
-        <p>Test content</p>
-      </FormCard>
-    );
-    
-    expect(screen.getByText('Test Title')).toBeInTheDocument();
-    expect(screen.getByText('Test content')).toBeInTheDocument();
+  describe('Basic rendering', () => {
+    it('renders title and children', () => {
+      render(
+        <FormCard title="Test Form">
+          <p>Form content</p>
+        </FormCard>
+      );
+
+      expect(screen.getByText('Test Form')).toBeInTheDocument();
+      expect(screen.getByText('Form content')).toBeInTheDocument();
+    });
+
+    it('applies base styling classes', () => {
+      const { container } = render(
+        <FormCard title="Test Form">
+          <p>Form content</p>
+        </FormCard>
+      );
+
+      const formCard = container.firstChild as HTMLElement;
+      expect(formCard).toHaveClass(
+        'bg-white',
+        'dark:bg-gray-800',
+        'rounded-lg',
+        'shadow-sm',
+        'p-6'
+      );
+    });
+
+    it('renders title with correct styling', () => {
+      render(
+        <FormCard title="Test Form">
+          <p>Form content</p>
+        </FormCard>
+      );
+
+      const title = screen.getByText('Test Form');
+      expect(title.tagName).toBe('H3');
+      expect(title).toHaveClass(
+        'text-lg',
+        'font-medium',
+        'text-gray-900',
+        'dark:text-white',
+        'mb-4'
+      );
+    });
   });
 
-  it('always renders title as required prop', () => {
-    render(
-      <FormCard title="Required Title">
-        <p>Test content</p>
-      </FormCard>
-    );
-    
-    expect(screen.getByText('Test content')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 3 })).toBeInTheDocument();
-    expect(screen.getByText('Required Title')).toBeInTheDocument();
+  describe('Description handling', () => {
+    it('renders description when provided', () => {
+      const description = 'This is a form description';
+      render(
+        <FormCard title="Test Form" description={description}>
+          <p>Form content</p>
+        </FormCard>
+      );
+
+      expect(screen.getByText(description)).toBeInTheDocument();
+    });
+
+    it('applies correct styling to description', () => {
+      const description = 'This is a form description';
+      render(
+        <FormCard title="Test Form" description={description}>
+          <p>Form content</p>
+        </FormCard>
+      );
+
+      const descriptionElement = screen.getByText(description);
+      expect(descriptionElement.tagName).toBe('P');
+      expect(descriptionElement).toHaveClass(
+        'text-gray-600',
+        'dark:text-gray-400',
+        'mb-6'
+      );
+    });
+
+    it('does not render description when not provided', () => {
+      render(
+        <FormCard title="Test Form">
+          <p>Form content</p>
+        </FormCard>
+      );
+
+      // Should not have any p tag with description classes
+      const paragraphs = screen.getAllByRole('paragraph');
+      const descriptionP = paragraphs.find(p => 
+        p.classList.contains('text-gray-600') && 
+        p.classList.contains('mb-6')
+      );
+      expect(descriptionP).toBeUndefined();
+    });
+
+    it('does not render description when empty string', () => {
+      render(
+        <FormCard title="Test Form" description="">
+          <p>Form content</p>
+        </FormCard>
+      );
+
+      // Should not render description paragraph for empty string
+      const paragraphs = screen.getAllByRole('paragraph');
+      const descriptionP = paragraphs.find(p => 
+        p.classList.contains('text-gray-600') && 
+        p.classList.contains('mb-6')
+      );
+      expect(descriptionP).toBeUndefined();
+    });
   });
 
-  it('renders description when provided', () => {
-    render(
-      <FormCard title="Test Title" description="Test description">
-        <p>Test content</p>
-      </FormCard>
-    );
-    
-    expect(screen.getByText('Test Title')).toBeInTheDocument();
-    expect(screen.getByText('Test description')).toBeInTheDocument();
-    expect(screen.getByText('Test content')).toBeInTheDocument();
+  describe('Custom className', () => {
+    it('applies custom className when provided', () => {
+      const customClass = 'custom-form-card';
+      const { container } = render(
+        <FormCard title="Test Form" className={customClass}>
+          <p>Form content</p>
+        </FormCard>
+      );
+
+      const formCard = container.firstChild as HTMLElement;
+      expect(formCard).toHaveClass(customClass);
+    });
+
+    it('combines custom className with base classes', () => {
+      const customClass = 'custom-form-card another-class';
+      const { container } = render(
+        <FormCard title="Test Form" className={customClass}>
+          <p>Form content</p>
+        </FormCard>
+      );
+
+      const formCard = container.firstChild as HTMLElement;
+      expect(formCard).toHaveClass(
+        'bg-white',
+        'dark:bg-gray-800',
+        'rounded-lg',
+        'shadow-sm',
+        'p-6',
+        'custom-form-card',
+        'another-class'
+      );
+    });
+
+    it('works without custom className (default empty string)', () => {
+      const { container } = render(
+        <FormCard title="Test Form">
+          <p>Form content</p>
+        </FormCard>
+      );
+
+      const formCard = container.firstChild as HTMLElement;
+      expect(formCard).toHaveClass(
+        'bg-white',
+        'dark:bg-gray-800',
+        'rounded-lg',
+        'shadow-sm',
+        'p-6'
+      );
+    });
   });
 
-  it('applies default card styles', () => {
-    render(
-      <FormCard title="Test Title">
-        <p>Test content</p>
-      </FormCard>
-    );
-    
-    const card = screen.getByText('Test Title').closest('div');
-    expect(card).toHaveClass('bg-white', 'dark:bg-gray-800', 'rounded-lg', 'shadow-sm');
-  });
+  describe('Children rendering', () => {
+    it('renders simple text children', () => {
+      render(
+        <FormCard title="Test Form">
+          Simple text content
+        </FormCard>
+      );
 
-  it('applies custom className when provided', () => {
-    render(
-      <FormCard title="Test Title" className="custom-card-class">
-        <p>Test content</p>
-      </FormCard>
-    );
-    
-    const card = screen.getByText('Test Title').closest('div');
-    expect(card).toHaveClass('custom-card-class');
-  });
+      expect(screen.getByText('Simple text content')).toBeInTheDocument();
+    });
 
-  it('combines custom className with default styles', () => {
-    render(
-      <FormCard title="Test Title" className="custom-card-class">
-        <p>Test content</p>
-      </FormCard>
-    );
-    
-    const card = screen.getByText('Test Title').closest('div');
-    expect(card).toHaveClass('bg-white', 'dark:bg-gray-800', 'custom-card-class');
-  });
-
-  it('renders title as heading with correct level', () => {
-    render(
-      <FormCard title="Test Title">
-        <p>Test content</p>
-      </FormCard>
-    );
-    
-    const heading = screen.getByRole('heading', { level: 3 });
-    expect(heading).toHaveTextContent('Test Title');
-  });
-
-  it('applies correct heading styles', () => {
-    render(
-      <FormCard title="Test Title">
-        <p>Test content</p>
-      </FormCard>
-    );
-    
-    const heading = screen.getByRole('heading', { level: 3 });
-    expect(heading).toHaveClass('text-lg', 'font-medium', 'text-gray-900', 'dark:text-white');
-  });
-
-  it('applies correct description styles', () => {
-    render(
-      <FormCard title="Test Title" description="Test description">
-        <p>Test content</p>
-      </FormCard>
-    );
-    
-    const description = screen.getByText('Test description');
-    expect(description).toHaveClass('text-gray-600', 'dark:text-gray-400', 'mb-6');
-  });
-
-  it('renders complex children correctly', () => {
-    render(
-      <FormCard title="Test Title">
-        <div>
-          <label htmlFor="test-input">Label</label>
-          <input id="test-input" type="text" />
-          <button>Submit</button>
-        </div>
-      </FormCard>
-    );
-    
-    expect(screen.getByLabelText('Label')).toBeInTheDocument();
-    expect(screen.getByRole('textbox')).toBeInTheDocument();
-    expect(screen.getByRole('button')).toBeInTheDocument();
-  });
-
-  it('handles empty children gracefully', () => {
-    render(
-      <FormCard title="Test Title">
-        {null}
-      </FormCard>
-    );
-    
-    expect(screen.getByText('Test Title')).toBeInTheDocument();
-  });
-
-  it('renders with proper semantic structure', () => {
-    render(
-      <FormCard title="Profile Settings" description="Update your profile information">
-        <form>
-          <input type="text" placeholder="Name" />
-        </form>
-      </FormCard>
-    );
-    
-    const card = screen.getByText('Profile Settings').closest('div');
-    const header = screen.getByText('Profile Settings').parentElement;
-    const content = screen.getByRole('textbox').closest('div');
-    
-    expect(card).toBeInTheDocument();
-    expect(header).toBeInTheDocument();
-    expect(content).toBeInTheDocument();
-  });
-
-  it('supports nested form elements', () => {
-    render(
-      <FormCard title="Contact Form">
-        <form>
+    it('renders complex JSX children', () => {
+      render(
+        <FormCard title="Test Form">
           <div>
-            <label htmlFor="email">Email</label>
-            <input id="email" type="email" />
+            <input type="text" placeholder="Name" />
+            <button>Submit</button>
+            <span>Helper text</span>
           </div>
-          <div>
-            <label htmlFor="message">Message</label>
-            <textarea id="message" />
-          </div>
-          <button type="submit">Send</button>
-        </form>
-      </FormCard>
-    );
-    
-    expect(screen.getByLabelText('Email')).toBeInTheDocument();
-    expect(screen.getByLabelText('Message')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Send' })).toBeInTheDocument();
+        </FormCard>
+      );
+
+      expect(screen.getByPlaceholderText('Name')).toBeInTheDocument();
+      expect(screen.getByText('Submit')).toBeInTheDocument();
+      expect(screen.getByText('Helper text')).toBeInTheDocument();
+    });
+
+    it('renders multiple children', () => {
+      render(
+        <FormCard title="Test Form">
+          <p>First paragraph</p>
+          <p>Second paragraph</p>
+          <button>Action button</button>
+        </FormCard>
+      );
+
+      expect(screen.getByText('First paragraph')).toBeInTheDocument();
+      expect(screen.getByText('Second paragraph')).toBeInTheDocument();
+      expect(screen.getByText('Action button')).toBeInTheDocument();
+    });
+
+    it('handles null/undefined children gracefully', () => {
+      render(
+        <FormCard title="Test Form">
+          {null}
+          {undefined}
+          <p>Visible content</p>
+        </FormCard>
+      );
+
+      expect(screen.getByText('Visible content')).toBeInTheDocument();
+      expect(screen.getByText('Test Form')).toBeInTheDocument();
+    });
   });
 
-  it('applies dark mode styles correctly', () => {
-    render(
-      <FormCard title="Test Title" description="Test description">
-        <p>Test content</p>
-      </FormCard>
-    );
-    
-    const card = screen.getByText('Test Title').closest('div');
-    const title = screen.getByText('Test Title');
-    const description = screen.getByText('Test description');
-    
-    expect(card).toHaveClass('dark:bg-gray-800');
-    expect(title).toHaveClass('dark:text-white');
-    expect(description).toHaveClass('dark:text-gray-400');
+  describe('Complete examples', () => {
+    it('renders form card with all props', () => {
+      render(
+        <FormCard 
+          title="User Registration" 
+          description="Please fill out the form below to create your account"
+          className="max-w-md mx-auto"
+        >
+          <form>
+            <input type="email" placeholder="Email" />
+            <input type="password" placeholder="Password" />
+            <button type="submit">Register</button>
+          </form>
+        </FormCard>
+      );
+
+      expect(screen.getByText('User Registration')).toBeInTheDocument();
+      expect(screen.getByText('Please fill out the form below to create your account')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Email')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Password')).toBeInTheDocument();
+      expect(screen.getByText('Register')).toBeInTheDocument();
+    });
+
+    it('renders minimal form card with only required props', () => {
+      render(
+        <FormCard title="Simple Form">
+          <input type="text" />
+        </FormCard>
+      );
+
+      expect(screen.getByText('Simple Form')).toBeInTheDocument();
+      expect(screen.getByRole('textbox')).toBeInTheDocument();
+    });
   });
 
-  it('maintains proper spacing between elements', () => {
-    render(
-      <FormCard title="Test Title" description="Test description">
-        <p>Test content</p>
-      </FormCard>
-    );
-    
-    const card = screen.getByText('Test Title').closest('div');
-    const title = screen.getByText('Test Title');
-    const description = screen.getByText('Test description');
-    
-    expect(card).toHaveClass('p-6');
-    expect(title).toHaveClass('mb-4');
-    expect(description).toHaveClass('mb-6');
+  describe('Edge cases', () => {
+    it('handles very long title', () => {
+      const longTitle = 'This is a very long title that might wrap to multiple lines and should still be rendered correctly';
+      render(
+        <FormCard title={longTitle}>
+          <p>Content</p>
+        </FormCard>
+      );
+
+      expect(screen.getByText(longTitle)).toBeInTheDocument();
+    });
+
+    it('handles very long description', () => {
+      const longDescription = 'This is a very long description that might wrap to multiple lines and should still be rendered correctly with proper styling and spacing';
+      render(
+        <FormCard title="Form" description={longDescription}>
+          <p>Content</p>
+        </FormCard>
+      );
+
+      expect(screen.getByText(longDescription)).toBeInTheDocument();
+    });
+
+    it('handles special characters in title and description', () => {
+      const specialTitle = 'Form & Settings (100% Complete) ✓';
+      const specialDescription = 'Use symbols: @#$%^&*()_+-=[]{}|;:,.<>?';
+      
+      render(
+        <FormCard title={specialTitle} description={specialDescription}>
+          <p>Content</p>
+        </FormCard>
+      );
+
+      expect(screen.getByText(specialTitle)).toBeInTheDocument();
+      expect(screen.getByText(specialDescription)).toBeInTheDocument();
+    });
   });
 });
