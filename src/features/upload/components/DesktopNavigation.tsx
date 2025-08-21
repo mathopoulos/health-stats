@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { signOut } from 'next-auth/react';
-import { ThemeToggle } from '@/features/theme';
+import ThemeToggle from '@components/ThemeToggle';
 
 interface DesktopNavigationProps {
   activeTab: string;
