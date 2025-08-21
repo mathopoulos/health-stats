@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
 export interface UseImageUploadReturn {
@@ -19,6 +19,13 @@ export function useImageUpload(initialImage?: string | null): UseImageUploadRetu
   const [profileImage, setProfileImage] = useState<string | null>(initialImage || null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // Update profile image when initial value changes (for async data loading)
+  useEffect(() => {
+    if (initialImage !== undefined && initialImage !== profileImage) {
+      setProfileImage(initialImage);
+    }
+  }, [initialImage, profileImage]);
 
   const handleProfileImageUpload = async (file: File) => {
     if (!file) return;

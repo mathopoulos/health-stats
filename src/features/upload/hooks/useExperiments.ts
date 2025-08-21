@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 
 export interface Experiment {
@@ -33,17 +34,29 @@ export interface UseExperimentsReturn {
 }
 
 export function useExperiments(): UseExperimentsReturn {
+  const { data: session } = useSession();
   const [experiments, setExperiments] = useState<Experiment[]>([]);
   const [isLoadingExperiments, setIsLoadingExperiments] = useState(false);
   const [editingExperiment, setEditingExperiment] = useState<Experiment | null>(null);
 
   const fetchExperiments = async () => {
+    if (!session?.user?.id) return;
+    
     setIsLoadingExperiments(true);
     try {
-      const response = await fetch('/api/experiments');
+      const timestamp = Date.now();
+      const response = await fetch(`/api/experiments?userId=${session.user.id}&t=${timestamp}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
       if (response.ok) {
         const data = await response.json();
-        setExperiments(data);
+        if (data.success && data.data) {
+          setExperiments(data.data);
+        }
       }
     } catch (error) {
       console.error('Error fetching experiments:', error);
@@ -60,16 +73,22 @@ export function useExperiments(): UseExperimentsReturn {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(experiment),
+        body: JSON.stringify({
+          ...experiment,
+          status: 'active'
+        }),
       });
 
       if (!response.ok) {
         throw new Error('Failed to save experiment');
       }
 
-      const savedExperiment = await response.json();
-      setExperiments(prev => [...prev, savedExperiment]);
-      toast.success('Experiment created successfully');
+      const result = await response.json();
+      if (result.success && result.data) {
+        // Refresh experiments list to get the latest data
+        await fetchExperiments();
+        toast.success('Experiment created successfully');
+      }
     } catch (error) {
       console.error('Error saving experiment:', error);
       toast.error('Failed to create experiment');
@@ -78,7 +97,7 @@ export function useExperiments(): UseExperimentsReturn {
 
   const removeExperiment = async (id: string) => {
     try {
-      const response = await fetch(`/api/experiments/${id}`, {
+      const response = await fetch(`/api/experiments?id=${id}`, {
         method: 'DELETE',
       });
 
@@ -102,8 +121,8 @@ export function useExperiments(): UseExperimentsReturn {
     if (!editingExperiment?.id) return;
 
     try {
-      const response = await fetch(`/api/experiments/${editingExperiment.id}`, {
-        method: 'PUT',
+      const response = await fetch(`/api/experiments?id=${editingExperiment.id}`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -114,22 +133,26 @@ export function useExperiments(): UseExperimentsReturn {
         throw new Error('Failed to update experiment');
       }
 
-      const updated = await response.json();
-      setExperiments(prev => 
-        prev.map(exp => exp.id === editingExperiment.id ? updated : exp)
-      );
-      setEditingExperiment(null);
-      toast.success('Experiment updated successfully');
+      const result = await response.json();
+      if (result.success && result.data) {
+        setExperiments(prev => 
+          prev.map(exp => exp.id === editingExperiment.id ? result.data : exp)
+        );
+        setEditingExperiment(null);
+        toast.success('Experiment updated successfully');
+      }
     } catch (error) {
       console.error('Error updating experiment:', error);
       toast.error('Failed to update experiment');
     }
   };
 
-  // Load experiments on mount
+  // Load experiments on mount and when session changes
   useEffect(() => {
-    fetchExperiments();
-  }, []);
+    if (session?.user?.id) {
+      fetchExperiments();
+    }
+  }, [session?.user?.id]);
 
   return {
     experiments,

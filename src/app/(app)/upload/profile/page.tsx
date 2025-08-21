@@ -33,24 +33,11 @@ export default function ProfilePage() {
   const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
   
-  // Profile state
+  // Profile state for navigation (only need data for navigation display)
   const [name, setName] = useState<string>('');
-  const [nameError, setNameError] = useState<string | null>(null);
   const [age, setAge] = useState<number | ''>('');
-  const [ageError, setAgeError] = useState<string | null>(null);
   const [sex, setSex] = useState<'male' | 'female' | 'other' | ''>('');
-  const [sexError, setSexError] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [imageError, setImageError] = useState<string | null>(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [isSavingProfile, setIsSavingProfile] = useState(false);
-  const [status, setStatus] = useState<string>('');
-
-  // Delete account state
-  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
-  const [confirmationPhrase, setConfirmationPhrase] = useState('');
-  const requiredPhrase = 'DELETE MY ACCOUNT';
 
   // Fix session race condition in preview deployments
   useEffect(() => {
@@ -161,41 +148,11 @@ export default function ProfilePage() {
       {/* Main Content Area */}
       <div className="flex-1 overflow-auto">
         <div className="max-w-4xl mx-auto p-8 md:p-8 pt-16 md:pt-8 pb-24 md:pb-8">
-          {status && (
-            <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-700 dark:text-green-300 text-sm">
-              {status}
-            </div>
-          )}
-          
           <ProfileTab
-            name={name}
-            setName={setName}
-            nameError={nameError}
-            setNameError={setNameError}
-            age={age}
-            setAge={setAge}
-            ageError={ageError}
-            setAgeError={setAgeError}
-            sex={sex}
-            setSex={setSex}
-            sexError={sexError}
-            setSexError={setSexError}
-            profileImage={profileImage}
-            setProfileImage={setProfileImage}
-            imageError={imageError}
-            setImageError={setImageError}
-            isUploadingImage={isUploadingImage}
-            setIsUploadingImage={setIsUploadingImage}
-            isSavingProfile={isSavingProfile}
-            setIsSavingProfile={setIsSavingProfile}
-            showDeleteAccountDialog={showDeleteAccountDialog}
-            setShowDeleteAccountDialog={setShowDeleteAccountDialog}
-            isDeletingAccount={isDeletingAccount}
-            setIsDeletingAccount={setIsDeletingAccount}
-            confirmationPhrase={confirmationPhrase}
-            setConfirmationPhrase={setConfirmationPhrase}
-            requiredPhrase={requiredPhrase}
-
+            initialName={name}
+            initialAge={age}
+            initialSex={sex}
+            initialProfileImage={profileImage}
           />
         </div>
       </div>

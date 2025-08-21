@@ -31,10 +31,12 @@ export function useUploadedFiles(): UseUploadedFilesReturn {
   const fetchUploadedFiles = async () => {
     setIsLoadingFiles(true);
     try {
-      const response = await fetch('/api/uploaded-files');
+      const response = await fetch('/api/uploads');
       if (response.ok) {
-        const files = await response.json();
-        setUploadedFiles(files);
+        const data = await response.json();
+        if (data.success && data.files) {
+          setUploadedFiles(data.files);
+        }
       }
     } catch (error) {
       console.error('Error fetching uploaded files:', error);
@@ -47,19 +49,25 @@ export function useUploadedFiles(): UseUploadedFilesReturn {
     if (selectedFiles.size === 0) return;
 
     try {
-      const response = await fetch('/api/uploaded-files', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fileIds: Array.from(selectedFiles),
-        }),
+      // Delete files one by one since the API expects individual DELETE requests
+      const deletePromises = Array.from(selectedFiles).map(async (fileId) => {
+        const encodedFileId = encodeURIComponent(fileId);
+        const response = await fetch(`/api/uploads/${encodedFileId}`, {
+          method: 'DELETE',
+        });
+        return { fileId, success: response.ok };
       });
 
-      if (response.ok) {
+      const results = await Promise.all(deletePromises);
+      
+      // Filter out successfully deleted files
+      const successfullyDeleted = results
+        .filter(result => result.success)
+        .map(result => result.fileId);
+
+      if (successfullyDeleted.length > 0) {
         setUploadedFiles(prev => 
-          prev.filter(file => !selectedFiles.has(file.id))
+          prev.filter(file => !successfullyDeleted.includes(file.id))
         );
         setSelectedFiles(new Set());
       }
@@ -94,14 +102,9 @@ export function useUploadedFiles(): UseUploadedFilesReturn {
 
   const handleDeleteFile = async (fileId: string) => {
     try {
-      const response = await fetch('/api/uploaded-files', {
+      const encodedFileId = encodeURIComponent(fileId);
+      const response = await fetch(`/api/uploads/${encodedFileId}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fileIds: [fileId],
-        }),
       });
 
       if (response.ok) {

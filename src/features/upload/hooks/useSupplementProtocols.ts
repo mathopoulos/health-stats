@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
 export interface SupplementProtocol {
@@ -27,6 +27,13 @@ export function useSupplementProtocols(initialProtocols: SupplementProtocol[] = 
   const [supplementProtocols, setSupplementProtocols] = useState<SupplementProtocol[]>(initialProtocols);
   const [isSavingSupplementProtocol, setIsSavingSupplementProtocol] = useState(false);
 
+  // Update supplement protocols when initial values change (for async data loading)
+  useEffect(() => {
+    if (initialProtocols.length > 0 && JSON.stringify(initialProtocols) !== JSON.stringify(supplementProtocols)) {
+      setSupplementProtocols(initialProtocols);
+    }
+  }, [initialProtocols, supplementProtocols]);
+
   const addSupplementProtocol = (type: string, frequency: string, dosage: string, unit: string) => {
     if (supplementProtocols.some(p => p.type === type)) {
       toast.error('This supplement is already added');
@@ -47,15 +54,19 @@ export function useSupplementProtocols(initialProtocols: SupplementProtocol[] = 
     setIsSavingSupplementProtocol(true);
 
     try {
-      const response = await fetch('/api/supplement-protocols', {
-        method: 'PUT',
+      const updatedProtocols = supplementProtocols.map(p =>
+        p.type === type ? { ...p, [field]: newValue } : p
+      );
+
+      const response = await fetch('/api/health-protocols', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          type,
-          field,
-          value: newValue,
+          protocolType: 'supplement',
+          protocol: JSON.stringify({ supplements: updatedProtocols }),
+          startDate: new Date().toISOString()
         }),
       });
 
@@ -63,11 +74,7 @@ export function useSupplementProtocols(initialProtocols: SupplementProtocol[] = 
         throw new Error('Failed to update supplement protocol');
       }
 
-      setSupplementProtocols(prev =>
-        prev.map(p =>
-          p.type === type ? { ...p, [field]: newValue } : p
-        )
-      );
+      setSupplementProtocols(updatedProtocols);
     } catch (error) {
       console.error('Error updating supplement protocol:', error);
       toast.error('Failed to update supplement protocol');
@@ -80,12 +87,16 @@ export function useSupplementProtocols(initialProtocols: SupplementProtocol[] = 
     setIsSavingSupplementProtocol(true);
 
     try {
-      const response = await fetch('/api/supplement-protocols', {
+      const response = await fetch('/api/health-protocols', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ protocols: newProtocols }),
+        body: JSON.stringify({
+          protocolType: 'supplement',
+          protocol: JSON.stringify({ supplements: newProtocols }),
+          startDate: new Date().toISOString()
+        }),
       });
 
       if (!response.ok) {

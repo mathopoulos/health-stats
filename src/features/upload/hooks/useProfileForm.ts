@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
 export interface UseProfileFormReturn {
@@ -36,6 +36,25 @@ export function useProfileForm(initialValues?: {
   const [sex, setSex] = useState<'male' | 'female' | 'other' | ''>(initialValues?.sex || '');
   const [sexError, setSexError] = useState<string | null>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Update state when initial values change (for async data loading)
+  useEffect(() => {
+    if (initialValues?.name && initialValues.name !== name) {
+      setName(initialValues.name);
+    }
+  }, [initialValues?.name, name]);
+
+  useEffect(() => {
+    if (initialValues?.age !== undefined && initialValues.age !== age) {
+      setAge(initialValues.age);
+    }
+  }, [initialValues?.age, age]);
+
+  useEffect(() => {
+    if (initialValues?.sex && initialValues.sex !== sex) {
+      setSex(initialValues.sex);
+    }
+  }, [initialValues?.sex, sex]);
 
   const handleUpdateProfile = async () => {
     if (!name.trim()) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
 export interface WorkoutProtocol {
@@ -26,6 +26,13 @@ export function useWorkoutProtocols(initialProtocols: WorkoutProtocol[] = []): U
   const [workoutProtocols, setWorkoutProtocols] = useState<WorkoutProtocol[]>(initialProtocols);
   const [isSavingWorkoutProtocol, setIsSavingWorkoutProtocol] = useState(false);
 
+  // Update workout protocols when initial values change (for async data loading)
+  useEffect(() => {
+    if (initialProtocols.length > 0 && JSON.stringify(initialProtocols) !== JSON.stringify(workoutProtocols)) {
+      setWorkoutProtocols(initialProtocols);
+    }
+  }, [initialProtocols, workoutProtocols]);
+
   const addWorkoutProtocol = (type: string) => {
     if (workoutProtocols.some(p => p.type === type)) {
       toast.error('This workout type is already added');
@@ -44,19 +51,25 @@ export function useWorkoutProtocols(initialProtocols: WorkoutProtocol[] = []): U
     setIsSavingWorkoutProtocol(true);
 
     try {
-      const response = await fetch('/api/workout-protocols', {
-        method: 'DELETE',
+      const updatedProtocols = workoutProtocols.filter(p => p.type !== type);
+      
+      const response = await fetch('/api/health-protocols', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ type }),
+        body: JSON.stringify({
+          protocolType: 'exercise',
+          protocol: JSON.stringify({ workouts: updatedProtocols }),
+          startDate: new Date().toISOString()
+        }),
       });
 
       if (!response.ok) {
         throw new Error('Failed to remove workout protocol');
       }
 
-      setWorkoutProtocols(prev => prev.filter(p => p.type !== type));
+      setWorkoutProtocols(updatedProtocols);
       toast.success('Workout protocol removed');
     } catch (error) {
       console.error('Error removing workout protocol:', error);
@@ -70,14 +83,19 @@ export function useWorkoutProtocols(initialProtocols: WorkoutProtocol[] = []): U
     setIsSavingWorkoutProtocol(true);
 
     try {
-      const response = await fetch('/api/workout-protocols', {
-        method: 'PUT',
+      const updatedProtocols = workoutProtocols.map(p =>
+        p.type === type ? { ...p, frequency: newFrequency } : p
+      );
+
+      const response = await fetch('/api/health-protocols', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          type,
-          frequency: newFrequency,
+          protocolType: 'exercise',
+          protocol: JSON.stringify({ workouts: updatedProtocols }),
+          startDate: new Date().toISOString()
         }),
       });
 
@@ -85,11 +103,7 @@ export function useWorkoutProtocols(initialProtocols: WorkoutProtocol[] = []): U
         throw new Error('Failed to update workout protocol frequency');
       }
 
-      setWorkoutProtocols(prev =>
-        prev.map(p =>
-          p.type === type ? { ...p, frequency: newFrequency } : p
-        )
-      );
+      setWorkoutProtocols(updatedProtocols);
     } catch (error) {
       console.error('Error updating workout protocol frequency:', error);
       toast.error('Failed to update frequency');
@@ -102,12 +116,16 @@ export function useWorkoutProtocols(initialProtocols: WorkoutProtocol[] = []): U
     setIsSavingWorkoutProtocol(true);
 
     try {
-      const response = await fetch('/api/workout-protocols', {
+      const response = await fetch('/api/health-protocols', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ protocols: newProtocols }),
+        body: JSON.stringify({
+          protocolType: 'exercise',
+          protocol: JSON.stringify({ workouts: newProtocols }),
+          startDate: new Date().toISOString()
+        }),
       });
 
       if (!response.ok) {

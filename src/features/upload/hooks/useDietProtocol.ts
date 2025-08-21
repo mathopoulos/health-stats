@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
 export interface UseDietProtocolReturn {
@@ -18,19 +18,28 @@ export function useDietProtocol(initialDiet: string = ''): UseDietProtocolReturn
   const [currentDiet, setCurrentDiet] = useState(initialDiet);
   const [isSavingProtocol, setIsSavingProtocol] = useState(false);
 
+  // Update current diet when initial value changes (for async data loading)
+  useEffect(() => {
+    if (initialDiet && initialDiet !== currentDiet) {
+      setCurrentDiet(initialDiet);
+    }
+  }, [initialDiet, currentDiet]);
+
   const handleDietChange = async (newDiet: string) => {
     if (newDiet === currentDiet) return;
 
     setIsSavingProtocol(true);
 
     try {
-      const response = await fetch('/api/diet-protocol', {
+      const response = await fetch('/api/health-protocols', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          diet: newDiet,
+          protocolType: 'diet',
+          protocol: newDiet,
+          startDate: new Date().toISOString()
         }),
       });
 
