@@ -17,7 +17,7 @@ import { toast } from 'react-hot-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
 import ConfirmDialog from '@components/ui/ConfirmDialog';
 import EditSupplementProtocolModal from '@features/experiments/components/EditSupplementProtocolPopover';
-import { ProfileTab, BloodTab, MoreTab, FitnessTab } from '@features/upload/components';
+import { ProfileTab, BloodTab, MoreTab, FitnessTab, ProtocolsTab } from '@features/upload/components';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
@@ -1491,347 +1491,49 @@ export default function UploadPage() {
 
           {/* Protocols & Experiments Tab Content */}
           {activeTab === 'protocols' && (
-            <div className="space-y-6">
-              <h2 className="hidden md:block text-2xl font-bold text-gray-900 dark:text-white">Protocols & Experiments</h2>
-              
-              {/* Current Diet Protocol */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Current Diet Protocol</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  Select your current dietary approach to track its impact on your health metrics.
-                </p>
-                
-                <div className="max-w-md relative">
-                  <select
-                    name="currentDiet"
-                    id="currentDiet"
-                    value={currentDiet}
-                    onChange={(e) => handleDietChange(e.target.value)}
-                    disabled={isSavingProtocol}
-                    className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700/50 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-12 px-4 text-gray-900 appearance-none bg-no-repeat disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                      backgroundPosition: `right 0.5rem center`,
-                      backgroundSize: `1.5em 1.5em`
-                    }}
-                  >
-                    <option value="">Select your current diet</option>
-                    <option value="ketogenic">Ketogenic Diet</option>
-                    <option value="carnivore">Carnivore Diet</option>
-                    <option value="mediterranean">Mediterranean Diet</option>
-                    <option value="paleo">Paleo Diet</option>
-                    <option value="vegan">Vegan Diet</option>
-                    <option value="vegetarian">Vegetarian Diet</option>
-                    <option value="whole30">Whole30</option>
-                    <option value="low-carb">Low Carb Diet</option>
-                    <option value="variable-no-particular">Variable - No Particular Diet</option>
-                    <option value="other">Other</option>
-                  </select>
-                  {isSavingProtocol && (
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                      <svg className="animate-spin h-4 w-4 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Current Workout Protocols */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Workout Protocols</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  Track your workout routines and weekly frequency to optimize your fitness protocols.
-                </p>
-                
-                {/* Add Workout Protocol Button */}
-                <button
-                  onClick={() => setIsAddWorkoutProtocolModalOpen(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Add Workout Protocols
-                </button>
-
-                {/* Current Workout Protocols List */}
-                {workoutProtocols.length > 0 && (
-                  <div className="mt-6">
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Your Current Protocols:</h4>
-                    <div className="space-y-3">
-                      {workoutProtocols.map((workout) => (
-                        <div key={workout.type} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <div className="flex-1">
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              {workout.type.split('-').map(word => 
-                                word.charAt(0).toUpperCase() + word.slice(1)
-                              ).join(' ')}
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center gap-3">
-                            {editingWorkoutType === workout.type ? (
-                              // Edit mode
-                              <div className="flex items-center gap-2">
-                                <select
-                                  value={workout.frequency}
-                                  onChange={(e) => updateWorkoutProtocolFrequency(workout.type, Number(e.target.value))}
-                                  onBlur={() => setEditingWorkoutType(null)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Escape') {
-                                      setEditingWorkoutType(null);
-                                    }
-                                  }}
-                                  className="h-8 rounded-md border border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-600 text-sm px-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
-                                  autoFocus
-                                >
-                                  {Array.from({ length: 7 }, (_, i) => i + 1).map(num => (
-                                    <option key={num} value={num}>{num}x/week</option>
-                                  ))}
-                                </select>
-                                <button
-                                  onClick={() => setEditingWorkoutType(null)}
-                                  className="w-6 h-6 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                                  title="Cancel edit"
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </button>
-                              </div>
-                            ) : (
-                              // View mode
-                              <>
-                                <button
-                                  onClick={() => setEditingWorkoutType(workout.type)}
-                                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer flex items-center gap-1"
-                                >
-                                  {workout.frequency}x/week
-                                  {isSavingWorkoutProtocol && (
-                                    <svg className="animate-spin h-3 w-3 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24">
-                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                    </svg>
-                                  )}
-                                </button>
-                                
-                                <button
-                                  onClick={() => setEditingWorkoutType(workout.type)}
-                                  className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                                  title="Edit frequency"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                  </svg>
-                                </button>
-                                
-                                <button
-                                  onClick={() => removeWorkoutProtocol(workout.type)}
-                                  className="w-8 h-8 flex items-center justify-center rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                                  title="Remove protocol"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="mt-4 flex items-center justify-between">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        Total: {workoutProtocols.reduce((sum, w) => sum + w.frequency, 0)} sessions/week
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-              </div>
-
-              {/* Current Supplement Protocols */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Supplement Protocols</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  Track your supplement regimen including dosages, frequency, and timing to optimize your health protocols.
-                </p>
-                
-                {/* Add Supplement Protocol Button */}
-                <button
-                  onClick={() => setIsAddSupplementProtocolModalOpen(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Add Supplement Protocols
-                </button>
-
-                {/* Current Supplement Protocols List */}
-                {supplementProtocols.length > 0 && (
-                  <div className="mt-6">
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Your Current Protocols:</h4>
-                    <div className="space-y-3">
-                      {supplementProtocols.map((supplement) => (
-                        <div key={supplement.type} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <div className="flex-1">
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              {supplement.type.split('-').map(word => 
-                                word.charAt(0).toUpperCase() + word.slice(1)
-                              ).join(' ')}
-                            </span>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              {supplement.dosage} {supplement.unit} • {supplement.frequency.replace('-', ' ')}
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => {
-                                setEditingSupplementProtocol(supplement);
-                                setIsEditSupplementProtocolModalOpen(true);
-                              }}
-                              className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                              title="Edit supplement"
-                            >
-                              {isSavingSupplementProtocol ? (
-                                <svg className="animate-spin h-4 w-4 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                </svg>
-                              ) : (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                              )}
-                            </button>
-                            
-                            <button
-                              onClick={() => removeSupplementProtocol(supplement.type)}
-                              className="w-8 h-8 flex items-center justify-center rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                              title="Remove protocol"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="mt-4 flex items-center justify-between">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        Total: {supplementProtocols.length} supplement{supplementProtocols.length !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-              </div>
-
-              {/* Experiments Section */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Experiments & Trials</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  Create and track health and fitness experiments to optimize your protocols and measure their impact.
-                </p>
-                
-                {/* Add Experiment Button */}
-                <button
-                  onClick={() => setIsAddExperimentModalOpen(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Create New Experiment
-                </button>
-
-                {/* Loading State */}
-                {isLoadingExperiments && (
-                  <div className="mt-6 flex items-center justify-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
-                    <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Loading experiments...</span>
-                  </div>
-                )}
-
-                {/* Current Experiments List */}
-                {!isLoadingExperiments && experiments.length > 0 && (
-                  <div className="mt-6">
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Your Active Experiments:</h4>
-                    <div className="space-y-3">
-                      {experiments.filter(exp => exp.status === 'active').map((experiment) => (
-                        <div key={experiment.id} className="flex items-start justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                {experiment.name}
-                              </span>
-                              <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
-                                Active
-                              </span>
-                            </div>
-                            {experiment.description && (
-                              <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                                {experiment.description}
-                              </p>
-                            )}
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                              {experiment.frequency} • {experiment.duration} • Created {new Date(experiment.createdAt).toLocaleDateString()}
-                            </div>
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {[...experiment.fitnessMarkers.slice(0, 3), ...experiment.bloodMarkers.slice(0, 3)].map((marker) => (
-                                <span
-                                  key={marker}
-                                  className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300"
-                                >
-                                  {marker}
-                                </span>
-                              ))}
-                              {(experiment.fitnessMarkers.length + experiment.bloodMarkers.length) > 6 && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400">
-                                  +{(experiment.fitnessMarkers.length + experiment.bloodMarkers.length) - 6} more
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 ml-4">
-                            <button
-                              onClick={() => handleEditExperiment(experiment)}
-                              className="w-8 h-8 flex items-center justify-center rounded-full text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                              title="Edit experiment"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => removeExperiment(experiment.id)}
-                              className="w-8 h-8 flex items-center justify-center rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                              title="Remove experiment"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="mt-4 flex items-center justify-between">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        Total: {experiments.filter(exp => exp.status === 'active').length} active experiment{experiments.filter(exp => exp.status === 'active').length !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Empty State */}
-                {!isLoadingExperiments && experiments.length === 0 && (
-                  <div className="mt-6 text-center py-6 text-gray-500 dark:text-gray-400">
-                    <p className="text-sm">No experiments created yet. Start your first health experiment!</p>
-                  </div>
-                )}
-
-              </div>
-            </div>
+            <ProtocolsTab
+              currentDiet={currentDiet}
+              setCurrentDiet={setCurrentDiet}
+              isSavingProtocol={isSavingProtocol}
+              setIsSavingProtocol={setIsSavingProtocol}
+              workoutProtocols={workoutProtocols}
+              setWorkoutProtocols={setWorkoutProtocols}
+              isSavingWorkoutProtocol={isSavingWorkoutProtocol}
+              setIsSavingWorkoutProtocol={setIsSavingWorkoutProtocol}
+              supplementProtocols={supplementProtocols}
+              setSupplementProtocols={setSupplementProtocols}
+              isSavingSupplementProtocol={isSavingSupplementProtocol}
+              setIsSavingSupplementProtocol={setIsSavingSupplementProtocol}
+              experiments={experiments}
+              setExperiments={setExperiments}
+              isLoadingExperiments={isLoadingExperiments}
+              setIsLoadingExperiments={setIsLoadingExperiments}
+              editingExperiment={editingExperiment}
+              setEditingExperiment={setEditingExperiment}
+              isAddWorkoutProtocolModalOpen={isAddWorkoutProtocolModalOpen}
+              setIsAddWorkoutProtocolModalOpen={setIsAddWorkoutProtocolModalOpen}
+              isAddSupplementProtocolModalOpen={isAddSupplementProtocolModalOpen}
+              setIsAddSupplementProtocolModalOpen={setIsAddSupplementProtocolModalOpen}
+              isEditSupplementProtocolModalOpen={isEditSupplementProtocolModalOpen}
+              setIsEditSupplementProtocolModalOpen={setIsEditSupplementProtocolModalOpen}
+              isAddExperimentModalOpen={isAddExperimentModalOpen}
+              setIsAddExperimentModalOpen={setIsAddExperimentModalOpen}
+              isEditExperimentModalOpen={isEditExperimentModalOpen}
+              setIsEditExperimentModalOpen={setIsEditExperimentModalOpen}
+              handleDietChange={handleDietChange}
+              addWorkoutProtocol={addWorkoutProtocol}
+              removeWorkoutProtocol={removeWorkoutProtocol}
+              updateWorkoutProtocolFrequency={updateWorkoutProtocolFrequency}
+              handleSaveWorkoutProtocols={handleSaveWorkoutProtocols}
+              addSupplementProtocol={addSupplementProtocol}
+              updateSupplementProtocol={updateSupplementProtocol}
+              handleSaveSupplementProtocols={handleSaveSupplementProtocols}
+              fetchExperiments={fetchExperiments}
+              handleSaveExperiment={handleSaveExperiment}
+              removeExperiment={removeExperiment}
+              handleEditExperiment={handleEditExperiment}
+              handleUpdateExperiment={handleUpdateExperiment}
+            />
           )}
 
           {/* Fitness Tab Content */}
@@ -1871,16 +1573,6 @@ export default function UploadPage() {
               handleDeleteFile={handleDeleteFile}
             />
           )}
-
-
-
-
-
-
-
-
-
-
 
           {/* Blood Tab Content */}
           {activeTab === 'blood' && (
