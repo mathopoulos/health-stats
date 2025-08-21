@@ -20,6 +20,7 @@ interface UseBloodMarkerPreviewReturn {
   setSelectedTab: (tab: number) => void;
   sortedDateGroups: DateGroup[];
   hasMultipleDates: boolean;
+  groupedMarkers: Record<string, BloodMarker[]>;
 
   // Actions
   handleTabChange: (index: number) => void;
@@ -254,9 +255,9 @@ export function useBloodMarkerPreview({
     setSelectedTab,
     sortedDateGroups,
     hasMultipleDates,
+    groupedMarkers,
     handleTabChange,
     formatDate,
-    ensureValidISODate,
-    groupedMarkers: groupedMarkers as any // Will be added to return type
+    ensureValidISODate
   };
 }
