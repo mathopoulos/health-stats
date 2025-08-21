@@ -2,11 +2,13 @@
 
 import React, { useState } from 'react';
 import { useSession } from "next-auth/react";
+import { useRouter } from 'next/navigation';
 import AddResultsModal from '@features/experiments/components/AddResultsModal';
 import { BloodTab, DesktopNavigation, MobileNavigation, MobileHeader } from '@features/upload/components';
 
 export default function BloodPage() {
   const { data: session, status: sessionStatus } = useSession();
+  const router = useRouter();
   
   // Blood test state
   const [isAddResultsModalOpen, setIsAddResultsModalOpen] = useState(false);
@@ -15,22 +17,22 @@ export default function BloodPage() {
   const handleTabChange = (tab: string) => {
     switch (tab) {
       case 'profile':
-        window.location.href = '/upload/profile';
+        router.push('/upload/profile');
         break;
       case 'protocols':
-        window.location.href = '/upload/protocols';
+        router.push('/upload/protocols');
         break;
       case 'fitness':
-        window.location.href = '/upload/fitness';
+        router.push('/upload/fitness');
         break;
       case 'blood':
-        window.location.href = '/upload/blood';
+        // Already on blood page
         break;
       case 'more':
-        window.location.href = '/upload/settings';
+        router.push('/upload/settings');
         break;
       default:
-        window.location.href = '/upload/profile';
+        router.push('/upload/profile');
     }
   };
 

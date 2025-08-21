@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from "next-auth/react";
+import { useRouter } from 'next/navigation';
 import AddWorkoutProtocolModal from '@features/experiments/components/AddWorkoutProtocolModal';
 import AddSupplementProtocolModal from '@features/experiments/components/AddSupplementProtocolModal';
 import AddExperimentModal from '@features/experiments/components/AddExperimentModal';
@@ -35,6 +36,7 @@ async function fetchWithRetry<T>(
 
 export default function ProtocolsPage() {
   const { data: session, status: sessionStatus } = useSession();
+  const router = useRouter();
   
   // Diet protocol state
   const [currentDiet, setCurrentDiet] = useState<string>('');
@@ -583,22 +585,22 @@ export default function ProtocolsPage() {
   const handleTabChange = (tab: string) => {
     switch (tab) {
       case 'profile':
-        window.location.href = '/upload/profile';
+        router.push('/upload/profile');
         break;
       case 'protocols':
-        window.location.href = '/upload/protocols';
+        // Already on protocols page
         break;
       case 'fitness':
-        window.location.href = '/upload/fitness';
+        router.push('/upload/fitness');
         break;
       case 'blood':
-        window.location.href = '/upload/blood';
+        router.push('/upload/blood');
         break;
       case 'more':
-        window.location.href = '/upload/settings';
+        router.push('/upload/settings');
         break;
       default:
-        window.location.href = '/upload/profile';
+        router.push('/upload/profile');
     }
   };
 

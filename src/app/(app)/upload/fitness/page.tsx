@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useSession } from "next-auth/react";
+import { useRouter } from 'next/navigation';
 import { FitnessTab, DesktopNavigation, MobileNavigation, MobileHeader } from '@features/upload/components';
 
 const MAX_RETRIES = 3;
@@ -120,6 +121,7 @@ async function triggerProcessing(updateStatus: (status: string) => void): Promis
 
 export default function FitnessPage() {
   const { data: session, status: sessionStatus } = useSession();
+  const router = useRouter();
   const inputFileRef = useRef<HTMLInputElement>(null);
   
   // Fitness-specific state
@@ -382,22 +384,22 @@ export default function FitnessPage() {
   const handleTabChange = (tab: string) => {
     switch (tab) {
       case 'profile':
-        window.location.href = '/upload/profile';
+        router.push('/upload/profile');
         break;
       case 'protocols':
-        window.location.href = '/upload/protocols';
+        router.push('/upload/protocols');
         break;
       case 'fitness':
-        window.location.href = '/upload/fitness';
+        // Already on fitness page
         break;
       case 'blood':
-        window.location.href = '/upload/blood';
+        router.push('/upload/blood');
         break;
       case 'more':
-        window.location.href = '/upload/settings';
+        router.push('/upload/settings');
         break;
       default:
-        window.location.href = '/upload/profile';
+        router.push('/upload/profile');
     }
   };
 

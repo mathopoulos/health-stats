@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from "next-auth/react";
+import { useRouter } from 'next/navigation';
 import { MoreTab, DesktopNavigation, MobileNavigation, MobileHeader } from '@features/upload/components';
 
 export default function SettingsPage() {
   const { data: session, status: sessionStatus } = useSession();
+  const router = useRouter();
   
   // Profile data for MoreTab
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -47,22 +49,22 @@ export default function SettingsPage() {
   const handleTabChange = (tab: string) => {
     switch (tab) {
       case 'profile':
-        window.location.href = '/upload/profile';
+        router.push('/upload/profile');
         break;
       case 'protocols':
-        window.location.href = '/upload/protocols';
+        router.push('/upload/protocols');
         break;
       case 'fitness':
-        window.location.href = '/upload/fitness';
+        router.push('/upload/fitness');
         break;
       case 'blood':
-        window.location.href = '/upload/blood';
+        router.push('/upload/blood');
         break;
       case 'more':
-        window.location.href = '/upload/settings';
+        // Already on settings page
         break;
       default:
-        window.location.href = '/upload/profile';
+        router.push('/upload/profile');
     }
   };
 

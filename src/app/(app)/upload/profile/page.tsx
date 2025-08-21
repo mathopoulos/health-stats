@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from "next-auth/react";
+import { useRouter } from 'next/navigation';
 import { ProfileTab, DesktopNavigation, MobileNavigation, MobileHeader } from '@features/upload/components';
 
 const MAX_RETRIES = 3;
@@ -30,6 +31,7 @@ async function fetchWithRetry<T>(
 
 export default function ProfilePage() {
   const { data: session, status: sessionStatus } = useSession();
+  const router = useRouter();
   
   // Profile state
   const [name, setName] = useState<string>('');
@@ -96,16 +98,16 @@ export default function ProfilePage() {
         // Already on profile page
         break;
       case 'protocols':
-        window.location.href = '/upload/protocols';
+        router.push('/upload/protocols');
         break;
       case 'fitness':
-        window.location.href = '/upload/fitness';
+        router.push('/upload/fitness');
         break;
       case 'blood':
-        window.location.href = '/upload/blood';
+        router.push('/upload/blood');
         break;
       case 'more':
-        window.location.href = '/upload/settings';
+        router.push('/upload/settings');
         break;
       default:
         // Already on profile page
