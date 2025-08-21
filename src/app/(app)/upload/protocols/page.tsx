@@ -682,71 +682,9 @@ export default function ProtocolsPage() {
           )}
           
           <ProtocolsTab
-            currentDiet={currentDiet}
-            setCurrentDiet={setCurrentDiet}
-            isSavingProtocol={isSavingProtocol}
-            setIsSavingProtocol={setIsSavingProtocol}
-            workoutProtocols={workoutProtocols}
-            setWorkoutProtocols={setWorkoutProtocols}
-            isSavingWorkoutProtocol={isSavingWorkoutProtocol}
-            setIsSavingWorkoutProtocol={setIsSavingWorkoutProtocol}
-            supplementProtocols={supplementProtocols}
-            setSupplementProtocols={setSupplementProtocols}
-            isSavingSupplementProtocol={isSavingSupplementProtocol}
-            setIsSavingSupplementProtocol={setIsSavingSupplementProtocol}
-            experiments={experiments}
-            setExperiments={setExperiments}
-            isLoadingExperiments={isLoadingExperiments}
-            setIsLoadingExperiments={setIsLoadingExperiments}
-            editingExperiment={editingExperiment}
-            setEditingExperiment={setEditingExperiment}
-            isAddWorkoutProtocolModalOpen={isAddWorkoutProtocolModalOpen}
-            setIsAddWorkoutProtocolModalOpen={setIsAddWorkoutProtocolModalOpen}
-            isAddSupplementProtocolModalOpen={isAddSupplementProtocolModalOpen}
-            setIsAddSupplementProtocolModalOpen={setIsAddSupplementProtocolModalOpen}
-            isEditSupplementProtocolModalOpen={isEditSupplementProtocolModalOpen}
-            setIsEditSupplementProtocolModalOpen={setIsEditSupplementProtocolModalOpen}
-            isAddExperimentModalOpen={isAddExperimentModalOpen}
-            setIsAddExperimentModalOpen={setIsAddExperimentModalOpen}
-            isEditExperimentModalOpen={isEditExperimentModalOpen}
-            setIsEditExperimentModalOpen={setIsEditExperimentModalOpen}
-            handleDietChange={handleDietChange}
-            addWorkoutProtocol={addWorkoutProtocol}
-            removeWorkoutProtocol={removeWorkoutProtocol}
-            updateWorkoutProtocolFrequency={updateWorkoutProtocolFrequency}
-            handleSaveWorkoutProtocols={handleSaveWorkoutProtocols}
-            addSupplementProtocol={addSupplementProtocol}
-            updateSupplementProtocol={updateSupplementProtocol}
-            handleSaveSupplementProtocols={handleSaveSupplementProtocols}
-            fetchExperiments={async () => {
-              if (!session?.user?.id) return;
-              
-              setIsLoadingExperiments(true);
-              try {
-                const timestamp = Date.now();
-                const response = await fetch(`/api/experiments?userId=${session.user.id}&t=${timestamp}`, {
-                  headers: {
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache',
-                    'Expires': '0'
-                  }
-                });
-                if (response.ok) {
-                  const data = await response.json();
-                  if (data.success && data.data) {
-                    setExperiments(data.data);
-                  }
-                }
-              } catch (error) {
-                console.error('Error fetching experiments:', error);
-              } finally {
-                setIsLoadingExperiments(false);
-              }
-            }}
-            handleSaveExperiment={handleSaveExperiment}
-            removeExperiment={removeExperiment}
-            handleEditExperiment={handleEditExperiment}
-            handleUpdateExperiment={handleUpdateExperiment}
+            initialDiet={currentDiet}
+            initialWorkoutProtocols={workoutProtocols}
+            initialSupplementProtocols={supplementProtocols}
           />
         </div>
       </div>

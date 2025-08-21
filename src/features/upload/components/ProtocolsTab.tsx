@@ -1,123 +1,33 @@
 'use client';
 
 import React from 'react';
+import {
+  useDietProtocol,
+  useWorkoutProtocols,
+  useSupplementProtocols,
+  useExperiments,
+  useModalStates,
+} from '../hooks';
 
 interface ProtocolsTabProps {
-  // Diet protocol state
-  currentDiet: string;
-  setCurrentDiet: (diet: string) => void;
-  isSavingProtocol: boolean;
-  setIsSavingProtocol: (saving: boolean) => void;
-  
-  // Workout protocols state
-  workoutProtocols: Array<{
-    type: string;
-    frequency: number;
-  }>;
-  setWorkoutProtocols: (protocols: Array<{ type: string; frequency: number }>) => void;
-  isSavingWorkoutProtocol: boolean;
-  setIsSavingWorkoutProtocol: (saving: boolean) => void;
-  
-  // Supplement protocols state
-  supplementProtocols: Array<{
-    type: string;
-    frequency: string;
-    dosage: string;
-    unit: string;
-  }>;
-  setSupplementProtocols: (protocols: Array<{ type: string; frequency: string; dosage: string; unit: string }>) => void;
-  isSavingSupplementProtocol: boolean;
-  setIsSavingSupplementProtocol: (saving: boolean) => void;
-  
-  // Experiments state
-  experiments: Array<{
-    id: string;
-    name: string;
-    description: string;
-    frequency: string;
-    duration: string;
-    fitnessMarkers: string[];
-    bloodMarkers: string[];
-    status: 'active' | 'completed' | 'paused';
-    createdAt: string;
-  }>;
-  setExperiments: (experiments: Array<any>) => void;
-  isLoadingExperiments: boolean;
-  setIsLoadingExperiments: (loading: boolean) => void;
-  editingExperiment: any;
-  setEditingExperiment: (experiment: any) => void;
-  
-  // Modal states
-  isAddWorkoutProtocolModalOpen: boolean;
-  setIsAddWorkoutProtocolModalOpen: (open: boolean) => void;
-  isAddSupplementProtocolModalOpen: boolean;
-  setIsAddSupplementProtocolModalOpen: (open: boolean) => void;
-  isEditSupplementProtocolModalOpen: boolean;
-  setIsEditSupplementProtocolModalOpen: (open: boolean) => void;
-  isAddExperimentModalOpen: boolean;
-  setIsAddExperimentModalOpen: (open: boolean) => void;
-  isEditExperimentModalOpen: boolean;
-  setIsEditExperimentModalOpen: (open: boolean) => void;
-  
-  // Handlers
-  handleDietChange: (newDiet: string) => Promise<void>;
-  addWorkoutProtocol: (type: string) => void;
-  removeWorkoutProtocol: (type: string) => Promise<void>;
-  updateWorkoutProtocolFrequency: (type: string, newFrequency: number) => Promise<void>;
-  handleSaveWorkoutProtocols: (newProtocols: Array<{ type: string; frequency: number }>) => Promise<void>;
-  addSupplementProtocol: (type: string, frequency: string, dosage: string, unit: string) => void;
-  updateSupplementProtocol: (type: string, field: string, newValue: string) => Promise<void>;
-  handleSaveSupplementProtocols: (newProtocols: Array<{ type: string; frequency: string; dosage: string; unit: string }>) => Promise<void>;
-  fetchExperiments: () => Promise<void>;
-  handleSaveExperiment: (experiment: any) => Promise<void>;
-  removeExperiment: (id: string) => Promise<void>;
-  handleEditExperiment: (experiment: any) => void;
-  handleUpdateExperiment: (updatedExperiment: any) => Promise<void>;
+  // Initial values for protocols
+  initialDiet?: string;
+  initialWorkoutProtocols?: Array<{ type: string; frequency: number }>;
+  initialSupplementProtocols?: Array<{ type: string; frequency: string; dosage: string; unit: string }>;
 }
 
 export default function ProtocolsTab({
-  currentDiet,
-  setCurrentDiet,
-  isSavingProtocol,
-  setIsSavingProtocol,
-  workoutProtocols,
-  setWorkoutProtocols,
-  isSavingWorkoutProtocol,
-  setIsSavingWorkoutProtocol,
-  supplementProtocols,
-  setSupplementProtocols,
-  isSavingSupplementProtocol,
-  setIsSavingSupplementProtocol,
-  experiments,
-  setExperiments,
-  isLoadingExperiments,
-  setIsLoadingExperiments,
-  editingExperiment,
-  setEditingExperiment,
-  isAddWorkoutProtocolModalOpen,
-  setIsAddWorkoutProtocolModalOpen,
-  isAddSupplementProtocolModalOpen,
-  setIsAddSupplementProtocolModalOpen,
-  isEditSupplementProtocolModalOpen,
-  setIsEditSupplementProtocolModalOpen,
-  isAddExperimentModalOpen,
-  setIsAddExperimentModalOpen,
-  isEditExperimentModalOpen,
-  setIsEditExperimentModalOpen,
-  handleDietChange,
-  addWorkoutProtocol,
-  removeWorkoutProtocol,
-  updateWorkoutProtocolFrequency,
-  handleSaveWorkoutProtocols,
-  addSupplementProtocol,
-  updateSupplementProtocol,
-  handleSaveSupplementProtocols,
-  fetchExperiments,
-  handleSaveExperiment,
-  removeExperiment,
-  handleEditExperiment,
-  handleUpdateExperiment,
+  initialDiet = '',
+  initialWorkoutProtocols = [],
+  initialSupplementProtocols = [],
 }: ProtocolsTabProps) {
+  // Initialize hooks
+  const dietProtocol = useDietProtocol(initialDiet);
+  const workoutProtocols = useWorkoutProtocols(initialWorkoutProtocols);
+  const supplementProtocols = useSupplementProtocols(initialSupplementProtocols);
+  const experiments = useExperiments();
+  const modalStates = useModalStates();
+  
   return (
     <div className="space-y-6">
       <h2 className="hidden md:block text-2xl font-bold text-gray-900 dark:text-white">Protocols & Experiments</h2>
@@ -133,9 +43,9 @@ export default function ProtocolsTab({
           <select
             name="currentDiet"
             id="currentDiet"
-            value={currentDiet}
-            onChange={(e) => handleDietChange(e.target.value)}
-            disabled={isSavingProtocol}
+            value={dietProtocol.currentDiet}
+            onChange={(e) => dietProtocol.handleDietChange(e.target.value)}
+            disabled={dietProtocol.isSavingProtocol}
             className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700/50 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-12 px-4 text-gray-900 appearance-none bg-no-repeat disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
@@ -155,7 +65,7 @@ export default function ProtocolsTab({
             <option value="variable-no-particular">Variable - No Particular Diet</option>
             <option value="other">Other</option>
           </select>
-          {isSavingProtocol && (
+          {dietProtocol.isSavingProtocol && (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
               <svg className="animate-spin h-4 w-4 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -174,7 +84,7 @@ export default function ProtocolsTab({
         </p>
         
         <button
-          onClick={() => setIsAddWorkoutProtocolModalOpen(true)}
+          onClick={() => modalStates.setIsAddWorkoutProtocolModalOpen(true)}
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
         >
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,11 +94,11 @@ export default function ProtocolsTab({
         </button>
 
         {/* Current Workout Protocols List */}
-        {workoutProtocols.length > 0 && (
+        {workoutProtocols.workoutProtocols.length > 0 && (
           <div className="mt-6">
             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Your Current Protocols:</h4>
             <div className="space-y-3">
-              {workoutProtocols.map((workout) => (
+              {workoutProtocols.workoutProtocols.map((workout) => (
                 <div key={workout.type} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <div className="flex-1">
                     <h5 className="text-sm font-medium text-gray-900 dark:text-white capitalize">
@@ -198,8 +108,8 @@ export default function ProtocolsTab({
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={() => updateWorkoutProtocolFrequency(workout.type, Math.max(1, workout.frequency - 1))}
-                        disabled={isSavingWorkoutProtocol || workout.frequency <= 1}
+                        onClick={() => workoutProtocols.updateWorkoutProtocolFrequency(workout.type, Math.max(1, workout.frequency - 1))}
+                        disabled={workoutProtocols.isSavingWorkoutProtocol || workout.frequency <= 1}
                         className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -210,8 +120,8 @@ export default function ProtocolsTab({
                         {workout.frequency}x/week
                       </span>
                       <button
-                        onClick={() => updateWorkoutProtocolFrequency(workout.type, Math.min(7, workout.frequency + 1))}
-                        disabled={isSavingWorkoutProtocol || workout.frequency >= 7}
+                        onClick={() => workoutProtocols.updateWorkoutProtocolFrequency(workout.type, Math.min(7, workout.frequency + 1))}
+                        disabled={workoutProtocols.isSavingWorkoutProtocol || workout.frequency >= 7}
                         className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,8 +130,8 @@ export default function ProtocolsTab({
                       </button>
                     </div>
                     <button
-                      onClick={() => removeWorkoutProtocol(workout.type)}
-                      disabled={isSavingWorkoutProtocol}
+                      onClick={() => workoutProtocols.removeWorkoutProtocol(workout.type)}
+                      disabled={workoutProtocols.isSavingWorkoutProtocol}
                       className="text-red-600 hover:text-red-500 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -234,7 +144,7 @@ export default function ProtocolsTab({
             </div>
             <div className="mt-4 flex items-center justify-between">
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                Total: {workoutProtocols.reduce((sum, w) => sum + w.frequency, 0)} sessions/week
+                Total: {workoutProtocols.workoutProtocols.reduce((sum, w) => sum + w.frequency, 0)} sessions/week
               </span>
             </div>
           </div>
@@ -249,7 +159,7 @@ export default function ProtocolsTab({
         </p>
         
         <button
-          onClick={() => setIsAddSupplementProtocolModalOpen(true)}
+          onClick={() => modalStates.setIsAddSupplementProtocolModalOpen(true)}
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
         >
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -259,11 +169,11 @@ export default function ProtocolsTab({
         </button>
 
         {/* Current Supplement Protocols List */}
-        {supplementProtocols.length > 0 && (
+        {supplementProtocols.supplementProtocols.length > 0 && (
           <div className="mt-6">
             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Your Current Protocols:</h4>
             <div className="space-y-3">
-              {supplementProtocols.map((supplement) => (
+              {supplementProtocols.supplementProtocols.map((supplement) => (
                 <div key={supplement.type} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <div className="flex-1">
                     <h5 className="text-sm font-medium text-gray-900 dark:text-white capitalize">
@@ -276,10 +186,10 @@ export default function ProtocolsTab({
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => {
-                        setEditingExperiment(supplement);
-                        setIsEditSupplementProtocolModalOpen(true);
+                        experiments.setEditingExperiment(supplement);
+                        modalStates.setIsEditSupplementProtocolModalOpen(true);
                       }}
-                      disabled={isSavingSupplementProtocol}
+                      disabled={supplementProtocols.isSavingSupplementProtocol}
                       className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -292,7 +202,7 @@ export default function ProtocolsTab({
             </div>
             <div className="mt-4 flex items-center justify-between">
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                Total: {supplementProtocols.length} supplement{supplementProtocols.length !== 1 ? 's' : ''}
+                Total: {supplementProtocols.supplementProtocols.length} supplement{supplementProtocols.supplementProtocols.length !== 1 ? 's' : ''}
               </span>
             </div>
           </div>
@@ -307,7 +217,7 @@ export default function ProtocolsTab({
         </p>
         
         <button
-          onClick={() => setIsAddExperimentModalOpen(true)}
+          onClick={() => modalStates.setIsAddExperimentModalOpen(true)}
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
         >
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -317,7 +227,7 @@ export default function ProtocolsTab({
         </button>
 
         {/* Loading State */}
-        {isLoadingExperiments && (
+        {experiments.isLoadingExperiments && (
           <div className="mt-6 flex items-center justify-center py-4">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
             <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Loading experiments...</span>
@@ -325,11 +235,11 @@ export default function ProtocolsTab({
         )}
 
         {/* Current Experiments List */}
-        {!isLoadingExperiments && experiments.length > 0 && (
+        {!experiments.isLoadingExperiments && experiments.experiments.length > 0 && (
           <div className="mt-6">
             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Your Active Experiments:</h4>
             <div className="space-y-3">
-              {experiments.filter(exp => exp.status === 'active').map((experiment) => (
+              {experiments.experiments.filter(exp => exp.status === 'active').map((experiment) => (
                 <div key={experiment.id} className="flex items-start justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <div className="flex-1">
                     <h5 className="text-sm font-medium text-gray-900 dark:text-white">
@@ -364,7 +274,7 @@ export default function ProtocolsTab({
                   </div>
                   <div className="flex items-center space-x-2 ml-4">
                     <button
-                      onClick={() => handleEditExperiment(experiment)}
+                      onClick={() => experiments.handleEditExperiment(experiment)}
                       className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -372,7 +282,7 @@ export default function ProtocolsTab({
                       </svg>
                     </button>
                     <button
-                      onClick={() => removeExperiment(experiment.id)}
+                      onClick={() => experiments.removeExperiment(experiment.id)}
                       className="text-red-600 hover:text-red-500 dark:text-red-400 dark:hover:text-red-300 transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -385,14 +295,14 @@ export default function ProtocolsTab({
             </div>
             <div className="mt-4 flex items-center justify-between">
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                Total: {experiments.filter(exp => exp.status === 'active').length} active experiment{experiments.filter(exp => exp.status === 'active').length !== 1 ? 's' : ''}
+                Total: {experiments.experiments.filter(exp => exp.status === 'active').length} active experiment{experiments.experiments.filter(exp => exp.status === 'active').length !== 1 ? 's' : ''}
               </span>
             </div>
           </div>
         )}
 
         {/* Empty State */}
-        {!isLoadingExperiments && experiments.length === 0 && (
+        {!experiments.isLoadingExperiments && experiments.experiments.length === 0 && (
           <div className="mt-6 text-center py-8">
             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />

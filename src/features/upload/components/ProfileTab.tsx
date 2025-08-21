@@ -1,206 +1,41 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { toast } from 'react-hot-toast';
+import {
+  useProfileForm,
+  useImageUpload,
+  useAccountDeletion,
+} from '../hooks';
 
 interface ProfileTabProps {
-  // Profile state
-  name: string;
-  setName: (name: string) => void;
-  nameError: string | null;
-  setNameError: (error: string | null) => void;
-  age: number | '';
-  setAge: (age: number | '') => void;
-  ageError: string | null;
-  setAgeError: (error: string | null) => void;
-  sex: 'male' | 'female' | 'other' | '';
-  setSex: (sex: 'male' | 'female' | 'other' | '') => void;
-  sexError: string | null;
-  setSexError: (error: string | null) => void;
-  profileImage: string | null;
-  setProfileImage: (image: string | null) => void;
-  imageError: string | null;
-  setImageError: (error: string | null) => void;
-  isUploadingImage: boolean;
-  setIsUploadingImage: (uploading: boolean) => void;
-  isSavingProfile: boolean;
-  setIsSavingProfile: (saving: boolean) => void;
-  // Delete account state
-  showDeleteAccountDialog: boolean;
-  setShowDeleteAccountDialog: (show: boolean) => void;
-  isDeletingAccount: boolean;
-  setIsDeletingAccount: (deleting: boolean) => void;
-  confirmationPhrase: string;
-  setConfirmationPhrase: (phrase: string) => void;
-  requiredPhrase: string;
+  // Initial values for form
+  initialName?: string;
+  initialAge?: number | '';
+  initialSex?: 'male' | 'female' | 'other' | '';
+  initialProfileImage?: string | null;
 }
 
 export default function ProfileTab({
-  name,
-  setName,
-  nameError,
-  setNameError,
-  age,
-  setAge,
-  ageError,
-  setAgeError,
-  sex,
-  setSex,
-  sexError,
-  setSexError,
-  profileImage,
-  setProfileImage,
-  imageError,
-  setImageError,
-  isUploadingImage,
-  setIsUploadingImage,
-  isSavingProfile,
-  setIsSavingProfile,
-  showDeleteAccountDialog,
-  setShowDeleteAccountDialog,
-  isDeletingAccount,
-  setIsDeletingAccount,
-  confirmationPhrase,
-  setConfirmationPhrase,
-  requiredPhrase,
+  initialName = '',
+  initialAge = '',
+  initialSex = '',
+  initialProfileImage = null,
 }: ProfileTabProps) {
   const { data: session } = useSession();
   const profileImageRef = useRef<HTMLInputElement>(null);
 
-  const handleUpdateProfile = async () => {
-    if (!name.trim()) {
-      setNameError('Name is required');
-      return;
-    }
-
-    // Validate age if provided
-    if (age !== '' && (isNaN(Number(age)) || Number(age) < 0 || Number(age) > 120)) {
-      setAgeError('Please enter a valid age between 0 and 120');
-      return;
-    }
-
-    setIsSavingProfile(true);
-    setNameError(null);
-    setAgeError(null);
-    setSexError(null);
-
-    try {
-      const response = await fetch('/api/update-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: name.trim(),
-          age: age === '' ? null : Number(age),
-          sex: sex || null
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update profile');
-      }
-
-      toast.success('Profile updated successfully');
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      setNameError(error instanceof Error ? error.message : 'Failed to update profile');
-      toast.error('Failed to update profile');
-    } finally {
-      setIsSavingProfile(false);
-    }
-  };
-
-  const handleProfileImageUpload = async (file: File) => {
-    if (!file) return;
-    
-    if (!file.type.startsWith('image/')) {
-      setImageError('Please select an image file');
-      return;
-    }
-
-    setIsUploadingImage(true);
-    setImageError(null);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('type', 'profile-image');
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload image');
-      }
-
-      const data = await response.json();
-      setProfileImage(data.url);
-      
-      // Update user profile with new image URL
-      await fetch('/api/update-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profileImage: data.url }),
-      });
-
-      toast.success('Profile image updated successfully');
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      setImageError('Failed to upload image');
-      toast.error('Failed to upload image');
-    } finally {
-      setIsUploadingImage(false);
-    }
-  };
-
-  const handleDeleteAccountClick = () => {
-    setShowDeleteAccountDialog(true);
-    setConfirmationPhrase('');
-  };
-
-  const handleDeleteAccount = async () => {
-    if (!session?.user?.id) {
-      toast.error('You must be logged in to delete your account');
-      return;
-    }
-
-    if (confirmationPhrase !== requiredPhrase) {
-      toast.error('Please type the confirmation phrase exactly as shown');
-      return;
-    }
-
-    setIsDeletingAccount(true);
-
-    try {
-      const response = await fetch('/api/delete-account', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to delete account');
-      }
-
-      toast.success('Account deleted successfully');
-      setShowDeleteAccountDialog(false);
-      setConfirmationPhrase('');
-      
-      // Sign out will be handled by the parent component or API response
-    } catch (error) {
-      console.error('Error deleting account:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to delete account');
-    } finally {
-      setIsDeletingAccount(false);
-    }
-  };
+  // Use hooks instead of props
+  const profileForm = useProfileForm({
+    name: initialName,
+    age: initialAge,
+    sex: initialSex,
+  });
+  
+  const imageUpload = useImageUpload(initialProfileImage);
+  const accountDeletion = useAccountDeletion();
 
   return (
     <>
@@ -235,17 +70,17 @@ export default function ProfileTab({
               <div className="flex flex-col items-center">
                 <div className="relative group">
                   <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 mb-3 ring-4 ring-white dark:ring-gray-800 shadow-lg">
-                    {profileImage ? (
+                    {imageUpload.profileImage ? (
                       <div className="w-full h-full">
                         <Image
-                          src={profileImage}
+                          src={imageUpload.profileImage}
                           alt="Profile"
                           width={128}
                           height={128}
                           className="w-full h-full object-cover"
                           onError={() => {
-                            setProfileImage(null);
-                            setImageError('Failed to load profile image');
+                            imageUpload.setProfileImage(null);
+                            imageUpload.setImageError('Failed to load profile image');
                           }}
                         />
                       </div>
@@ -258,10 +93,10 @@ export default function ProfileTab({
                     )}
                     <button
                       onClick={() => profileImageRef.current?.click()}
-                      disabled={isUploadingImage}
+                      disabled={imageUpload.isUploadingImage}
                       className="absolute inset-0 flex items-center justify-center bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity rounded-full"
                     >
-                      {isUploadingImage ? (
+                      {imageUpload.isUploadingImage ? (
                         <svg className="animate-spin h-6 w-6" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -284,12 +119,12 @@ export default function ProfileTab({
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) handleProfileImageUpload(file);
+                      if (file) imageUpload.handleProfileImageUpload(file);
                     }}
                   />
                 </div>
-                {imageError && (
-                  <p className="mt-2 text-sm text-red-500 dark:text-red-400">{imageError}</p>
+                {imageUpload.imageError && (
+                  <p className="mt-2 text-sm text-red-500 dark:text-red-400">{imageUpload.imageError}</p>
                 )}
               </div>
 
@@ -305,21 +140,21 @@ export default function ProfileTab({
                         type="text"
                         name="name"
                         id="name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        value={profileForm.name}
+                        onChange={(e) => profileForm.setName(e.target.value)}
                         className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-[38px] px-3 text-gray-900"
                         placeholder="Enter your name"
                       />
-                      {nameError && (
-                        <p className="mt-1 text-sm text-red-500 dark:text-red-400">{nameError}</p>
+                      {profileForm.nameError && (
+                        <p className="mt-1 text-sm text-red-500 dark:text-red-400">{profileForm.nameError}</p>
                       )}
                     </div>
                     <button
-                      onClick={handleUpdateProfile}
-                      disabled={isSavingProfile}
+                      onClick={profileForm.handleUpdateProfile}
+                      disabled={profileForm.isSavingProfile}
                       className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 h-[38px]"
                     >
-                      {isSavingProfile ? (
+                      {profileForm.isSavingProfile ? (
                         <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -355,15 +190,15 @@ export default function ProfileTab({
                     type="number"
                     name="age"
                     id="age"
-                    value={age}
-                    onChange={(e) => setAge(e.target.value === '' ? '' : Number(e.target.value))}
+                    value={profileForm.age}
+                    onChange={(e) => profileForm.setAge(e.target.value === '' ? '' : Number(e.target.value))}
                     min="0"
                     max="120"
                     className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700/50 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-12 px-4 text-gray-900"
                     placeholder="Enter your age"
                   />
-                  {ageError && (
-                    <p className="mt-2 text-sm text-red-500 dark:text-red-400">{ageError}</p>
+                  {profileForm.ageError && (
+                    <p className="mt-2 text-sm text-red-500 dark:text-red-400">{profileForm.ageError}</p>
                   )}
                 </div>
                 
@@ -375,8 +210,8 @@ export default function ProfileTab({
                   <select
                     name="sex"
                     id="sex"
-                    value={sex}
-                    onChange={(e) => setSex(e.target.value as 'male' | 'female' | 'other' | '')}
+                    value={profileForm.sex}
+                    onChange={(e) => profileForm.setSex(e.target.value as 'male' | 'female' | 'other' | '')}
                     className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700/50 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-12 px-4 text-gray-900 appearance-none bg-no-repeat"
                     style={{
                       backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
@@ -389,19 +224,19 @@ export default function ProfileTab({
                     <option value="female">Female</option>
                     <option value="other">Other</option>
                   </select>
-                  {sexError && (
-                    <p className="mt-2 text-sm text-red-500 dark:text-red-400">{sexError}</p>
+                  {profileForm.sexError && (
+                    <p className="mt-2 text-sm text-red-500 dark:text-red-400">{profileForm.sexError}</p>
                   )}
                 </div>
 
                 {/* Update Button */}
                 <div className="md:col-span-2 flex items-end">
                   <button
-                    onClick={handleUpdateProfile}
-                    disabled={isSavingProfile}
+                    onClick={profileForm.handleUpdateProfile}
+                    disabled={profileForm.isSavingProfile}
                     className="w-full h-12 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors"
                   >
-                    {isSavingProfile ? (
+                    {profileForm.isSavingProfile ? (
                       <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -437,7 +272,7 @@ export default function ProfileTab({
                 </p>
               </div>
               <button
-                onClick={handleDeleteAccountClick}
+                onClick={accountDeletion.handleDeleteAccountClick}
                 className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Delete Account
@@ -448,15 +283,15 @@ export default function ProfileTab({
       </div>
 
       {/* Delete Account Confirmation Dialog */}
-      {showDeleteAccountDialog && (
+      {accountDeletion.showDeleteAccountDialog && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex min-h-screen items-center justify-center p-4 text-center">
             {/* Backdrop */}
             <div 
               className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity" 
               onClick={() => {
-                setShowDeleteAccountDialog(false);
-                setConfirmationPhrase('');
+                accountDeletion.setShowDeleteAccountDialog(false);
+                accountDeletion.setConfirmationPhrase('');
               }}
               aria-hidden="true"
             />
@@ -481,15 +316,15 @@ export default function ProfileTab({
                       
                       <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          To confirm, type <span className="font-mono font-semibold text-red-600 dark:text-red-400">{requiredPhrase}</span> in the box below:
+                          To confirm, type <span className="font-mono font-semibold text-red-600 dark:text-red-400">{accountDeletion.requiredPhrase}</span> in the box below:
                         </label>
                         <input
                           type="text"
-                          value={confirmationPhrase}
-                          onChange={(e) => setConfirmationPhrase(e.target.value)}
+                          value={accountDeletion.confirmationPhrase}
+                          onChange={(e) => accountDeletion.setConfirmationPhrase(e.target.value)}
                           className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 sm:text-sm px-3 py-2"
-                          placeholder={requiredPhrase}
-                          disabled={isDeletingAccount}
+                          placeholder={accountDeletion.requiredPhrase}
+                          disabled={accountDeletion.isDeletingAccount}
                         />
                       </div>
                     </div>
@@ -499,11 +334,11 @@ export default function ProfileTab({
               <div className="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                 <button
                   type="button"
-                  disabled={confirmationPhrase !== requiredPhrase || isDeletingAccount}
+                  disabled={accountDeletion.confirmationPhrase !== accountDeletion.requiredPhrase || accountDeletion.isDeletingAccount}
                   className="inline-flex w-full justify-center rounded-md border border-transparent px-4 py-2 text-base font-medium text-white shadow-sm bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed sm:ml-3 sm:w-auto sm:text-sm"
-                  onClick={handleDeleteAccount}
+                  onClick={accountDeletion.handleDeleteAccount}
                 >
-                  {isDeletingAccount ? (
+                  {accountDeletion.isDeletingAccount ? (
                     <>
                       <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -519,10 +354,10 @@ export default function ProfileTab({
                   type="button"
                   className="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:w-auto sm:text-sm"
                   onClick={() => {
-                    setShowDeleteAccountDialog(false);
-                    setConfirmationPhrase('');
+                    accountDeletion.setShowDeleteAccountDialog(false);
+                    accountDeletion.setConfirmationPhrase('');
                   }}
-                  disabled={isDeletingAccount}
+                  disabled={accountDeletion.isDeletingAccount}
                 >
                   Cancel
                 </button>

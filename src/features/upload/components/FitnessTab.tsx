@@ -1,94 +1,24 @@
 'use client';
 
-import React, { useRef, DragEvent } from 'react';
+import React from 'react';
 import FitnessMetricsHistory from '@features/workouts/components/FitnessMetricsHistory';
+import { 
+  useFileUpload, 
+  useFileProcessing, 
+  useUploadedFiles, 
+  useHelpExpansion 
+} from '../hooks';
 
 interface FitnessTabProps {
-  // Drag & Drop state
-  isDragging: boolean;
-  
-  // File upload state
-  inputFileRef: React.RefObject<HTMLInputElement>;
-  isFileLoading: boolean;
-  setIsFileLoading: (loading: boolean) => void;
-  fileKey: number;
-  setFileKey: (key: number | ((prev: number) => number)) => void;
-  error: string | null;
-  setError: (error: string | null) => void;
-  uploading: boolean;
-  progress: number;
-  uploadSuccess: boolean;
-  setUploadSuccess: (success: boolean) => void;
-  
-  // Processing state
-  isProcessing: boolean;
-  processingStatus: string;
-  hasExistingUploads: boolean;
-  
-  // File management state
-  uploadedFiles: Array<{
-    id: string;
-    filename: string;
-    uploadDate: string;
-  }>;
-  selectedFiles: Set<string>;
-  isLoadingFiles: boolean;
-  
-  // Help state
-  isHelpExpanded: boolean;
-  setIsHelpExpanded: (expanded: boolean) => void;
-  
-  // Event handlers
-  handleDragEnter: (e: DragEvent<HTMLDivElement>) => void;
-  handleDragLeave: (e: DragEvent<HTMLDivElement>) => void;
-  handleDragOver: (e: DragEvent<HTMLDivElement>) => void;
-  handleDrop: (e: DragEvent<HTMLDivElement>) => void;
-  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  handleProcess: () => void;
-  
-  // File management handlers
-  fetchUploadedFiles: () => void;
-  deleteSelectedFiles: () => void;
-  toggleSelectAllFiles: () => void;
-  toggleFileSelection: (fileId: string) => void;
-  isFileSelected: (fileId: string) => boolean;
-  handleDeleteFile: (fileId: string) => void;
+  // No props needed anymore - hooks handle everything!
 }
 
-export default function FitnessTab({
-  isDragging,
-  inputFileRef,
-  isFileLoading,
-  setIsFileLoading,
-  fileKey,
-  setFileKey,
-  error,
-  setError,
-  uploading,
-  progress,
-  uploadSuccess,
-  setUploadSuccess,
-  isProcessing,
-  processingStatus,
-  hasExistingUploads,
-  uploadedFiles,
-  selectedFiles,
-  isLoadingFiles,
-  isHelpExpanded,
-  setIsHelpExpanded,
-  handleDragEnter,
-  handleDragLeave,
-  handleDragOver,
-  handleDrop,
-  handleSubmit,
-  handleProcess,
-  fetchUploadedFiles,
-  deleteSelectedFiles,
-  toggleSelectAllFiles,
-  toggleFileSelection,
-  isFileSelected,
-  handleDeleteFile,
-}: FitnessTabProps) {
+export default function FitnessTab({}: FitnessTabProps) {
+  // Use hooks instead of props
+  const fileUpload = useFileUpload();
+  const fileProcessing = useFileProcessing();
+  const uploadedFiles = useUploadedFiles();
+  const helpExpansion = useHelpExpansion();
   return (
     <div className="space-y-6">
       <h2 className="hidden md:block text-2xl font-bold text-gray-900 dark:text-white">Fitness Metrics</h2>
@@ -132,36 +62,36 @@ export default function FitnessTab({
 
         {/* Existing file upload functionality */}
         <div
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          onClick={() => inputFileRef.current?.click()}
+          onDragEnter={fileUpload.handleDragEnter}
+          onDragLeave={fileUpload.handleDragLeave}
+          onDragOver={fileUpload.handleDragOver}
+          onDrop={fileUpload.handleDrop}
+          onClick={() => fileUpload.inputFileRef.current?.click()}
           className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer ${
-            isDragging
+            fileUpload.isDragging
               ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
               : 'border-gray-300 dark:border-gray-700'
           }`}
         >
           <input
-            key={fileKey}
+            key={fileUpload.fileKey}
             type="file"
-            ref={inputFileRef}
+            ref={fileUpload.inputFileRef}
             onChange={(e) => {
-              setIsFileLoading(true);
+              fileUpload.setIsFileLoading(true);
               if (e.target.files?.[0]) {
-                setError(null);
-                setUploadSuccess(false);
+                fileUpload.setError(null);
+                fileUpload.setUploadSuccess(false);
               }
               setTimeout(() => {
-                setIsFileLoading(false);
+                fileUpload.setIsFileLoading(false);
               }, 500);
             }}
             className="hidden"
             accept=".xml,.fit"
           />
           <div className="space-y-4">
-            {isFileLoading ? (
+            {fileUpload.isFileLoading ? (
               // Loading state
               <div className="flex flex-col items-center space-y-3">
                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800">
@@ -174,7 +104,7 @@ export default function FitnessTab({
                   Adding file...
                 </p>
               </div>
-            ) : inputFileRef.current?.files?.[0] ? (
+            ) : fileUpload.inputFileRef.current?.files?.[0] ? (
               // Show selected file info
               <div className="flex flex-col items-center space-y-3">
                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/20">
@@ -184,7 +114,7 @@ export default function FitnessTab({
                 </div>
                 <div className="text-center">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {inputFileRef.current.files[0].name}
+                    {fileUpload.inputFileRef.current.files[0].name}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     Ready to upload
@@ -192,10 +122,10 @@ export default function FitnessTab({
                 </div>
                 <button
                   onClick={() => {
-                    if (inputFileRef.current) {
-                      inputFileRef.current.value = '';
-                      setIsFileLoading(false);
-                      setFileKey(prev => prev + 1);
+                    if (fileUpload.inputFileRef.current) {
+                      fileUpload.inputFileRef.current.value = '';
+                      fileUpload.setIsFileLoading(false);
+                      fileUpload.setFileKey(prev => prev + 1);
                     }
                   }}
                   className="text-sm text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 cursor-pointer"
@@ -213,7 +143,7 @@ export default function FitnessTab({
                 </div>
                 <div>
                   <button
-                    onClick={() => inputFileRef.current?.click()}
+                    onClick={() => fileUpload.inputFileRef.current?.click()}
                     className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 font-medium cursor-pointer"
                   >
                     Upload a file
@@ -226,8 +156,8 @@ export default function FitnessTab({
             )}
           </div>
         </div>
-        {error && <p className="mt-2 text-red-500 text-sm">{error}</p>}
-        {uploading && (
+        {fileUpload.error && <p className="mt-2 text-red-500 text-sm">{fileUpload.error}</p>}
+        {fileUpload.uploading && (
           <div className="mt-4">
             <div className="relative pt-1">
               <div className="flex mb-2 items-center justify-between">
@@ -238,32 +168,32 @@ export default function FitnessTab({
                 </div>
                 <div className="text-right">
                   <span className="text-xs font-semibold inline-block text-indigo-600">
-                    {Math.round(progress)}%
+                    {Math.round(fileUpload.progress)}%
                   </span>
                 </div>
               </div>
               <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-indigo-200">
                 <div
-                  style={{ width: `${progress}%` }}
+                  style={{ width: `${fileUpload.progress}%` }}
                   className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-500"
                 />
               </div>
             </div>
           </div>
         )}
-        {isProcessing && (
-          <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">{processingStatus}</p>
+        {fileProcessing.isProcessing && (
+          <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">{fileProcessing.processingStatus}</p>
         )}
 
         {/* Processing Buttons */}
         <div className="flex gap-4 mt-4">
           <button
             type="submit"
-            onClick={(e) => handleSubmit(e as any)}
-            disabled={uploading || !inputFileRef.current?.files?.[0]}
+            onClick={(e) => fileUpload.handleSubmit(e as any)}
+            disabled={fileUpload.uploading || !fileUpload.inputFileRef.current?.files?.[0]}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
-            {uploading ? (
+            {fileUpload.uploading ? (
               <>
                 <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -273,17 +203,17 @@ export default function FitnessTab({
               </>
             ) : 'Upload'}
           </button>
-          {(uploadSuccess || hasExistingUploads) && (
+          {(fileUpload.uploadSuccess || fileProcessing.hasExistingUploads) && (
             <button
-              onClick={handleProcess}
-              disabled={isProcessing || uploading}
+              onClick={fileProcessing.handleProcess}
+              disabled={fileProcessing.isProcessing || fileUpload.uploading}
               className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white transition-colors ${
-                isProcessing || uploading
+                fileProcessing.isProcessing || fileUpload.uploading
                   ? 'bg-gray-400 dark:bg-gray-600' 
                   : 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 cursor-pointer'
               } disabled:cursor-not-allowed`}
             >
-              {isProcessing ? (
+              {fileProcessing.isProcessing ? (
                 <>
                   <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -299,7 +229,7 @@ export default function FitnessTab({
         {/* Help Section - How to export Apple Health data - Now Expandable */}
         <div className="mt-6 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
           <button
-            onClick={() => setIsHelpExpanded(!isHelpExpanded)}
+            onClick={() => helpExpansion.setIsHelpExpanded(!helpExpansion.isHelpExpanded)}
             className="w-full px-4 py-3 flex items-center justify-between text-left bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
           >
             <div className="flex items-center">
@@ -311,7 +241,7 @@ export default function FitnessTab({
               </span>
             </div>
             <svg 
-              className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${isHelpExpanded ? 'rotate-180' : ''}`} 
+              className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${helpExpansion.isHelpExpanded ? 'rotate-180' : ''}`} 
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
@@ -320,7 +250,7 @@ export default function FitnessTab({
             </svg>
           </button>
           
-          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isHelpExpanded ? 'max-h-96 py-4 px-6' : 'max-h-0'}`}>
+          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${helpExpansion.isHelpExpanded ? 'max-h-96 py-4 px-6' : 'max-h-0'}`}>
             <ol className="space-y-3">
               <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
                 <span className="flex-none w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xs font-medium text-gray-900 dark:text-white">1</span>
@@ -348,7 +278,7 @@ export default function FitnessTab({
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Uploaded Files History</h3>
           <button
-            onClick={fetchUploadedFiles}
+            onClick={uploadedFiles.fetchUploadedFiles}
             className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
           >
             <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -359,13 +289,13 @@ export default function FitnessTab({
         </div>
         
         {/* Show delete selected button when files are selected */}
-        {selectedFiles.size > 0 && (
+        {uploadedFiles.selectedFiles.size > 0 && (
           <div className="flex items-center justify-between mb-4 p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-md">
             <span className="text-sm text-indigo-700 dark:text-indigo-300 font-medium">
-              {selectedFiles.size} file{selectedFiles.size !== 1 ? 's' : ''} selected
+              {uploadedFiles.selectedFiles.size} file{uploadedFiles.selectedFiles.size !== 1 ? 's' : ''} selected
             </span>
             <button
-              onClick={deleteSelectedFiles}
+              onClick={uploadedFiles.deleteSelectedFiles}
               className="px-3 py-1 text-sm bg-red-500 hover:bg-red-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
             >
               Delete Selected
@@ -373,12 +303,12 @@ export default function FitnessTab({
           </div>
         )}
         
-        {isLoadingFiles ? (
+        {uploadedFiles.isLoadingFiles ? (
           <div className="flex justify-center items-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
             <span className="ml-2 text-gray-500 dark:text-gray-400">Loading uploaded files...</span>
           </div>
-        ) : uploadedFiles.length === 0 ? (
+        ) : uploadedFiles.uploadedFiles.length === 0 ? (
           <div className="py-8 text-center">
             <p className="text-gray-500 dark:text-gray-400">
               No files uploaded yet. Upload your Apple Health data to get started.
@@ -395,8 +325,8 @@ export default function FitnessTab({
                       <input
                         type="checkbox"
                         className="h-3.5 w-3.5 text-indigo-500 focus:ring-indigo-400 focus:ring-opacity-50 focus:ring-offset-0 border-gray-300 dark:border-gray-600 rounded cursor-pointer"
-                        checked={uploadedFiles.length > 0 && selectedFiles.size === uploadedFiles.length}
-                        onChange={toggleSelectAllFiles}
+                        checked={uploadedFiles.uploadedFiles.length > 0 && uploadedFiles.selectedFiles.size === uploadedFiles.uploadedFiles.length}
+                        onChange={uploadedFiles.toggleSelectAllFiles}
                       />
                     </div>
                   </th>
@@ -412,11 +342,11 @@ export default function FitnessTab({
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {uploadedFiles.map((file, idx) => (
+                {uploadedFiles.uploadedFiles.map((file, idx) => (
                   <tr 
                     key={file.id} 
                     className={`${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/30'} ${
-                      isFileSelected(file.id) ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
+                      uploadedFiles.isFileSelected(file.id) ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
                     }`}
                   >
                     {/* Checkbox for row selection */}
@@ -425,8 +355,8 @@ export default function FitnessTab({
                         <input
                           type="checkbox"
                           className="h-3.5 w-3.5 text-indigo-500 focus:ring-indigo-400 focus:ring-opacity-50 focus:ring-offset-0 border-gray-300 dark:border-gray-600 rounded cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
-                          checked={isFileSelected(file.id)}
-                          onChange={() => toggleFileSelection(file.id)}
+                          checked={uploadedFiles.isFileSelected(file.id)}
+                          onChange={() => uploadedFiles.toggleFileSelection(file.id)}
                         />
                       </div>
                     </td>
@@ -444,7 +374,7 @@ export default function FitnessTab({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <button 
-                        onClick={() => handleDeleteFile(file.id)}
+                        onClick={() => uploadedFiles.handleDeleteFile(file.id)}
                         className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
                         aria-label={`Delete ${file.filename}`}
                       >
