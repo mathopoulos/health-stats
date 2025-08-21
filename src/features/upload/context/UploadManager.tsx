@@ -3,7 +3,7 @@ import { useUploadContext, useUploadFileFactory } from './UploadContext';
 import { UploadFile, UploadProgress, UploadError } from '../types';
 import { uploadFileWithChunks } from '../../health-data/utils/fileChunker';
 
-interface UploadManagerOptions {
+export interface UploadManagerOptions {
   autoStart?: boolean;
   maxConcurrentUploads?: number;
   onFileComplete?: (file: UploadFile) => void;
@@ -11,7 +11,7 @@ interface UploadManagerOptions {
   onAllComplete?: () => void;
 }
 
-interface UploadManagerReturn {
+export interface UploadManagerReturn {
   // Upload operations
   uploadFiles: (files: File[]) => Promise<void>;
   uploadFile: (file: File) => Promise<void>;

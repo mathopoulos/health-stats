@@ -29,6 +29,7 @@ interface UseHealthDataUploadReturn {
   processHealthData: (file: File) => Promise<void>;
   startProcessing: () => Promise<string>;
   checkProcessingStatus: (jobId: string) => Promise<ProcessingJob | null>;
+  resetHealthDataState: () => void;
 
   // State
   isProcessing: boolean;
@@ -270,6 +271,7 @@ export function useHealthDataUpload(options: UseHealthDataUploadOptions = {}): U
     processHealthData,
     startProcessing,
     checkProcessingStatus,
+    resetHealthDataState,
 
     // State
     isProcessing,

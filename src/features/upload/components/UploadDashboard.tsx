@@ -74,36 +74,35 @@ export default function UploadDashboard({
       <AddExperimentModal
         isOpen={showAddExperiment}
         onClose={() => setShowAddExperiment(false)}
-        onSuccess={() => {
+        onSave={(experiment) => {
           setShowAddExperiment(false);
-          // Optionally refresh data
+          // Optionally refresh data or handle the experiment
+          console.log('Experiment saved:', experiment);
         }}
       />
 
       <AddResultsModal
         isOpen={showAddResults}
         onClose={() => setShowAddResults(false)}
-        onSuccess={() => {
-          setShowAddResults(false);
-          // Optionally refresh data
-        }}
       />
 
       <AddWorkoutProtocolModal
         isOpen={showAddWorkoutProtocol}
         onClose={() => setShowAddWorkoutProtocol(false)}
-        onSuccess={() => {
+        onSave={async (protocols) => {
           setShowAddWorkoutProtocol(false);
-          // Optionally refresh data
+          // Optionally refresh data or handle the protocols
+          console.log('Workout protocols saved:', protocols);
         }}
       />
 
       <AddSupplementProtocolModal
         isOpen={showAddSupplementProtocol}
         onClose={() => setShowAddSupplementProtocol(false)}
-        onSuccess={() => {
+        onSave={async (protocols) => {
           setShowAddSupplementProtocol(false);
-          // Optionally refresh data
+          // Optionally refresh data or handle the protocols
+          console.log('Supplement protocols saved:', protocols);
         }}
       />
 
@@ -111,9 +110,10 @@ export default function UploadDashboard({
         isOpen={showEditExperiment}
         onClose={() => setShowEditExperiment(false)}
         experiment={null} // Would need to be passed in
-        onSuccess={() => {
+        onSave={(experiment) => {
           setShowEditExperiment(false);
-          // Optionally refresh data
+          // Optionally refresh data or handle the experiment
+          console.log('Experiment updated:', experiment);
         }}
       />
     </div>

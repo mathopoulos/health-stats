@@ -34,7 +34,7 @@ interface UploadContextState extends UploadState {
 }
 
 // Upload context value
-interface UploadContextValue extends UploadContextState {
+export interface UploadContextValue extends UploadContextState {
   // Actions
   addFiles: (files: UploadFile[]) => void;
   updateFile: (fileId: string, updates: Partial<UploadFile>) => void;
