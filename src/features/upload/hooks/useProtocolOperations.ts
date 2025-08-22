@@ -291,14 +291,12 @@ export function useProtocolOperations(): UseProtocolOperationsReturn {
   }, []);
 
   const removeWorkoutProtocol = useCallback(async (type: string) => {
-    let updatedProtocols: WorkoutProtocol[];
-    let previousProtocols: WorkoutProtocol[];
+    // Store the current state before making any changes
+    let previousProtocols: WorkoutProtocol[] = workoutProtocols;
     
-    setWorkoutProtocols(prev => {
-      previousProtocols = [...prev];
-      updatedProtocols = prev.filter(w => w.type !== type);
-      return updatedProtocols;
-    });
+    // Update state to remove the protocol
+    const updatedProtocols = workoutProtocols.filter(w => w.type !== type);
+    setWorkoutProtocols(updatedProtocols);
     
     try {
       const response = await fetch('/api/health-protocols', {
@@ -321,10 +319,11 @@ export function useProtocolOperations(): UseProtocolOperationsReturn {
       setTemporaryStatus('Workout protocol removed successfully');
     } catch (error) {
       console.error('Error removing workout protocol:', error);
-      setWorkoutProtocols(previousProtocols!);
+      // Revert to previous state on error
+      setWorkoutProtocols(previousProtocols);
       setTemporaryStatus(error instanceof Error ? error.message : 'Failed to remove workout protocol');
     }
-  }, [setTemporaryStatus]);
+  }, [setTemporaryStatus, workoutProtocols]);
 
   const updateWorkoutProtocolFrequency = useCallback(async (type: string, newFrequency: number) => {
     let originalFrequency = 2;
