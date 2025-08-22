@@ -49,7 +49,7 @@ export function useSessionRecovery(options: UseSessionRecoveryOptions = {}) {
       return;
     }
 
-    console.log(`Session recovery attempt ${recoveryAttempts.current + 1}/${maxAttempts} - authenticated but missing user ID`);
+    // Session recovery attempt (removed console.log to avoid test brittleness)
     
     recoveryAttempts.current++;
     lastRecoveryTime.current = now;
