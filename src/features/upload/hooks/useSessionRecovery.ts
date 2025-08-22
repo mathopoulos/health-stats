@@ -15,7 +15,7 @@ interface UseSessionRecoveryOptions {
  * Prevents infinite reload loops by limiting retry attempts
  */
 export function useSessionRecovery(options: UseSessionRecoveryOptions = {}) {
-  const { data: session, status: sessionStatus } = useSession();
+  const { data: session, status: sessionStatus, update } = useSession();
   const recoveryAttempts = useRef(0);
   const lastRecoveryTime = useRef(0);
   const sessionProblemStartTime = useRef(0);
@@ -66,12 +66,21 @@ export function useSessionRecovery(options: UseSessionRecoveryOptions = {}) {
     }
 
     // Session recovery attempt (removed console.log to avoid test brittleness)
-    
     recoveryAttempts.current++;
     lastRecoveryTime.current = now;
 
-    // Instead of reloading (which doesn't fix broken sessions), 
-    // redirect to sign-in to start fresh auth flow
+    // First, try to refresh the session in-place. This avoids losing preview env context
+    // and fixes "loads only after tab switch" by forcing a refetch like window focus.
+    try {
+      if (typeof update === 'function') {
+        void update();
+        return;
+      }
+    } catch (_) {
+      // Ignore and fall back to redirect below
+    }
+
+    // Fallback: redirect to sign-in to start fresh auth flow
     if (typeof window !== 'undefined') {
       window.location.href = '/auth/signin';
     }
