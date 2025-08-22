@@ -1,12 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
-export interface UploadedFile {
-  id: string;
-  filename: string;
-  uploadDate: string;
-}
+import type { UploadedFile } from '../services';
 
 export interface UseUploadedFilesReturn {
   // File management state

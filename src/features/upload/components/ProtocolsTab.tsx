@@ -6,7 +6,7 @@ import {
   useWorkoutProtocols,
   useSupplementProtocols,
   useExperiments,
-  useModalStates,
+  useProtocolModals,
 } from '../hooks';
 
 interface ProtocolsTabProps {
@@ -26,7 +26,7 @@ export default function ProtocolsTab({
   const workoutProtocols = useWorkoutProtocols(initialWorkoutProtocols);
   const supplementProtocols = useSupplementProtocols(initialSupplementProtocols);
   const experiments = useExperiments();
-  const modalStates = useModalStates();
+  const protocolModals = useProtocolModals();
   
   return (
     <div className="space-y-6">
@@ -84,7 +84,7 @@ export default function ProtocolsTab({
         </p>
         
         <button
-          onClick={() => modalStates.setIsAddWorkoutProtocolModalOpen(true)}
+          onClick={() => protocolModals.openModal('add-workout')}
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
         >
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,7 +159,7 @@ export default function ProtocolsTab({
         </p>
         
         <button
-          onClick={() => modalStates.setIsAddSupplementProtocolModalOpen(true)}
+          onClick={() => protocolModals.openModal('add-supplement')}
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
         >
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -186,8 +186,8 @@ export default function ProtocolsTab({
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => {
-                        experiments.setEditingExperiment(supplement);
-                        modalStates.setIsEditSupplementProtocolModalOpen(true);
+                        // TODO: Implement proper supplement editing state management
+                        protocolModals.openModal('edit-supplement');
                       }}
                       disabled={supplementProtocols.isSavingSupplementProtocol}
                       className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -217,7 +217,7 @@ export default function ProtocolsTab({
         </p>
         
         <button
-          onClick={() => modalStates.setIsAddExperimentModalOpen(true)}
+          onClick={() => protocolModals.openModal('add-experiment')}
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
         >
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

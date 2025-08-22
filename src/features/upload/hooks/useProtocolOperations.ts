@@ -2,31 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+import type { Experiment, WorkoutProtocol, SupplementProtocol } from '../services';
 
-// Type definitions
-export interface WorkoutProtocol {
-  type: string;
-  frequency: number;
-}
 
-export interface SupplementProtocol {
-  type: string;
-  frequency: string;
-  dosage: string;
-  unit: string;
-}
 
-export interface Experiment {
-  id: string;
-  name: string;
-  description: string;
-  frequency: string;
-  duration: string;
-  fitnessMarkers: string[];
-  bloodMarkers: string[];
-  status: 'active' | 'completed' | 'paused';
-  createdAt: string;
-}
+
 
 export interface ExperimentData {
   name: string;
@@ -338,12 +318,6 @@ export function useProtocolOperations(): UseProtocolOperationsReturn {
     });
 
     try {
-      let updatedProtocols: WorkoutProtocol[];
-      setWorkoutProtocols(prev => {
-        updatedProtocols = prev; // Get current state
-        return prev;
-      });
-
       const response = await fetch('/api/health-protocols', {
         method: 'POST',
         headers: {
@@ -351,7 +325,7 @@ export function useProtocolOperations(): UseProtocolOperationsReturn {
         },
         body: JSON.stringify({
           protocolType: 'exercise',
-          protocol: JSON.stringify({ workouts: updatedProtocols }),
+          protocol: JSON.stringify({ workouts: workoutProtocols }),
           startDate: new Date().toISOString()
         }),
       });

@@ -2,11 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-
-export interface WorkoutProtocol {
-  type: string;
-  frequency: number;
-}
+import type { WorkoutProtocol } from '../services';
 
 export interface UseWorkoutProtocolsReturn {
   // Workout protocols state

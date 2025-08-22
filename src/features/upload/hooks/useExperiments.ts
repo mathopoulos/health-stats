@@ -3,18 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
-
-export interface Experiment {
-  id: string;
-  name: string;
-  description: string;
-  frequency: string;
-  duration: string;
-  fitnessMarkers: string[];
-  bloodMarkers: string[];
-  status: 'active' | 'completed' | 'paused';
-  createdAt: string;
-}
+import type { Experiment } from '../services';
 
 export interface UseExperimentsReturn {
   // Experiments state

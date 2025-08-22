@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-
-export interface SupplementProtocol {
-  type: string;
-  frequency: string;
-  dosage: string;
-  unit: string;
-}
+import type { SupplementProtocol } from '../services';
 
 export interface UseSupplementProtocolsReturn {
   // Supplement protocols state

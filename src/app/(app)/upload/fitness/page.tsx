@@ -481,56 +481,7 @@ export default function FitnessPage() {
             </div>
           )}
           
-          <FitnessTab
-            isDragging={isDragging}
-            inputFileRef={inputFileRef}
-            isFileLoading={isFileLoading}
-            setIsFileLoading={setIsFileLoading}
-            fileKey={fileKey}
-            setFileKey={setFileKey}
-            error={error}
-            setError={setError}
-            uploading={uploading}
-            progress={progress}
-            uploadSuccess={uploadSuccess}
-            setUploadSuccess={setUploadSuccess}
-            isProcessing={isProcessing}
-            processingStatus={processingStatus}
-            hasExistingUploads={hasExistingUploads}
-            uploadedFiles={uploadedFiles}
-            selectedFiles={selectedFiles}
-            isLoadingFiles={isLoadingFiles}
-            isHelpExpanded={isHelpExpanded}
-            setIsHelpExpanded={setIsHelpExpanded}
-            handleDragEnter={handleDragEnter}
-            handleDragLeave={handleDragLeave}
-            handleDragOver={handleDragOver}
-            handleDrop={handleDrop}
-            handleSubmit={handleSubmit}
-            handleProcess={handleProcess}
-            fetchUploadedFiles={async () => {
-              setIsLoadingFiles(true);
-              try {
-                const response = await fetch('/api/uploads');
-                if (response.ok) {
-                  const data = await response.json();
-                  if (data.success && data.files) {
-                    setUploadedFiles(data.files);
-                    setHasExistingUploads(data.files.length > 0);
-                  }
-                }
-              } catch (error) {
-                console.error('Error fetching uploaded files:', error);
-              } finally {
-                setIsLoadingFiles(false);
-              }
-            }}
-            deleteSelectedFiles={deleteSelectedFiles}
-            toggleSelectAllFiles={toggleSelectAllFiles}
-            toggleFileSelection={toggleFileSelection}
-            isFileSelected={isFileSelected}
-            handleDeleteFile={handleDeleteFile}
-          />
+          <FitnessTab />
         </div>
       </div>
 

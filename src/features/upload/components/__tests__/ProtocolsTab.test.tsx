@@ -9,7 +9,7 @@ jest.mock('../../hooks', () => ({
   useWorkoutProtocols: jest.fn(),
   useSupplementProtocols: jest.fn(),
   useExperiments: jest.fn(),
-  useModalStates: jest.fn(),
+  useProtocolModals: jest.fn(),
 }));
 
 import {
@@ -17,14 +17,14 @@ import {
   useWorkoutProtocols,
   useSupplementProtocols,
   useExperiments,
-  useModalStates,
+  useProtocolModals,
 } from '../../hooks';
 
 const mockUseDietProtocol = useDietProtocol as jest.MockedFunction<typeof useDietProtocol>;
 const mockUseWorkoutProtocols = useWorkoutProtocols as jest.MockedFunction<typeof useWorkoutProtocols>;
 const mockUseSupplementProtocols = useSupplementProtocols as jest.MockedFunction<typeof useSupplementProtocols>;
 const mockUseExperiments = useExperiments as jest.MockedFunction<typeof useExperiments>;
-const mockUseModalStates = useModalStates as jest.MockedFunction<typeof useModalStates>;
+const mockUseProtocolModals = useProtocolModals as jest.MockedFunction<typeof useProtocolModals>;
 
 describe('ProtocolsTab', () => {
   const mockDietProtocol = {
@@ -54,15 +54,15 @@ describe('ProtocolsTab', () => {
     removeExperiment: jest.fn(),
   };
 
-  const mockModalStates = {
+  const mockProtocolModals = {
     isAddWorkoutProtocolModalOpen: false,
-    setIsAddWorkoutProtocolModalOpen: jest.fn(),
     isAddSupplementProtocolModalOpen: false,
-    setIsAddSupplementProtocolModalOpen: jest.fn(),
-    isEditSupplementProtocolModalOpen: false,
-    setIsEditSupplementProtocolModalOpen: jest.fn(),
     isAddExperimentModalOpen: false,
-    setIsAddExperimentModalOpen: jest.fn(),
+    isEditExperimentModalOpen: false,
+    isEditSupplementProtocolModalOpen: false,
+    openModal: jest.fn(),
+    closeModal: jest.fn(),
+    closeAllModals: jest.fn(),
   };
 
   beforeEach(() => {
@@ -72,7 +72,7 @@ describe('ProtocolsTab', () => {
     mockUseWorkoutProtocols.mockReturnValue(mockWorkoutProtocols);
     mockUseSupplementProtocols.mockReturnValue(mockSupplementProtocols);
     mockUseExperiments.mockReturnValue(mockExperiments);
-    mockUseModalStates.mockReturnValue(mockModalStates);
+    mockUseProtocolModals.mockReturnValue(mockProtocolModals);
   });
 
   describe('Rendering', () => {
@@ -192,7 +192,7 @@ describe('ProtocolsTab', () => {
       const addButton = screen.getByRole('button', { name: /Add Workout Protocol/i });
       fireEvent.click(addButton);
 
-      expect(mockModalStates.setIsAddWorkoutProtocolModalOpen).toHaveBeenCalledWith(true);
+      expect(mockProtocolModals.openModal).toHaveBeenCalledWith('add-workout');
     });
 
     it('shows empty state when no workout protocols exist', () => {
@@ -373,7 +373,7 @@ describe('ProtocolsTab', () => {
       const addButton = screen.getByRole('button', { name: /Add Supplement Protocol/i });
       fireEvent.click(addButton);
 
-      expect(mockModalStates.setIsAddSupplementProtocolModalOpen).toHaveBeenCalledWith(true);
+      expect(mockProtocolModals.openModal).toHaveBeenCalledWith('add-supplement');
     });
 
     it('shows empty state when no supplement protocols exist', () => {
@@ -436,8 +436,8 @@ describe('ProtocolsTab', () => {
       
       if (editButton) {
         fireEvent.click(editButton);
-        expect(mockExperiments.setEditingExperiment).toHaveBeenCalledWith(mockSupplements[0]);
-        expect(mockModalStates.setIsEditSupplementProtocolModalOpen).toHaveBeenCalledWith(true);
+        // Note: Removed setEditingExperiment call as it was conceptually incorrect (passing SupplementProtocol to Experiment state)
+        expect(mockProtocolModals.openModal).toHaveBeenCalledWith('edit-supplement');
       }
     });
 
@@ -476,7 +476,7 @@ describe('ProtocolsTab', () => {
       const createButton = screen.getByRole('button', { name: /Create Experiment/i });
       fireEvent.click(createButton);
 
-      expect(mockModalStates.setIsAddExperimentModalOpen).toHaveBeenCalledWith(true);
+      expect(mockProtocolModals.openModal).toHaveBeenCalledWith('add-experiment');
     });
 
     it('shows loading state when experiments are loading', () => {
