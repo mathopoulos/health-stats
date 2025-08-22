@@ -344,8 +344,17 @@ export const authOptions: NextAuthOptions = {
         // Check if this is an OAuth proxy callback - let proxy handle the redirect
         const urlObj = new URL(url);
         const callbackUrl = urlObj.searchParams.get('callbackUrl');
-        if (callbackUrl && callbackUrl.includes('/api/auth/proxy/callback')) {
-          console.log("OAuth proxy callback detected, letting proxy handle redirect");
+        
+        // Check for various OAuth proxy patterns
+        const isOAuthProxy = callbackUrl && (
+          callbackUrl.includes('/api/auth/proxy/callback') ||  // Internal proxy
+          callbackUrl.includes('auth.revly.health') ||         // External auth service
+          callbackUrl.includes('return_url=') ||               // Proxy return parameter
+          (process.env.USE_OAUTH_PROXY === 'true' && callbackUrl.includes('vercel.app')) // Preview with proxy
+        );
+        
+        if (isOAuthProxy) {
+          console.log("OAuth proxy callback detected, letting proxy handle redirect:", callbackUrl);
           return url; // Let the proxy callback handle the redirect
         }
         
