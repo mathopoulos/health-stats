@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 
 const MAX_RECOVERY_ATTEMPTS = 3;
 const RECOVERY_DELAY = 2000;
@@ -16,7 +15,6 @@ interface UseSessionRecoveryOptions {
  */
 export function useSessionRecovery(options: UseSessionRecoveryOptions = {}) {
   const { data: session, status: sessionStatus } = useSession();
-  const router = useRouter();
   const recoveryAttempts = useRef(0);
   const lastRecoveryTime = useRef(0);
   const { onRecoveryExhausted, maxAttempts = MAX_RECOVERY_ATTEMPTS } = options;
@@ -44,7 +42,10 @@ export function useSessionRecovery(options: UseSessionRecoveryOptions = {}) {
         onRecoveryExhausted();
       } else {
         // Fallback: redirect to sign-in instead of infinite reload
-        router.push('/auth/signin');
+        // Use window.location to avoid router context issues
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth/signin';
+        }
       }
       return;
     }
@@ -54,16 +55,13 @@ export function useSessionRecovery(options: UseSessionRecoveryOptions = {}) {
     recoveryAttempts.current++;
     lastRecoveryTime.current = now;
 
-    // Use router.refresh() if available, otherwise redirect to signin
-    // This is less disruptive than window.location.reload()
-    if (typeof router.refresh === 'function') {
-      router.refresh();
-    } else {
-      // Fallback for environments where refresh isn't available (like tests)
-      router.push('/auth/signin');
+    // Use window.location.reload() for session refresh
+    // This is safer than router.refresh() which can cause context issues
+    if (typeof window !== 'undefined') {
+      window.location.reload();
     }
     
-  }, [session, sessionStatus, router, maxAttempts, onRecoveryExhausted]);
+  }, [session, sessionStatus, maxAttempts, onRecoveryExhausted]);
 
   return {
     isRecovering: sessionStatus === 'authenticated' && !session?.user?.id,
