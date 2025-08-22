@@ -11,7 +11,15 @@ export { useAccountDeletion, type UseAccountDeletionReturn } from './useAccountD
 
 // ProtocolsTab hooks
 export { useDietProtocol, type UseDietProtocolReturn } from './useDietProtocol';
-export { useWorkoutProtocols, type UseWorkoutProtocolsReturn, type WorkoutProtocol } from './useWorkoutProtocols';
-export { useSupplementProtocols, type UseSupplementProtocolsReturn, type SupplementProtocol } from './useSupplementProtocols';
-export { useExperiments, type UseExperimentsReturn, type Experiment } from './useExperiments';
-export { useModalStates, type UseModalStatesReturn } from './useModalStates';
+export { useWorkoutProtocols, type UseWorkoutProtocolsReturn } from './useWorkoutProtocols';
+export { useSupplementProtocols, type UseSupplementProtocolsReturn } from './useSupplementProtocols';
+export { useExperiments, type UseExperimentsReturn } from './useExperiments';
+export { useProtocolModals, type ModalType, type UseProtocolModalsReturn } from './useProtocolModals';
+export { 
+  useProtocolOperations, 
+  type UseProtocolOperationsReturn,
+  type WorkoutProtocol,
+  type SupplementProtocol,
+  type Experiment,
+  type ExperimentData
+} from './useProtocolOperations';

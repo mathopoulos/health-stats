@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { toast } from 'react-hot-toast';
 import { useSession } from 'next-auth/react';
 import ProfileTab from '../ProfileTab';
@@ -112,8 +113,16 @@ describe('ProfileTab', () => {
       expect(mockProfileFormData.setAge).toHaveBeenCalledWith(25);
     });
 
-    it.skip('handles sex selection change', () => {
-      // Skipped: getByDisplayValue('male') fails in JSDOM with select elements
+    it('handles sex selection change', () => {
+      render(<ProfileTab />);
+      
+      // Find the sex select element and simulate change without relying on getByDisplayValue
+      const sexSelect = screen.getByRole('combobox');
+      
+      // Simulate selecting a value
+      fireEvent.change(sexSelect, { target: { value: 'male' } });
+      
+      expect(mockProfileFormData.setSex).toHaveBeenCalledWith('male');
     });
 
     it('shows validation errors', () => {
@@ -131,12 +140,14 @@ describe('ProfileTab', () => {
       expect(screen.getByText('Please select your sex')).toBeInTheDocument();
     });
 
-    it.skip('handles save profile form submission', async () => {
-      // Skipped: Multiple Update buttons cause DOM query ambiguity
+    it('handles save profile form submission', async () => {
       render(<ProfileTab />);
       
-      const saveButton = screen.getByText('Update');
-      fireEvent.click(saveButton);
+      // Find the profile update button (not the image upload update button)
+      const updateButtons = screen.getAllByText('Update');
+      const profileUpdateButton = updateButtons[0]; // First Update button is for profile
+      
+      fireEvent.click(profileUpdateButton);
       
       expect(mockProfileFormData.handleUpdateProfile).toHaveBeenCalled();
     });
@@ -366,8 +377,19 @@ describe('ProfileTab', () => {
       expect(mockUseImageUpload).toHaveBeenCalledWith(null);
     });
 
-    it.skip('handles complex form interactions', async () => {
-      // Skipped: getByDisplayValue('male') fails in JSDOM with select elements
+    it('handles complex form interactions', async () => {
+      render(<ProfileTab />);
+      
+      // Test multiple form interactions without relying on select elements
+      const nameInput = screen.getByPlaceholderText('Enter your name');
+      const ageInput = screen.getByPlaceholderText('Enter your age');
+      
+      // Simulate complex user interactions
+      fireEvent.change(nameInput, { target: { value: 'Complex Test User' } });
+      fireEvent.change(ageInput, { target: { value: '35' } });
+      
+      expect(mockProfileFormData.setName).toHaveBeenCalledWith('Complex Test User');
+      expect(mockProfileFormData.setAge).toHaveBeenCalledWith(35);
     });
   });
 
