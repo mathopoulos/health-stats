@@ -20,3 +20,6 @@ export {
   type UseProtocolOperationsReturn,
   type ExperimentData
 } from './useProtocolOperations';
+
+// Session management hooks
+export { useSessionRecovery } from './useSessionRecovery';

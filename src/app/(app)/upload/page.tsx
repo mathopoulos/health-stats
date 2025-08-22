@@ -1,35 +1,54 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function UploadIndexPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
+    // Prevent multiple redirects
+    if (hasRedirected.current) return;
+    
     // Get the tab parameter from URL or default to profile
     const tab = searchParams?.get('tab');
     
-    // Redirect to the appropriate upload sub-page
-    switch (tab) {
-      case 'protocols':
-        router.replace('/upload/protocols');
-        break;
-      case 'fitness':
-        router.replace('/upload/fitness');
-        break;
-      case 'blood':
-        router.replace('/upload/blood');
-        break;
-      case 'more':
-      case 'settings':
-        router.replace('/upload/settings');
-        break;
-      case 'profile':
-      default:
-        router.replace('/upload/profile');
-        break;
+    // Mark as redirected to prevent multiple attempts
+    hasRedirected.current = true;
+    
+    // Small delay to ensure hydration is complete in production only
+    const isProduction = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
+    const redirectDelay = isProduction ? 100 : 0;
+    
+    const performRedirect = () => {
+      // Redirect to the appropriate upload sub-page
+      switch (tab) {
+        case 'protocols':
+          router.replace('/upload/protocols');
+          break;
+        case 'fitness':
+          router.replace('/upload/fitness');
+          break;
+        case 'blood':
+          router.replace('/upload/blood');
+          break;
+        case 'more':
+        case 'settings':
+          router.replace('/upload/settings');
+          break;
+        case 'profile':
+        default:
+          router.replace('/upload/profile');
+          break;
+      }
+    };
+
+    if (redirectDelay > 0) {
+      setTimeout(performRedirect, redirectDelay);
+    } else {
+      performRedirect();
     }
   }, [searchParams, router]);
 

@@ -10,7 +10,7 @@ import {
   MobileHeader
 } from '@features/upload/components';
 
-import { useProtocolOperations } from '@features/upload/hooks';
+import { useProtocolOperations, useSessionRecovery } from '@features/upload/hooks';
 
 export default function ProtocolsPage() {
   const { data: session, status: sessionStatus } = useSession();
@@ -19,14 +19,8 @@ export default function ProtocolsPage() {
   // Use our extracted hook for user data and status
   const operations = useProtocolOperations();
 
-  // Fix session race condition in preview deployments
-  useEffect(() => {
-    if (sessionStatus === 'authenticated' && !session?.user?.id) {
-      console.log('Session authenticated but missing user ID, forcing refresh...');
-      window.location.reload();
-      return;
-    }
-  }, [session, sessionStatus]);
+  // Handle session recovery without infinite reloads
+  const { isRecovering } = useSessionRecovery();
 
   // Navigation handler
   const handleTabChange = (tab: string) => {
@@ -51,12 +45,17 @@ export default function ProtocolsPage() {
     }
   };
 
-  // Loading state
-  if (sessionStatus === 'loading') {
+  // Loading state (including session recovery)
+  if (sessionStatus === 'loading' || isRecovering) {
     return (
       <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">
+              {isRecovering ? 'Recovering session...' : 'Loading...'}
+            </p>
+          </div>
         </div>
       </div>
     );

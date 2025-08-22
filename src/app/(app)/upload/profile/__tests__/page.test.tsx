@@ -116,7 +116,7 @@ describe('ProfilePage', () => {
 
     render(<ProfilePage />);
 
-    expect(mockConsoleLog).toHaveBeenCalledWith('Session authenticated but missing user ID, forcing refresh...');
+    // Session recovery should handle this case gracefully without console logs
     expect(mockReload).toHaveBeenCalled();
   });
 

@@ -9,6 +9,7 @@ import {
   MobileNavigation, 
   MobileHeader
 } from '@features/upload/components';
+import { useSessionRecovery } from '@features/upload/hooks/useSessionRecovery';
 
 export default function FitnessPage() {
   const { data: session, status: sessionStatus } = useSession();
@@ -18,14 +19,8 @@ export default function FitnessPage() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [name, setName] = useState<string>('');
 
-  // Fix session race condition in preview deployments
-  useEffect(() => {
-    if (sessionStatus === 'authenticated' && !session?.user?.id) {
-      console.log('Session authenticated but missing user ID, forcing refresh...');
-      window.location.reload();
-      return;
-    }
-  }, [session, sessionStatus]);
+  // Handle session recovery without infinite reloads
+  const { isRecovering } = useSessionRecovery();
 
   // Fetch user data and uploaded files for navigation display
   useEffect(() => {
@@ -85,12 +80,17 @@ export default function FitnessPage() {
     }
   };
 
-  // Loading state
-  if (sessionStatus === 'loading') {
+  // Loading state (including session recovery)
+  if (sessionStatus === 'loading' || isRecovering) {
     return (
       <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">
+              {isRecovering ? 'Recovering session...' : 'Loading...'}
+            </p>
+          </div>
         </div>
       </div>
     );
