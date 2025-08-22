@@ -47,6 +47,25 @@ export function getProductionUrl(): string {
   return process.env.NEXTAUTH_URL || 'https://www.revly.health';
 }
 
+// Get the appropriate URL for the current environment
+// Uses preview URL if in preview, production URL otherwise
+function getCurrentEnvironmentUrl(baseUrl: string): string {
+  // If we have NEXTAUTH_URL set, we're in production
+  if (process.env.NEXTAUTH_URL) {
+    return process.env.NEXTAUTH_URL;
+  }
+  
+  // For preview deployments, use the baseUrl provided by NextAuth
+  // This ensures we stay within the same preview environment
+  if (baseUrl && baseUrl.includes('vercel.app')) {
+    console.log('Using preview deployment URL:', baseUrl);
+    return baseUrl;
+  }
+  
+  // Development or fallback
+  return baseUrl || 'https://www.revly.health';
+}
+
 // Verify an iOS token to ensure it's authentic and not expired
 function verifyIosToken(token: string): boolean {
   try {
@@ -257,8 +276,9 @@ export const authOptions: NextAuthOptions = {
         return url;
       }
       
-      // Get the production URL from env
+      // Get URLs for different scenarios
       const productionUrl = process.env.NEXTAUTH_URL || baseUrl;
+      const currentEnvUrl = getCurrentEnvironmentUrl(baseUrl);
       
       // Direct iOS app URL scheme redirect - highest priority
       if (url.startsWith('health.revly://')) {
@@ -338,8 +358,9 @@ export const authOptions: NextAuthOptions = {
           console.error('Error parsing state in redirect callback:', e);
         }
         
-        // Default web callback
-        return `${productionUrl}/upload`;
+        // Default web callback - use current environment for web flows
+        console.log("Default web callback, using current environment URL:", `${currentEnvUrl}/upload`);
+        return `${currentEnvUrl}/upload`;
       }
       
       // For development, bypass invite page redirect for errors
@@ -355,12 +376,14 @@ export const authOptions: NextAuthOptions = {
       
       // If the URL is explicitly set to /upload, honor that
       if (url.includes('/upload')) {
-        return url.startsWith('http') ? url : `${productionUrl}${url}`;
+        console.log("Upload URL detected, using current environment:", `${currentEnvUrl}${url}`);
+        return url.startsWith('http') ? url : `${currentEnvUrl}${url}`;
       }
       
       // For all successful auth callbacks, direct to upload page
       if (url.includes('auth/callback')) {
-        return `${productionUrl}/upload`;
+        console.log("Auth callback detected, redirecting to:", `${currentEnvUrl}/upload`);
+        return `${currentEnvUrl}/upload`;
       }
       
       // If the URL starts with baseUrl or productionUrl, go to the requested URL
@@ -368,8 +391,9 @@ export const authOptions: NextAuthOptions = {
         return url;
       }
       
-      // Default fallback - go to upload page
-      return `${productionUrl}/upload`;
+      // Default fallback - go to upload page using current environment
+      console.log("Default fallback, redirecting to:", `${currentEnvUrl}/upload`);
+      return `${currentEnvUrl}/upload`;
     }
   },
   pages: {

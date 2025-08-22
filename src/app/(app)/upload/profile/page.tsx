@@ -41,7 +41,7 @@ export default function ProfilePage() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
   // Handle session recovery without infinite reloads
-  const { isRecovering } = useSessionRecovery();
+  const { isRecovering, isWaitingToRecover } = useSessionRecovery();
 
   useEffect(() => {
     if (sessionStatus === 'loading') return;
@@ -97,14 +97,15 @@ export default function ProfilePage() {
   };
 
   // Loading state (including session recovery)
-  if (sessionStatus === 'loading' || isRecovering) {
+  if (sessionStatus === 'loading' || isRecovering || isWaitingToRecover) {
     return (
       <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
             <p className="text-gray-600 dark:text-gray-400">
-              {isRecovering ? 'Recovering session...' : 'Loading...'}
+              {isRecovering ? 'Recovering session...' : 
+               isWaitingToRecover ? 'Validating session...' : 'Loading...'}
             </p>
           </div>
         </div>

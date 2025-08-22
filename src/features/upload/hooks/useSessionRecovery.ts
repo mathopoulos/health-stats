@@ -3,6 +3,7 @@ import { useSession } from 'next-auth/react';
 
 const MAX_RECOVERY_ATTEMPTS = 3;
 const RECOVERY_DELAY = 2000;
+const INITIAL_WAIT_TIME = 3000; // Wait 3 seconds before first recovery attempt
 
 interface UseSessionRecoveryOptions {
   onRecoveryExhausted?: () => void;
@@ -17,17 +18,31 @@ export function useSessionRecovery(options: UseSessionRecoveryOptions = {}) {
   const { data: session, status: sessionStatus } = useSession();
   const recoveryAttempts = useRef(0);
   const lastRecoveryTime = useRef(0);
+  const sessionProblemStartTime = useRef(0);
   const { onRecoveryExhausted, maxAttempts = MAX_RECOVERY_ATTEMPTS } = options;
 
   useEffect(() => {
     // Only handle authenticated sessions with missing user ID
     if (sessionStatus !== 'authenticated' || session?.user?.id) {
-      // Reset counter on successful auth or when not authenticated
+      // Reset all counters on successful auth or when not authenticated
       recoveryAttempts.current = 0;
+      sessionProblemStartTime.current = 0;
       return;
     }
 
     const now = Date.now();
+    
+    // Track when the session problem first started
+    if (sessionProblemStartTime.current === 0) {
+      sessionProblemStartTime.current = now;
+      console.log('Session problem detected, waiting before recovery...');
+      return;
+    }
+    
+    // Wait for initial period before attempting any recovery
+    if (now - sessionProblemStartTime.current < INITIAL_WAIT_TIME) {
+      return;
+    }
     
     // Prevent rapid successive recovery attempts
     if (now - lastRecoveryTime.current < RECOVERY_DELAY) {
@@ -55,17 +70,22 @@ export function useSessionRecovery(options: UseSessionRecoveryOptions = {}) {
     recoveryAttempts.current++;
     lastRecoveryTime.current = now;
 
-    // Use window.location.reload() for session refresh
-    // This is safer than router.refresh() which can cause context issues
+    // Instead of reloading (which doesn't fix broken sessions), 
+    // redirect to sign-in to start fresh auth flow
     if (typeof window !== 'undefined') {
-      window.location.reload();
+      window.location.href = '/auth/signin';
     }
     
   }, [session, sessionStatus, maxAttempts, onRecoveryExhausted]);
 
   return {
-    isRecovering: sessionStatus === 'authenticated' && !session?.user?.id,
+    isRecovering: sessionStatus === 'authenticated' && !session?.user?.id && 
+                 sessionProblemStartTime.current > 0 && 
+                 (Date.now() - sessionProblemStartTime.current >= INITIAL_WAIT_TIME),
     recoveryAttempts: recoveryAttempts.current,
-    maxAttempts
+    maxAttempts,
+    isWaitingToRecover: sessionStatus === 'authenticated' && !session?.user?.id && 
+                       sessionProblemStartTime.current > 0 && 
+                       (Date.now() - sessionProblemStartTime.current < INITIAL_WAIT_TIME)
   };
 }
