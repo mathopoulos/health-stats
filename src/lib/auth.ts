@@ -245,7 +245,10 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async redirect({ url, baseUrl }) {
-      console.log("NextAuth redirect URL:", url);
+      console.log("=== NextAuth Redirect Debug ===");
+      console.log("Redirect URL:", url);
+      console.log("Base URL:", baseUrl);
+      console.log("NEXTAUTH_URL env:", process.env.NEXTAUTH_URL);
       
       // Check if we're being redirected back to a preview deployment
       // This happens when using the OAuth proxy for preview deployments
