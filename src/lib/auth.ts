@@ -341,9 +341,16 @@ export const authOptions: NextAuthOptions = {
       // Rest of original redirect logic for regular web flow
       // For iOS app callback
       if (url.includes('auth/callback') || url.includes('api/auth/callback')) {
+        // Check if this is an OAuth proxy callback - let proxy handle the redirect
+        const urlObj = new URL(url);
+        const callbackUrl = urlObj.searchParams.get('callbackUrl');
+        if (callbackUrl && callbackUrl.includes('/api/auth/proxy/callback')) {
+          console.log("OAuth proxy callback detected, letting proxy handle redirect");
+          return url; // Let the proxy callback handle the redirect
+        }
+        
         // Try to extract state from the URL
         try {
-          const urlObj = new URL(url);
           const state = urlObj.searchParams.get('state');
           
           if (state) {

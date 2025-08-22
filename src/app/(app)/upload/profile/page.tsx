@@ -96,8 +96,9 @@ export default function ProfilePage() {
     }
   };
 
-  // Loading state (including session recovery)
-  if (sessionStatus === 'loading' || isRecovering || isWaitingToRecover) {
+  // Loading state (including session recovery and authenticated but missing user data)
+  if (sessionStatus === 'loading' || isRecovering || isWaitingToRecover || 
+      (sessionStatus === 'authenticated' && !session?.user?.id)) {
     return (
       <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
         <div className="flex-1 flex items-center justify-center">
