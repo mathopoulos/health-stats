@@ -776,8 +776,8 @@ describe('ProtocolsPage', () => {
 
     render(<ProtocolsPage />);
 
-      // Should show recovery state instead of main content
-      expect(screen.getByText('Recovering session...')).toBeInTheDocument();
+      // Should show validation state initially (our improvement: wait before recovery)
+      expect(screen.getByText('Validating session...')).toBeInTheDocument();
       
       // Should not make API calls without user ID
       expect(mockFetch).not.toHaveBeenCalled();
@@ -791,8 +791,8 @@ describe('ProtocolsPage', () => {
 
     render(<ProtocolsPage />);
 
-      // Should show recovery state when session is null but status is authenticated
-      expect(screen.getByText('Recovering session...')).toBeInTheDocument();
+      // Should show validation state when session is null but status is authenticated
+      expect(screen.getByText('Validating session...')).toBeInTheDocument();
     });
 
     it('should handle loading state properly', () => {
@@ -830,8 +830,8 @@ describe('ProtocolsPage', () => {
 
     render(<ProtocolsPage />);
 
-      // Should show recovery state when user ID is missing
-      expect(screen.getByText('Recovering session...')).toBeInTheDocument();
+      // Should show validation state when user ID is missing
+      expect(screen.getByText('Validating session...')).toBeInTheDocument();
     });
 
     it('should handle persistent fetch errors', async () => {
