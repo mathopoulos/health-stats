@@ -2,7 +2,6 @@ import React from 'react';
 import { BioAgeMetrics } from './BioAgeMetrics';
 import { ActivityFeed } from './ActivityFeed';
 import { WorkoutHeatMapSection } from './WorkoutHeatMapSection';
-import ActiveExperiments from '@features/experiments/components/ActiveExperiments';
 import { Skeleton } from '@components/ui/skeleton';
 import type { ChartData, ActivityFeedItem } from '@/types/dashboard';
 

@@ -13,6 +13,10 @@ export async function GET(request: NextRequest) {
   const url = request.nextUrl;
   const searchParams = url.searchParams;
   
+  console.log('=== OAuth Proxy Callback Debug ===');
+  console.log('Full URL:', url.toString());
+  console.log('Search params:', Object.fromEntries(searchParams));
+  
   // Get the original preview URL to return to
   const returnUrl = searchParams.get('return_url');
   
@@ -40,6 +44,11 @@ export async function GET(request: NextRequest) {
 
     // Get the user's session (should be available after OAuth)
     const session = await getServerSession(authOptions);
+    
+    console.log('Session check:', {
+      hasSession: !!session,
+      userEmail: session?.user?.email || 'none'
+    });
     
     if (!session) {
       // If no session, redirect to signin with error
