@@ -288,6 +288,32 @@ export const authOptions: NextAuthOptions = {
       
       // Handle Google auth callback
       if (url.includes('/api/auth/callback/google')) {
+        // If OAuth provides a callbackUrl, and it's an allowed origin, honor it directly.
+        try {
+          const u = new URL(url);
+          const cb = u.searchParams.get('callbackUrl');
+          if (cb) {
+            const allowed = (href: string) => {
+              try {
+                const t = new URL(href);
+                return (
+                  t.hostname.endsWith('vercel.app') ||
+                  t.hostname === 'www.revly.health' ||
+                  t.hostname === 'revly.health' ||
+                  t.hostname === 'localhost'
+                );
+              } catch {
+                return false;
+              }
+            };
+            if (allowed(cb)) {
+              console.log('Honoring provided callbackUrl:', cb);
+              return cb;
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing callbackUrl:', e);
+        }
         try {
           const urlObj = new URL(url);
           const state = urlObj.searchParams.get('state');
