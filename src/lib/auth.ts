@@ -247,6 +247,13 @@ export const authOptions: NextAuthOptions = {
     async redirect({ url, baseUrl }) {
       console.log("NextAuth redirect URL:", url);
       
+      // Check if we're being redirected back to a preview deployment
+      // This happens when using the OAuth proxy for preview deployments
+      if (url.includes('vercel.app') && !url.includes('www.revly.health')) {
+        console.log("Preview deployment redirect detected, using preview URL");
+        return url;
+      }
+      
       // Get the production URL from env
       const productionUrl = process.env.NEXTAUTH_URL || baseUrl;
       
