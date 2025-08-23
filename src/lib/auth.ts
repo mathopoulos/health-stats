@@ -20,6 +20,30 @@ const paidUsers = new Set<string>();
 // In a real app, this would be stored in Redis or a database
 const previewUrlCache = new Map<string, string>();
 
+// Helper functions to manage preview URL cache
+export function storePreviewUrl(key: string, previewUrl: string) {
+  previewUrlCache.set(key, previewUrl);
+  console.log(`🔍 CACHE: Stored preview URL for key ${key}:`, previewUrl);
+  
+  // Clean up old entries (keep only last 50 for memory management)
+  if (previewUrlCache.size > 50) {
+    const firstKey = previewUrlCache.keys().next().value;
+    if (firstKey) {
+      previewUrlCache.delete(firstKey);
+    }
+  }
+}
+
+export function getPreviewUrl(key: string): string | null {
+  const previewUrl = previewUrlCache.get(key);
+  if (previewUrl) {
+    previewUrlCache.delete(key); // Clean up after retrieval
+    console.log(`🔍 CACHE: Retrieved and removed preview URL for key ${key}:`, previewUrl);
+    return previewUrl;
+  }
+  return null;
+}
+
 // Temporary solution for development - mark some test accounts as paid
 if (process.env.NODE_ENV === 'development') {
   // Add some test emails that are always considered paid
@@ -301,18 +325,42 @@ export const authOptions: NextAuthOptions = {
       
       // Check cache for preview URL (try all cached entries for recent OAuth flows)
       console.log("Redirect callback - checking preview URL cache:", Array.from(previewUrlCache.entries()));
-      for (const [email, previewUrl] of previewUrlCache.entries()) {
-        try {
-          const previewUrlObj = new URL(previewUrl);
-          if (previewUrlObj.hostname.endsWith('vercel.app')) {
-            console.log("✅ REDIRECT DECISION: Found preview URL in cache for user:", email);
-            console.log("✅ FINAL REDIRECT:", previewUrl);
-            // Clean up the cache entry after use
-            previewUrlCache.delete(email);
-            return previewUrl;
+      
+      // Try to find preview URLs in cache
+      // Check all existing keys first (most efficient)
+      for (const key of previewUrlCache.keys()) {
+        const previewUrl = getPreviewUrl(key);
+        if (previewUrl) {
+          try {
+            const previewUrlObj = new URL(previewUrl);
+            if (previewUrlObj.hostname.endsWith('vercel.app')) {
+              console.log("✅ REDIRECT DECISION: Found preview URL in cache for key:", key);
+              console.log("✅ FINAL REDIRECT:", previewUrl);
+              return previewUrl;
+            }
+          } catch (e) {
+            console.log("Invalid preview URL found:", e);
           }
-        } catch (e) {
-          console.log("Invalid preview URL in cache:", e);
+        }
+      }
+      
+      // Fallback: Try recent timestamp-based keys (last 30 seconds)
+      const now = Date.now();
+      for (let i = 0; i < 30; i++) { // 30 seconds should be enough
+        const timestamp = now - (i * 1000);
+        const key = `preview_${timestamp}`;
+        const previewUrl = getPreviewUrl(key);
+        if (previewUrl) {
+          try {
+            const previewUrlObj = new URL(previewUrl);
+            if (previewUrlObj.hostname.endsWith('vercel.app')) {
+              console.log("✅ REDIRECT DECISION: Found preview URL with timestamp key:", key);
+              console.log("✅ FINAL REDIRECT:", previewUrl);
+              return previewUrl;
+            }
+          } catch (e) {
+            console.log("Invalid timestamp preview URL found:", e);
+          }
         }
       }
       
