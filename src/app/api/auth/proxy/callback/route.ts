@@ -13,14 +13,16 @@ export async function GET(request: NextRequest) {
   const url = request.nextUrl;
   const searchParams = url.searchParams;
   
-  console.log('=== OAuth Proxy Callback Debug ===');
-  console.log('Full URL:', url.toString());
-  console.log('Search params:', Object.fromEntries(searchParams));
+  console.log('🔍 OAUTH PROXY CALLBACK: OAuth proxy callback received');
+  console.log('🔍 OAUTH PROXY CALLBACK: Full URL:', url.toString());
+  console.log('🔍 OAUTH PROXY CALLBACK: All search params:', Object.fromEntries(searchParams));
   
   // Get the original preview URL to return to
   const returnUrl = searchParams.get('return_url');
+  console.log('🔍 OAUTH PROXY CALLBACK: Return URL from params:', returnUrl);
   
   if (!returnUrl) {
+    console.log('❌ OAUTH PROXY CALLBACK: Missing return_url parameter');
     return NextResponse.json(
       { error: 'return_url parameter is required' }, 
       { status: 400 }
@@ -69,7 +71,8 @@ export async function GET(request: NextRequest) {
     // Add success parameter
     successUrl.searchParams.set('oauth_success', 'true');
     
-    console.log(`OAuth Proxy Callback: Redirecting back to preview: ${successUrl.toString()}`);
+    console.log('🔍 OAUTH PROXY CALLBACK: Constructed success URL:', successUrl.toString());
+    console.log('✅ OAUTH PROXY CALLBACK: Final redirect back to preview:', successUrl.toString());
     
     // Create response with redirect
     const response = NextResponse.redirect(successUrl.toString());
