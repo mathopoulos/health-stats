@@ -16,6 +16,34 @@ const usersWithValidatedInviteCodes = new Set<string>();
 // In a real app, this would be stored in a database
 const paidUsers = new Set<string>();
 
+// Temporary preview URL cache for OAuth flow
+// In a real app, this would be stored in Redis or a database
+const previewUrlCache = new Map<string, string>();
+
+// Helper functions to manage preview URL cache
+export function storePreviewUrl(key: string, previewUrl: string) {
+  previewUrlCache.set(key, previewUrl);
+  console.log(`🔍 CACHE: Stored preview URL for key ${key}:`, previewUrl);
+  
+  // Clean up old entries (keep only last 50 for memory management)
+  if (previewUrlCache.size > 50) {
+    const firstKey = previewUrlCache.keys().next().value;
+    if (firstKey) {
+      previewUrlCache.delete(firstKey);
+    }
+  }
+}
+
+export function getPreviewUrl(key: string): string | null {
+  const previewUrl = previewUrlCache.get(key);
+  if (previewUrl) {
+    previewUrlCache.delete(key); // Clean up after retrieval
+    console.log(`🔍 CACHE: Retrieved and removed preview URL for key ${key}:`, previewUrl);
+    return previewUrl;
+  }
+  return null;
+}
+
 // Temporary solution for development - mark some test accounts as paid
 if (process.env.NODE_ENV === 'development') {
   // Add some test emails that are always considered paid
@@ -36,13 +64,7 @@ interface StateData {
 // Secret for iOS token verification
 const IOS_AUTH_SECRET = process.env.NEXTAUTH_SECRET || 'default-secret-change-me';
 
-// Utility to detect if we're on a Vercel preview deployment
-export function isPreviewDeployment(): boolean {
-  const url = process.env.VERCEL_URL || process.env.NEXTAUTH_URL || '';
-  return url.includes('vercel.app') && !url.includes('www.revly.health');
-}
-
-// Get the production URL for OAuth proxy
+// Get the production URL
 export function getProductionUrl(): string {
   return process.env.NEXTAUTH_URL || 'https://www.revly.health';
 }
@@ -50,20 +72,28 @@ export function getProductionUrl(): string {
 // Get the appropriate URL for the current environment
 // Uses preview URL if in preview, production URL otherwise
 function getCurrentEnvironmentUrl(baseUrl: string): string {
-  // If we have NEXTAUTH_URL set, we're in production
-  if (process.env.NEXTAUTH_URL) {
+  console.log("🔍 getCurrentEnvironmentUrl called with baseUrl:", baseUrl);
+  console.log("NEXTAUTH_URL env:", process.env.NEXTAUTH_URL);
+  console.log("VERCEL_URL env:", process.env.VERCEL_URL);
+  console.log("VERCEL_ENV env:", process.env.VERCEL_ENV);
+  
+  // Production environment - use NEXTAUTH_URL
+  if (process.env.VERCEL_ENV === 'production' && process.env.NEXTAUTH_URL) {
+    console.log("✅ Using NEXTAUTH_URL (production):", process.env.NEXTAUTH_URL);
     return process.env.NEXTAUTH_URL;
   }
   
-  // For preview deployments, use the baseUrl provided by NextAuth
-  // This ensures we stay within the same preview environment
-  if (baseUrl && baseUrl.includes('vercel.app')) {
-    console.log('Using preview deployment URL:', baseUrl);
-    return baseUrl;
+  // Preview deployments - use VERCEL_URL if available, otherwise baseUrl
+  if (process.env.VERCEL_ENV === 'preview' || (baseUrl && baseUrl.includes('vercel.app'))) {
+    const previewUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : baseUrl;
+    console.log('✅ Using preview deployment URL:', previewUrl);
+    return previewUrl;
   }
   
   // Development or fallback
-  return baseUrl || 'https://www.revly.health';
+  const fallback = process.env.NEXTAUTH_URL || baseUrl || 'http://localhost:3000';
+  console.log('✅ Using fallback URL:', fallback);
+  return fallback;
 }
 
 // Verify an iOS token to ensure it's authentic and not expired
@@ -226,6 +256,12 @@ export const authOptions: NextAuthOptions = {
         if (token.isIosApp) {
           (session as any).isIosApp = true;
         }
+        
+        // Pass the preview URL to the session if present
+        if (token.previewUrl) {
+          (session as any).previewUrl = token.previewUrl;
+          console.log("Session callback - passed preview URL to session:", token.previewUrl);
+        }
       }
       return session;
     },
@@ -234,16 +270,31 @@ export const authOptions: NextAuthOptions = {
       if (account) {
         token.accessToken = account.access_token;
         
-        // Check for iOS authentication
+        // Check for preview URL or iOS authentication in state
         try {
           if (account.state) {
             const stateData = JSON.parse(account.state as string);
+            console.log("JWT callback - parsed state data:", stateData);
+            
+            // Store preview URL in cache for redirect callback
+            if (stateData.previewUrl && user?.email) {
+              token.previewUrl = stateData.previewUrl;
+              previewUrlCache.set(user.email, stateData.previewUrl);
+              console.log("JWT callback - stored preview URL in cache for user:", user.email, "->", stateData.previewUrl);
+              
+              // Clean up cache after 5 minutes
+              setTimeout(() => {
+                previewUrlCache.delete(user.email!);
+                console.log("JWT callback - cleaned up preview URL cache for user:", user.email);
+              }, 5 * 60 * 1000);
+            }
             
             // Set iOS flag if we have a verified token or legacy indicators
             if ((stateData.iosToken && verifyIosToken(stateData.iosToken)) || 
                 stateData.platform === 'ios' || 
                 stateData.iosBypass === true) {
               token.isIosApp = true;
+              console.log("JWT callback - stored iOS flag in token");
             }
           }
         } catch (e) {
@@ -268,45 +319,158 @@ export const authOptions: NextAuthOptions = {
       console.log("Redirect URL:", url);
       console.log("Base URL:", baseUrl);
       console.log("NEXTAUTH_URL env:", process.env.NEXTAUTH_URL);
+      console.log("VERCEL_URL env:", process.env.VERCEL_URL);
+      console.log("USE_OAUTH_PROXY env:", process.env.USE_OAUTH_PROXY);
+      console.log("OAUTH_PROXY_URL env:", process.env.OAUTH_PROXY_URL);
+      
+      // Check for preview URL parameter in the callback URL
+      console.log("Redirect callback - checking for previewUrl parameter in URL:", url);
+      
+      try {
+        // Handle relative URLs by making them absolute
+        const absoluteUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
+        const urlObj = new URL(absoluteUrl);
+        const previewUrlParam = urlObj.searchParams.get('previewUrl');
+        
+        if (previewUrlParam) {
+          console.log("🔍 CALLBACK: Found previewUrl parameter:", previewUrlParam);
+          
+          // Validate that it's a vercel.app URL
+          try {
+            const previewUrlObj = new URL(previewUrlParam);
+            if (previewUrlObj.hostname.endsWith('vercel.app')) {
+              console.log("✅ REDIRECT DECISION: Valid preview URL from callback parameter");
+              console.log("✅ FINAL REDIRECT:", previewUrlParam);
+              return previewUrlParam;
+            } else {
+              console.log("⚠️ Invalid preview URL domain:", previewUrlObj.hostname);
+            }
+          } catch (e) {
+            console.log("⚠️ Invalid preview URL format:", previewUrlParam, e);
+          }
+        }
+      } catch (e) {
+        console.log("Could not parse callback URL for previewUrl parameter:", e);
+      }
+      
+      // Fallback: Check cache for preview URL (legacy support)
+      console.log("Redirect callback - checking preview URL cache as fallback:", Array.from(previewUrlCache.entries()));
+      
+      for (const key of previewUrlCache.keys()) {
+        const previewUrl = previewUrlCache.get(key);
+        if (previewUrl) {
+          try {
+            const previewUrlObj = new URL(previewUrl);
+            if (previewUrlObj.hostname.endsWith('vercel.app')) {
+              console.log("✅ REDIRECT DECISION: Found preview URL in cache for key:", key);
+              console.log("✅ FINAL REDIRECT:", previewUrl);
+              // Clean up cache
+              previewUrlCache.clear();
+              return previewUrl;
+            }
+          } catch (e) {
+            console.log("Invalid preview URL found for key:", key, e);
+          }
+        }
+      }
+      
+      // Log all URL components for detailed analysis
+      try {
+        // Handle relative URLs by making them absolute
+        const absoluteUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
+        const urlObj = new URL(absoluteUrl);
+        console.log("URL pathname:", urlObj.pathname);
+        console.log("URL search params:", Object.fromEntries(urlObj.searchParams.entries()));
+        console.log("URL hash:", urlObj.hash);
+      } catch (e) {
+        console.log("Could not parse URL:", e);
+      }
       
       // Check if we're being redirected back to a preview deployment
       // This happens when using the OAuth proxy for preview deployments
       if (url.includes('vercel.app') && !url.includes('www.revly.health')) {
-        console.log("Preview deployment redirect detected, using preview URL");
+        console.log("✅ REDIRECT DECISION: Preview deployment redirect detected, using preview URL");
+        console.log("✅ FINAL REDIRECT:", url);
         return url;
       }
       
       // Get URLs for different scenarios
       const productionUrl = process.env.NEXTAUTH_URL || baseUrl;
       const currentEnvUrl = getCurrentEnvironmentUrl(baseUrl);
+      console.log("productionUrl:", productionUrl);
+      console.log("currentEnvUrl:", currentEnvUrl);
       
       // Direct iOS app URL scheme redirect - highest priority
       if (url.startsWith('health.revly://')) {
-        console.log("iOS auth: Direct iOS scheme URL, returning as is");
+        console.log("✅ REDIRECT DECISION: iOS auth: Direct iOS scheme URL, returning as is");
+        console.log("✅ FINAL REDIRECT:", url);
         return url;
       }
       
       // Handle Google auth callback
       if (url.includes('/api/auth/callback/google')) {
+        console.log("🔍 PROCESSING: Google auth callback detected");
+        
+        // Check state parameter for preview URL
         try {
-          const urlObj = new URL(url);
+          // Handle relative URLs by making them absolute
+          const absoluteUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
+          const urlObj = new URL(absoluteUrl);
           const state = urlObj.searchParams.get('state');
+          console.log("State parameter from Google callback:", state);
           
           if (state) {
-            const stateData = JSON.parse(state);
+            let stateData: any;
+            try {
+              stateData = JSON.parse(state);
+              console.log("Parsed state data:", stateData);
+            } catch (e) {
+              console.log("Could not parse state as JSON:", e);
+            }
             
-            // Check if this is iOS auth with a valid token or legacy indicators
-            if ((stateData.iosToken && verifyIosToken(stateData.iosToken)) || 
-                stateData.platform === 'ios' || 
-                stateData.iosBypass === true) {
+            // Check for preview URL in state
+            if (stateData?.previewUrl) {
+              try {
+                const previewUrlObj = new URL(stateData.previewUrl);
+                // Enhanced security: validate preview URL domain
+                const allowedPreviewDomains = [
+                  'vercel.app',
+                  'revly.health' // Allow main domain redirects too
+                ];
+                
+                const isValidPreviewDomain = allowedPreviewDomains.some(domain => 
+                  previewUrlObj.hostname.endsWith(domain)
+                );
+                
+                if (isValidPreviewDomain) {
+                  console.log('✅ REDIRECT DECISION: Valid preview URL found in state:', stateData.previewUrl);
+                  console.log("✅ FINAL REDIRECT:", stateData.previewUrl);
+                  return stateData.previewUrl;
+                }
+                console.log('⚠️ Invalid preview domain:', previewUrlObj.hostname);
+              } catch (e) {
+                console.log("Invalid preview URL in state:", e);
+              }
+            }
+            
+            // Check if this is iOS auth
+            if ((stateData?.iosToken && verifyIosToken(stateData.iosToken)) || 
+                stateData?.platform === 'ios' || 
+                stateData?.iosBypass === true) {
               
-              console.log("iOS auth: Verified iOS auth in Google callback, redirecting to mobile-callback");
+              console.log("✅ REDIRECT DECISION: iOS auth detected, redirecting to mobile-callback");
+              console.log("✅ FINAL REDIRECT:", `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}`);
               return `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}`;
             }
           }
         } catch (e) {
-          console.error('Error in redirect callback:', e);
+          console.error('Error parsing state in Google callback:', e);
         }
+        
+        // Default to production upload page
+        console.log('✅ REDIRECT DECISION: Default Google callback to production upload');
+        console.log("✅ FINAL REDIRECT:", `${productionUrl}/upload`);
+        return `${productionUrl}/upload`;
       }
       
       // Mobile callback page
@@ -338,10 +502,11 @@ export const authOptions: NextAuthOptions = {
         }
       }
       
-      // Rest of original redirect logic for regular web flow
-      // For iOS app callback
+      // Handle other auth callbacks (non-Google)
       if (url.includes('auth/callback') || url.includes('api/auth/callback')) {
-        // Try to extract state from the URL
+        console.log("🔍 PROCESSING: General auth callback detected");
+        
+        // Try to extract state for iOS apps
         try {
           const urlObj = new URL(url);
           const state = urlObj.searchParams.get('state');
@@ -349,18 +514,19 @@ export const authOptions: NextAuthOptions = {
           if (state) {
             const stateData = JSON.parse(state);
             if (stateData.platform === 'ios') {
-              // Get token from session to pass back to the app
-              // Format: health.revly://auth?token=xyz
+              console.log("✅ REDIRECT DECISION: iOS callback, redirecting to app scheme");
+              console.log("✅ FINAL REDIRECT:", `health.revly://auth?token=${stateData.token || ''}`);
               return `health.revly://auth?token=${stateData.token || ''}`;
             }
           }
         } catch (e) {
-          console.error('Error parsing state in redirect callback:', e);
+          console.log('Could not parse state in general callback:', e);
         }
         
-        // Default web callback - use current environment for web flows
-        console.log("Default web callback, using current environment URL:", `${currentEnvUrl}/upload`);
-        return `${currentEnvUrl}/upload`;
+        // Default web callback - use production for consistency
+        console.log("✅ REDIRECT DECISION: Default web callback to production upload");
+        console.log("✅ FINAL REDIRECT:", `${productionUrl}/upload`);
+        return `${productionUrl}/upload`;
       }
       
       // For development, bypass invite page redirect for errors
@@ -376,8 +542,17 @@ export const authOptions: NextAuthOptions = {
       
       // If the URL is explicitly set to /upload, honor that
       if (url.includes('/upload')) {
-        console.log("Upload URL detected, using current environment:", `${currentEnvUrl}${url}`);
-        return url.startsWith('http') ? url : `${currentEnvUrl}${url}`;
+        if (url.startsWith('http')) {
+          console.log("✅ REDIRECT DECISION: Absolute upload URL detected:", url);
+          console.log("✅ FINAL REDIRECT:", url);
+          return url;
+        } else {
+          // Handle relative URL, avoid double slashes
+          const cleanUrl = `${currentEnvUrl.replace(/\/$/, '')}/${url.replace(/^\//, '')}`;
+          console.log("✅ REDIRECT DECISION: Relative upload URL detected, using current environment:", cleanUrl);
+          console.log("✅ FINAL REDIRECT:", cleanUrl);
+          return cleanUrl;
+        }
       }
       
       // For all successful auth callbacks, direct to upload page
@@ -392,7 +567,8 @@ export const authOptions: NextAuthOptions = {
       }
       
       // Default fallback - go to upload page using current environment
-      console.log("Default fallback, redirecting to:", `${currentEnvUrl}/upload`);
+      console.log("✅ REDIRECT DECISION: Default fallback, redirecting to:", `${currentEnvUrl}/upload`);
+      console.log("✅ FINAL REDIRECT:", `${currentEnvUrl}/upload`);
       return `${currentEnvUrl}/upload`;
     }
   },

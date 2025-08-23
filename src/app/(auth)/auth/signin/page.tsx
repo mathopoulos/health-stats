@@ -11,6 +11,7 @@ export default function SignIn() {
   const [validatedEmail, setValidatedEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [comingFromPayment, setComingFromPayment] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -20,6 +21,13 @@ export default function SignIn() {
     const inviteRequiredParam = searchParams?.get('invite_required');
     const inviteCodeValidated = sessionStorage.getItem('inviteCodeValidated') === 'true';
     const validatedEmailFromSession = sessionStorage.getItem('validatedEmail');
+    
+    // Check for preview URL from query parameters (when redirected from preview deployment)
+    const previewUrlParam = searchParams?.get('previewUrl');
+    if (previewUrlParam) {
+      setPreviewUrl(previewUrlParam);
+      console.log("🔍 AUTH FLOW: Preview URL from query params:", previewUrlParam);
+    }
     
     // Check if user is coming from iOS app - Direct flag takes precedence
     const isIosApp = searchParams?.get('platform') === 'ios';
@@ -77,7 +85,7 @@ export default function SignIn() {
   }, [router, searchParams, comingFromPayment]);
 
   // Refactor handleSignIn to accept parameters for more control
-  const handleSignIn = (isIosApp?: boolean, isDirectIosAuth?: boolean) => {
+  const handleSignIn = async (isIosApp?: boolean, isDirectIosAuth?: boolean) => {
     // Check if authenticating from iOS app - use passed param or check search params
     const iosParam = searchParams?.get('platform') === 'ios';
     const iosSessionFlag = sessionStorage.getItem('isIosApp') === 'true';
@@ -86,52 +94,60 @@ export default function SignIn() {
     console.log("iOS authentication:", finalIsIosApp, "Direct:", isDirectIosAuth);
     const callbackUrl = searchParams?.get('callback_url') || '/upload';
     
-    // Check if we're on a Vercel preview deployment
+    // Check if we're on a Vercel preview deployment  
     const isPreview = window.location.hostname.includes('vercel.app') && 
                      !window.location.hostname.includes('www.revly.health');
     
+    console.log("🔍 AUTH FLOW: Environment detected", { isPreview, finalIsIosApp });
+    
+    // For preview deployments, redirect to production signin with state
     if (isPreview && !finalIsIosApp) {
-      // For preview deployments, redirect through OAuth proxy
-      console.log("Preview deployment detected, using OAuth proxy");
-      const currentUrl = window.location.origin;
-      let proxyUrl = `/api/auth/proxy?provider=google&return_url=${encodeURIComponent(currentUrl)}`;
+      const previewUrl = window.location.origin + callbackUrl;
+      console.log("🔍 AUTH FLOW: Preview detected, redirecting to production signin");
+      console.log("🔍 AUTH FLOW: Preview URL to preserve:", previewUrl);
       
-      // Preserve any state data by adding it to the proxy URL
-      if (validatedEmail) {
-        const stateData = { email: validatedEmail };
-        const encodedState = encodeURIComponent(JSON.stringify(stateData));
-        proxyUrl += `&state=${encodedState}`;
-      }
-      
-      window.location.href = proxyUrl;
+      // Redirect to production signin page with previewUrl as query parameter
+      const productionSigninUrl = `https://www.revly.health/auth/signin?callbackUrl=${encodeURIComponent('/upload')}&previewUrl=${encodeURIComponent(previewUrl)}`;
+      console.log("🔍 AUTH FLOW: Redirecting to production signin:", productionSigninUrl);
+      window.location.href = productionSigninUrl;
       return;
     }
     
-    // State data with iOS flags to ensure they're preserved through redirects
+    // State data for production/iOS flows
     const stateData: any = {};
     
     if (validatedEmail) {
       stateData.email = validatedEmail;
     }
     
-    // Always add these flags to the state to ensure they survive redirects
+    // Determine callback URL - include preview URL as parameter if present
+    let finalCallbackUrl = callbackUrl;
+    if (previewUrl) {
+      // Encode preview URL in the callback URL so it travels with the OAuth flow
+      const callbackParams = new URLSearchParams();
+      callbackParams.set('previewUrl', previewUrl);
+      finalCallbackUrl = `${callbackUrl}?${callbackParams.toString()}`;
+      console.log("🔍 AUTH FLOW: Encoding preview URL in callback:", finalCallbackUrl);
+    }
+    
+    // Add iOS flags if needed
     if (finalIsIosApp) {
       stateData.platform = 'ios';
       stateData.redirect = 'health.revly://auth';
       
-      // For direct auth, we need to ensure it's tagged specially
       if (isDirectIosAuth) {
         stateData.directIosAuth = true;
       }
       
-      console.log("Adding iOS platform to state", stateData);
+      console.log("🔍 AUTH FLOW: Added iOS platform to state", stateData);
     }
+    
+    console.log("🔍 AUTH FLOW: Final state data:", stateData);
     
     // Regular sign in for production or iOS
     signIn('google', { 
-      // Always use a web URL for NextAuth compatibility
-      callbackUrl: finalIsIosApp ? '/auth/mobile-callback' : callbackUrl,
-      state: Object.keys(stateData).length > 0 ? JSON.stringify(stateData) : undefined 
+      callbackUrl: finalIsIosApp ? '/auth/mobile-callback' : finalCallbackUrl,
+      ...(Object.keys(stateData).length > 0 && { state: JSON.stringify(stateData) })
     });
   };
 
