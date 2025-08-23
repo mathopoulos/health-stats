@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   useDietProtocol,
   useWorkoutProtocols,
@@ -8,6 +8,20 @@ import {
   useExperiments,
   useProtocolModals,
 } from '../hooks';
+import {
+  AddSupplementProtocolModal,
+  EditSupplementProtocolModal,
+  AddWorkoutProtocolModal,
+  AddExperimentModal,
+  EditExperimentModal,
+} from './modals';
+
+type SupplementProtocol = {
+  type: string;
+  frequency: string;
+  dosage: string;
+  unit: string;
+};
 
 interface ProtocolsTabProps {
   // Initial values from preloaded data for smooth tab switching
@@ -21,6 +35,9 @@ export default function ProtocolsTab({
   initialWorkoutProtocols = [],
   initialSupplementProtocols = [],
 }: ProtocolsTabProps) {
+  // State for tracking which supplement is being edited
+  const [editingSupplement, setEditingSupplement] = useState<SupplementProtocol | null>(null);
+  
   // Initialize hooks with preloaded data
   const dietProtocol = useDietProtocol(initialDiet);
   const workoutProtocols = useWorkoutProtocols(initialWorkoutProtocols);
@@ -186,7 +203,7 @@ export default function ProtocolsTab({
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => {
-                        // TODO: Implement proper supplement editing state management
+                        setEditingSupplement(supplement);
                         protocolModals.openModal('edit-supplement');
                       }}
                       disabled={supplementProtocols.isSavingSupplementProtocol}
@@ -274,7 +291,10 @@ export default function ProtocolsTab({
                   </div>
                   <div className="flex items-center space-x-2 ml-4">
                     <button
-                      onClick={() => experiments.handleEditExperiment(experiment)}
+                      onClick={() => {
+                        experiments.handleEditExperiment(experiment);
+                        protocolModals.openModal('edit-experiment');
+                      }}
                       className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -315,6 +335,46 @@ export default function ProtocolsTab({
         )}
 
       </div>
+
+      {/* Protocol Modals */}
+      <AddSupplementProtocolModal
+        isOpen={protocolModals.isAddSupplementProtocolModalOpen}
+        onClose={() => protocolModals.closeModal('add-supplement')}
+        onSave={supplementProtocols.handleSaveSupplementProtocols}
+      />
+
+      <EditSupplementProtocolModal
+        isOpen={protocolModals.isEditSupplementProtocolModalOpen}
+        onClose={() => {
+          setEditingSupplement(null);
+          protocolModals.closeModal('edit-supplement');
+        }}
+        supplement={editingSupplement}
+        onUpdate={supplementProtocols.updateSupplementProtocol}
+        isSaving={supplementProtocols.isSavingSupplementProtocol}
+      />
+
+      <AddWorkoutProtocolModal
+        isOpen={protocolModals.isAddWorkoutProtocolModalOpen}
+        onClose={() => protocolModals.closeModal('add-workout')}
+        onSave={workoutProtocols.handleSaveWorkoutProtocols}
+      />
+
+      <AddExperimentModal
+        isOpen={protocolModals.isAddExperimentModalOpen}
+        onClose={() => protocolModals.closeModal('add-experiment')}
+        onSave={experiments.handleSaveExperiment}
+      />
+
+      <EditExperimentModal
+        isOpen={protocolModals.isEditExperimentModalOpen}
+        onClose={() => {
+          experiments.setEditingExperiment(null);
+          protocolModals.closeModal('edit-experiment');
+        }}
+        experiment={experiments.editingExperiment}
+        onSave={experiments.handleUpdateExperiment}
+      />
     </div>
   );
 }
