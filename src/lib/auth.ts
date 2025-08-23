@@ -16,33 +16,7 @@ const usersWithValidatedInviteCodes = new Set<string>();
 // In a real app, this would be stored in a database
 const paidUsers = new Set<string>();
 
-// Temporary preview URL cache for OAuth flow
-// In a real app, this would be stored in Redis or a database
-const previewUrlCache = new Map<string, string>();
-
-// Helper functions to manage preview URL cache
-export function storePreviewUrl(key: string, previewUrl: string) {
-  previewUrlCache.set(key, previewUrl);
-  console.log(`🔍 CACHE: Stored preview URL for key ${key}:`, previewUrl);
-  
-  // Clean up old entries (keep only last 50 for memory management)
-  if (previewUrlCache.size > 50) {
-    const firstKey = previewUrlCache.keys().next().value;
-    if (firstKey) {
-      previewUrlCache.delete(firstKey);
-    }
-  }
-}
-
-export function getPreviewUrl(key: string): string | null {
-  const previewUrl = previewUrlCache.get(key);
-  if (previewUrl) {
-    previewUrlCache.delete(key); // Clean up after retrieval
-    console.log(`🔍 CACHE: Retrieved and removed preview URL for key ${key}:`, previewUrl);
-    return previewUrl;
-  }
-  return null;
-}
+// Removed preview URL cache - no longer needed for simplified staging workflow
 
 // Temporary solution for development - mark some test accounts as paid
 if (process.env.NODE_ENV === 'development') {
@@ -70,29 +44,17 @@ export function getProductionUrl(): string {
 }
 
 // Get the appropriate URL for the current environment
-// Uses preview URL if in preview, production URL otherwise
-function getCurrentEnvironmentUrl(baseUrl: string): string {
-  console.log("🔍 getCurrentEnvironmentUrl called with baseUrl:", baseUrl);
-  console.log("NEXTAUTH_URL env:", process.env.NEXTAUTH_URL);
-  console.log("VERCEL_URL env:", process.env.VERCEL_URL);
-  console.log("VERCEL_ENV env:", process.env.VERCEL_ENV);
-  
-  // Production environment - use NEXTAUTH_URL
-  if (process.env.VERCEL_ENV === 'production' && process.env.NEXTAUTH_URL) {
-    console.log("✅ Using NEXTAUTH_URL (production):", process.env.NEXTAUTH_URL);
+// Simplified for staging workflow: production, staging, or development
+function getCurrentEnvironmentUrl(): string {
+  // Always use NEXTAUTH_URL if set (handles production, staging, and development)
+  if (process.env.NEXTAUTH_URL) {
+    console.log("✅ Using NEXTAUTH_URL:", process.env.NEXTAUTH_URL);
     return process.env.NEXTAUTH_URL;
   }
   
-  // Preview deployments - use VERCEL_URL if available, otherwise baseUrl
-  if (process.env.VERCEL_ENV === 'preview' || (baseUrl && baseUrl.includes('vercel.app'))) {
-    const previewUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : baseUrl;
-    console.log('✅ Using preview deployment URL:', previewUrl);
-    return previewUrl;
-  }
-  
-  // Development or fallback
-  const fallback = process.env.NEXTAUTH_URL || baseUrl || 'http://localhost:3000';
-  console.log('✅ Using fallback URL:', fallback);
+  // Fallback for development
+  const fallback = 'http://localhost:3000';
+  console.log('✅ Using development fallback:', fallback);
   return fallback;
 }
 
@@ -256,12 +218,6 @@ export const authOptions: NextAuthOptions = {
         if (token.isIosApp) {
           (session as any).isIosApp = true;
         }
-        
-        // Pass the preview URL to the session if present
-        if (token.previewUrl) {
-          (session as any).previewUrl = token.previewUrl;
-          console.log("Session callback - passed preview URL to session:", token.previewUrl);
-        }
       }
       return session;
     },
@@ -270,24 +226,11 @@ export const authOptions: NextAuthOptions = {
       if (account) {
         token.accessToken = account.access_token;
         
-        // Check for preview URL or iOS authentication in state
+        // Check for iOS authentication in state (simplified)
         try {
           if (account.state) {
             const stateData = JSON.parse(account.state as string);
             console.log("JWT callback - parsed state data:", stateData);
-            
-            // Store preview URL in cache for redirect callback
-            if (stateData.previewUrl && user?.email) {
-              token.previewUrl = stateData.previewUrl;
-              previewUrlCache.set(user.email, stateData.previewUrl);
-              console.log("JWT callback - stored preview URL in cache for user:", user.email, "->", stateData.previewUrl);
-              
-              // Clean up cache after 5 minutes
-              setTimeout(() => {
-                previewUrlCache.delete(user.email!);
-                console.log("JWT callback - cleaned up preview URL cache for user:", user.email);
-              }, 5 * 60 * 1000);
-            }
             
             // Set iOS flag if we have a verified token or legacy indicators
             if ((stateData.iosToken && verifyIosToken(stateData.iosToken)) || 
@@ -315,260 +258,80 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async redirect({ url, baseUrl }) {
-      console.log("=== NextAuth Redirect Debug ===");
+      console.log("=== NextAuth Redirect (Simplified) ===");
       console.log("Redirect URL:", url);
       console.log("Base URL:", baseUrl);
       console.log("NEXTAUTH_URL env:", process.env.NEXTAUTH_URL);
-      console.log("VERCEL_URL env:", process.env.VERCEL_URL);
-      console.log("USE_OAUTH_PROXY env:", process.env.USE_OAUTH_PROXY);
-      console.log("OAUTH_PROXY_URL env:", process.env.OAUTH_PROXY_URL);
       
-      // Check for preview URL parameter in the callback URL
-      console.log("Redirect callback - checking for previewUrl parameter in URL:", url);
-      
-      try {
-        // Handle relative URLs by making them absolute
-        const absoluteUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
-        const urlObj = new URL(absoluteUrl);
-        const previewUrlParam = urlObj.searchParams.get('previewUrl');
-        
-        if (previewUrlParam) {
-          console.log("🔍 CALLBACK: Found previewUrl parameter:", previewUrlParam);
-          
-          // Validate that it's a vercel.app URL
-          try {
-            const previewUrlObj = new URL(previewUrlParam);
-            if (previewUrlObj.hostname.endsWith('vercel.app')) {
-              console.log("✅ REDIRECT DECISION: Valid preview URL from callback parameter");
-              console.log("✅ FINAL REDIRECT:", previewUrlParam);
-              return previewUrlParam;
-            } else {
-              console.log("⚠️ Invalid preview URL domain:", previewUrlObj.hostname);
-            }
-          } catch (e) {
-            console.log("⚠️ Invalid preview URL format:", previewUrlParam, e);
-          }
-        }
-      } catch (e) {
-        console.log("Could not parse callback URL for previewUrl parameter:", e);
-      }
-      
-      // Fallback: Check cache for preview URL (legacy support)
-      console.log("Redirect callback - checking preview URL cache as fallback:", Array.from(previewUrlCache.entries()));
-      
-      for (const key of previewUrlCache.keys()) {
-        const previewUrl = previewUrlCache.get(key);
-        if (previewUrl) {
-          try {
-            const previewUrlObj = new URL(previewUrl);
-            if (previewUrlObj.hostname.endsWith('vercel.app')) {
-              console.log("✅ REDIRECT DECISION: Found preview URL in cache for key:", key);
-              console.log("✅ FINAL REDIRECT:", previewUrl);
-              // Clean up cache
-              previewUrlCache.clear();
-              return previewUrl;
-            }
-          } catch (e) {
-            console.log("Invalid preview URL found for key:", key, e);
-          }
-        }
-      }
-      
-      // Log all URL components for detailed analysis
-      try {
-        // Handle relative URLs by making them absolute
-        const absoluteUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
-        const urlObj = new URL(absoluteUrl);
-        console.log("URL pathname:", urlObj.pathname);
-        console.log("URL search params:", Object.fromEntries(urlObj.searchParams.entries()));
-        console.log("URL hash:", urlObj.hash);
-      } catch (e) {
-        console.log("Could not parse URL:", e);
-      }
-      
-      // Check if we're being redirected back to a preview deployment
-      // This happens when using the OAuth proxy for preview deployments
-      if (url.includes('vercel.app') && !url.includes('www.revly.health')) {
-        console.log("✅ REDIRECT DECISION: Preview deployment redirect detected, using preview URL");
-        console.log("✅ FINAL REDIRECT:", url);
-        return url;
-      }
-      
-      // Get URLs for different scenarios
-      const productionUrl = process.env.NEXTAUTH_URL || baseUrl;
-      const currentEnvUrl = getCurrentEnvironmentUrl(baseUrl);
-      console.log("productionUrl:", productionUrl);
-      console.log("currentEnvUrl:", currentEnvUrl);
+      const currentEnvUrl = getCurrentEnvironmentUrl();
+      console.log("Current environment URL:", currentEnvUrl);
       
       // Direct iOS app URL scheme redirect - highest priority
       if (url.startsWith('health.revly://')) {
-        console.log("✅ REDIRECT DECISION: iOS auth: Direct iOS scheme URL, returning as is");
-        console.log("✅ FINAL REDIRECT:", url);
+        console.log("✅ iOS app redirect detected");
         return url;
       }
       
-      // Handle Google auth callback
-      if (url.includes('/api/auth/callback/google')) {
-        console.log("🔍 PROCESSING: Google auth callback detected");
-        
-        // Check state parameter for preview URL
+      // Handle iOS authentication flows
+      if (url.includes('state=')) {
         try {
-          // Handle relative URLs by making them absolute
-          const absoluteUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
-          const urlObj = new URL(absoluteUrl);
+          const urlObj = new URL(url.startsWith('http') ? url : `${baseUrl}${url}`);
           const state = urlObj.searchParams.get('state');
-          console.log("State parameter from Google callback:", state);
           
           if (state) {
-            let stateData: any;
-            try {
-              stateData = JSON.parse(state);
-              console.log("Parsed state data:", stateData);
-            } catch (e) {
-              console.log("Could not parse state as JSON:", e);
-            }
-            
-            // Check for preview URL in state
-            if (stateData?.previewUrl) {
-              try {
-                const previewUrlObj = new URL(stateData.previewUrl);
-                // Enhanced security: validate preview URL domain
-                const allowedPreviewDomains = [
-                  'vercel.app',
-                  'revly.health' // Allow main domain redirects too
-                ];
-                
-                const isValidPreviewDomain = allowedPreviewDomains.some(domain => 
-                  previewUrlObj.hostname.endsWith(domain)
-                );
-                
-                if (isValidPreviewDomain) {
-                  console.log('✅ REDIRECT DECISION: Valid preview URL found in state:', stateData.previewUrl);
-                  console.log("✅ FINAL REDIRECT:", stateData.previewUrl);
-                  return stateData.previewUrl;
-                }
-                console.log('⚠️ Invalid preview domain:', previewUrlObj.hostname);
-              } catch (e) {
-                console.log("Invalid preview URL in state:", e);
-              }
-            }
+            const stateData = JSON.parse(state);
             
             // Check if this is iOS auth
             if ((stateData?.iosToken && verifyIosToken(stateData.iosToken)) || 
                 stateData?.platform === 'ios' || 
                 stateData?.iosBypass === true) {
               
-              console.log("✅ REDIRECT DECISION: iOS auth detected, redirecting to mobile-callback");
-              console.log("✅ FINAL REDIRECT:", `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}`);
-              return `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}`;
+              if (url.includes('/auth/checkout') || url.includes('error=')) {
+                console.log("✅ iOS auth: Redirecting to mobile callback");
+                return `${currentEnvUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}&iosRedirect=true`;
+              }
+              
+              if (url.includes('/api/auth/callback/google')) {
+                console.log("✅ iOS auth: Google callback to mobile callback");
+                return `${currentEnvUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}`;
+              }
             }
           }
         } catch (e) {
-          console.error('Error parsing state in Google callback:', e);
+          console.log('Could not parse state:', e);
         }
-        
-        // Default to production upload page
-        console.log('✅ REDIRECT DECISION: Default Google callback to production upload');
-        console.log("✅ FINAL REDIRECT:", `${productionUrl}/upload`);
-        return `${productionUrl}/upload`;
       }
       
       // Mobile callback page
       if (url.includes('/auth/mobile-callback')) {
-        console.log("iOS auth: Found mobile callback URL");
+        console.log("✅ iOS mobile callback");
         return url;
       }
       
-      // Prevent iOS users from being sent to payment/checkout
-      if ((url.includes('/auth/checkout') || url.includes('error=')) && url.includes('state=')) {
-        try {
-          const urlObj = new URL(url);
-          const state = urlObj.searchParams.get('state');
-          
-          if (state) {
-            const stateData = JSON.parse(state);
-            
-            // Check if this is iOS auth
-            if ((stateData.iosToken && verifyIosToken(stateData.iosToken)) || 
-                stateData.platform === 'ios' || 
-                stateData.iosBypass === true) {
-              
-              console.log("iOS auth: Intercepted payment redirect for iOS user, sending to mobile-callback");
-              return `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}&iosRedirect=true`;
-            }
-          }
-        } catch (e) {
-          console.error('Error checking state in error redirect:', e);
-        }
-      }
-      
-      // Handle other auth callbacks (non-Google)
-      if (url.includes('auth/callback') || url.includes('api/auth/callback')) {
-        console.log("🔍 PROCESSING: General auth callback detected");
-        
-        // Try to extract state for iOS apps
-        try {
-          const urlObj = new URL(url);
-          const state = urlObj.searchParams.get('state');
-          
-          if (state) {
-            const stateData = JSON.parse(state);
-            if (stateData.platform === 'ios') {
-              console.log("✅ REDIRECT DECISION: iOS callback, redirecting to app scheme");
-              console.log("✅ FINAL REDIRECT:", `health.revly://auth?token=${stateData.token || ''}`);
-              return `health.revly://auth?token=${stateData.token || ''}`;
-            }
-          }
-        } catch (e) {
-          console.log('Could not parse state in general callback:', e);
-        }
-        
-        // Default web callback - use production for consistency
-        console.log("✅ REDIRECT DECISION: Default web callback to production upload");
-        console.log("✅ FINAL REDIRECT:", `${productionUrl}/upload`);
-        return `${productionUrl}/upload`;
-      }
-      
-      // For development, bypass invite page redirect for errors
-      if (process.env.NODE_ENV !== 'production' && (url.includes('error=Callback') || url.includes('error=AccessDenied'))) {
-        console.log('Auth error in development mode, still redirecting to upload page:', url);
-        return `${baseUrl}/upload`;
-      }
-      
-      // In production: If auth failed due to missing invite code or payment, redirect to checkout page
+      // Auth error handling
       if (url.includes('error=Callback') || url.includes('error=AccessDenied')) {
-        return `${productionUrl}/auth/checkout`;
-      }
-      
-      // If the URL is explicitly set to /upload, honor that
-      if (url.includes('/upload')) {
-        if (url.startsWith('http')) {
-          console.log("✅ REDIRECT DECISION: Absolute upload URL detected:", url);
-          console.log("✅ FINAL REDIRECT:", url);
-          return url;
-        } else {
-          // Handle relative URL, avoid double slashes
-          const cleanUrl = `${currentEnvUrl.replace(/\/$/, '')}/${url.replace(/^\//, '')}`;
-          console.log("✅ REDIRECT DECISION: Relative upload URL detected, using current environment:", cleanUrl);
-          console.log("✅ FINAL REDIRECT:", cleanUrl);
-          return cleanUrl;
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Development auth error, redirecting to upload');
+          return `${currentEnvUrl}/upload`;
         }
+        console.log('✅ Production auth error, redirecting to checkout');
+        return `${currentEnvUrl}/auth/checkout`;
       }
       
-      // For all successful auth callbacks, direct to upload page
-      if (url.includes('auth/callback')) {
-        console.log("Auth callback detected, redirecting to:", `${currentEnvUrl}/upload`);
+      // Successful auth - redirect to upload page
+      if (url.includes('auth/callback') || url.includes('api/auth/callback') || url.includes('/upload')) {
+        console.log("✅ Successful auth, redirecting to upload page");
         return `${currentEnvUrl}/upload`;
       }
       
-      // If the URL starts with baseUrl or productionUrl, go to the requested URL
-      if (url.startsWith(baseUrl) || url.startsWith(productionUrl)) {
+      // If URL is for the same domain, use it
+      if (url.startsWith(currentEnvUrl) || url.startsWith(baseUrl)) {
+        console.log("✅ Same domain redirect");
         return url;
       }
       
-      // Default fallback - go to upload page using current environment
-      console.log("✅ REDIRECT DECISION: Default fallback, redirecting to:", `${currentEnvUrl}/upload`);
-      console.log("✅ FINAL REDIRECT:", `${currentEnvUrl}/upload`);
+      // Default fallback - go to upload page
+      console.log("✅ Default fallback to upload page");
       return `${currentEnvUrl}/upload`;
     }
   },
