@@ -147,5 +147,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/upload/:path*", "/api/:path*", "/auth/:path*", "/dashboard/:path*", "/admin/:path*"],
+  // Include root path so normalization also runs on the landing page
+  matcher: ["/", "/upload/:path*", "/api/:path*", "/auth/:path*", "/dashboard/:path*", "/admin/:path*"],
 }; 
