@@ -3,5 +3,11 @@
     "src/app/api/process/route.ts": {
       "maxDuration": 60
     }
+  },
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "staging": true
+    }
   }
 } 

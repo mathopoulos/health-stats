@@ -1,10 +1,10 @@
-name: Simple E2E Tests
+name: Quality Checks
 
 on:
   push:
-    branches: [ main, develop, feature/* ]
+    branches: [ 'feature/*', 'fix/*', 'chore/*' ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, staging ]
 
 jobs:
   # Linting and Type Checking

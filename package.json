@@ -35,7 +35,10 @@
     "test:e2e:theme-simple": "playwright test theme-toggle-simple.spec.ts",
     "test:e2e:report": "playwright show-report",
     "test:e2e:clean": "rm -rf test-results/ playwright-report/",
-    "test:e2e:clean-all": "rm -rf test-results/ playwright-report/ node_modules/.cache/playwright/"
+    "test:e2e:clean-all": "rm -rf test-results/ playwright-report/ node_modules/.cache/playwright/",
+    "deploy:staging": "gh workflow run deploy-staging.yml --ref $(git branch --show-current)",
+    "deploy:staging:branch": "gh workflow run deploy-staging.yml --ref",
+    "deploy:staging:current": "gh workflow run deploy-staging.yml --ref $(git branch --show-current)"
   },
   "lint-staged": {
     "src/**/*.{js,jsx,ts,tsx}": [
