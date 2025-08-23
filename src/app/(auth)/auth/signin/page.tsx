@@ -92,17 +92,23 @@ export default function SignIn() {
     
     if (isPreview && !finalIsIosApp) {
       // For preview deployments, redirect through OAuth proxy
-      console.log("Preview deployment detected, using OAuth proxy");
+      console.log("🔍 OAUTH FLOW START: Preview deployment detected, using OAuth proxy");
       const currentUrl = window.location.origin;
-      let proxyUrl = `/api/auth/proxy?provider=google&return_url=${encodeURIComponent(currentUrl)}`;
+      console.log("🔍 OAUTH FLOW: Current preview URL:", currentUrl);
+      console.log("🔍 OAUTH FLOW: Callback URL from search params:", callbackUrl);
+      
+      let proxyUrl = `/api/auth/proxy?provider=google&return_url=${encodeURIComponent(currentUrl + callbackUrl)}`;
+      console.log("🔍 OAUTH FLOW: Constructed proxy URL:", proxyUrl);
       
       // Preserve any state data by adding it to the proxy URL
       if (validatedEmail) {
         const stateData = { email: validatedEmail };
         const encodedState = encodeURIComponent(JSON.stringify(stateData));
         proxyUrl += `&state=${encodedState}`;
+        console.log("🔍 OAUTH FLOW: Added state data:", stateData);
       }
       
+      console.log("🔍 OAUTH FLOW: Final redirect to proxy:", proxyUrl);
       window.location.href = proxyUrl;
       return;
     }

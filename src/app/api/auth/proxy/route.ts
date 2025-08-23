@@ -13,14 +13,23 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 
 export async function GET(request: NextRequest) {
+  console.log("🔍 OAUTH PROXY: Received OAuth proxy request");
+  
   const url = request.nextUrl;
   const searchParams = url.searchParams;
+  
+  console.log("🔍 OAUTH PROXY: Full request URL:", url.toString());
+  console.log("🔍 OAUTH PROXY: All search params:", Object.fromEntries(searchParams.entries()));
   
   // Get the original URL that initiated the OAuth request
   const returnUrl = searchParams.get('return_url');
   const provider = searchParams.get('provider') || 'google';
   
+  console.log("🔍 OAUTH PROXY: Return URL:", returnUrl);
+  console.log("🔍 OAUTH PROXY: Provider:", provider);
+  
   if (!returnUrl) {
+    console.log("❌ OAUTH PROXY: Missing return_url parameter");
     return NextResponse.json(
       { error: 'return_url parameter is required' }, 
       { status: 400 }
@@ -58,7 +67,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log(`OAuth Proxy: Redirecting ${returnUrl} to production OAuth: ${oauthUrl.toString()}`);
+    console.log("🔍 OAUTH PROXY: Production URL:", productionUrl);
+    console.log("🔍 OAUTH PROXY: Constructed OAuth URL:", oauthUrl.toString());
+    console.log(`🔍 OAUTH PROXY: Final redirect - from ${returnUrl} to ${oauthUrl.toString()}`);
     
     // Redirect to production OAuth
     return NextResponse.redirect(oauthUrl.toString());
