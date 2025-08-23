@@ -26,6 +26,22 @@ const PROTECTED_API_ROUTES = [
 ];
 
 export async function middleware(request: NextRequest) {
+  // Normalize NextAuth callback cookie if it is missing a protocol (e.g., "staging.revly.health/upload").
+  // Be defensive: in unit tests or certain runtimes, request.cookies may be undefined or not implement .get
+  try {
+    const cookieGetter = (request as any).cookies?.get as undefined | ((name: string) => { value?: string } | undefined);
+    const callbackCookie = typeof cookieGetter === 'function' ? cookieGetter("next-auth.callback-url") : undefined;
+    const callbackValue = callbackCookie?.value;
+    if (callbackValue && !callbackValue.startsWith("http")) {
+      const normalized = `https://${callbackValue.replace(/^\/*/, "")}`;
+      const res = NextResponse.next();
+      res.cookies.set("next-auth.callback-url", normalized, { path: "/", sameSite: "lax", httpOnly: true, secure: true });
+      return res;
+    }
+  } catch {
+    // If anything goes wrong reading cookies, proceed without normalization
+  }
+
   // Comment out or remove console logs to reduce noise
   // console.log('=== Middleware Start ===');
   // console.log('Request path:', request.nextUrl.pathname);
