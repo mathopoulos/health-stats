@@ -92,17 +92,30 @@ export default function SignIn() {
     
     console.log("🔍 AUTH FLOW: Environment detected", { isPreview, finalIsIosApp });
     
-    // State data with environment and user info
+    // For preview deployments, redirect to production OAuth with state
+    if (isPreview && !finalIsIosApp) {
+      const previewUrl = window.location.origin + callbackUrl;
+      console.log("🔍 AUTH FLOW: Preview detected, redirecting to production OAuth");
+      console.log("🔍 AUTH FLOW: Preview URL to preserve:", previewUrl);
+      
+      // Build state data for preview
+      const stateData: any = { previewUrl };
+      if (validatedEmail) {
+        stateData.email = validatedEmail;
+      }
+      
+      // Redirect to production OAuth with state containing preview URL
+      const productionOAuthUrl = `https://www.revly.health/api/auth/signin/google?callbackUrl=${encodeURIComponent('/upload')}&state=${encodeURIComponent(JSON.stringify(stateData))}`;
+      console.log("🔍 AUTH FLOW: Redirecting to production OAuth:", productionOAuthUrl);
+      window.location.href = productionOAuthUrl;
+      return;
+    }
+    
+    // State data for production/iOS flows
     const stateData: any = {};
     
     if (validatedEmail) {
       stateData.email = validatedEmail;
-    }
-    
-    // Add preview environment info to state
-    if (isPreview && !finalIsIosApp) {
-      stateData.previewUrl = window.location.origin + callbackUrl;
-      console.log("🔍 AUTH FLOW: Added preview URL to state:", stateData.previewUrl);
     }
     
     // Add iOS flags if needed
@@ -121,9 +134,8 @@ export default function SignIn() {
     
     // Regular sign in for production or iOS
     signIn('google', { 
-      // Always use a web URL for NextAuth compatibility
       callbackUrl: finalIsIosApp ? '/auth/mobile-callback' : callbackUrl,
-      state: Object.keys(stateData).length > 0 ? JSON.stringify(stateData) : undefined 
+      ...(Object.keys(stateData).length > 0 && { state: JSON.stringify(stateData) })
     });
   };
 
