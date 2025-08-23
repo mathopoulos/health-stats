@@ -11,6 +11,7 @@ export default function SignIn() {
   const [validatedEmail, setValidatedEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [comingFromPayment, setComingFromPayment] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -20,6 +21,13 @@ export default function SignIn() {
     const inviteRequiredParam = searchParams?.get('invite_required');
     const inviteCodeValidated = sessionStorage.getItem('inviteCodeValidated') === 'true';
     const validatedEmailFromSession = sessionStorage.getItem('validatedEmail');
+    
+    // Check for preview URL from query parameters (when redirected from preview deployment)
+    const previewUrlParam = searchParams?.get('previewUrl');
+    if (previewUrlParam) {
+      setPreviewUrl(previewUrlParam);
+      console.log("🔍 AUTH FLOW: Preview URL from query params:", previewUrlParam);
+    }
     
     // Check if user is coming from iOS app - Direct flag takes precedence
     const isIosApp = searchParams?.get('platform') === 'ios';
@@ -92,22 +100,16 @@ export default function SignIn() {
     
     console.log("🔍 AUTH FLOW: Environment detected", { isPreview, finalIsIosApp });
     
-    // For preview deployments, redirect to production OAuth with state
+    // For preview deployments, redirect to production signin with state
     if (isPreview && !finalIsIosApp) {
       const previewUrl = window.location.origin + callbackUrl;
-      console.log("🔍 AUTH FLOW: Preview detected, redirecting to production OAuth");
+      console.log("🔍 AUTH FLOW: Preview detected, redirecting to production signin");
       console.log("🔍 AUTH FLOW: Preview URL to preserve:", previewUrl);
       
-      // Build state data for preview
-      const stateData: any = { previewUrl };
-      if (validatedEmail) {
-        stateData.email = validatedEmail;
-      }
-      
-      // Redirect to production OAuth with state containing preview URL
-      const productionOAuthUrl = `https://www.revly.health/api/auth/signin/google?callbackUrl=${encodeURIComponent('/upload')}&state=${encodeURIComponent(JSON.stringify(stateData))}`;
-      console.log("🔍 AUTH FLOW: Redirecting to production OAuth:", productionOAuthUrl);
-      window.location.href = productionOAuthUrl;
+      // Redirect to production signin page with previewUrl as query parameter
+      const productionSigninUrl = `https://www.revly.health/auth/signin?callbackUrl=${encodeURIComponent('/upload')}&previewUrl=${encodeURIComponent(previewUrl)}`;
+      console.log("🔍 AUTH FLOW: Redirecting to production signin:", productionSigninUrl);
+      window.location.href = productionSigninUrl;
       return;
     }
     
@@ -116,6 +118,12 @@ export default function SignIn() {
     
     if (validatedEmail) {
       stateData.email = validatedEmail;
+    }
+    
+    // Add preview URL to state if present (for redirecting back after OAuth)
+    if (previewUrl) {
+      stateData.previewUrl = previewUrl;
+      console.log("🔍 AUTH FLOW: Added preview URL to OAuth state:", previewUrl);
     }
     
     // Add iOS flags if needed
