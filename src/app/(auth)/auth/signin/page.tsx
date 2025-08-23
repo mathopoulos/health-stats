@@ -120,24 +120,14 @@ export default function SignIn() {
       stateData.email = validatedEmail;
     }
     
-    // Store preview URL in cache if present (for redirecting back after OAuth)
+    // Determine callback URL - include preview URL as parameter if present
+    let finalCallbackUrl = callbackUrl;
     if (previewUrl) {
-      // Use a simple timestamp-based key
-      const cacheKey = `preview_${Date.now()}`;
-      console.log("🔍 AUTH FLOW: Storing preview URL in cache with key:", cacheKey);
-      
-      // Store preview URL synchronously before starting OAuth
-      try {
-        await fetch('/api/auth/store-preview-url', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ key: cacheKey, previewUrl })
-        });
-        console.log("🔍 AUTH FLOW: Preview URL stored successfully");
-      } catch (err) {
-        console.error('Failed to store preview URL:', err);
-        // Continue with OAuth even if storage fails
-      }
+      // Encode preview URL in the callback URL so it travels with the OAuth flow
+      const callbackParams = new URLSearchParams();
+      callbackParams.set('previewUrl', previewUrl);
+      finalCallbackUrl = `${callbackUrl}?${callbackParams.toString()}`;
+      console.log("🔍 AUTH FLOW: Encoding preview URL in callback:", finalCallbackUrl);
     }
     
     // Add iOS flags if needed
@@ -156,7 +146,7 @@ export default function SignIn() {
     
     // Regular sign in for production or iOS
     signIn('google', { 
-      callbackUrl: finalIsIosApp ? '/auth/mobile-callback' : callbackUrl,
+      callbackUrl: finalIsIosApp ? '/auth/mobile-callback' : finalCallbackUrl,
       ...(Object.keys(stateData).length > 0 && { state: JSON.stringify(stateData) })
     });
   };
