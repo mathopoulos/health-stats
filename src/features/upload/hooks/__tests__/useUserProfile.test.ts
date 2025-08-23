@@ -178,6 +178,28 @@ describe('useUserProfile', () => {
     });
   });
 
+  describe('utility functions', () => {
+    it('handles fetchWithRetry success', async () => {
+      // Mock a successful API call that returns proper data structure
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          user: { name: 'Test User', profileImage: 'test.jpg' }
+        })
+      });
+
+      const { result } = renderHook(() => useUserProfile());
+      
+      // Wait for the effect to trigger the fetchWithRetry function
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+
+      expect(global.fetch).toHaveBeenCalled();
+    });
+  });
+
   describe('data parsing', () => {
     it('handles basic data parsing flow', async () => {
       // Simple test to ensure the hook processes data correctly
