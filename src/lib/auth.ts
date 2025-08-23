@@ -323,43 +323,53 @@ export const authOptions: NextAuthOptions = {
       console.log("USE_OAUTH_PROXY env:", process.env.USE_OAUTH_PROXY);
       console.log("OAUTH_PROXY_URL env:", process.env.OAUTH_PROXY_URL);
       
-      // Check cache for preview URL (try all cached entries for recent OAuth flows)
-      console.log("Redirect callback - checking preview URL cache:", Array.from(previewUrlCache.entries()));
+      // Check for preview URL parameter in the callback URL
+      console.log("Redirect callback - checking for previewUrl parameter in URL:", url);
       
-      // Try to find preview URLs in cache
-      // Check all existing keys first (most efficient)
+      try {
+        // Handle relative URLs by making them absolute
+        const absoluteUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
+        const urlObj = new URL(absoluteUrl);
+        const previewUrlParam = urlObj.searchParams.get('previewUrl');
+        
+        if (previewUrlParam) {
+          console.log("🔍 CALLBACK: Found previewUrl parameter:", previewUrlParam);
+          
+          // Validate that it's a vercel.app URL
+          try {
+            const previewUrlObj = new URL(previewUrlParam);
+            if (previewUrlObj.hostname.endsWith('vercel.app')) {
+              console.log("✅ REDIRECT DECISION: Valid preview URL from callback parameter");
+              console.log("✅ FINAL REDIRECT:", previewUrlParam);
+              return previewUrlParam;
+            } else {
+              console.log("⚠️ Invalid preview URL domain:", previewUrlObj.hostname);
+            }
+          } catch (e) {
+            console.log("⚠️ Invalid preview URL format:", previewUrlParam, e);
+          }
+        }
+      } catch (e) {
+        console.log("Could not parse callback URL for previewUrl parameter:", e);
+      }
+      
+      // Fallback: Check cache for preview URL (legacy support)
+      console.log("Redirect callback - checking preview URL cache as fallback:", Array.from(previewUrlCache.entries()));
+      
       for (const key of previewUrlCache.keys()) {
-        const previewUrl = getPreviewUrl(key);
+        const previewUrl = previewUrlCache.get(key);
         if (previewUrl) {
           try {
             const previewUrlObj = new URL(previewUrl);
             if (previewUrlObj.hostname.endsWith('vercel.app')) {
               console.log("✅ REDIRECT DECISION: Found preview URL in cache for key:", key);
               console.log("✅ FINAL REDIRECT:", previewUrl);
+              // Clean up cache
+              previewUrlCache.clear();
               return previewUrl;
             }
           } catch (e) {
-            console.log("Invalid preview URL found:", e);
-          }
-        }
-      }
-      
-      // Fallback: Try recent timestamp-based keys (last 30 seconds)
-      const now = Date.now();
-      for (let i = 0; i < 30; i++) { // 30 seconds should be enough
-        const timestamp = now - (i * 1000);
-        const key = `preview_${timestamp}`;
-        const previewUrl = getPreviewUrl(key);
-        if (previewUrl) {
-          try {
-            const previewUrlObj = new URL(previewUrl);
-            if (previewUrlObj.hostname.endsWith('vercel.app')) {
-              console.log("✅ REDIRECT DECISION: Found preview URL with timestamp key:", key);
-              console.log("✅ FINAL REDIRECT:", previewUrl);
-              return previewUrl;
-            }
-          } catch (e) {
-            console.log("Invalid timestamp preview URL found:", e);
+            console.log("Invalid preview URL found for key:", key, e);
           }
         }
       }
