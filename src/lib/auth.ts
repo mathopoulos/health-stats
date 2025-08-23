@@ -104,6 +104,8 @@ function verifyIosToken(token: string): boolean {
 }
 
 export const authOptions: NextAuthOptions = {
+  // Force NextAuth to use NEXTAUTH_URL for all URL construction
+  trustHost: true,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
