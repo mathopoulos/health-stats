@@ -92,8 +92,9 @@ function verifyIosToken(token: string): boolean {
 
 // Force NextAuth to use HTTPS and proper URL construction
 const getBaseUrl = () => {
-  // Use NEXTAUTH_URL if available (production and staging)
+  // ALWAYS use NEXTAUTH_URL if available (ignore VERCEL_URL completely)
   if (process.env.NEXTAUTH_URL) {
+    console.log('✅ Using NEXTAUTH_URL for base URL:', process.env.NEXTAUTH_URL);
     return process.env.NEXTAUTH_URL;
   }
   
@@ -107,6 +108,8 @@ const getBaseUrl = () => {
 };
 
 export const authOptions: NextAuthOptions = {
+  // Force NextAuth to use our configured base URL
+  basePath: '/api/auth',
   // Ensure secure cookies in production and staging
   useSecureCookies: process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.includes('https'),
   providers: [
@@ -263,13 +266,15 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async redirect({ url, baseUrl }) {
-      console.log("=== NextAuth Redirect (Simplified) ===");
+      console.log("=== NextAuth Redirect (Forced Base URL) ===");
       console.log("Redirect URL:", url);
-      console.log("Base URL:", baseUrl);
+      console.log("Base URL (NextAuth provided):", baseUrl);
       console.log("NEXTAUTH_URL env:", process.env.NEXTAUTH_URL);
+      console.log("VERCEL_URL env:", process.env.VERCEL_URL);
       
+      // ALWAYS use our configured base URL, ignore what NextAuth provides
       const currentEnvUrl = getBaseUrl();
-      console.log("Current environment URL:", currentEnvUrl);
+      console.log("Base URL (FORCED to use):", currentEnvUrl);
       
       // Direct iOS app URL scheme redirect - highest priority
       if (url.startsWith('health.revly://')) {
@@ -280,7 +285,7 @@ export const authOptions: NextAuthOptions = {
       // Handle iOS authentication flows
       if (url.includes('state=')) {
         try {
-          const urlObj = new URL(url.startsWith('http') ? url : `${baseUrl}${url}`);
+          const urlObj = new URL(url.startsWith('http') ? url : `${currentEnvUrl}${url}`);
           const state = urlObj.searchParams.get('state');
           
           if (state) {
@@ -329,8 +334,8 @@ export const authOptions: NextAuthOptions = {
         return `${currentEnvUrl}/upload`;
       }
       
-      // If URL is for the same domain, use it
-      if (url.startsWith(currentEnvUrl) || url.startsWith(baseUrl)) {
+      // If URL is for the same domain, use it (only check our configured domain)
+      if (url.startsWith(currentEnvUrl)) {
         console.log("✅ Same domain redirect");
         return url;
       }
