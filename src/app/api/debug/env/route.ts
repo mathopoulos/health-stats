@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  // Only allow this in non-production environments
-  if (process.env.NODE_ENV === 'production') {
+  // Only allow this in non-production environments, but allow staging
+  if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_URL?.includes('staging')) {
     return NextResponse.json({ error: 'Not available in production' }, { status: 403 });
   }
 
