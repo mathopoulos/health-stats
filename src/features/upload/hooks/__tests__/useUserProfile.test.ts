@@ -187,5 +187,39 @@ describe('useUserProfile', () => {
       expect(result.current.profileImage).toBe(null);
       expect(result.current.isLoading).toBe(true);
     });
+
+    it('handles successful data fetch and parsing', async () => {
+      const mockUserData = {
+        success: true,
+        user: {
+          id: 'test-user-id',
+          name: 'Updated User',
+          age: 25,
+          sex: 'female',
+          profileImage: 'https://example.com/test.jpg'
+        }
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockUserData,
+      });
+
+      const { result } = renderHook(() => useUserProfile());
+
+      // Wait for async operations
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+
+      // Test that all data is properly set
+      expect(result.current.name).toBe('Updated User');
+      expect(result.current.age).toBe(25);
+      expect(result.current.sex).toBe('female');
+      expect(result.current.profileImage).toBe('https://example.com/test.jpg');
+      expect(result.current.isLoading).toBe(false);
+      expect(result.current.hasLoaded).toBe(true);
+      expect(result.current.error).toBe(null);
+    });
   });
 });
