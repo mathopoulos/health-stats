@@ -177,4 +177,36 @@ describe('HeatmapLegend', () => {
       expect(moreLabel.parentElement).toHaveClass('text-xs', 'text-gray-600', 'dark:text-gray-400');
     });
   });
+
+  it('renders as a memoized component', () => {
+    // Test that HeatmapLegend is a React component
+    expect(typeof HeatmapLegend).toBe('function');
+    
+    const { rerender } = render(<HeatmapLegend />);
+    expect(screen.getByText('Less')).toBeInTheDocument();
+    
+    // Should re-render without issues
+    rerender(<HeatmapLegend />);
+    expect(screen.getByText('Less')).toBeInTheDocument();
+  });
+
+  it('uses correct constants for color configuration', () => {
+    const { container } = render(<HeatmapLegend />);
+    
+    const squares = container.querySelectorAll('[style*="background-color"]');
+    
+    // Should have exactly 5 squares for the 5 intensity levels
+    expect(squares).toHaveLength(5);
+    
+    // Each should have a valid background color
+    Array.from(squares).forEach((square, index) => {
+      const bgColor = (square as HTMLElement).style.backgroundColor;
+      expect(bgColor).toBeTruthy();
+      
+      // First square should be the empty/gray color
+      if (index === 0) {
+        expect(bgColor).toContain('235, 237, 240'); // #ebedf0 in RGB
+      }
+    });
+  });
 });

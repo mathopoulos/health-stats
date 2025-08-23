@@ -106,6 +106,17 @@ describe('dateRangeUtils', () => {
       expect(result.currentWeekEnd.getDay()).toBe(0); // Sunday
     });
 
+    it('uses current date when no reference date provided', () => {
+      const result = getCurrentWeekRange(); // No parameter - should use new Date()
+      
+      // Should return week range for current date
+      expect(result.currentWeekStart).toBeDefined();
+      expect(result.currentWeekEnd).toBeDefined();
+      expect(result.currentWeekStart).toBeInstanceOf(Date);
+      expect(result.currentWeekEnd).toBeInstanceOf(Date);
+      expect(result.currentWeekStart.getTime()).toBeLessThanOrEqual(result.currentWeekEnd.getTime());
+    });
+
     it('handles Monday as reference date', () => {
       // Use a Monday
       const referenceDate = new Date('2024-01-15T10:30:00Z'); // Monday
@@ -138,6 +149,16 @@ describe('dateRangeUtils', () => {
       expect(format(result[6], 'yyyy-MM-dd')).toBe('2024-01-21'); // Sunday
     });
 
+    it('uses current date when no reference date provided', () => {
+      const result = getCurrentWeekDates(); // No parameter - should use new Date()
+      
+      expect(result).toHaveLength(7);
+      expect(result[0]).toBeInstanceOf(Date);
+      expect(result[6]).toBeInstanceOf(Date);
+      expect(result[0].getDay()).toBe(1); // Monday
+      expect(result[6].getDay()).toBe(0); // Sunday
+    });
+
     it('returns dates in correct order (Monday to Sunday)', () => {
       const referenceDate = new Date('2024-01-17T10:30:00Z');
       
@@ -164,6 +185,16 @@ describe('dateRangeUtils', () => {
       const result = countWorkoutDaysThisWeek(workoutsByDate, referenceDate);
       
       expect(result).toBe(4); // 4 days with workouts
+    });
+
+    it('uses current date when no reference date provided', () => {
+      const workoutsByDate = {};
+      
+      const result = countWorkoutDaysThisWeek(workoutsByDate); // No reference date
+      
+      expect(typeof result).toBe('number');
+      expect(result).toBeGreaterThanOrEqual(0);
+      expect(result).toBeLessThanOrEqual(7);
     });
 
     it('returns 0 when no workouts in current week', () => {

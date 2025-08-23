@@ -18,4 +18,26 @@ describe('WorkoutHeatMapStyles', () => {
     render(<WorkoutHeatMapStyles />);
     // Should not throw any errors
   });
+
+  it('renders jsx styled component', () => {
+    const { container } = render(<WorkoutHeatMapStyles />);
+    
+    // styled-jsx doesn't create actual style elements in test environment
+    // but the component should render without errors
+    expect(container).toBeDefined();
+  });
+
+  it('creates global styles structure', () => {
+    const { container } = render(<WorkoutHeatMapStyles />);
+    
+    // The component renders successfully (no style elements in test env)
+    expect(container).toBeDefined();
+    expect(container.firstChild).toBeTruthy();
+  });
+
+  it('returns jsx element', () => {
+    const result = WorkoutHeatMapStyles({});
+    expect(result).toBeDefined();
+    expect(React.isValidElement(result)).toBe(true);
+  });
 });

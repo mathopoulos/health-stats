@@ -138,4 +138,4 @@ export default function WorkoutHeatMap({ workouts }: WorkoutHeatMapProps) {
       />
     </div>
   );
-} 
+}
