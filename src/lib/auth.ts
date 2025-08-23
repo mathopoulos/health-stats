@@ -275,7 +275,9 @@ export const authOptions: NextAuthOptions = {
       
       // Log all URL components for detailed analysis
       try {
-        const urlObj = new URL(url);
+        // Handle relative URLs by making them absolute
+        const absoluteUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
+        const urlObj = new URL(absoluteUrl);
         console.log("URL pathname:", urlObj.pathname);
         console.log("URL search params:", Object.fromEntries(urlObj.searchParams.entries()));
         console.log("URL hash:", urlObj.hash);
@@ -310,9 +312,11 @@ export const authOptions: NextAuthOptions = {
         
         // Check state parameter for preview URL
         try {
-          const urlObj = new URL(url);
+          // Handle relative URLs by making them absolute
+          const absoluteUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
+          const urlObj = new URL(absoluteUrl);
           const state = urlObj.searchParams.get('state');
-          console.log("State parameter:", state);
+          console.log("State parameter from Google callback:", state);
           
           if (state) {
             let stateData: any;
@@ -338,9 +342,9 @@ export const authOptions: NextAuthOptions = {
             }
             
             // Check if this is iOS auth
-            if ((stateData.iosToken && verifyIosToken(stateData.iosToken)) || 
-                stateData.platform === 'ios' || 
-                stateData.iosBypass === true) {
+            if ((stateData?.iosToken && verifyIosToken(stateData.iosToken)) || 
+                stateData?.platform === 'ios' || 
+                stateData?.iosBypass === true) {
               
               console.log("✅ REDIRECT DECISION: iOS auth detected, redirecting to mobile-callback");
               console.log("✅ FINAL REDIRECT:", `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}`);
@@ -426,8 +430,17 @@ export const authOptions: NextAuthOptions = {
       
       // If the URL is explicitly set to /upload, honor that
       if (url.includes('/upload')) {
-        console.log("Upload URL detected, using current environment:", `${currentEnvUrl}${url}`);
-        return url.startsWith('http') ? url : `${currentEnvUrl}${url}`;
+        if (url.startsWith('http')) {
+          console.log("✅ REDIRECT DECISION: Absolute upload URL detected:", url);
+          console.log("✅ FINAL REDIRECT:", url);
+          return url;
+        } else {
+          // Handle relative URL, avoid double slashes
+          const cleanUrl = `${currentEnvUrl.replace(/\/$/, '')}/${url.replace(/^\//, '')}`;
+          console.log("✅ REDIRECT DECISION: Relative upload URL detected, using current environment:", cleanUrl);
+          console.log("✅ FINAL REDIRECT:", cleanUrl);
+          return cleanUrl;
+        }
       }
       
       // For all successful auth callbacks, direct to upload page
