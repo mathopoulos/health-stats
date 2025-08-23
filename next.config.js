@@ -14,7 +14,12 @@ const nextConfig = {
     removeConsole: false,
   },
   images: {
-    domains: ['healthdatalex.s3.us-east-1.amazonaws.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'healthdatalex.s3.us-east-1.amazonaws.com',
+      },
+    ],
   },
   async headers() {
     return [

@@ -10,7 +10,7 @@ import {
 } from '../hooks';
 
 interface ProtocolsTabProps {
-  // Initial values for protocols
+  // Initial values from preloaded data for smooth tab switching
   initialDiet?: string;
   initialWorkoutProtocols?: Array<{ type: string; frequency: number }>;
   initialSupplementProtocols?: Array<{ type: string; frequency: string; dosage: string; unit: string }>;
@@ -21,7 +21,7 @@ export default function ProtocolsTab({
   initialWorkoutProtocols = [],
   initialSupplementProtocols = [],
 }: ProtocolsTabProps) {
-  // Initialize hooks
+  // Initialize hooks with preloaded data
   const dietProtocol = useDietProtocol(initialDiet);
   const workoutProtocols = useWorkoutProtocols(initialWorkoutProtocols);
   const supplementProtocols = useSupplementProtocols(initialSupplementProtocols);

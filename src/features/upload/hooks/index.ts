@@ -15,11 +15,9 @@ export { useWorkoutProtocols, type UseWorkoutProtocolsReturn } from './useWorkou
 export { useSupplementProtocols, type UseSupplementProtocolsReturn } from './useSupplementProtocols';
 export { useExperiments, type UseExperimentsReturn } from './useExperiments';
 export { useProtocolModals, type ModalType, type UseProtocolModalsReturn } from './useProtocolModals';
-export { 
-  useProtocolOperations, 
-  type UseProtocolOperationsReturn,
-  type ExperimentData
-} from './useProtocolOperations';
 
 // Session management hooks
 export { useSessionRecovery } from './useSessionRecovery';
+
+// Shared profile data hooks
+export { useUserProfile, type UseUserProfileReturn } from './useUserProfile';
