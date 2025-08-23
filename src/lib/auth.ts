@@ -43,20 +43,7 @@ export function getProductionUrl(): string {
   return process.env.NEXTAUTH_URL || 'https://www.revly.health';
 }
 
-// Get the appropriate URL for the current environment
-// Simplified for staging workflow: production, staging, or development
-function getCurrentEnvironmentUrl(): string {
-  // Always use NEXTAUTH_URL if set (handles production, staging, and development)
-  if (process.env.NEXTAUTH_URL) {
-    console.log("✅ Using NEXTAUTH_URL:", process.env.NEXTAUTH_URL);
-    return process.env.NEXTAUTH_URL;
-  }
-  
-  // Fallback for development
-  const fallback = 'http://localhost:3000';
-  console.log('✅ Using development fallback:', fallback);
-  return fallback;
-}
+
 
 // Verify an iOS token to ensure it's authentic and not expired
 function verifyIosToken(token: string): boolean {
@@ -103,7 +90,35 @@ function verifyIosToken(token: string): boolean {
   }
 }
 
+// Force NextAuth to use HTTPS and proper URL construction 
+const getBaseUrl = () => {
+  // 1. Priority: NEXTAUTH_URL if set (explicitly configured in environment)
+  if (process.env.NEXTAUTH_URL) {
+    const url = process.env.NEXTAUTH_URL;
+    // Ensure URL has protocol
+    if (!url.startsWith('http')) {
+      return `https://${url.replace(/^\/*/, '')}`;
+    }
+    return url;
+  }
+  
+  // 2. Fallback: Local development
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:3000';
+  }
+  
+  // 3. Emergency fallback: Production URL
+  if (process.env.VERCEL_ENV === 'production') {
+    return 'https://www.revly.health';
+  }
+  
+  // This should only happen in unusual circumstances
+  throw new Error('NEXTAUTH_URL environment variable is required for non-development environments');
+};
+
 export const authOptions: NextAuthOptions = {
+  // Ensure secure cookies in production and staging
+  useSecureCookies: process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.includes('https'),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
@@ -258,13 +273,15 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async redirect({ url, baseUrl }) {
-      console.log("=== NextAuth Redirect (Simplified) ===");
+      console.log("=== NextAuth Redirect (Forced Base URL) ===");
       console.log("Redirect URL:", url);
-      console.log("Base URL:", baseUrl);
+      console.log("Base URL (NextAuth provided):", baseUrl);
       console.log("NEXTAUTH_URL env:", process.env.NEXTAUTH_URL);
+      console.log("VERCEL_URL env:", process.env.VERCEL_URL);
       
-      const currentEnvUrl = getCurrentEnvironmentUrl();
-      console.log("Current environment URL:", currentEnvUrl);
+      // ALWAYS use our configured base URL, ignore what NextAuth provides
+      const currentEnvUrl = getBaseUrl();
+      console.log("Base URL (FORCED to use):", currentEnvUrl);
       
       // Direct iOS app URL scheme redirect - highest priority
       if (url.startsWith('health.revly://')) {
@@ -275,7 +292,7 @@ export const authOptions: NextAuthOptions = {
       // Handle iOS authentication flows
       if (url.includes('state=')) {
         try {
-          const urlObj = new URL(url.startsWith('http') ? url : `${baseUrl}${url}`);
+          const urlObj = new URL(url.startsWith('http') ? url : `${currentEnvUrl}${url}`);
           const state = urlObj.searchParams.get('state');
           
           if (state) {
@@ -324,8 +341,8 @@ export const authOptions: NextAuthOptions = {
         return `${currentEnvUrl}/upload`;
       }
       
-      // If URL is for the same domain, use it
-      if (url.startsWith(currentEnvUrl) || url.startsWith(baseUrl)) {
+      // If URL is for the same domain, use it (only check our configured domain)
+      if (url.startsWith(currentEnvUrl)) {
         console.log("✅ Same domain redirect");
         return url;
       }
