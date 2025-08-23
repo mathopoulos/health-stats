@@ -36,13 +36,7 @@ interface StateData {
 // Secret for iOS token verification
 const IOS_AUTH_SECRET = process.env.NEXTAUTH_SECRET || 'default-secret-change-me';
 
-// Utility to detect if we're on a Vercel preview deployment
-export function isPreviewDeployment(): boolean {
-  const url = process.env.VERCEL_URL || process.env.NEXTAUTH_URL || '';
-  return url.includes('vercel.app') && !url.includes('www.revly.health');
-}
-
-// Get the production URL for OAuth proxy
+// Get the production URL
 export function getProductionUrl(): string {
   return process.env.NEXTAUTH_URL || 'https://www.revly.health';
 }
@@ -314,114 +308,53 @@ export const authOptions: NextAuthOptions = {
       if (url.includes('/api/auth/callback/google')) {
         console.log("🔍 PROCESSING: Google auth callback detected");
         
-        // If OAuth provides a callbackUrl, and it's an allowed origin, honor it directly.
-        try {
-          const u = new URL(url);
-          const cb = u.searchParams.get('callbackUrl');
-          const returnUrl = u.searchParams.get('return_url');
-          console.log("callbackUrl from query:", cb);
-          console.log("return_url from query:", returnUrl);
-          
-          if (cb) {
-            const allowed = (href: string) => {
-              try {
-                const t = new URL(href);
-                const isAllowed = (
-                  t.hostname.endsWith('vercel.app') ||
-                  t.hostname === 'www.revly.health' ||
-                  t.hostname === 'revly.health' ||
-                  t.hostname === 'localhost'
-                );
-                console.log(`Checking if ${href} is allowed: ${isAllowed}`);
-                return isAllowed;
-              } catch {
-                return false;
-              }
-            };
-            if (allowed(cb)) {
-              console.log('✅ REDIRECT DECISION: Honoring provided callbackUrl:', cb);
-              console.log("✅ FINAL REDIRECT:", cb);
-              return cb;
-            }
-            // Sometimes the cb contains a return_url param we should unwrap
-            try {
-              const inner = new URL(cb);
-              const ru = inner.searchParams.get('return_url');
-              console.log("nested return_url inside callbackUrl:", ru);
-              if (ru && allowed(ru)) {
-                console.log('✅ REDIRECT DECISION: Honoring nested return_url inside callbackUrl:', ru);
-                console.log("✅ FINAL REDIRECT:", ru);
-                return ru;
-              }
-            } catch (innerError) {
-              console.log("Could not parse nested URL from callbackUrl:", innerError);
-            }
-          }
-          // Direct return_url support
-          if (returnUrl) {
-            const allowed = (href: string) => {
-              try {
-                const t = new URL(href);
-                const isAllowed = (
-                  t.hostname.endsWith('vercel.app') ||
-                  t.hostname === 'www.revly.health' ||
-                  t.hostname === 'revly.health' ||
-                  t.hostname === 'localhost'
-                );
-                console.log(`Checking if ${href} is allowed: ${isAllowed}`);
-                return isAllowed;
-              } catch {
-                return false;
-              }
-            };
-            if (allowed(returnUrl)) {
-              console.log('✅ REDIRECT DECISION: Honoring provided return_url:', returnUrl);
-              console.log("✅ FINAL REDIRECT:", returnUrl);
-              return returnUrl;
-            }
-          }
-        } catch (e) {
-          console.error('Error parsing callbackUrl:', e);
-        }
+        // Check state parameter for preview URL
         try {
           const urlObj = new URL(url);
           const state = urlObj.searchParams.get('state');
+          console.log("State parameter:", state);
           
           if (state) {
             let stateData: any;
             try {
               stateData = JSON.parse(state);
-            } catch {
-              // Some providers base64-encode JSON state
-              try {
-                stateData = JSON.parse(Buffer.from(state, 'base64').toString('utf-8'));
-              } catch {}
+              console.log("Parsed state data:", stateData);
+            } catch (e) {
+              console.log("Could not parse state as JSON:", e);
             }
             
-            // If state includes a callback/return URL pointing to preview, honor it
-            const previewUrl = stateData?.callbackUrl || stateData?.return_url || stateData?.returnUrl;
-            if (typeof previewUrl === 'string') {
+            // Check for preview URL in state
+            if (stateData?.previewUrl) {
               try {
-                const t = new URL(previewUrl);
-                if (t.hostname.endsWith('vercel.app') || t.hostname === 'localhost') {
-                  console.log('Honoring preview URL from state:', previewUrl);
-                  return previewUrl;
+                const previewUrlObj = new URL(stateData.previewUrl);
+                if (previewUrlObj.hostname.endsWith('vercel.app')) {
+                  console.log('✅ REDIRECT DECISION: Preview URL found in state:', stateData.previewUrl);
+                  console.log("✅ FINAL REDIRECT:", stateData.previewUrl);
+                  return stateData.previewUrl;
                 }
-              } catch {}
+              } catch (e) {
+                console.log("Invalid preview URL in state:", e);
+              }
             }
             
-            // Check if this is iOS auth with a valid token or legacy indicators
+            // Check if this is iOS auth
             if ((stateData.iosToken && verifyIosToken(stateData.iosToken)) || 
                 stateData.platform === 'ios' || 
                 stateData.iosBypass === true) {
               
-              console.log("iOS auth: Verified iOS auth in Google callback, redirecting to mobile-callback");
+              console.log("✅ REDIRECT DECISION: iOS auth detected, redirecting to mobile-callback");
+              console.log("✅ FINAL REDIRECT:", `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}`);
               return `${productionUrl}/auth/mobile-callback?state=${encodeURIComponent(state)}`;
             }
           }
         } catch (e) {
-          console.error('Error in redirect callback:', e);
+          console.error('Error parsing state in Google callback:', e);
         }
+        
+        // Default to production upload page
+        console.log('✅ REDIRECT DECISION: Default Google callback to production upload');
+        console.log("✅ FINAL REDIRECT:", `${productionUrl}/upload`);
+        return `${productionUrl}/upload`;
       }
       
       // Mobile callback page
@@ -453,63 +386,31 @@ export const authOptions: NextAuthOptions = {
         }
       }
       
-      // Rest of original redirect logic for regular web flow
-      // For iOS app callback
+      // Handle other auth callbacks (non-Google)
       if (url.includes('auth/callback') || url.includes('api/auth/callback')) {
-        console.log("🔍 PROCESSING: General auth callback, checking for OAuth proxy patterns");
+        console.log("🔍 PROCESSING: General auth callback detected");
         
-        // Check if this is an OAuth proxy callback URL itself
-        if (url.includes('/api/auth/proxy/callback')) {
-          console.log("✅ REDIRECT DECISION: OAuth proxy callback URL detected, letting proxy handle redirect");
-          console.log("✅ FINAL REDIRECT:", url);
-          return url; // Let the proxy callback handle the redirect
-        }
-        
-        // Also check callbackUrl parameter for nested proxy patterns
-        const urlObj = new URL(url);
-        const callbackUrl = urlObj.searchParams.get('callbackUrl');
-        console.log("callbackUrl from query:", callbackUrl);
-        
-        const isNestedOAuthProxy = callbackUrl && (
-          callbackUrl.includes('/api/auth/proxy/callback') ||  // Internal proxy
-          callbackUrl.includes('auth.revly.health') ||         // External auth service
-          callbackUrl.includes('return_url=') ||               // Proxy return parameter
-          (process.env.USE_OAUTH_PROXY === 'true' && callbackUrl.includes('vercel.app')) // Preview with proxy
-        );
-        
-        console.log("isNestedOAuthProxy determined:", isNestedOAuthProxy);
-        if (isNestedOAuthProxy) {
-          console.log("OAuth proxy check breakdown:");
-          console.log("- Has /api/auth/proxy/callback:", callbackUrl?.includes('/api/auth/proxy/callback'));
-          console.log("- Has auth.revly.health:", callbackUrl?.includes('auth.revly.health'));
-          console.log("- Has return_url=:", callbackUrl?.includes('return_url='));
-          console.log("- Has USE_OAUTH_PROXY + vercel.app:", process.env.USE_OAUTH_PROXY === 'true' && callbackUrl?.includes('vercel.app'));
-          
-          console.log("✅ REDIRECT DECISION: Nested OAuth proxy callback detected, letting proxy handle redirect:", callbackUrl);
-          console.log("✅ FINAL REDIRECT:", url);
-          return url; // Let the proxy callback handle the redirect
-        }
-        
-        // Try to extract state from the URL
+        // Try to extract state for iOS apps
         try {
+          const urlObj = new URL(url);
           const state = urlObj.searchParams.get('state');
           
           if (state) {
             const stateData = JSON.parse(state);
             if (stateData.platform === 'ios') {
-              // Get token from session to pass back to the app
-              // Format: health.revly://auth?token=xyz
+              console.log("✅ REDIRECT DECISION: iOS callback, redirecting to app scheme");
+              console.log("✅ FINAL REDIRECT:", `health.revly://auth?token=${stateData.token || ''}`);
               return `health.revly://auth?token=${stateData.token || ''}`;
             }
           }
         } catch (e) {
-          console.error('Error parsing state in redirect callback:', e);
+          console.log('Could not parse state in general callback:', e);
         }
         
-        // Default web callback - use current environment for web flows
-        console.log("✅ REDIRECT DECISION: Default web callback, using current environment URL:", `${currentEnvUrl}/upload`);
-        console.log("✅ FINAL REDIRECT:", `${currentEnvUrl}/upload`);
-        return `${currentEnvUrl}/upload`;
+        // Default web callback - use production for consistency
+        console.log("✅ REDIRECT DECISION: Default web callback to production upload");
+        console.log("✅ FINAL REDIRECT:", `${productionUrl}/upload`);
+        return `${productionUrl}/upload`;
       }
       
       // For development, bypass invite page redirect for errors

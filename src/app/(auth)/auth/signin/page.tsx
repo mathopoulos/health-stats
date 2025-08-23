@@ -86,52 +86,38 @@ export default function SignIn() {
     console.log("iOS authentication:", finalIsIosApp, "Direct:", isDirectIosAuth);
     const callbackUrl = searchParams?.get('callback_url') || '/upload';
     
-    // Check if we're on a Vercel preview deployment
+    // Check if we're on a Vercel preview deployment  
     const isPreview = window.location.hostname.includes('vercel.app') && 
                      !window.location.hostname.includes('www.revly.health');
     
-    if (isPreview && !finalIsIosApp) {
-      // For preview deployments, redirect through OAuth proxy
-      console.log("🔍 OAUTH FLOW START: Preview deployment detected, using OAuth proxy");
-      const currentUrl = window.location.origin;
-      console.log("🔍 OAUTH FLOW: Current preview URL:", currentUrl);
-      console.log("🔍 OAUTH FLOW: Callback URL from search params:", callbackUrl);
-      
-      let proxyUrl = `/api/auth/proxy?provider=google&return_url=${encodeURIComponent(currentUrl + callbackUrl)}`;
-      console.log("🔍 OAUTH FLOW: Constructed proxy URL:", proxyUrl);
-      
-      // Preserve any state data by adding it to the proxy URL
-      if (validatedEmail) {
-        const stateData = { email: validatedEmail };
-        const encodedState = encodeURIComponent(JSON.stringify(stateData));
-        proxyUrl += `&state=${encodedState}`;
-        console.log("🔍 OAUTH FLOW: Added state data:", stateData);
-      }
-      
-      console.log("🔍 OAUTH FLOW: Final redirect to proxy:", proxyUrl);
-      window.location.href = proxyUrl;
-      return;
-    }
+    console.log("🔍 AUTH FLOW: Environment detected", { isPreview, finalIsIosApp });
     
-    // State data with iOS flags to ensure they're preserved through redirects
+    // State data with environment and user info
     const stateData: any = {};
     
     if (validatedEmail) {
       stateData.email = validatedEmail;
     }
     
-    // Always add these flags to the state to ensure they survive redirects
+    // Add preview environment info to state
+    if (isPreview && !finalIsIosApp) {
+      stateData.previewUrl = window.location.origin + callbackUrl;
+      console.log("🔍 AUTH FLOW: Added preview URL to state:", stateData.previewUrl);
+    }
+    
+    // Add iOS flags if needed
     if (finalIsIosApp) {
       stateData.platform = 'ios';
       stateData.redirect = 'health.revly://auth';
       
-      // For direct auth, we need to ensure it's tagged specially
       if (isDirectIosAuth) {
         stateData.directIosAuth = true;
       }
       
-      console.log("Adding iOS platform to state", stateData);
+      console.log("🔍 AUTH FLOW: Added iOS platform to state", stateData);
     }
+    
+    console.log("🔍 AUTH FLOW: Final state data:", stateData);
     
     // Regular sign in for production or iOS
     signIn('google', { 
