@@ -108,8 +108,6 @@ const getBaseUrl = () => {
 };
 
 export const authOptions: NextAuthOptions = {
-  // Force NextAuth to use our configured base URL
-  basePath: '/api/auth',
   // Ensure secure cookies in production and staging
   useSecureCookies: process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.includes('https'),
   providers: [
