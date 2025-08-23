@@ -1,7 +1,10 @@
 import React from 'react';
-import { render, screen } from '@/test-utils';
+import { render, screen } from '../../../../test-utils';
 import { WorkoutHeatMapSection } from '../WorkoutHeatMapSection';
-import type { ActivityFeedItem } from '@/types/dashboard';
+import type { ActivityFeedItem } from '../../../../types/dashboard';
+
+// Ensure Jest DOM matchers are available
+import '@testing-library/jest-dom';
 
 // Mock the WeeklyWorkoutProvider and related hooks
 const mockSetWorkoutCount = jest.fn();
@@ -18,7 +21,7 @@ jest.mock('@providers/WeeklyWorkoutProvider', () => ({
 }));
 
 // Mock the WorkoutHeatMap component
-jest.mock('@features/workouts/components/WorkoutHeatMap', () => {
+jest.mock('../WorkoutHeatMap', () => {
   return function MockWorkoutHeatMap({ workouts }: { workouts: any[] }) {
     return (
       <div data-testid="workout-heatmap">
@@ -71,10 +74,14 @@ describe('WorkoutHeatMapSection', () => {
       title: '7h 23m',
       startTime: '2024-01-15T22:30:00Z',
       endTime: '2024-01-16T05:53:00Z',
+      metrics: {
+        'Total Sleep': '7h 23m',
+        'Sleep Score': '85',
+      },
       sleepStages: {
-        deep: 85,
-        core: 230,
-        rem: 88,
+        deep: { percentage: 20, duration: '85m' },
+        core: { percentage: 55, duration: '230m' },
+        rem: { percentage: 25, duration: '88m' },
       },
     },
     {
@@ -113,7 +120,12 @@ describe('WorkoutHeatMapSection', () => {
 
       // Test that content renders properly - CSS handles container styling
       expect(screen.getByText('Workout Activity')).toBeInTheDocument();
-      expect(screen.getByText('3 workouts this week')).toBeInTheDocument();
+      
+      // Test responsive workout counter text - should show both versions
+      expect(screen.getByText('3 this week')).toBeInTheDocument(); // Mobile version
+      // Test responsive workout counter - both mobile and desktop versions should be present
+      expect(screen.getByText('3 this week')).toBeInTheDocument(); // Mobile version  
+      expect(screen.getByText('3 workouts this week')).toBeInTheDocument(); // Desktop version // Desktop version
     });
 
     it('applies shadow and margin classes', () => {
@@ -155,7 +167,11 @@ describe('WorkoutHeatMapSection', () => {
     it('renders workout count pill', () => {
       render(<WorkoutHeatMapSection {...defaultProps} />);
 
-      expect(screen.getByText('3 workouts this week')).toBeInTheDocument();
+      // Test responsive workout counter - both mobile and desktop versions should be present
+      expect(screen.getByText('3 this week')).toBeInTheDocument(); // Mobile version
+      // Test responsive workout counter - both mobile and desktop versions should be present
+      expect(screen.getByText('3 this week')).toBeInTheDocument(); // Mobile version  
+      expect(screen.getByText('3 workouts this week')).toBeInTheDocument(); // Desktop version // Desktop version
     });
 
     it('applies correct styling to workout count pill', () => {
@@ -169,7 +185,9 @@ describe('WorkoutHeatMapSection', () => {
     it('applies correct container styling to count pill', () => {
       render(<WorkoutHeatMapSection {...defaultProps} />);
 
-      const countContainer = screen.getByText('3 workouts this week').closest('.px-3.py-1\\.5');
+      // Test responsive workout counter styling
+      expect(screen.getByText('3 this week')).toBeInTheDocument(); // Mobile version
+      const countContainer = screen.getByText('3 workouts this week').closest('.px-3.py-1\\.5'); // Desktop version
       expect(countContainer).toBeInTheDocument();
       expect(countContainer).toHaveClass(
         'bg-emerald-50/50',
@@ -183,7 +201,9 @@ describe('WorkoutHeatMapSection', () => {
 
       // Test that header elements render in proper layout - CSS handles flex layout
       expect(screen.getByText('Workout Activity')).toBeInTheDocument();
-      expect(screen.getByText('3 workouts this week')).toBeInTheDocument();
+      // Test responsive workout counter - both mobile and desktop versions should be present
+      expect(screen.getByText('3 this week')).toBeInTheDocument(); // Mobile version  
+      expect(screen.getByText('3 workouts this week')).toBeInTheDocument(); // Desktop version
     });
   });
 
@@ -513,7 +533,6 @@ describe('WorkoutHeatMapSection', () => {
           activityType: 'running',
           metrics: { 'Duration': '30 min', 'Calories': '250' },
         },
-        // @ts-expect-error Testing malformed data
         {
           id: '2',
           type: 'workout',
@@ -611,7 +630,9 @@ describe('WorkoutHeatMapSection', () => {
 
       // Test that layout structure renders properly - CSS handles flex layout
       expect(screen.getByText('Workout Activity')).toBeInTheDocument();
-      expect(screen.getByText('3 workouts this week')).toBeInTheDocument();
+      // Test responsive workout counter - both mobile and desktop versions should be present
+      expect(screen.getByText('3 this week')).toBeInTheDocument(); // Mobile version  
+      expect(screen.getByText('3 workouts this week')).toBeInTheDocument(); // Desktop version
       expect(screen.getByTestId('workout-heatmap')).toBeInTheDocument();
     });
 
@@ -619,7 +640,9 @@ describe('WorkoutHeatMapSection', () => {
       render(<WorkoutHeatMapSection {...defaultProps} />);
 
       expect(screen.getByText('Workout Activity')).toBeInTheDocument();
-      expect(screen.getByText('3 workouts this week')).toBeInTheDocument();
+      // Test responsive workout counter - both mobile and desktop versions should be present
+      expect(screen.getByText('3 this week')).toBeInTheDocument(); // Mobile version  
+      expect(screen.getByText('3 workouts this week')).toBeInTheDocument(); // Desktop version
     });
   });
 });

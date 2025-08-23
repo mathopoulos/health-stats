@@ -1,12 +1,19 @@
 import React, { useEffect } from 'react';
 import { WeeklyWorkoutProvider, useWeeklyWorkout } from '@providers/WeeklyWorkoutProvider';
-import WorkoutHeatMap from '@features/workouts/components/WorkoutHeatMap';
+import WorkoutHeatMap from './WorkoutHeatMap';
 import type { ActivityFeedItem } from '@/types/dashboard';
 
 // Helper component to show workout count using the actual hook
 function WeeklyWorkoutCount() {
   const { workoutCount } = useWeeklyWorkout();
-  return <span>{workoutCount} workouts this week</span>;
+  return (
+    <>
+      {/* Show shorter text on small screens */}
+      <span className="sm:hidden">{workoutCount} this week</span>
+      {/* Show full text on larger screens */}
+      <span className="hidden sm:inline">{workoutCount} workouts this week</span>
+    </>
+  );
 }
 
 // Internal component that calculates and sets the workout count
