@@ -39,22 +39,22 @@ export function useProfileForm(initialValues?: {
 
   // Update state when initial values change (for async data loading)
   useEffect(() => {
-    if (initialValues?.name && initialValues.name !== name) {
+    if (initialValues?.name) {
       setName(initialValues.name);
     }
-  }, [initialValues?.name, name]);
+  }, [initialValues?.name]);
 
   useEffect(() => {
-    if (initialValues?.age !== undefined && initialValues.age !== age) {
+    if (initialValues?.age !== undefined) {
       setAge(initialValues.age);
     }
-  }, [initialValues?.age, age]);
+  }, [initialValues?.age]);
 
   useEffect(() => {
-    if (initialValues?.sex && initialValues.sex !== sex) {
+    if (initialValues?.sex) {
       setSex(initialValues.sex);
     }
-  }, [initialValues?.sex, sex]);
+  }, [initialValues?.sex]);
 
   const handleUpdateProfile = async () => {
     if (!name.trim()) {
