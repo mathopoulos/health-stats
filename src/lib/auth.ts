@@ -292,6 +292,7 @@ export const authOptions: NextAuthOptions = {
         try {
           const u = new URL(url);
           const cb = u.searchParams.get('callbackUrl');
+          const returnUrl = u.searchParams.get('return_url');
           if (cb) {
             const allowed = (href: string) => {
               try {
@@ -310,6 +311,35 @@ export const authOptions: NextAuthOptions = {
               console.log('Honoring provided callbackUrl:', cb);
               return cb;
             }
+            // Sometimes the cb contains a return_url param we should unwrap
+            try {
+              const inner = new URL(cb);
+              const ru = inner.searchParams.get('return_url');
+              if (ru && allowed(ru)) {
+                console.log('Honoring nested return_url inside callbackUrl:', ru);
+                return ru;
+              }
+            } catch {}
+          }
+          // Direct return_url support
+          if (returnUrl) {
+            const allowed = (href: string) => {
+              try {
+                const t = new URL(href);
+                return (
+                  t.hostname.endsWith('vercel.app') ||
+                  t.hostname === 'www.revly.health' ||
+                  t.hostname === 'revly.health' ||
+                  t.hostname === 'localhost'
+                );
+              } catch {
+                return false;
+              }
+            };
+            if (allowed(returnUrl)) {
+              console.log('Honoring provided return_url:', returnUrl);
+              return returnUrl;
+            }
           }
         } catch (e) {
           console.error('Error parsing callbackUrl:', e);
@@ -319,7 +349,27 @@ export const authOptions: NextAuthOptions = {
           const state = urlObj.searchParams.get('state');
           
           if (state) {
-            const stateData = JSON.parse(state);
+            let stateData: any;
+            try {
+              stateData = JSON.parse(state);
+            } catch {
+              // Some providers base64-encode JSON state
+              try {
+                stateData = JSON.parse(Buffer.from(state, 'base64').toString('utf-8'));
+              } catch {}
+            }
+            
+            // If state includes a callback/return URL pointing to preview, honor it
+            const previewUrl = stateData?.callbackUrl || stateData?.return_url || stateData?.returnUrl;
+            if (typeof previewUrl === 'string') {
+              try {
+                const t = new URL(previewUrl);
+                if (t.hostname.endsWith('vercel.app') || t.hostname === 'localhost') {
+                  console.log('Honoring preview URL from state:', previewUrl);
+                  return previewUrl;
+                }
+              } catch {}
+            }
             
             // Check if this is iOS auth with a valid token or legacy indicators
             if ((stateData.iosToken && verifyIosToken(stateData.iosToken)) || 
