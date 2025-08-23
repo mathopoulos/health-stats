@@ -111,8 +111,7 @@ export async function middleware(request: NextRequest) {
   }
   
   // If user is authenticated and trying to access auth pages, redirect to home
-  // BUT allow them to access signin page for OAuth initiation (with state parameter)
-  if (isAuthPage && token && !isInvitePage && !request.nextUrl.searchParams.has('state')) {
+  if (isAuthPage && token && !isInvitePage) {
     return NextResponse.redirect(new URL("/upload", request.url));
   }
 
