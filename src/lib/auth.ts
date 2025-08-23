@@ -90,21 +90,30 @@ function verifyIosToken(token: string): boolean {
   }
 }
 
-// Force NextAuth to use HTTPS and proper URL construction
+// Force NextAuth to use HTTPS and proper URL construction 
 const getBaseUrl = () => {
-  // ALWAYS use NEXTAUTH_URL if available (ignore VERCEL_URL completely)
+  // 1. Priority: NEXTAUTH_URL if set (explicitly configured in environment)
   if (process.env.NEXTAUTH_URL) {
-    console.log('✅ Using NEXTAUTH_URL for base URL:', process.env.NEXTAUTH_URL);
-    return process.env.NEXTAUTH_URL;
+    const url = process.env.NEXTAUTH_URL;
+    // Ensure URL has protocol
+    if (!url.startsWith('http')) {
+      return `https://${url.replace(/^\/*/, '')}`;
+    }
+    return url;
   }
   
-  // Fallback for local development
+  // 2. Fallback: Local development
   if (process.env.NODE_ENV === 'development') {
     return 'http://localhost:3000';
   }
   
-  // This should not happen in production/staging
-  throw new Error('NEXTAUTH_URL environment variable is required');
+  // 3. Emergency fallback: Production URL
+  if (process.env.VERCEL_ENV === 'production') {
+    return 'https://www.revly.health';
+  }
+  
+  // This should only happen in unusual circumstances
+  throw new Error('NEXTAUTH_URL environment variable is required for non-development environments');
 };
 
 export const authOptions: NextAuthOptions = {
