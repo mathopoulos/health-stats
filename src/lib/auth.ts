@@ -456,30 +456,36 @@ export const authOptions: NextAuthOptions = {
       // Rest of original redirect logic for regular web flow
       // For iOS app callback
       if (url.includes('auth/callback') || url.includes('api/auth/callback')) {
-        // Check if this is an OAuth proxy callback - let proxy handle the redirect
+        console.log("🔍 PROCESSING: General auth callback, checking for OAuth proxy patterns");
+        
+        // Check if this is an OAuth proxy callback URL itself
+        if (url.includes('/api/auth/proxy/callback')) {
+          console.log("✅ REDIRECT DECISION: OAuth proxy callback URL detected, letting proxy handle redirect");
+          console.log("✅ FINAL REDIRECT:", url);
+          return url; // Let the proxy callback handle the redirect
+        }
+        
+        // Also check callbackUrl parameter for nested proxy patterns
         const urlObj = new URL(url);
         const callbackUrl = urlObj.searchParams.get('callbackUrl');
-        
-        // Check for various OAuth proxy patterns
-        console.log("🔍 PROCESSING: General auth callback, checking for OAuth proxy patterns");
         console.log("callbackUrl from query:", callbackUrl);
         
-        const isOAuthProxy = callbackUrl && (
+        const isNestedOAuthProxy = callbackUrl && (
           callbackUrl.includes('/api/auth/proxy/callback') ||  // Internal proxy
           callbackUrl.includes('auth.revly.health') ||         // External auth service
           callbackUrl.includes('return_url=') ||               // Proxy return parameter
           (process.env.USE_OAUTH_PROXY === 'true' && callbackUrl.includes('vercel.app')) // Preview with proxy
         );
         
-        console.log("isOAuthProxy determined:", isOAuthProxy);
-        console.log("OAuth proxy check breakdown:");
-        console.log("- Has /api/auth/proxy/callback:", callbackUrl?.includes('/api/auth/proxy/callback'));
-        console.log("- Has auth.revly.health:", callbackUrl?.includes('auth.revly.health'));
-        console.log("- Has return_url=:", callbackUrl?.includes('return_url='));
-        console.log("- Has USE_OAUTH_PROXY + vercel.app:", process.env.USE_OAUTH_PROXY === 'true' && callbackUrl?.includes('vercel.app'));
-        
-        if (isOAuthProxy) {
-          console.log("✅ REDIRECT DECISION: OAuth proxy callback detected, letting proxy handle redirect:", callbackUrl);
+        console.log("isNestedOAuthProxy determined:", isNestedOAuthProxy);
+        if (isNestedOAuthProxy) {
+          console.log("OAuth proxy check breakdown:");
+          console.log("- Has /api/auth/proxy/callback:", callbackUrl?.includes('/api/auth/proxy/callback'));
+          console.log("- Has auth.revly.health:", callbackUrl?.includes('auth.revly.health'));
+          console.log("- Has return_url=:", callbackUrl?.includes('return_url='));
+          console.log("- Has USE_OAUTH_PROXY + vercel.app:", process.env.USE_OAUTH_PROXY === 'true' && callbackUrl?.includes('vercel.app'));
+          
+          console.log("✅ REDIRECT DECISION: Nested OAuth proxy callback detected, letting proxy handle redirect:", callbackUrl);
           console.log("✅ FINAL REDIRECT:", url);
           return url; // Let the proxy callback handle the redirect
         }
