@@ -51,22 +51,23 @@ function getCurrentEnvironmentUrl(baseUrl: string): string {
   console.log("🔍 getCurrentEnvironmentUrl called with baseUrl:", baseUrl);
   console.log("NEXTAUTH_URL env:", process.env.NEXTAUTH_URL);
   console.log("VERCEL_URL env:", process.env.VERCEL_URL);
+  console.log("VERCEL_ENV env:", process.env.VERCEL_ENV);
   
-  // If we have NEXTAUTH_URL set, we're in production
-  if (process.env.NEXTAUTH_URL) {
+  // Production environment - use NEXTAUTH_URL
+  if (process.env.VERCEL_ENV === 'production' && process.env.NEXTAUTH_URL) {
     console.log("✅ Using NEXTAUTH_URL (production):", process.env.NEXTAUTH_URL);
     return process.env.NEXTAUTH_URL;
   }
   
-  // For preview deployments, use the baseUrl provided by NextAuth
-  // This ensures we stay within the same preview environment
-  if (baseUrl && baseUrl.includes('vercel.app')) {
-    console.log('✅ Using preview deployment URL:', baseUrl);
-    return baseUrl;
+  // Preview deployments - use VERCEL_URL if available, otherwise baseUrl
+  if (process.env.VERCEL_ENV === 'preview' || (baseUrl && baseUrl.includes('vercel.app'))) {
+    const previewUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : baseUrl;
+    console.log('✅ Using preview deployment URL:', previewUrl);
+    return previewUrl;
   }
   
   // Development or fallback
-  const fallback = baseUrl || 'https://www.revly.health';
+  const fallback = process.env.NEXTAUTH_URL || baseUrl || 'http://localhost:3000';
   console.log('✅ Using fallback URL:', fallback);
   return fallback;
 }
@@ -373,11 +374,22 @@ export const authOptions: NextAuthOptions = {
             if (stateData?.previewUrl) {
               try {
                 const previewUrlObj = new URL(stateData.previewUrl);
-                if (previewUrlObj.hostname.endsWith('vercel.app')) {
-                  console.log('✅ REDIRECT DECISION: Preview URL found in state:', stateData.previewUrl);
+                // Enhanced security: validate preview URL domain
+                const allowedPreviewDomains = [
+                  'vercel.app',
+                  'revly.health' // Allow main domain redirects too
+                ];
+                
+                const isValidPreviewDomain = allowedPreviewDomains.some(domain => 
+                  previewUrlObj.hostname.endsWith(domain)
+                );
+                
+                if (isValidPreviewDomain) {
+                  console.log('✅ REDIRECT DECISION: Valid preview URL found in state:', stateData.previewUrl);
                   console.log("✅ FINAL REDIRECT:", stateData.previewUrl);
                   return stateData.previewUrl;
                 }
+                console.log('⚠️ Invalid preview domain:', previewUrlObj.hostname);
               } catch (e) {
                 console.log("Invalid preview URL in state:", e);
               }
