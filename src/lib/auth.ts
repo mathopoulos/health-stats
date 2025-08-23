@@ -43,20 +43,7 @@ export function getProductionUrl(): string {
   return process.env.NEXTAUTH_URL || 'https://www.revly.health';
 }
 
-// Get the appropriate URL for the current environment
-// Simplified for staging workflow: production, staging, or development
-function getCurrentEnvironmentUrl(): string {
-  // Always use NEXTAUTH_URL if set (handles production, staging, and development)
-  if (process.env.NEXTAUTH_URL) {
-    console.log("✅ Using NEXTAUTH_URL:", process.env.NEXTAUTH_URL);
-    return process.env.NEXTAUTH_URL;
-  }
-  
-  // Fallback for development
-  const fallback = 'http://localhost:3000';
-  console.log('✅ Using development fallback:', fallback);
-  return fallback;
-}
+
 
 // Verify an iOS token to ensure it's authentic and not expired
 function verifyIosToken(token: string): boolean {
@@ -103,9 +90,25 @@ function verifyIosToken(token: string): boolean {
   }
 }
 
+// Force NextAuth to use HTTPS and proper URL construction
+const getBaseUrl = () => {
+  // Use NEXTAUTH_URL if available (production and staging)
+  if (process.env.NEXTAUTH_URL) {
+    return process.env.NEXTAUTH_URL;
+  }
+  
+  // Fallback for local development
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:3000';
+  }
+  
+  // This should not happen in production/staging
+  throw new Error('NEXTAUTH_URL environment variable is required');
+};
+
 export const authOptions: NextAuthOptions = {
-  // Force NextAuth to use NEXTAUTH_URL for all URL construction
-  trustHost: true,
+  // Ensure secure cookies in production and staging
+  useSecureCookies: process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.includes('https'),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
@@ -265,7 +268,7 @@ export const authOptions: NextAuthOptions = {
       console.log("Base URL:", baseUrl);
       console.log("NEXTAUTH_URL env:", process.env.NEXTAUTH_URL);
       
-      const currentEnvUrl = getCurrentEnvironmentUrl();
+      const currentEnvUrl = getBaseUrl();
       console.log("Current environment URL:", currentEnvUrl);
       
       // Direct iOS app URL scheme redirect - highest priority
