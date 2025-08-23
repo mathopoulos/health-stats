@@ -105,7 +105,7 @@ export default function SignIn() {
       }
       
       // Redirect to production OAuth with state containing preview URL
-      const productionOAuthUrl = `https://www.revly.health/api/auth/signin/google?callbackUrl=${encodeURIComponent('upload')}&state=${encodeURIComponent(JSON.stringify(stateData))}`;
+      const productionOAuthUrl = `https://www.revly.health/api/auth/signin/google?callbackUrl=${encodeURIComponent('/upload')}&state=${encodeURIComponent(JSON.stringify(stateData))}`;
       console.log("🔍 AUTH FLOW: Redirecting to production OAuth:", productionOAuthUrl);
       window.location.href = productionOAuthUrl;
       return;
