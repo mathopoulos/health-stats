@@ -374,7 +374,6 @@ export default function ProtocolsTab({
         }}
         experiment={experiments.editingExperiment}
         onSave={experiments.handleUpdateExperiment}
-        onDelete={experiments.removeExperiment}
       />
     </div>
   );
