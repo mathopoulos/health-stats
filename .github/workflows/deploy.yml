@@ -29,8 +29,5 @@ jobs:
     - name: Run unit tests
       run: npm run test:ci
     
-    - name: Build application
-      run: npm run build
-    
     - name: ✅ Quality checks passed
-      run: echo "All quality checks passed. Vercel will handle automatic deployment."
+      run: echo "All quality checks passed. Vercel will handle build and deployment with proper environment variables."
