@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import type { WorkoutProtocol } from '../services';
 
@@ -19,15 +20,41 @@ export interface UseWorkoutProtocolsReturn {
 }
 
 export function useWorkoutProtocols(initialProtocols: WorkoutProtocol[] = []): UseWorkoutProtocolsReturn {
+  const { data: session, status: sessionStatus } = useSession();
   const [workoutProtocols, setWorkoutProtocols] = useState<WorkoutProtocol[]>(initialProtocols);
   const [isSavingWorkoutProtocol, setIsSavingWorkoutProtocol] = useState(false);
 
   // Update workout protocols when initial values change (for async data loading)
   useEffect(() => {
-    if (initialProtocols.length > 0 && JSON.stringify(initialProtocols) !== JSON.stringify(workoutProtocols)) {
+    if (initialProtocols.length > 0) {
       setWorkoutProtocols(initialProtocols);
     }
-  }, [initialProtocols, workoutProtocols]);
+  }, [initialProtocols]);
+
+  // Fetch current workout protocols if no initial data provided
+  useEffect(() => {
+    const fetchWorkoutProtocols = async () => {
+      if (!session?.user?.id) return;
+      
+      try {
+        const response = await fetch(`/api/health-protocols?protocolType=exercise&activeOnly=true&userId=${session.user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data && data.data.length > 0) {
+            const protocolData = JSON.parse(data.data[0].protocol);
+            setWorkoutProtocols(protocolData.workouts || []);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching current workout protocols:', error);
+      }
+    };
+
+    // Only fetch if no initial protocols provided and we have a session
+    if (initialProtocols.length === 0 && sessionStatus === 'authenticated' && session?.user?.id) {
+      fetchWorkoutProtocols();
+    }
+  }, [initialProtocols.length, session?.user?.id, sessionStatus]);
 
   const addWorkoutProtocol = (type: string) => {
     if (workoutProtocols.some(p => p.type === type)) {

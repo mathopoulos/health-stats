@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import type { SupplementProtocol } from '../services';
 
@@ -18,15 +19,41 @@ export interface UseSupplementProtocolsReturn {
 }
 
 export function useSupplementProtocols(initialProtocols: SupplementProtocol[] = []): UseSupplementProtocolsReturn {
+  const { data: session, status: sessionStatus } = useSession();
   const [supplementProtocols, setSupplementProtocols] = useState<SupplementProtocol[]>(initialProtocols);
   const [isSavingSupplementProtocol, setIsSavingSupplementProtocol] = useState(false);
 
   // Update supplement protocols when initial values change (for async data loading)
   useEffect(() => {
-    if (initialProtocols.length > 0 && JSON.stringify(initialProtocols) !== JSON.stringify(supplementProtocols)) {
+    if (initialProtocols.length > 0) {
       setSupplementProtocols(initialProtocols);
     }
-  }, [initialProtocols, supplementProtocols]);
+  }, [initialProtocols]);
+
+  // Fetch current supplement protocols if no initial data provided
+  useEffect(() => {
+    const fetchSupplementProtocols = async () => {
+      if (!session?.user?.id) return;
+      
+      try {
+        const response = await fetch(`/api/health-protocols?protocolType=supplement&activeOnly=true&userId=${session.user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data && data.data.length > 0) {
+            const protocolData = JSON.parse(data.data[0].protocol);
+            setSupplementProtocols(protocolData.supplements || []);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching current supplement protocols:', error);
+      }
+    };
+
+    // Only fetch if no initial protocols provided and we have a session
+    if (initialProtocols.length === 0 && sessionStatus === 'authenticated' && session?.user?.id) {
+      fetchSupplementProtocols();
+    }
+  }, [initialProtocols.length, session?.user?.id, sessionStatus]);
 
   const addSupplementProtocol = (type: string, frequency: string, dosage: string, unit: string) => {
     if (supplementProtocols.some(p => p.type === type)) {

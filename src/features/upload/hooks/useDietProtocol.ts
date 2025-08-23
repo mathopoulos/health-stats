@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 
 export interface UseDietProtocolReturn {
@@ -15,15 +16,40 @@ export interface UseDietProtocolReturn {
 }
 
 export function useDietProtocol(initialDiet: string = ''): UseDietProtocolReturn {
+  const { data: session, status: sessionStatus } = useSession();
   const [currentDiet, setCurrentDiet] = useState(initialDiet);
   const [isSavingProtocol, setIsSavingProtocol] = useState(false);
 
   // Update current diet when initial value changes (for async data loading)
   useEffect(() => {
-    if (initialDiet && initialDiet !== currentDiet) {
+    if (initialDiet) {
       setCurrentDiet(initialDiet);
     }
-  }, [initialDiet, currentDiet]);
+  }, [initialDiet]);
+
+  // Fetch current diet if no initial data provided
+  useEffect(() => {
+    const fetchCurrentDiet = async () => {
+      if (!session?.user?.id) return;
+      
+      try {
+        const response = await fetch(`/api/health-protocols?protocolType=diet&activeOnly=true&userId=${session.user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data && data.data.length > 0) {
+            setCurrentDiet(data.data[0].protocol || '');
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching current diet:', error);
+      }
+    };
+
+    // Only fetch if no initial diet was provided and we have a session
+    if (!initialDiet && sessionStatus === 'authenticated' && session?.user?.id) {
+      fetchCurrentDiet();
+    }
+  }, [initialDiet, session?.user?.id, sessionStatus]);
 
   const handleDietChange = async (newDiet: string) => {
     if (newDiet === currentDiet) return;
