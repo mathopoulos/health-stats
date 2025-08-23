@@ -16,6 +16,10 @@ const usersWithValidatedInviteCodes = new Set<string>();
 // In a real app, this would be stored in a database
 const paidUsers = new Set<string>();
 
+// Temporary preview URL cache for OAuth flow
+// In a real app, this would be stored in Redis or a database
+const previewUrlCache = new Map<string, string>();
+
 // Temporary solution for development - mark some test accounts as paid
 if (process.env.NODE_ENV === 'development') {
   // Add some test emails that are always considered paid
@@ -227,6 +231,12 @@ export const authOptions: NextAuthOptions = {
         if (token.isIosApp) {
           (session as any).isIosApp = true;
         }
+        
+        // Pass the preview URL to the session if present
+        if (token.previewUrl) {
+          (session as any).previewUrl = token.previewUrl;
+          console.log("Session callback - passed preview URL to session:", token.previewUrl);
+        }
       }
       return session;
     },
@@ -235,16 +245,31 @@ export const authOptions: NextAuthOptions = {
       if (account) {
         token.accessToken = account.access_token;
         
-        // Check for iOS authentication
+        // Check for preview URL or iOS authentication in state
         try {
           if (account.state) {
             const stateData = JSON.parse(account.state as string);
+            console.log("JWT callback - parsed state data:", stateData);
+            
+            // Store preview URL in cache for redirect callback
+            if (stateData.previewUrl && user?.email) {
+              token.previewUrl = stateData.previewUrl;
+              previewUrlCache.set(user.email, stateData.previewUrl);
+              console.log("JWT callback - stored preview URL in cache for user:", user.email, "->", stateData.previewUrl);
+              
+              // Clean up cache after 5 minutes
+              setTimeout(() => {
+                previewUrlCache.delete(user.email!);
+                console.log("JWT callback - cleaned up preview URL cache for user:", user.email);
+              }, 5 * 60 * 1000);
+            }
             
             // Set iOS flag if we have a verified token or legacy indicators
             if ((stateData.iosToken && verifyIosToken(stateData.iosToken)) || 
                 stateData.platform === 'ios' || 
                 stateData.iosBypass === true) {
               token.isIosApp = true;
+              console.log("JWT callback - stored iOS flag in token");
             }
           }
         } catch (e) {
@@ -272,6 +297,23 @@ export const authOptions: NextAuthOptions = {
       console.log("VERCEL_URL env:", process.env.VERCEL_URL);
       console.log("USE_OAUTH_PROXY env:", process.env.USE_OAUTH_PROXY);
       console.log("OAUTH_PROXY_URL env:", process.env.OAUTH_PROXY_URL);
+      
+      // Check cache for preview URL (try all cached entries for recent OAuth flows)
+      console.log("Redirect callback - checking preview URL cache:", Array.from(previewUrlCache.entries()));
+      for (const [email, previewUrl] of previewUrlCache.entries()) {
+        try {
+          const previewUrlObj = new URL(previewUrl);
+          if (previewUrlObj.hostname.endsWith('vercel.app')) {
+            console.log("✅ REDIRECT DECISION: Found preview URL in cache for user:", email);
+            console.log("✅ FINAL REDIRECT:", previewUrl);
+            // Clean up the cache entry after use
+            previewUrlCache.delete(email);
+            return previewUrl;
+          }
+        } catch (e) {
+          console.log("Invalid preview URL in cache:", e);
+        }
+      }
       
       // Log all URL components for detailed analysis
       try {
