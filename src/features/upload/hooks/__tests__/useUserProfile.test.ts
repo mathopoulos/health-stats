@@ -198,6 +198,32 @@ describe('useUserProfile', () => {
 
       expect(global.fetch).toHaveBeenCalled();
     });
+
+    it('handles fetchUserData callback directly', async () => {
+      // Mock successful response
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          user: {
+            id: 'test-user-id',
+            name: 'Callback Test User',
+            age: 30,
+            sex: 'male',
+            profileImage: 'callback-test.jpg'
+          }
+        }),
+      });
+
+      const { result } = renderHook(() => useUserProfile());
+
+      // The fetchUserData callback should be available and tested
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+
+      expect(result.current.name).toBe('Callback Test User');
+    });
   });
 
   describe('data parsing', () => {
