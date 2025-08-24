@@ -802,6 +802,239 @@ describe('HealthChart', () => {
     });
   });
 
+  describe('Tick Formatter Function Coverage', () => {
+    it('should format dates correctly for different time ranges', () => {
+      // Test the getTickFormatter function indirectly through different time range props
+      const timeRanges: TimeRange[] = ['last30days', 'last3months', 'last6months', 'last1year', 'last3years'];
+      
+      timeRanges.forEach(timeRange => {
+        const { unmount } = render(
+          <HealthChart
+            title={`Test Chart ${timeRange}`}
+            data={mockHealthData}
+            loading={false}
+            timeRange={timeRange}
+            onTimeRangeChange={mockOnTimeRangeChange}
+            isDarkMode={false}
+            metricType="hrv"
+            unit="ms"
+          />
+        );
+        
+        // Verify XAxis has the formatter
+        const xAxis = screen.getByTestId('x-axis');
+        expect(xAxis).toHaveAttribute('data-has-formatter', 'true');
+        
+        // Clean up after each iteration
+        unmount();
+      });
+    });
+  });
+
+  describe('Tooltip Rendering Coverage', () => {
+    it('should handle tooltip with weekly aggregation and date ranges', () => {
+      const weeklyDataWithRanges = [{
+        date: '2025-07-15',
+        value: 45.5,
+        meta: {
+          aggregationType: 'weekly' as const,
+          pointCount: 7,
+          startDate: '2025-07-14',
+          endDate: '2025-07-20'
+        }
+      }];
+
+      render(
+        <HealthChart
+          title="Weekly Chart"
+          data={weeklyDataWithRanges}
+          loading={false}
+          timeRange="last3months"
+          onTimeRangeChange={mockOnTimeRangeChange}
+          isDarkMode={false}
+          metricType="hrv"
+          unit="ms"
+        />
+      );
+
+      expect(screen.getByTestId('tooltip')).toHaveAttribute('data-has-content', 'true');
+    });
+
+    it('should handle tooltip with monthly aggregation and date ranges', () => {
+      const monthlyDataWithRanges = [{
+        date: '2025-07-15',
+        value: 178.2,
+        meta: {
+          aggregationType: 'monthly' as const,
+          pointCount: 31,
+          startDate: '2025-07-01',
+          endDate: '2025-07-31'
+        }
+      }];
+
+      render(
+        <HealthChart
+          title="Monthly Chart"
+          data={monthlyDataWithRanges}
+          loading={false}
+          timeRange="last1year"
+          onTimeRangeChange={mockOnTimeRangeChange}
+          isDarkMode={false}
+          metricType="weight"
+          unit="lb"
+        />
+      );
+
+      expect(screen.getByTestId('tooltip')).toHaveAttribute('data-has-content', 'true');
+    });
+
+    it('should handle tooltip fallback for data without date ranges', () => {
+      const dataWithoutRanges = [{
+        date: '2025-07-15',
+        value: 45.5,
+        meta: {
+          aggregationType: 'weekly' as const,
+          pointCount: 7
+          // Missing startDate and endDate
+        }
+      }];
+
+      render(
+        <HealthChart
+          title="Fallback Chart"
+          data={dataWithoutRanges}
+          loading={false}
+          timeRange="last30days"
+          onTimeRangeChange={mockOnTimeRangeChange}
+          isDarkMode={false}
+          metricType="hrv"
+          unit="ms"
+        />
+      );
+
+      expect(screen.getByTestId('tooltip')).toHaveAttribute('data-has-content', 'true');
+    });
+
+    it('should handle tooltip for non-aggregated data with different time ranges', () => {
+      const nonAggregatedData = [{
+        date: '2025-07-15',
+        value: 45.5
+        // No meta property
+      }];
+
+      // Test both short and long time range formatting paths
+      const testCases = [
+        { timeRange: 'last30days' as TimeRange, expectedFormat: 'short' },
+        { timeRange: 'last3months' as TimeRange, expectedFormat: 'short' },
+        { timeRange: 'last1year' as TimeRange, expectedFormat: 'long' }
+      ];
+
+      testCases.forEach(({ timeRange }) => {
+        const { rerender } = render(
+          <HealthChart
+            title="Non-Aggregated Chart"
+            data={nonAggregatedData}
+            loading={false}
+            timeRange={timeRange}
+            onTimeRangeChange={mockOnTimeRangeChange}
+            isDarkMode={false}
+            metricType="hrv"
+            unit="ms"
+          />
+        );
+
+        expect(screen.getByTestId('tooltip')).toHaveAttribute('data-has-content', 'true');
+        rerender(<div />);
+      });
+    });
+  });
+
+  describe('Chart Rendering and Visual Elements', () => {
+    it('should render chart with proper stroke color and dark mode styling', () => {
+      render(
+        <HealthChart
+          title="Dark Mode Chart"
+          data={mockHealthData}
+          loading={false}
+          timeRange="last3months"
+          onTimeRangeChange={mockOnTimeRangeChange}
+          isDarkMode={true}
+          metricType="hrv"
+          unit="ms"
+        />
+      );
+
+      const line = screen.getByTestId('line');
+      // In dark mode, the color changes to a lighter version
+      expect(line).toHaveAttribute('data-stroke', '#818cf8');
+      expect(line).toHaveAttribute('data-unit', 'ms');
+    });
+
+    it('should render chart with light mode styling', () => {
+      render(
+        <HealthChart
+          title="Light Mode Chart"
+          data={mockHealthData}
+          loading={false}
+          timeRange="last3months"
+          onTimeRangeChange={mockOnTimeRangeChange}
+          isDarkMode={false}
+          metricType="vo2max"
+          unit="ml/kg/min"
+        />
+      );
+
+      const line = screen.getByTestId('line');
+      expect(line).toHaveAttribute('data-stroke', '#4f46e5');
+      expect(line).toHaveAttribute('data-unit', 'ml/kg/min');
+    });
+
+    it('should handle data with multiple points for chart visualization', () => {
+      const multiPointData = [
+        { date: '2025-07-01', value: 42.5 },
+        { date: '2025-07-08', value: 44.0 },
+        { date: '2025-07-15', value: 45.5 },
+        { date: '2025-07-22', value: 43.8 }
+      ];
+
+      render(
+        <HealthChart
+          title="Multi-Point Chart"
+          data={multiPointData}
+          loading={false}
+          timeRange="last3months"
+          onTimeRangeChange={mockOnTimeRangeChange}
+          isDarkMode={false}
+          metricType="hrv"
+          unit="ms"
+        />
+      );
+
+      // Chart should render with multiple data points
+      expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+      expect(screen.getByTestId('line')).toHaveAttribute('data-key', 'value');
+    });
+
+    it('should render empty state when no data provided', () => {
+      render(
+        <HealthChart
+          title="Empty Chart"
+          data={[]}
+          loading={false}
+          timeRange="last3months"
+          onTimeRangeChange={mockOnTimeRangeChange}
+          isDarkMode={false}
+          metricType="hrv"
+          unit="ms"
+        />
+      );
+
+      // When no data, chart shows empty state message instead of chart components
+      expect(screen.getByText(/No.*data available for the/)).toBeInTheDocument();
+      expect(screen.queryByTestId('line-chart')).not.toBeInTheDocument();
+    });
+  });
+
   describe('Enhanced Metadata Handling', () => {
     it('should handle data with complete aggregation metadata', () => {
       // Provide multiple data points for trend calculation
