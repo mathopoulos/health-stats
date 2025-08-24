@@ -110,8 +110,7 @@ function renderCustomTooltip({ active, payload, label, timeRange }: any) {
         </p>
         {meta && (
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {meta.aggregationType === 'weekly' ? 'Weekly avg' : 'Monthly avg'} 
-            ({meta.pointCount} points)
+            {meta.aggregationType === 'weekly' ? 'Weekly avg' : 'Monthly avg'} ({meta.pointCount} points)
           </p>
         )}
       </div>
