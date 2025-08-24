@@ -1,3 +1,5 @@
+import React from 'react';
+import { render } from '@testing-library/react';
 import {
   getStatusColor,
   getProgressColor,
@@ -6,7 +8,8 @@ import {
   getMetricUnit,
   getBloodMarkerColors,
   getMetricColors,
-  formatDate
+  formatDate,
+  renderCustomTooltip
 } from '../experimentDisplay';
 
 describe('experimentDisplay', () => {
@@ -183,6 +186,84 @@ describe('experimentDisplay', () => {
     it('should handle ISO date strings', () => {
       const result = formatDate('2023-01-15T12:00:00Z');
       expect(result).toMatch(/Jan 1[45]/);
+    });
+  });
+
+  describe('renderCustomTooltip', () => {
+    it('should render tooltip when active with payload data', () => {
+      const props = {
+        active: true,
+        payload: [
+          {
+            value: 150.5,
+            payload: { unit: 'lbs' }
+          }
+        ],
+        label: '2023-01-15'
+      };
+
+      const tooltip = renderCustomTooltip(props);
+      
+      expect(tooltip).toBeTruthy();
+      
+      // Render the tooltip to check its content
+      const { container } = render(<div>{tooltip}</div>);
+      expect(container.textContent).toContain('150.5 lbs');
+      expect(container.textContent).toMatch(/Jan 1[45], 2023/);
+    });
+
+    it('should return null when not active', () => {
+      const props = {
+        active: false,
+        payload: [],
+        label: '2023-01-15'
+      };
+
+      const tooltip = renderCustomTooltip(props);
+      expect(tooltip).toBeNull();
+    });
+
+    it('should return null when no payload', () => {
+      const props = {
+        active: true,
+        payload: null,
+        label: '2023-01-15'
+      };
+
+      const tooltip = renderCustomTooltip(props);
+      expect(tooltip).toBeNull();
+    });
+
+    it('should return null when payload is empty', () => {
+      const props = {
+        active: true,
+        payload: [],
+        label: '2023-01-15'
+      };
+
+      const tooltip = renderCustomTooltip(props);
+      expect(tooltip).toBeNull();
+    });
+
+    it('should handle tooltip without unit', () => {
+      const props = {
+        active: true,
+        payload: [
+          {
+            value: 75,
+            payload: {}
+          }
+        ],
+        label: '2023-01-15'
+      };
+
+      const tooltip = renderCustomTooltip(props);
+      
+      expect(tooltip).toBeTruthy();
+      
+      const { container } = render(<div>{tooltip}</div>);
+      expect(container.textContent).toContain('75.0');
+      expect(container.textContent).not.toContain('undefined');
     });
   });
 });
