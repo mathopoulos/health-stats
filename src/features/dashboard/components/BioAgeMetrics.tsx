@@ -20,11 +20,11 @@ function MetricCard({
 }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-6 py-4 sm:py-6 shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
-        <h3 className="text-sm sm:text-lg font-medium text-gray-900 dark:text-white">
+      <div className="flex flex-col gap-2">
+        <h3 className="text-sm sm:text-base font-medium text-gray-600 dark:text-gray-300 leading-tight">
           {title}
         </h3>
-        <span className={`text-xl sm:text-2xl font-bold ${colorClass}`}>
+        <span className={`text-xl sm:text-2xl font-bold ${colorClass} leading-none`}>
           {loading ? "..." : value}
         </span>
       </div>
@@ -54,7 +54,7 @@ export function BioAgeMetrics({ data, loading }: BioAgeMetricsProps) {
     : "—";
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
       <MetricCard
         title="Biological Age"
         value={biologicalAge}

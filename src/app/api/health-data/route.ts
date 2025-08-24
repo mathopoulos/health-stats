@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { fetchAllHealthData, type HealthDataType, generatePresignedUploadUrl } from '@/server/aws/s3';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import clientPromise from '@/db/client';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -43,36 +44,36 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     if (type === 'bloodMarkers') {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
-        const bloodMarkersUrl = new URL(`/api/blood-markers?userId=${userId}`, baseUrl);
+        // Direct database query instead of internal HTTP call
+        const client = await clientPromise;
+        const db = client.db("health-stats");
+
+        const query: any = { userId };
         
-        if (forceRefresh) {
-          bloodMarkersUrl.searchParams.append('forceRefresh', 'true');
+        // Support for additional query parameters from the original API
+        const startDate = searchParams.get('startDate');
+        const endDate = searchParams.get('endDate');
+        const category = searchParams.get('category');
+
+        if (startDate || endDate) {
+          query.date = {};
+          if (startDate) query.date.$gte = new Date(startDate);
+          if (endDate) query.date.$lte = new Date(endDate);
         }
 
-        const bloodMarkersResponse = await fetch(bloodMarkersUrl.toString(), {
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
-        });
-        
-        if (!bloodMarkersResponse.ok) {
-          const errorData = await bloodMarkersResponse.json().catch(() => ({ error: 'Failed to fetch blood markers and parse error response' }));
-          throw new Error(errorData.error || `Failed to fetch blood markers: ${bloodMarkersResponse.statusText}`);
+        if (category) {
+          query['markers.category'] = category;
         }
-        
-        const bloodMarkersData = await bloodMarkersResponse.json();
-        if (bloodMarkersData.success) {
-          data = bloodMarkersData.data;
-        } else {
-          success = false;
-          errorMsg = bloodMarkersData.error || 'Fetching blood markers was not successful.';
-          data = [];
-        }
+
+        const results = await db
+          .collection('blood-markers')
+          .find(query)
+          .sort({ date: -1 })
+          .toArray();
+
+        data = results;
       } catch (e) {
-        console.error('Error fetching blood markers from internal API:', e);
+        console.error('Error fetching blood markers from database:', e);
         success = false;
         errorMsg = e instanceof Error ? e.message : 'Failed to fetch blood markers due to an unexpected error.';
         data = [];
