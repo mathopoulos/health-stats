@@ -58,21 +58,48 @@ function getTickFormatter(timeRange: string) {
 function renderCustomTooltip({ active, payload, label, timeRange }: any) {
   if (active && payload && payload.length) {
     const data = payload[0];
-    const date = new Date(label);
+    const meta = data.payload.meta;
     
     let dateStr = '';
-    if (timeRange === 'last30days' || timeRange === 'last3months') {
-      dateStr = date.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        month: 'short', 
-        day: 'numeric' 
-      });
+    
+    // Check if we have aggregated data with date ranges
+    if (meta && meta.startDate && meta.endDate) {
+      const startDate = new Date(meta.startDate);
+      const endDate = new Date(meta.endDate);
+      
+      if (meta.aggregationType === 'weekly') {
+        // Weekly: Show "Jul 7 - Jul 13, 2025" (Monday - Sunday)
+        dateStr = `${startDate.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric' 
+        })} - ${endDate.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric', 
+          year: 'numeric' 
+        })}`;
+      } else if (meta.aggregationType === 'monthly') {
+        // Monthly: Show "July 2025" (month name + year)
+        dateStr = startDate.toLocaleDateString('en-US', { 
+          month: 'long', 
+          year: 'numeric' 
+        });
+      }
     } else {
-      dateStr = date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric',
-        year: 'numeric'
-      });
+      // Fallback to original logic for non-aggregated data
+      const date = new Date(label);
+      if (timeRange === 'last30days' || timeRange === 'last3months') {
+        dateStr = date.toLocaleDateString('en-US', { 
+          weekday: 'short', 
+          month: 'short', 
+          day: 'numeric' 
+        });
+      } else {
+        dateStr = date.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric',
+          year: 'numeric'
+        });
+      }
     }
 
     return (
@@ -81,10 +108,10 @@ function renderCustomTooltip({ active, payload, label, timeRange }: any) {
         <p className="text-sm font-semibold text-gray-900 dark:text-white">
           {`${data.value}${data.unit || ''}`}
         </p>
-        {data.payload.meta && (
+        {meta && (
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {data.payload.meta.aggregationType === 'weekly' ? 'Weekly avg' : 'Monthly avg'} 
-            ({data.payload.meta.pointCount} points)
+            {meta.aggregationType === 'weekly' ? 'Weekly avg' : 'Monthly avg'} 
+            ({meta.pointCount} points)
           </p>
         )}
       </div>
