@@ -68,7 +68,7 @@ export default function WorkoutHeatMap({ workouts }: WorkoutHeatMapProps) {
   }, [values]);
 
   // Memoized tooltip content renderer for better performance
-  const renderTooltipContent = React.useCallback(({ content }: { content?: string }) => {
+  const renderTooltipContent = React.useCallback(({ content }: { content: string | null; activeAnchor: HTMLElement | null }) => {
     if (!content) return <WorkoutTooltip value={null} />;
     const currentValue = valuesByDate.get(content) || null;
     return <WorkoutTooltip value={currentValue} />;
@@ -114,8 +114,8 @@ export default function WorkoutHeatMap({ workouts }: WorkoutHeatMapProps) {
                 'data-tooltip-content': value && 'date' in value ? value.date : ''
               } as any)}
               showWeekdayLabels={true}
-              weekdayLabels={UI.WEEKDAY_LABELS}
-              monthLabels={UI.MONTH_LABELS}
+              weekdayLabels={[...UI.WEEKDAY_LABELS]}
+              monthLabels={[...UI.MONTH_LABELS]}
               gutterSize={UI.GUTTER_SIZE}
             />
           </div>
