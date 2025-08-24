@@ -6,6 +6,8 @@ export interface HealthData {
   meta?: {
     aggregationType?: 'weekly' | 'monthly';
     pointCount?: number;
+    startDate?: string;
+    endDate?: string;
   };
 }
 
