@@ -2,37 +2,52 @@ import type { HealthData } from '@/types/dashboard';
 
 // Helper function to aggregate data by week or month
 export function aggregateData(data: HealthData[], aggregationType: 'weekly' | 'monthly'): HealthData[] {
-  const groupedData = new Map<string, HealthData[]>();
+  const groupedData = new Map<string, { items: HealthData[], startDate: Date, endDate: Date }>();
   
   data.forEach(item => {
     const date = new Date(item.date);
     let key: string;
+    let startDate: Date;
+    let endDate: Date;
     
     if (aggregationType === 'weekly') {
       // Convert to UTC to avoid timezone issues
       const utcDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-      // Get the week start date (Sunday) in UTC
+      // Get the Monday of this week (Monday = 1, Sunday = 0)
       const dayOfWeek = utcDate.getUTCDay();
-      const weekStart = new Date(utcDate);
-      weekStart.setUTCDate(utcDate.getUTCDate() - dayOfWeek);
-      // Use UTC date string for consistent grouping
-      key = weekStart.toISOString().split('T')[0];
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Handle Sunday (0) as last day of week
+      const weekStartMonday = new Date(utcDate);
+      weekStartMonday.setUTCDate(utcDate.getUTCDate() + mondayOffset);
+      
+      // Calculate Sunday of the same week
+      const weekEndSunday = new Date(weekStartMonday);
+      weekEndSunday.setUTCDate(weekStartMonday.getUTCDate() + 6);
+      
+      startDate = weekStartMonday;
+      endDate = weekEndSunday;
+      key = weekStartMonday.toISOString().split('T')[0];
     } else {
-      // Monthly aggregation - use YYYY-MM as key
+      // Monthly aggregation - calculate first and last day of the month
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      startDate = new Date(year, month, 1);
+      endDate = new Date(year, month + 1, 0); // Last day of the month
       key = date.toISOString().slice(0, 7); // YYYY-MM format
     }
     
     if (!groupedData.has(key)) {
-      groupedData.set(key, []);
+      groupedData.set(key, { items: [], startDate, endDate });
     }
     
-    groupedData.get(key)?.push(item);
+    groupedData.get(key)?.items.push(item);
   });
   
   // Aggregate each group to a single data point (average value)
   const aggregatedData: HealthData[] = [];
   
-  groupedData.forEach((items, key) => {
+  groupedData.forEach((group, key) => {
+    const { items, startDate, endDate } = group;
+    
     // Calculate average value for the group
     const sum = items.reduce((acc, curr) => acc + curr.value, 0);
     const avgValue = sum / items.length;
@@ -43,10 +58,12 @@ export function aggregateData(data: HealthData[], aggregationType: 'weekly' | 'm
     const aggregatedItem: HealthData = {
       date: items[middleIndex]?.date || items[0].date,
       value: Number(avgValue.toFixed(2)), // Round to 2 decimal places
-      // Add metadata for tooltip
+      // Add metadata for tooltip with date ranges
       meta: {
         aggregationType: aggregationType,
-        pointCount: items.length
+        pointCount: items.length,
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0]
       }
     };
     
@@ -141,37 +158,26 @@ export function calculateTrendComparison(data: HealthData[], timeRange: string) 
   return { current: 0, previous: 0, hasData: false };
 }
 
-// Calculate trend comparison using pre-filtered/aggregated data (like original implementation)
+// Calculate trend comparison using pre-filtered/aggregated data (first vs last data points)
 export function calculateTrendFromAggregatedData(aggregatedData: HealthData[]) {
   if (aggregatedData.length === 0) {
     return { current: 0, previous: 0, hasData: false };
   }
 
-  // Split the aggregated data in half (like the original implementation)
-  const halfPeriod = Math.floor(aggregatedData.length / 2);
-  
-  // Current period (most recent half of the data)
-  const currentPeriodData = aggregatedData.slice(-halfPeriod);
-  const currentAvg = currentPeriodData.length > 0 
-    ? currentPeriodData.reduce((sum, item) => sum + item.value, 0) / currentPeriodData.length 
-    : 0;
-  
-  // Previous period (older half of the data)  
-  const previousPeriodData = aggregatedData.slice(-aggregatedData.length, -halfPeriod);
-  const previousAvg = previousPeriodData.length > 0 
-    ? previousPeriodData.reduce((sum, item) => sum + item.value, 0) / previousPeriodData.length 
-    : 0;
-  
-  // Only return data if we have enough for both periods
-  if (currentPeriodData.length > 0 && previousPeriodData.length > 0) {
-    return {
-      current: currentAvg,
-      previous: previousAvg,
-      hasData: true,
-    };
+  // Need at least 2 data points to compare first vs last
+  if (aggregatedData.length < 2) {
+    return { current: 0, previous: 0, hasData: false };
   }
 
-  return { current: 0, previous: 0, hasData: false };
+  // Compare first data point vs last data point in the selected timeframe
+  const firstDataPoint = aggregatedData[0];
+  const lastDataPoint = aggregatedData[aggregatedData.length - 1];
+  
+  return {
+    current: lastDataPoint.value,
+    previous: firstDataPoint.value,
+    hasData: true,
+  };
 }
 
 // Get time range in days

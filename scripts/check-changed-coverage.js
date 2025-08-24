@@ -42,6 +42,7 @@ function getChangedFiles() {
       !file.includes('.spec.') &&
       !file.includes('/__tests__/') &&
       !file.includes('/index.ts') && // Skip barrel files
+      !file.includes('/types/') && // Skip TypeScript type definition files
       // Skip complex integration files with external dependencies (next-auth, SessionProvider)
       !file.includes('src/features/admin/components/AdminLayout.tsx') &&
       !file.includes('src/features/admin/hooks/useAdminAuth.ts') &&
@@ -88,6 +89,7 @@ function runCoverageForChangedFiles(changedFiles) {
       '--collectCoverageFrom=!src/**/*.{test,spec}.{ts,tsx}',
       '--collectCoverageFrom=!src/**/__tests__/**',
       '--collectCoverageFrom=!src/**/index.{ts,tsx}',
+      '--collectCoverageFrom=!src/types/**/*',
       '--coverageThreshold={}', // Disable global thresholds
       '--findRelatedTests',
       '--passWithNoTests',
