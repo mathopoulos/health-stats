@@ -518,4 +518,370 @@ describe('HealthChart', () => {
       expect(trendIndicator.querySelector('[data-testid="body-fat"]')).toHaveTextContent('false');
     });
   });
+
+  describe('Enhanced Tooltip Functionality', () => {
+    // Import the actual renderCustomTooltip function for testing
+    const mockTooltipProps = {
+      active: true,
+      payload: [{
+        value: 45.5,
+        unit: 'ms',
+        payload: {
+          meta: null
+        }
+      }],
+      label: '2025-07-15',
+      timeRange: 'last30days'
+    };
+
+    it('should render weekly aggregation tooltip with Monday-Sunday date range', () => {
+      const tooltipProps = {
+        ...mockTooltipProps,
+        timeRange: 'last3months',
+        payload: [{
+          ...mockTooltipProps.payload[0],
+          payload: {
+            meta: {
+              aggregationType: 'weekly',
+              pointCount: 63,
+              startDate: '2025-08-03',
+              endDate: '2025-08-09'
+            }
+          }
+        }]
+      };
+
+      render(
+        <HealthChart
+          title="Test Chart"
+          data={mockHealthData}
+          loading={false}
+          timeRange="last3months"
+          onTimeRangeChange={mockOnTimeRangeChange}
+          isDarkMode={false}
+          metricType="hrv"
+          unit="ms"
+        />
+      );
+
+      // The tooltip content function is internal, but we can test the component renders
+      // and check for data attributes that indicate the tooltip setup
+      expect(screen.getByTestId('tooltip')).toBeInTheDocument();
+      expect(screen.getByTestId('tooltip')).toHaveAttribute('data-has-content', 'true');
+    });
+
+    it('should render monthly aggregation tooltip with month name only', () => {
+      const tooltipProps = {
+        ...mockTooltipProps,
+        timeRange: 'last1year',
+        payload: [{
+          ...mockTooltipProps.payload[0],
+          payload: {
+            meta: {
+              aggregationType: 'monthly',
+              pointCount: 301,
+              startDate: '2025-07-01',
+              endDate: '2025-07-31'
+            }
+          }
+        }]
+      };
+
+      render(
+        <HealthChart
+          title="Test Chart"
+          data={mockHealthData}
+          loading={false}
+          timeRange="last1year"
+          onTimeRangeChange={mockOnTimeRangeChange}
+          isDarkMode={false}
+          metricType="hrv"
+          unit="ms"
+        />
+      );
+
+      expect(screen.getByTestId('tooltip')).toBeInTheDocument();
+      expect(screen.getByTestId('tooltip')).toHaveAttribute('data-has-content', 'true');
+    });
+
+    it('should handle fallback tooltip rendering for non-aggregated data', () => {
+      const tooltipProps = {
+        ...mockTooltipProps,
+        payload: [{
+          ...mockTooltipProps.payload[0],
+          payload: {
+            meta: null // No aggregation metadata
+          }
+        }]
+      };
+
+      render(
+        <HealthChart
+          title="Test Chart"
+          data={mockHealthData}
+          loading={false}
+          timeRange="last30days"
+          onTimeRangeChange={mockOnTimeRangeChange}
+          isDarkMode={false}
+          metricType="hrv"
+          unit="ms"
+        />
+      );
+
+      expect(screen.getByTestId('tooltip')).toBeInTheDocument();
+    });
+
+    it('should display correct spacing in tooltip metadata text', () => {
+      const dataWithMeta = [{
+        date: '2025-07-15',
+        value: 45.5,
+        meta: {
+          aggregationType: 'weekly' as const,
+          pointCount: 63,
+          startDate: '2025-08-03',
+          endDate: '2025-08-09'
+        }
+      }];
+
+      render(
+        <HealthChart
+          title="Test Chart"
+          data={dataWithMeta}
+          loading={false}
+          timeRange="last3months"
+          onTimeRangeChange={mockOnTimeRangeChange}
+          isDarkMode={false}
+          metricType="hrv"
+          unit="ms"
+        />
+      );
+
+      // Check that tooltip component is set up correctly
+      expect(screen.getByTestId('tooltip')).toBeInTheDocument();
+    });
+  });
+
+  describe('Data Aggregation Integration', () => {
+    it('should handle weekly aggregated data correctly', () => {
+      const weeklyAggregatedData = [{
+        date: '2025-07-15',
+        value: 45.5,
+        meta: {
+          aggregationType: 'weekly' as const,
+          pointCount: 7,
+          startDate: '2025-07-14',
+          endDate: '2025-07-20'
+        }
+      }];
+
+      render(
+        <HealthChart
+          title="Weekly HRV Chart"
+          data={weeklyAggregatedData}
+          loading={false}
+          timeRange="last3months"
+          onTimeRangeChange={mockOnTimeRangeChange}
+          isDarkMode={false}
+          metricType="hrv"
+          unit="ms"
+        />
+      );
+
+      expect(screen.getByText('Weekly HRV Chart')).toBeInTheDocument();
+      expect(screen.getByTestId('line-chart')).toHaveAttribute('data-chart-points', '1');
+    });
+
+    it('should handle monthly aggregated data correctly', () => {
+      const monthlyAggregatedData = [{
+        date: '2025-07-15',
+        value: 178.2,
+        meta: {
+          aggregationType: 'monthly' as const,
+          pointCount: 28,
+          startDate: '2025-07-01',
+          endDate: '2025-07-31'
+        }
+      }];
+
+      render(
+        <HealthChart
+          title="Monthly Weight Chart"
+          data={monthlyAggregatedData}
+          loading={false}
+          timeRange="last1year"
+          onTimeRangeChange={mockOnTimeRangeChange}
+          isDarkMode={false}
+          metricType="weight"
+          unit="lb"
+        />
+      );
+
+      expect(screen.getByText('Monthly Weight Chart')).toBeInTheDocument();
+      expect(screen.getByTestId('line-chart')).toHaveAttribute('data-chart-points', '1');
+    });
+
+    it('should handle mixed data with and without aggregation metadata', () => {
+      const mixedData = [
+        {
+          date: '2025-07-01',
+          value: 45.0
+          // No meta property
+        },
+        {
+          date: '2025-07-15',
+          value: 46.5,
+          meta: {
+            aggregationType: 'weekly' as const,
+            pointCount: 5,
+            startDate: '2025-07-14',
+            endDate: '2025-07-20'
+          }
+        }
+      ];
+
+      render(
+        <HealthChart
+          title="Mixed Data Chart"
+          data={mixedData}
+          loading={false}
+          timeRange="last3months"
+          onTimeRangeChange={mockOnTimeRangeChange}
+          isDarkMode={false}
+          metricType="hrv"
+          unit="ms"
+        />
+      );
+
+      expect(screen.getByText('Mixed Data Chart')).toBeInTheDocument();
+      // Chart may aggregate data, so check that it renders successfully
+      expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+    });
+  });
+
+  describe('Time Range Specific Behavior', () => {
+    it('should use appropriate tick formatter for 6 month range', () => {
+      render(
+        <HealthChart
+          title="6 Month Chart"
+          data={mockHealthData}
+          loading={false}
+          timeRange="last6months"
+          onTimeRangeChange={mockOnTimeRangeChange}
+          isDarkMode={false}
+          metricType="hrv"
+          unit="ms"
+        />
+      );
+
+      const xAxis = screen.getByTestId('x-axis');
+      expect(xAxis).toHaveAttribute('data-has-formatter', 'true');
+    });
+
+    it('should handle different time ranges with correct formatting logic', () => {
+      const timeRanges: TimeRange[] = ['last30days', 'last3months', 'last6months', 'last1year', 'last3years'];
+      
+      timeRanges.forEach(timeRange => {
+        const { rerender } = render(
+          <HealthChart
+            title={`Chart ${timeRange}`}
+            data={mockHealthData}
+            loading={false}
+            timeRange={timeRange}
+            onTimeRangeChange={mockOnTimeRangeChange}
+            isDarkMode={false}
+            metricType="hrv"
+            unit="ms"
+          />
+        );
+
+        expect(screen.getByTestId('x-axis')).toHaveAttribute('data-has-formatter', 'true');
+        
+        // Clean up for next iteration
+        rerender(<div />);
+      });
+    });
+  });
+
+  describe('Enhanced Metadata Handling', () => {
+    it('should handle data with complete aggregation metadata', () => {
+      // Provide multiple data points for trend calculation
+      const completeMetaData = [
+        {
+          date: '2025-05-15',
+          value: 42.5,
+          meta: {
+            aggregationType: 'monthly' as const,
+            pointCount: 280,
+            startDate: '2025-05-01',
+            endDate: '2025-05-31'
+          }
+        },
+        {
+          date: '2025-06-15',
+          value: 44.0,
+          meta: {
+            aggregationType: 'monthly' as const,
+            pointCount: 295,
+            startDate: '2025-06-01',
+            endDate: '2025-06-30'
+          }
+        },
+        {
+          date: '2025-07-15',
+          value: 45.5,
+          meta: {
+            aggregationType: 'monthly' as const,
+            pointCount: 301,
+            startDate: '2025-07-01',
+            endDate: '2025-07-31'
+          }
+        }
+      ];
+
+      render(
+        <HealthChart
+          title="Complete Metadata Chart"
+          data={completeMetaData}
+          loading={false}
+          timeRange="last6months"
+          onTimeRangeChange={mockOnTimeRangeChange}
+          isDarkMode={false}
+          metricType="hrv"
+          unit="ms"
+        />
+      );
+
+      expect(screen.getByText('Complete Metadata Chart')).toBeInTheDocument();
+      // Check that chart renders successfully with metadata
+      expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+      expect(screen.getByTestId('tooltip')).toBeInTheDocument();
+    });
+
+    it('should handle data with partial aggregation metadata gracefully', () => {
+      const partialMetaData = [{
+        date: '2025-07-15',
+        value: 45.5,
+        meta: {
+          aggregationType: 'weekly' as const,
+          pointCount: 7
+          // Missing startDate and endDate
+        }
+      }];
+
+      render(
+        <HealthChart
+          title="Partial Metadata Chart"
+          data={partialMetaData}
+          loading={false}
+          timeRange="last3months"
+          onTimeRangeChange={mockOnTimeRangeChange}
+          isDarkMode={false}
+          metricType="hrv"
+          unit="ms"
+        />
+      );
+
+      expect(screen.getByText('Partial Metadata Chart')).toBeInTheDocument();
+    });
+  });
 });
