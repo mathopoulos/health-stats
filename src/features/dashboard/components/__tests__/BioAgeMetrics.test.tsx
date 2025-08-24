@@ -105,7 +105,7 @@ describe('BioAgeMetrics', () => {
       render(<BioAgeMetrics {...defaultProps} />);
 
       const bioAgeValue = screen.getByText('28');
-      expect(bioAgeValue).toHaveClass('text-indigo-700', 'dark:text-indigo-300');
+      expect(bioAgeValue).toHaveClass('text-indigo-600', 'dark:text-indigo-400');
     });
 
     it('handles undefined biological age data', () => {
@@ -141,7 +141,7 @@ describe('BioAgeMetrics', () => {
       render(<BioAgeMetrics {...defaultProps} />);
 
       const ageSpeedCard = screen.getByText('Age Speed').closest('.bg-white');
-      const ageSpeedValue = ageSpeedCard?.querySelector('.text-emerald-700');
+      const ageSpeedValue = ageSpeedCard?.querySelector('.text-green-600');
       expect(ageSpeedValue).toBeInTheDocument();
     });
   });
@@ -172,7 +172,7 @@ describe('BioAgeMetrics', () => {
       render(<BioAgeMetrics {...defaultProps} />);
 
       const vo2maxValue = screen.getByText('45');
-      expect(vo2maxValue).toHaveClass('text-blue-700', 'dark:text-blue-300');
+      expect(vo2maxValue).toHaveClass('text-blue-600', 'dark:text-blue-400');
     });
 
     it('rounds VO2 Max average correctly', () => {
@@ -231,7 +231,7 @@ describe('BioAgeMetrics', () => {
       render(<BioAgeMetrics {...defaultProps} />);
 
       const hrvValue = screen.getByText('43 ms');
-      expect(hrvValue).toHaveClass('text-violet-700', 'dark:text-violet-300');
+      expect(hrvValue).toHaveClass('text-purple-600', 'dark:text-purple-400');
     });
 
     it('handles decimal HRV values correctly', () => {
@@ -267,10 +267,8 @@ describe('BioAgeMetrics', () => {
     it('shows loading indicators for all metrics when loading', () => {
       render(<BioAgeMetrics {...defaultProps} loading={true} />);
 
-      // Check that loading skeleton divs are rendered by looking for the specific class combination
-      const container = document.querySelector('[data-theme]') || document.body;
-      const loadingSkeletons = container.querySelectorAll('div.animate-pulse.bg-gray-200.dark\\:bg-gray-700');
-      expect(loadingSkeletons.length).toBe(4);
+      const loadingIndicators = screen.getAllByText('...');
+      expect(loadingIndicators).toHaveLength(4);
     });
 
     it('does not show calculated values during loading', () => {
@@ -284,10 +282,9 @@ describe('BioAgeMetrics', () => {
     it('applies correct styling to loading indicators', () => {
       render(<BioAgeMetrics {...defaultProps} loading={true} />);
 
-      const loadingSkeletons = document.querySelectorAll('.animate-pulse');
-      expect(loadingSkeletons.length).toBe(4);
-      loadingSkeletons.forEach(skeleton => {
-        expect(skeleton).toHaveClass('animate-pulse', 'bg-gray-200', 'dark:bg-gray-700');
+      const loadingIndicators = screen.getAllByText('...');
+      loadingIndicators.forEach(indicator => {
+        expect(indicator).toHaveClass('text-xl', 'sm:text-2xl', 'font-bold');
       });
     });
   });
@@ -316,7 +313,7 @@ describe('BioAgeMetrics', () => {
       ];
 
       titles.forEach(title => {
-        expect(title).toHaveClass('text-xs', 'sm:text-sm');
+        expect(title).toHaveClass('text-sm', 'sm:text-lg');
       });
     });
 
@@ -330,7 +327,7 @@ describe('BioAgeMetrics', () => {
       ];
 
       values.forEach(value => {
-        expect(value).toHaveClass('text-2xl', 'sm:text-3xl');
+        expect(value).toHaveClass('text-xl', 'sm:text-2xl');
       });
     });
 
@@ -367,16 +364,16 @@ describe('BioAgeMetrics', () => {
       ];
 
       titles.forEach(title => {
-        expect(title).toHaveClass('dark:text-gray-400');
+        expect(title).toHaveClass('dark:text-white');
       });
     });
 
     it('applies dark mode classes to values', () => {
       render(<BioAgeMetrics {...defaultProps} />);
 
-      expect(screen.getByText('28')).toHaveClass('dark:text-indigo-300');
-      expect(screen.getByText('45')).toHaveClass('dark:text-blue-300');
-      expect(screen.getByText('43 ms')).toHaveClass('dark:text-violet-300');
+      expect(screen.getByText('28')).toHaveClass('dark:text-indigo-400');
+      expect(screen.getByText('45')).toHaveClass('dark:text-blue-400');
+      expect(screen.getByText('43 ms')).toHaveClass('dark:text-purple-400');
     });
   });
 
