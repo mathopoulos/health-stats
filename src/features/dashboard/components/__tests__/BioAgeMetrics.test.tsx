@@ -313,7 +313,7 @@ describe('BioAgeMetrics', () => {
       ];
 
       titles.forEach(title => {
-        expect(title).toHaveClass('text-sm', 'sm:text-lg');
+        expect(title).toHaveClass('text-sm', 'sm:text-base');
       });
     });
 
@@ -364,7 +364,7 @@ describe('BioAgeMetrics', () => {
       ];
 
       titles.forEach(title => {
-        expect(title).toHaveClass('dark:text-white');
+        expect(title).toHaveClass('dark:text-gray-300');
       });
     });
 
