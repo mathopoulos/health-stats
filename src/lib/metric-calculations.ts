@@ -158,37 +158,26 @@ export function calculateTrendComparison(data: HealthData[], timeRange: string) 
   return { current: 0, previous: 0, hasData: false };
 }
 
-// Calculate trend comparison using pre-filtered/aggregated data (like original implementation)
+// Calculate trend comparison using pre-filtered/aggregated data (first vs last data points)
 export function calculateTrendFromAggregatedData(aggregatedData: HealthData[]) {
   if (aggregatedData.length === 0) {
     return { current: 0, previous: 0, hasData: false };
   }
 
-  // Split the aggregated data in half (like the original implementation)
-  const halfPeriod = Math.floor(aggregatedData.length / 2);
-  
-  // Current period (most recent half of the data)
-  const currentPeriodData = aggregatedData.slice(-halfPeriod);
-  const currentAvg = currentPeriodData.length > 0 
-    ? currentPeriodData.reduce((sum, item) => sum + item.value, 0) / currentPeriodData.length 
-    : 0;
-  
-  // Previous period (older half of the data)  
-  const previousPeriodData = aggregatedData.slice(-aggregatedData.length, -halfPeriod);
-  const previousAvg = previousPeriodData.length > 0 
-    ? previousPeriodData.reduce((sum, item) => sum + item.value, 0) / previousPeriodData.length 
-    : 0;
-  
-  // Only return data if we have enough for both periods
-  if (currentPeriodData.length > 0 && previousPeriodData.length > 0) {
-    return {
-      current: currentAvg,
-      previous: previousAvg,
-      hasData: true,
-    };
+  // Need at least 2 data points to compare first vs last
+  if (aggregatedData.length < 2) {
+    return { current: 0, previous: 0, hasData: false };
   }
 
-  return { current: 0, previous: 0, hasData: false };
+  // Compare first data point vs last data point in the selected timeframe
+  const firstDataPoint = aggregatedData[0];
+  const lastDataPoint = aggregatedData[aggregatedData.length - 1];
+  
+  return {
+    current: lastDataPoint.value,
+    previous: firstDataPoint.value,
+    hasData: true,
+  };
 }
 
 // Get time range in days

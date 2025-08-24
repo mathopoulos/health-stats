@@ -257,17 +257,17 @@ describe('metric-calculations', () => {
 
     it('should calculate trend from aggregated data correctly', () => {
       const data = [
-        { date: '2024-01-01', value: 100 }, // Previous period
-        { date: '2024-01-08', value: 110 }, // Previous period
-        { date: '2024-01-15', value: 120 }, // Current period
-        { date: '2024-01-22', value: 130 }  // Current period
+        { date: '2024-01-01', value: 100 }, // First data point
+        { date: '2024-01-08', value: 110 }, 
+        { date: '2024-01-15', value: 120 }, 
+        { date: '2024-01-22', value: 130 }  // Last data point
       ];
 
       const result = calculateTrendFromAggregatedData(data);
       
       expect(result.hasData).toBe(true);
-      expect(result.current).toBe(125); // Average of 120, 130
-      expect(result.previous).toBe(105); // Average of 100, 110
+      expect(result.current).toBe(130); // Last data point
+      expect(result.previous).toBe(100); // First data point
     });
 
     it('should handle single data point', () => {
@@ -279,30 +279,29 @@ describe('metric-calculations', () => {
 
     it('should handle two data points', () => {
       const data = [
-        { date: '2024-01-01', value: 100 },
-        { date: '2024-01-15', value: 200 }
+        { date: '2024-01-01', value: 100 }, // First data point
+        { date: '2024-01-15', value: 200 }  // Last data point
       ];
 
       const result = calculateTrendFromAggregatedData(data);
       
       expect(result.hasData).toBe(true);
-      expect(result.current).toBe(200); // Second half (most recent)
-      expect(result.previous).toBe(100); // First half
+      expect(result.current).toBe(200); // Last data point
+      expect(result.previous).toBe(100); // First data point
     });
 
     it('should handle odd number of data points', () => {
       const data = [
-        { date: '2024-01-01', value: 100 },
+        { date: '2024-01-01', value: 100 }, // First data point
         { date: '2024-01-08', value: 110 },
-        { date: '2024-01-15', value: 120 }
+        { date: '2024-01-15', value: 120 }  // Last data point
       ];
 
       const result = calculateTrendFromAggregatedData(data);
       
       expect(result.hasData).toBe(true);
-      // With 3 items, halfPeriod = 1, so current gets last 1 item, previous gets first 2 items
-      expect(result.current).toBe(120);
-      expect(result.previous).toBe(105); // Average of 100, 110
+      expect(result.current).toBe(120); // Last data point
+      expect(result.previous).toBe(100); // First data point
     });
   });
 
