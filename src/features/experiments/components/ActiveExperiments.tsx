@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { useTheme } from '@providers/ThemeProvider';
@@ -120,13 +120,15 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
   const pastExperiments = experiments.filter(exp => exp.status === 'completed');
 
   // Function to fetch experiment-specific fitness data
-  const fetchExperimentFitnessData = async (experiment: Experiment) => {
+  const fetchExperimentFitnessData = useCallback(async (experiment: Experiment) => {
     if (!userId || !experiment.fitnessMarkers?.length) return;
 
     setIsLoadingFitnessData(true);
     try {
       const startDate = new Date(experiment.startDate);
-      const endDate = experiment.status === 'active' ? new Date() : new Date(experiment.endDate);
+      // Fix: Create endDate once to prevent constant recreation causing re-renders
+      const currentTime = new Date();
+      const endDate = experiment.status === 'active' ? currentTime : new Date(experiment.endDate);
       
       // Fetch data for each fitness marker
       const dataPromises = experiment.fitnessMarkers.map(async (marker) => {
@@ -196,16 +198,18 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
     } finally {
       setIsLoadingFitnessData(false);
     }
-  };
+  }, [userId]);
 
   // Function to fetch experiment-specific blood marker data
-  const fetchExperimentBloodMarkerData = async (experiment: Experiment) => {
+  const fetchExperimentBloodMarkerData = useCallback(async (experiment: Experiment) => {
     if (!userId || !experiment.bloodMarkers?.length) return;
 
     setIsLoadingBloodMarkerData(true);
     try {
       const startDate = new Date(experiment.startDate);
-      const endDate = experiment.status === 'active' ? new Date() : new Date(experiment.endDate);
+      // Fix: Create endDate once to prevent constant recreation causing re-renders
+      const currentTime = new Date();
+      const endDate = experiment.status === 'active' ? currentTime : new Date(experiment.endDate);
       
       // Fetch all blood marker data for this user (we'll filter on client side for precise control)
       const response = await fetch(`/api/blood-markers?userId=${userId}`);
@@ -296,7 +300,7 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
     } finally {
       setIsLoadingBloodMarkerData(false);
     }
-  };
+  }, [userId]);
 
   // Helper function to get metric display name
   const getMetricDisplayName = (metricType: string): string => {
@@ -565,9 +569,12 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
         fetchExperimentBloodMarkerData(selectedExperiment);
       }
     }
-  }, [selectedExperiment, userId]);
+  }, [selectedExperiment, fetchExperimentFitnessData, fetchExperimentBloodMarkerData]);
 
-  const ExperimentDetailsModal = ({ experiment }: { experiment: Experiment }) => {
+  const ExperimentDetailsModal = useMemo(() => {
+    if (!selectedExperiment) return null;
+    
+    const ModalComponent = ({ experiment }: { experiment: Experiment }) => {
     if (!isMounted) return null;
     
     const [chartWidth, setChartWidth] = useState(800);
@@ -853,7 +860,10 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
     );
 
     return createPortal(modalContent, document.body);
-  };
+    };
+    
+    return <ModalComponent experiment={selectedExperiment} />;
+  }, [selectedExperiment, experimentFitnessData, experimentBloodMarkerData, isLoadingFitnessData, isLoadingBloodMarkerData, isMounted, isDarkMode]);
 
   // Show loading state
   if (isLoading) {
@@ -1063,9 +1073,7 @@ export default function ActiveExperiments({ userId }: ActiveExperimentsProps) {
       )}
 
       {/* Render modal when experiment is selected */}
-      {selectedExperiment && (
-        <ExperimentDetailsModal experiment={selectedExperiment} />
-      )}
+      {ExperimentDetailsModal}
     </div>
   );
 } 
