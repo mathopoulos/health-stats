@@ -46,7 +46,7 @@ function getTickFormatter(timeRange: string) {
     
     if (timeRange === 'last30days') {
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    } else if (timeRange === 'last3months' || timeRange === 'last6months') {
+    } else if (timeRange === 'last3months') {
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     } else {
       return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
