@@ -19,13 +19,17 @@ function MetricCard({
   loading: boolean;
 }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 sm:px-6 py-4 sm:py-6 shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
-        <h3 className="text-sm sm:text-lg font-medium text-gray-900 dark:text-white">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex flex-col space-y-1">
+        <h3 className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
           {title}
         </h3>
-        <span className={`text-xl sm:text-2xl font-bold ${colorClass}`}>
-          {loading ? "..." : value}
+        <span className={`text-2xl sm:text-3xl font-bold ${colorClass} leading-none`}>
+          {loading ? (
+            <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-8 w-16 rounded"></div>
+          ) : (
+            value
+          )}
         </span>
       </div>
     </div>
@@ -54,32 +58,32 @@ export function BioAgeMetrics({ data, loading }: BioAgeMetricsProps) {
     : "—";
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
       <MetricCard
         title="Biological Age"
         value={biologicalAge}
-        colorClass="text-indigo-600 dark:text-indigo-400"
+        colorClass="text-indigo-700 dark:text-indigo-300"
         loading={loading}
       />
       
       <MetricCard
         title="Age Speed"
         value="—" // This seems to be a placeholder in the original
-        colorClass="text-green-600 dark:text-green-400"
+        colorClass="text-emerald-700 dark:text-emerald-300"
         loading={loading}
       />
       
       <MetricCard
         title="VO2 Max"
         value={vo2maxAverage}
-        colorClass="text-blue-600 dark:text-blue-400"
+        colorClass="text-blue-700 dark:text-blue-300"
         loading={loading}
       />
       
       <MetricCard
         title="HRV"
         value={hrvAverage}
-        colorClass="text-purple-600 dark:text-purple-400"
+        colorClass="text-violet-700 dark:text-violet-300"
         loading={loading}
       />
     </div>
