@@ -1,6 +1,8 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { TrendIndicator } from '@components/TrendIndicator';
+import { aggregateData } from '@/lib/metric-calculations';
+import type { HealthData } from '@/types/dashboard';
 
 import { Experiment, FitnessDataPoint } from '../../../types/experiment';
 import {
@@ -11,9 +13,57 @@ import {
   getMetricDisplayName,
   getMetricUnit,
   getMetricColors,
-  renderCustomTooltip,
   formatDate
 } from '../../../utils/experimentDisplay';
+
+// Custom tooltip for aggregated data
+function renderWeeklyTooltip({ active, payload, label }: any) {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    const meta = data.payload.meta;
+    
+    let dateStr = '';
+    
+    // Check if we have aggregated data with date ranges
+    if (meta && meta.startDate && meta.endDate) {
+      const startDate = new Date(meta.startDate);
+      const endDate = new Date(meta.endDate);
+      
+      // Weekly: Show "Jul 7 - Jul 13, 2025" (Monday - Sunday)
+      dateStr = `${startDate.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric' 
+      })} - ${endDate.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      })}`;
+    } else {
+      // Fallback to single date
+      const date = new Date(label);
+      dateStr = date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: 'numeric'
+      });
+    }
+
+    return (
+      <div className="bg-white dark:bg-gray-800 px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg">
+        <p className="text-sm text-gray-600 dark:text-gray-400">{dateStr}</p>
+        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+          {`${data.value.toFixed(1)}${data.payload.unit || ''}`}
+        </p>
+        {meta && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Weekly avg ({meta.pointCount} points)
+          </p>
+        )}
+      </div>
+    );
+  }
+  return null;
+}
 
 interface FitnessMetricCardProps {
   metricType: string;
@@ -30,7 +80,14 @@ export default function FitnessMetricCard({
   chartWidth, 
   isDarkMode 
 }: FitnessMetricCardProps) {
-  const hasData = metricData.length > 0;
+  // Apply weekly aggregation to the data
+  // Convert FitnessDataPoint[] to HealthData[] for compatibility with aggregateData
+  const healthData: HealthData[] = metricData.map(point => ({ 
+    date: point.date, 
+    value: point.value 
+  }));
+  const aggregatedData = healthData.length > 0 ? aggregateData(healthData, 'weekly') : [];
+  const hasData = aggregatedData.length > 0;
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-6">
@@ -40,7 +97,7 @@ export default function FitnessMetricCard({
             {getMetricDisplayName(metricType)}
           </h4>
           {hasData && (() => {
-            const trend = calculateTrend(metricData, metricType, experiment);
+            const trend = calculateTrend(aggregatedData, metricType, experiment);
             if (trend) {
               const colors = getMetricColors(metricType);
               return (
@@ -65,7 +122,7 @@ export default function FitnessMetricCard({
           <LineChart 
             width={chartWidth}
             height={280}
-            data={metricData.map(point => ({ ...point, unit: getMetricUnit(metricType) }))}
+            data={aggregatedData.map(point => ({ ...point, unit: getMetricUnit(metricType) }))}
             margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
           >
             <CartesianGrid 
@@ -75,7 +132,7 @@ export default function FitnessMetricCard({
               vertical={false}
             />
             <YAxis 
-              domain={getAdaptiveYAxisDomain(metricData, metricType)}
+              domain={getAdaptiveYAxisDomain(aggregatedData, metricType)}
               hide={true}
             />
             <XAxis 
@@ -91,7 +148,7 @@ export default function FitnessMetricCard({
               allowDuplicatedCategory={false}
             />
             <Tooltip 
-              content={renderCustomTooltip}
+              content={renderWeeklyTooltip}
             />
             <Line 
               type="monotone"
@@ -107,7 +164,7 @@ export default function FitnessMetricCard({
                 const { cx, cy, index } = props; 
                 const lineColor = isDarkMode ? "#818cf8" : "#4f46e5";
                 const bgColor = isDarkMode ? "#1f2937" : "#ffffff";
-                if (index === metricData.length - 1 && metricData.length > 0) { 
+                if (index === aggregatedData.length - 1 && aggregatedData.length > 0) { 
                   return (
                     <g>
                       <circle cx={cx} cy={cy} r={12} fill={lineColor} fillOpacity={0.15} stroke="none" />
