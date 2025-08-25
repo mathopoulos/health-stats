@@ -11,7 +11,6 @@ import {
 import {
   getMetricDisplayName,
   getMetricUnit,
-  getMetricColors,
   renderCustomTooltip,
   formatDate
 } from '../../../utils/experimentDisplay';
@@ -104,7 +103,6 @@ export default function FitnessMetricCard({
             // Use dashboard-style trend calculation: first vs last data point
             const trendData = calculateTrendFromAggregatedData(chartData);
             if (trendData.hasData) {
-              const colors = getMetricColors(metricType);
               const isBodyFat = metricType === 'Body Fat %' || metricType === 'bodyFat';
               return (
                 <TrendIndicator 
@@ -113,7 +111,6 @@ export default function FitnessMetricCard({
                   isFitnessMetric={true}
                   isBodyFat={isBodyFat}
                   showTimeRange={false}
-                  customColors={colors}
                   className="ml-2"
                 />
               );
