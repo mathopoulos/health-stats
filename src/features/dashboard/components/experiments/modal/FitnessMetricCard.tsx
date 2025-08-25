@@ -1,18 +1,18 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { TrendIndicator } from '@components/TrendIndicator';
-import { aggregateData } from '@/lib/metric-calculations';
+import { aggregateData, calculateTrendFromAggregatedData } from '@/lib/metric-calculations';
 import type { HealthData } from '@/types/dashboard';
 
 import { Experiment, FitnessDataPoint } from '../../../types/experiment';
 import {
-  calculateTrend,
   getAdaptiveYAxisDomain
 } from '../../../utils/experimentCalculations';
 import {
   getMetricDisplayName,
   getMetricUnit,
   getMetricColors,
+  renderCustomTooltip,
   formatDate
 } from '../../../utils/experimentDisplay';
 
@@ -86,8 +86,12 @@ export default function FitnessMetricCard({
     date: point.date, 
     value: point.value 
   }));
+  
   const aggregatedData = healthData.length > 0 ? aggregateData(healthData, 'weekly') : [];
-  const hasData = aggregatedData.length > 0;
+  
+  // If aggregation results in no data but we have original data, fall back to original data
+  const chartData = aggregatedData.length > 0 ? aggregatedData : healthData;
+  const hasData = chartData.length > 0;
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-6">
@@ -97,15 +101,17 @@ export default function FitnessMetricCard({
             {getMetricDisplayName(metricType)}
           </h4>
           {hasData && (() => {
-            const trend = calculateTrend(aggregatedData, metricType, experiment);
-            if (trend) {
+            // Use dashboard-style trend calculation: first vs last data point
+            const trendData = calculateTrendFromAggregatedData(chartData);
+            if (trendData.hasData) {
               const colors = getMetricColors(metricType);
+              const isBodyFat = metricType === 'Body Fat %' || metricType === 'bodyFat';
               return (
                 <TrendIndicator 
-                  current={trend.current} 
-                  previous={trend.previous} 
+                  current={trendData.current} 
+                  previous={trendData.previous} 
                   isFitnessMetric={true}
-                  isBodyFat={trend.isBodyFat}
+                  isBodyFat={isBodyFat}
                   showTimeRange={false}
                   customColors={colors}
                   className="ml-2"
@@ -122,7 +128,7 @@ export default function FitnessMetricCard({
           <LineChart 
             width={chartWidth}
             height={280}
-            data={aggregatedData.map(point => ({ ...point, unit: getMetricUnit(metricType) }))}
+            data={chartData.map(point => ({ ...point, unit: getMetricUnit(metricType) }))}
             margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
           >
             <CartesianGrid 
@@ -132,7 +138,7 @@ export default function FitnessMetricCard({
               vertical={false}
             />
             <YAxis 
-              domain={getAdaptiveYAxisDomain(aggregatedData, metricType)}
+              domain={getAdaptiveYAxisDomain(chartData, metricType)}
               hide={true}
             />
             <XAxis 
@@ -148,7 +154,7 @@ export default function FitnessMetricCard({
               allowDuplicatedCategory={false}
             />
             <Tooltip 
-              content={renderWeeklyTooltip}
+              content={aggregatedData.length > 0 ? renderWeeklyTooltip : renderCustomTooltip}
             />
             <Line 
               type="monotone"
@@ -164,7 +170,7 @@ export default function FitnessMetricCard({
                 const { cx, cy, index } = props; 
                 const lineColor = isDarkMode ? "#818cf8" : "#4f46e5";
                 const bgColor = isDarkMode ? "#1f2937" : "#ffffff";
-                if (index === aggregatedData.length - 1 && aggregatedData.length > 0) { 
+                if (index === chartData.length - 1 && chartData.length > 0) { 
                   return (
                     <g>
                       <circle cx={cx} cy={cy} r={12} fill={lineColor} fillOpacity={0.15} stroke="none" />
