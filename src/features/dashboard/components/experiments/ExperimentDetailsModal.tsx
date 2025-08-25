@@ -76,8 +76,14 @@ export default function ExperimentDetailsModal({
   const isLoading = isLoadingFitnessData || isLoadingBloodMarkerData;
 
   const modalContent = (
-    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-[100] p-4 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl w-[90vw] max-w-4xl min-h-0 max-h-[calc(100vh-2rem)] overflow-y-auto my-4">
+    <div 
+      className="fixed inset-0 bg-black/50 flex items-start justify-center z-[100] p-4 backdrop-blur-sm overflow-y-auto"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white dark:bg-gray-800 rounded-2xl w-[90vw] max-w-4xl min-h-0 max-h-[calc(100vh-2rem)] overflow-y-auto my-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Header */}
         <ModalHeader experiment={experiment} onClose={onClose} />
