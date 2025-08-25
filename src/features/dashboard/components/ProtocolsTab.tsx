@@ -2,7 +2,7 @@ import React from 'react';
 import { DietProtocolCard } from './DietProtocolCard';
 import { WorkoutProtocolCard } from './WorkoutProtocolCard';
 import { SupplementProtocolCard } from './SupplementProtocolCard';
-import ActiveExperiments from '@features/experiments/components/ActiveExperiments';
+import ActiveExperiments from './experiments/ActiveExperiments';
 
 import type { HealthProtocol } from '@/types/healthProtocol';
 
