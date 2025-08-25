@@ -37,7 +37,7 @@ jest.mock('../SupplementProtocolCard', () => {
   };
 });
 
-jest.mock('@features/experiments/components/ActiveExperiments', () => {
+jest.mock('../experiments/ActiveExperiments', () => {
   return function MockActiveExperiments({ userId }: { userId: string }) {
     return (
       <div data-testid="active-experiments">

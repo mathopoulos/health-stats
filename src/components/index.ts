@@ -1,1 +1,1 @@
-export * from '@/features/experiments/components';
+export * from '@/features/dashboard/components/experiments';
