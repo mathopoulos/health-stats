@@ -10,7 +10,7 @@ import {
   ExperimentDetailsModalProps,
   ExperimentFitnessData,
   ExperimentBloodMarkerData 
-} from '../types/experiment';
+} from '../../types/experiment';
 import ModalHeader from './modal/ModalHeader';
 import ExperimentOverview from './modal/ExperimentOverview';
 import FitnessMetricCard from './modal/FitnessMetricCard';

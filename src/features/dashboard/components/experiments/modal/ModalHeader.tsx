@@ -1,5 +1,5 @@
 import React from 'react';
-import { Experiment } from '../../types/experiment';
+import { Experiment } from '../../../types/experiment';
 
 interface ModalHeaderProps {
   experiment: Experiment;

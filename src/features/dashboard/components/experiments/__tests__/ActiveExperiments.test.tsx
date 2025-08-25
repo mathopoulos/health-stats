@@ -22,7 +22,7 @@ const mockUseExperimentBloodMarkerData = {
   fetchExperimentBloodMarkerData: jest.fn()
 };
 
-jest.mock('../../hooks/useExperimentData', () => ({
+jest.mock('../../../hooks/useExperimentData', () => ({
   useExperiments: jest.fn(() => mockUseExperiments),
   useExperimentFitnessData: jest.fn(() => mockUseExperimentFitnessData),
   useExperimentBloodMarkerData: jest.fn(() => mockUseExperimentBloodMarkerData)

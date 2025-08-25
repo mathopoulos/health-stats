@@ -2,18 +2,18 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { TrendIndicator } from '@components/TrendIndicator';
 
-import { Experiment, FitnessDataPoint } from '../../types/experiment';
+import { Experiment, FitnessDataPoint } from '../../../types/experiment';
 import {
   calculateTrend,
   getAdaptiveYAxisDomain
-} from '../../utils/experimentCalculations';
+} from '../../../utils/experimentCalculations';
 import {
   getMetricDisplayName,
   getMetricUnit,
   getMetricColors,
   renderCustomTooltip,
   formatDate
-} from '../../utils/experimentDisplay';
+} from '../../../utils/experimentDisplay';
 
 interface FitnessMetricCardProps {
   metricType: string;

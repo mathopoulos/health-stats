@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useExperiments, useExperimentFitnessData, useExperimentBloodMarkerData } from '../hooks/useExperimentData';
+import { useExperiments, useExperimentFitnessData, useExperimentBloodMarkerData } from '../../hooks/useExperimentData';
 import ExperimentDetailsModal from './ExperimentDetailsModal';
 import { ExperimentList } from './ExperimentCard';
 

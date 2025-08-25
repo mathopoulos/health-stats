@@ -2,9 +2,9 @@ import React from 'react';
 import BloodMarkerChart from '@features/blood-markers/components/BloodMarkerChart';
 import { TrendIndicator } from '@components/TrendIndicator';
 
-import { Experiment, BloodMarkerDataPoint } from '../../types/experiment';
-import { calculateBloodMarkerTrend } from '../../utils/experimentCalculations';
-import { getBloodMarkerColors } from '../../utils/experimentDisplay';
+import { Experiment, BloodMarkerDataPoint } from '../../../types/experiment';
+import { calculateBloodMarkerTrend } from '../../../utils/experimentCalculations';
+import { getBloodMarkerColors } from '../../../utils/experimentDisplay';
 
 interface BloodMarkerCardProps {
   markerName: string;
